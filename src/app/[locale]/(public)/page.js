@@ -79,7 +79,7 @@ export default function Home() {
         <div className="flex h-16 items-center justify-between px-6 border-b border-zinc-200 shrink-0">
           <span className="text-xl font-bold tracking-tighter">E-STORE.</span>
           <button 
-            className="p-2 -mr-2 text-zinc-500 hover:text-zinc-900"
+            className="p-2 -mr-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 hover:rotate-90 active:scale-95 rounded-full transition-all duration-200"
             onClick={() => setIsSidebarOpen(false)}
             aria-label="Close sidebar"
           >
@@ -142,7 +142,7 @@ export default function Home() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
             <button 
-              className="p-2 -ml-2 text-zinc-600 hover:text-zinc-900" 
+              className="p-2 -ml-2 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 rounded-full hover:scale-110 active:scale-95 transition-all duration-200" 
               aria-label="Open sidebar"
               onClick={() => setIsSidebarOpen(true)}
             >
