@@ -152,13 +152,6 @@ export default function Home() {
             </button>
             <Link href={`/${locale}`} className="text-2xl font-bold tracking-tighter sm:block">E-STORE.</Link>
           </div>
-          
-          {/* DESKTOP NAV */}
-          <nav className="hidden lg:flex items-center gap-8">
-            <Link href={`/${locale}`} className="text-sm font-medium text-zinc-900 hover:text-blue-600 transition-colors">Home</Link>
-            <Link href={`/${locale}/shop`} className="text-sm font-medium text-zinc-600 hover:text-blue-600 transition-colors">Shop</Link>
-            <Link href={`/${locale}/categories`} className="text-sm font-medium text-zinc-600 hover:text-blue-600 transition-colors">Categories</Link>
-          </nav>
 
           <div className="flex items-center gap-4">
             <button className="p-2 text-zinc-600 hover:text-zinc-900 hidden sm:block" aria-label="Search">
