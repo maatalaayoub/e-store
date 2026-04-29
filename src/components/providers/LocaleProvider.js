@@ -1,22 +1,22 @@
 /**
  * LocaleProvider — Client Component
  *
- * Sets the `lang` and `dir` attributes on the root <html> element at
- * runtime, keeping server-rendered HTML and hydrated output in sync.
- *
- * Using `suppressHydrationWarning` on <html> in the root layout allows
- * React to update these attributes without a hydration mismatch warning.
+ * - Sets the `lang` and `dir` attributes on <html> at runtime.
+ * - Exposes the current locale, direction, and translation dictionary
+ *   to descendant client components via React context.
  */
 
 'use client';
 
-import { useEffect } from 'react';
+import { createContext, useContext, useEffect, useMemo } from 'react';
 import { localeMetadata } from '@/i18n/config';
 
+const LocaleContext = createContext({ locale: 'en', dir: 'ltr', dictionary: {} });
+
 /**
- * @param {{ locale: string, children: React.ReactNode }} props
+ * @param {{ locale: string, dictionary: Record<string, any>, children: React.ReactNode }} props
  */
-export default function LocaleProvider({ locale, children }) {
+export default function LocaleProvider({ locale, dictionary, children }) {
   const { dir } = localeMetadata[locale] ?? { dir: 'ltr' };
 
   useEffect(() => {
@@ -24,5 +24,20 @@ export default function LocaleProvider({ locale, children }) {
     document.documentElement.dir = dir;
   }, [locale, dir]);
 
-  return children;
+  const value = useMemo(
+    () => ({ locale, dir, dictionary: dictionary ?? {} }),
+    [locale, dir, dictionary],
+  );
+
+  return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
+}
+
+/** Returns the full translation dictionary for the active locale. */
+export function useDictionary() {
+  return useContext(LocaleContext).dictionary;
+}
+
+/** Returns `{ locale, dir, dictionary }` for the active locale. */
+export function useLocale() {
+  return useContext(LocaleContext);
 }

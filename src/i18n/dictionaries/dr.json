@@ -1,1 +1,213 @@
-{}
+{
+  "common": {
+    "search": "قلّب",
+    "view": "شوف",
+    "view_all": "شوف الكل",
+    "filter": "فلتر",
+    "or": "ولا",
+    "language": "اللغة",
+    "loading": "كيتحمّل..."
+  },
+  "nav": {
+    "home": "الرئيسية",
+    "shop": "الحانوت",
+    "categories": "الفئات",
+    "about": "علينا",
+    "login": "دخول",
+    "signup": "صاوب حساب",
+    "dashboard": "اللوحة",
+    "logout": "خروج",
+    "my_account": "الحساب ديالي",
+    "cart": "الكارّيطة"
+  },
+  "home": {
+    "title_part1": "بدّل",
+    "title_highlight": "ستايلك",
+    "title_part2": "كل نهار.",
+    "subtitle": "منتجات مزيانة مختارة بالعناية ليك. جودة عالية، ديزاين بسيط وعصري، يوصلك حتى لباب الدار.",
+    "cta_shop": "شري دابا",
+    "cta_browse": "شوف المجموعة",
+    "trust_loved": "كيبغيوها أكثر من 12 ألف عميل",
+    "showcase_featured": "مميّز",
+    "showcase_product": "سماعات ستوديو",
+    "showcase_order_placed": "الطلب تأكّد",
+    "showcase_just_now": "دابا · زوج ديال القطع",
+    "showcase_free_shipping": "تيوصل مجّان",
+    "showcase_progress": "75٪ باش تاخد الكادو",
+    "showcase_save": "ربح",
+    "brands_label": "ماركات كنثقو فيهم",
+    "featured_kicker": "اختياراتنا",
+    "featured_title": "منتجات مميّزة",
+    "wishlist": "زيد للمفضلة",
+    "quick_add": "زيد بسرعة",
+    "badge_new": "جديد",
+    "badge_hot": "كيدور بزّاف"
+  },
+  "perks": {
+    "support_title": "دعم 24 ساعة على 7",
+    "support_desc": "الفريق ديالنا متاح كل الأسبوع من 9 ديال الصباح حتى 10 ديال الليل.",
+    "return_title": "ترجاع ساهل",
+    "return_desc": "تقدر ترجّع ولا تبدّل خلال 30 يوم بلا حتى مشكل.",
+    "free_shipping_title": "توصيل مجاني",
+    "free_shipping_desc": "توصيل مجّاني على كل الطلبات اللي فوق 99 درهم.",
+    "express_title": "توصيل سريع",
+    "express_desc": "توصيل سريع ومجاني لجميع المدن ديال المملكة."
+  },
+  "footer": {
+    "tagline": "منتجات بجودة عالية لحياتك اليومية. من 2026.",
+    "shop_heading": "الحانوت",
+    "shop_all": "كل المنتجات",
+    "shop_featured": "المميّزة",
+    "shop_new": "وصلات جديدة",
+    "support_heading": "الدعم",
+    "faq": "أسئلة شائعة",
+    "shipping_returns": "التوصيل و الترجيع",
+    "contact": "تواصل معانا",
+    "copyright": "© 2026 E-Store. كل الحقوق محفوظة."
+  },
+  "auth": {
+    "back_home": "رجع للرئيسية",
+    "login": {
+      "title": "مرحبا بيك من جديد",
+      "subtitle": "دخل لحسابك بالإيميل ديالك",
+      "email_label": "الإيميل",
+      "email_placeholder": "دخّل الإيميل ديالك",
+      "password_label": "كلمة السر",
+      "password_placeholder": "دخّل كلمة السر",
+      "remember": "تفكّرني",
+      "forgot": "نسيتي كلمة السر؟",
+      "submit": "دخل",
+      "no_account": "ما عندكش حساب؟",
+      "signup_link": "صاوب حساب"
+    },
+    "signup": {
+      "title": "صاوب حساب جديد",
+      "subtitle": "مرحبا! دخّل المعلومات ديالك باش تسجّل",
+      "full_name_label": "الاسم الكامل",
+      "full_name_placeholder": "دخّل الاسم الكامل",
+      "email_label": "الإيميل",
+      "email_placeholder": "دخّل الإيميل ديالك",
+      "password_label": "كلمة السر",
+      "password_placeholder": "دخّل كلمة السر",
+      "accept_prefix": "كنوافق على",
+      "terms_link": "الشروط",
+      "submit": "تسجيل",
+      "have_account": "عندك حساب من قبل؟",
+      "login_link": "دخل"
+    }
+  },
+  "admin": {
+    "nav": {
+      "dashboard": "اللوحة",
+      "products": "المنتجات",
+      "orders": "الطلبات",
+      "customers": "العملاء",
+      "settings": "إعدادات الحانوت",
+      "exit": "خرج من الإدارة"
+    },
+    "search_placeholder": "قلّب...",
+    "dashboard": {
+      "title": "نظرة عامة",
+      "customize": "خصّص الحانوت",
+      "add_product": "زيد منتج",
+      "stats": {
+        "revenue": "المداخيل الكاملة",
+        "orders": "الطلبات",
+        "products": "المنتجات",
+        "customers": "العملاء النشيطين"
+      },
+      "recent_title": "آخر المنتجات",
+      "empty": "ما زال ما زدتي حتى منتج. ضغط «زيد منتج» باش تبدا.",
+      "headers": {
+        "product": "المنتج",
+        "category": "الفئة",
+        "price": "الثمن",
+        "status": "الحالة",
+        "actions": "الإجراءات"
+      }
+    },
+    "products": {
+      "title": "المنتجات",
+      "subtitle": "تحكم فالستوك والثمن والإعلانات ديالك.",
+      "add": "زيد منتج",
+      "tabs": { "all": "الكل", "active": "نشيط", "draft": "مسوّدة", "archived": "مأرشف" },
+      "search": "قلّب على منتج...",
+      "headers": { "product": "المنتج", "category": "الفئة", "inventory": "الستوك", "price": "الثمن", "status": "الحالة", "actions": "الإجراءات", "stock": "الستوك" },
+      "empty_title": "ما كاينش منتجات",
+      "empty_desc": "زيد أول منتج باش تبدا تبيع."
+    },
+    "orders": {
+      "title": "الطلبات",
+      "subtitle": "تابع وحضّر طلبات العملاء.",
+      "export": "تصدير",
+      "stats": { "total": "كل الطلبات", "pending": "كتسنّى", "shipped": "تشحنات", "revenue": "المداخيل" },
+      "tabs": { "all": "الكل", "pending": "كتسنّى", "processing": "كتعالج", "shipped": "تشحنات", "delivered": "توصلات", "cancelled": "ملغية" },
+      "search": "قلّب على طلب...",
+      "headers": { "order": "الطلب", "customer": "العميل", "date": "التاريخ", "total": "المجموع", "status": "الحالة", "action": "الإجراء" },
+      "empty_title": "ما كاينش طلبات",
+      "empty_desc": "الطلبات غادي يبانو هنا منين العملاء يشريو."
+    },
+    "customers": {
+      "title": "العملاء",
+      "subtitle": "شوف تفاصيل العملاء، السجلات، والقيمة الإجمالية.",
+      "add": "زيد عميل",
+      "stats": { "total": "كل العملاء", "new": "الجدد هاد الشهر", "returning": "العائدون", "avg": "معدل قيمة الطلب" },
+      "all": "كل العملاء",
+      "search": "قلّب على عميل...",
+      "headers": { "name": "الاسم", "email": "الإيميل", "orders": "الطلبات", "spent": "صرف", "joined": "تسجل", "action": "الإجراء" },
+      "empty_title": "ما كاينش عملاء",
+      "empty_desc": "العملاء غادي يبانو هنا بعد التسجيل ولا أول طلب."
+    },
+    "settings": {
+      "title": "إعدادات الحانوت",
+      "subtitle": "ضبط الواجهة، المدفوعات، والعمليات.",
+      "save": "حفظ التغييرات",
+      "sections": {
+        "general": "عام",
+        "payments": "المدفوعات",
+        "shipping": "التوصيل",
+        "notifications": "الإشعارات",
+        "localization": "التعريب"
+      },
+      "general": {
+        "title": "عام",
+        "desc": "معلومات أساسية على الحانوت.",
+        "store_name": "اسم الحانوت",
+        "store_name_hint": "كيبان ف الناڤيكاتور و ف الإيميلات.",
+        "contact_email": "إيميل التواصل",
+        "description": "الوصف",
+        "description_hint": "ملخص قصير على الحانوت.",
+        "description_placeholder": "گول للعملاء شنو كتبيع..."
+      },
+      "payments": {
+        "title": "المدفوعات",
+        "desc": "اختر كيفاش تقبل المدفوعات.",
+        "currency": "العملة",
+        "stripe": "مفتاح Stripe",
+        "stripe_hint": "كيتستعمل لمعالجة الدفع بالكارط.",
+        "cod": "الدفع عند التسليم"
+      },
+      "shipping": {
+        "title": "التوصيل",
+        "desc": "حدد مناطق وأسعار التوصيل.",
+        "origin": "بلاد المنشأ الافتراضية",
+        "flat": "ثمن موحّد",
+        "flat_hint": "كيتطبق إيلا ما كانش مناطق متطابقة.",
+        "free_threshold": "حد التوصيل المجاني"
+      },
+      "notifications": {
+        "title": "الإشعارات",
+        "desc": "تحكّم ف الإيميلات اللي كتوصلكم.",
+        "new_order": "إشعار طلب جديد",
+        "low_stock": "تنبيه قلة الستوك",
+        "weekly": "ملخّص أسبوعي"
+      },
+      "localization": {
+        "title": "التعريب",
+        "desc": "اللغة و التوقيت الافتراضي.",
+        "default_language": "اللغة الافتراضية",
+        "timezone": "المنطقة الزمنية"
+      }
+    }
+  }
+}

@@ -10,6 +10,7 @@
 
 import { notFound } from 'next/navigation';
 import { locales } from '@/i18n/config';
+import { getDictionary } from '@/i18n/getDictionary';
 import LocaleProvider from '@/components/providers/LocaleProvider';
 
 /**
@@ -25,5 +26,11 @@ export default async function LocaleLayout({ children, params }) {
 
   if (!locales.includes(locale)) notFound();
 
-  return <LocaleProvider locale={locale}>{children}</LocaleProvider>;
+  const dictionary = await getDictionary(locale);
+
+  return (
+    <LocaleProvider locale={locale} dictionary={dictionary}>
+      {children}
+    </LocaleProvider>
+  );
 }

@@ -1,1 +1,213 @@
-{}
+{
+  "common": {
+    "search": "Search",
+    "view": "View",
+    "view_all": "View all",
+    "filter": "Filter",
+    "or": "OR",
+    "language": "Language",
+    "loading": "Loading..."
+  },
+  "nav": {
+    "home": "Home",
+    "shop": "Shop",
+    "categories": "Categories",
+    "about": "About Us",
+    "login": "Log in",
+    "signup": "Create account",
+    "dashboard": "Dashboard",
+    "logout": "Log out",
+    "my_account": "My Account",
+    "cart": "Cart"
+  },
+  "home": {
+    "title_part1": "Redefine your",
+    "title_highlight": "everyday",
+    "title_part2": "style.",
+    "subtitle": "Premium products curated for modern living. Quality materials, timeless minimalist design, delivered to your door.",
+    "cta_shop": "Shop Now",
+    "cta_browse": "Browse collection",
+    "trust_loved": "Loved by 12k+ customers",
+    "showcase_featured": "Featured",
+    "showcase_product": "Studio Headphones",
+    "showcase_order_placed": "Order placed",
+    "showcase_just_now": "Just now · 2 items",
+    "showcase_free_shipping": "Free shipping",
+    "showcase_progress": "75% to your free gift",
+    "showcase_save": "Save",
+    "brands_label": "Trusted by leading brands",
+    "featured_kicker": "Curated picks",
+    "featured_title": "Featured Products",
+    "wishlist": "Add to wishlist",
+    "quick_add": "Quick add",
+    "badge_new": "New",
+    "badge_hot": "Hot"
+  },
+  "perks": {
+    "support_title": "24/7 customer support",
+    "support_desc": "Our team is available all week from 9am to 10pm.",
+    "return_title": "Easy returns",
+    "return_desc": "30-day no-questions-asked returns and exchanges.",
+    "free_shipping_title": "Free shipping",
+    "free_shipping_desc": "Free shipping on all US orders or any order over $99.",
+    "express_title": "Express delivery",
+    "express_desc": "Fast, free delivery to every city in the country."
+  },
+  "footer": {
+    "tagline": "High-quality products for your everyday life. Est. 2026.",
+    "shop_heading": "Shop",
+    "shop_all": "All Products",
+    "shop_featured": "Featured",
+    "shop_new": "New Arrivals",
+    "support_heading": "Support",
+    "faq": "FAQ",
+    "shipping_returns": "Shipping & Returns",
+    "contact": "Contact Us",
+    "copyright": "© 2026 E-Store. All rights reserved."
+  },
+  "auth": {
+    "back_home": "Back to Home",
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Log in to your account with your email",
+      "email_label": "Email address",
+      "email_placeholder": "Enter your email",
+      "password_label": "Password",
+      "password_placeholder": "Enter your password",
+      "remember": "Remember me",
+      "forgot": "Forgot password?",
+      "submit": "Log In",
+      "no_account": "Don't have an account?",
+      "signup_link": "Sign up"
+    },
+    "signup": {
+      "title": "Create an account",
+      "subtitle": "Welcome! Enter your details to sign up",
+      "full_name_label": "Full Name",
+      "full_name_placeholder": "Enter your full name",
+      "email_label": "Email address",
+      "email_placeholder": "Enter your email",
+      "password_label": "Password",
+      "password_placeholder": "Enter your password",
+      "accept_prefix": "I accept",
+      "terms_link": "Terms & Conditions",
+      "submit": "Sign Up",
+      "have_account": "Already have an account?",
+      "login_link": "Log in"
+    }
+  },
+  "admin": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "products": "Products",
+      "orders": "Orders",
+      "customers": "Customers",
+      "settings": "Store Settings",
+      "exit": "Exit Admin"
+    },
+    "search_placeholder": "Search...",
+    "dashboard": {
+      "title": "Overview",
+      "customize": "Customize Store",
+      "add_product": "Add Product",
+      "stats": {
+        "revenue": "Total Revenue",
+        "orders": "Orders",
+        "products": "Products",
+        "customers": "Active Customers"
+      },
+      "recent_title": "Recent Products",
+      "empty": "No products have been added yet. Click \"Add Product\" to get started.",
+      "headers": {
+        "product": "Product",
+        "category": "Category",
+        "price": "Price",
+        "status": "Status",
+        "actions": "Actions"
+      }
+    },
+    "products": {
+      "title": "Products",
+      "subtitle": "Manage your inventory, pricing, and listings.",
+      "add": "Add Product",
+      "tabs": { "all": "All", "active": "Active", "draft": "Draft", "archived": "Archived" },
+      "search": "Search products...",
+      "headers": { "product": "Product", "category": "Category", "inventory": "Inventory", "price": "Price", "status": "Status", "actions": "Actions", "stock": "Stock" },
+      "empty_title": "No products yet",
+      "empty_desc": "Add your first product to start selling."
+    },
+    "orders": {
+      "title": "Orders",
+      "subtitle": "Track and fulfil orders placed by your customers.",
+      "export": "Export",
+      "stats": { "total": "Total Orders", "pending": "Pending", "shipped": "Shipped", "revenue": "Revenue" },
+      "tabs": { "all": "All", "pending": "Pending", "processing": "Processing", "shipped": "Shipped", "delivered": "Delivered", "cancelled": "Cancelled" },
+      "search": "Search orders...",
+      "headers": { "order": "Order", "customer": "Customer", "date": "Date", "total": "Total", "status": "Status", "action": "Action" },
+      "empty_title": "No orders yet",
+      "empty_desc": "Orders will appear here as customers check out."
+    },
+    "customers": {
+      "title": "Customers",
+      "subtitle": "View customer details, order history, and lifetime value.",
+      "add": "Add Customer",
+      "stats": { "total": "Total Customers", "new": "New This Month", "returning": "Returning", "avg": "Avg. Order Value" },
+      "all": "All customers",
+      "search": "Search customers...",
+      "headers": { "name": "Name", "email": "Email", "orders": "Orders", "spent": "Spent", "joined": "Joined", "action": "Action" },
+      "empty_title": "No customers yet",
+      "empty_desc": "Customers will appear here after they sign up or place an order."
+    },
+    "settings": {
+      "title": "Store Settings",
+      "subtitle": "Configure your storefront, payments, and operations.",
+      "save": "Save changes",
+      "sections": {
+        "general": "General",
+        "payments": "Payments",
+        "shipping": "Shipping",
+        "notifications": "Notifications",
+        "localization": "Localization"
+      },
+      "general": {
+        "title": "General",
+        "desc": "Basic information about your store.",
+        "store_name": "Store name",
+        "store_name_hint": "Shown in the browser tab and emails.",
+        "contact_email": "Contact email",
+        "description": "Description",
+        "description_hint": "A short summary of your store.",
+        "description_placeholder": "Tell customers what you sell..."
+      },
+      "payments": {
+        "title": "Payments",
+        "desc": "Choose how you accept payments from customers.",
+        "currency": "Currency",
+        "stripe": "Stripe API key",
+        "stripe_hint": "Used to process card payments.",
+        "cod": "Cash on delivery"
+      },
+      "shipping": {
+        "title": "Shipping",
+        "desc": "Define your shipping zones and rates.",
+        "origin": "Default origin country",
+        "flat": "Flat rate",
+        "flat_hint": "Applied when no zone matches.",
+        "free_threshold": "Free shipping threshold"
+      },
+      "notifications": {
+        "title": "Notifications",
+        "desc": "Control which emails you and your customers receive.",
+        "new_order": "New order email",
+        "low_stock": "Low stock alerts",
+        "weekly": "Weekly summary"
+      },
+      "localization": {
+        "title": "Localization",
+        "desc": "Default language and timezone for your storefront.",
+        "default_language": "Default language",
+        "timezone": "Timezone"
+      }
+    }
+  }
+}

@@ -6,6 +6,7 @@ import { Eye, ArrowLeft, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { useDictionary } from "@/components/providers/LocaleProvider";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -14,6 +15,10 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+  const dict = useDictionary();
+  const t = dict?.auth?.login ?? {};
+  const tCommon = dict?.common ?? {};
+  const tBack = dict?.auth?.back_home;
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -42,7 +47,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen flex-col bg-white">
       {/* HEADER WITH BACK BUTTON */}
       <header className="absolute top-0 left-0 w-full flex h-16 items-center px-4 sm:px-8 bg-white border-b border-zinc-200">
-        <Link href="/" className="p-2 text-zinc-500 transition-colors hover:text-zinc-900" aria-label="Back to Home">
+        <Link href="/" className="p-2 text-zinc-500 transition-colors hover:text-zinc-900" aria-label={tBack}>
           <ArrowLeft className="h-6 w-6" />
         </Link>
       </header>
@@ -52,8 +57,8 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <div className="mx-auto w-full sm:rounded-2xl sm:border border-transparent sm:border-zinc-200 bg-white px-2 py-8 sm:p-10">
           
-          <h1 className="mb-2 text-3xl font-bold text-zinc-900">Welcome Back</h1>
-          <p className="mb-8 text-sm text-zinc-500">Log in to your account with your email</p>
+          <h1 className="mb-2 text-3xl font-bold text-zinc-900">{t.title}</h1>
+          <p className="mb-8 text-sm text-zinc-500">{t.subtitle}</p>
           
           {error && (
             <div className="mb-6 rounded-md bg-red-50 p-4 text-sm text-red-700">
@@ -63,10 +68,10 @@ export default function LoginPage() {
 
           <form className="flex flex-col gap-5" onSubmit={handleLogin}>
             <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-900">Email address</label>
+              <label className="mb-2 block text-sm font-medium text-zinc-900">{t.email_label}</label>
               <input 
                 type="email" 
-                placeholder="Enter your email" 
+                placeholder={t.email_placeholder} 
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -74,11 +79,11 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-900">Password</label>
+              <label className="mb-2 block text-sm font-medium text-zinc-900">{t.password_label}</label>
               <div className="relative">
                 <input 
                   type="password" 
-                  placeholder="Enter your password" 
+                  placeholder={t.password_placeholder} 
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -94,10 +99,10 @@ export default function LoginPage() {
               <div className="flex items-center gap-2">
                 <input type="checkbox" id="remember" className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-600" />
                 <label htmlFor="remember" className="text-sm text-zinc-600">
-                  Remember me
+                  {t.remember}
                 </label>
               </div>
-              <a href="#" className="text-sm font-medium text-blue-600 hover:underline">Forgot password?</a>
+              <a href="#" className="text-sm font-medium text-blue-600 hover:underline">{t.forgot}</a>
             </div>
 
             <button 
@@ -105,13 +110,13 @@ export default function LoginPage() {
               disabled={loading}
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              {loading ? <Loader2 className="h-5 w-5 animate-spin"/> : "Log In"}
+              {loading ? <Loader2 className="h-5 w-5 animate-spin"/> : t.submit}
             </button>
           </form>
 
           <div className="my-6 flex items-center justify-between">
              <hr className="w-full border-zinc-200" />
-             <span className="p-2 text-xs text-zinc-400">OR</span>
+             <span className="p-2 text-xs text-zinc-400">{tCommon.or}</span>
              <hr className="w-full border-zinc-200" />
           </div>
 
@@ -127,7 +132,7 @@ export default function LoginPage() {
           </div>
 
           <p className="mt-8 text-center text-sm text-zinc-500">
-            Don't have an account? <Link href="/signup" className="font-semibold text-zinc-900 hover:underline">Sign up</Link>
+            {t.no_account} <Link href="/signup" className="font-semibold text-zinc-900 hover:underline">{t.signup_link}</Link>
           </p>
         </div>
       </div>

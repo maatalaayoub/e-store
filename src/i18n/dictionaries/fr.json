@@ -1,1 +1,213 @@
-{}
+{
+  "common": {
+    "search": "Rechercher",
+    "view": "Voir",
+    "view_all": "Voir tout",
+    "filter": "Filtrer",
+    "or": "OU",
+    "language": "Langue",
+    "loading": "Chargement..."
+  },
+  "nav": {
+    "home": "Accueil",
+    "shop": "Boutique",
+    "categories": "Catégories",
+    "about": "À propos",
+    "login": "Connexion",
+    "signup": "Créer un compte",
+    "dashboard": "Tableau de bord",
+    "logout": "Déconnexion",
+    "my_account": "Mon compte",
+    "cart": "Panier"
+  },
+  "home": {
+    "title_part1": "Redéfinissez votre",
+    "title_highlight": "style",
+    "title_part2": "au quotidien.",
+    "subtitle": "Des produits premium sélectionnés pour la vie moderne. Matériaux de qualité, design minimaliste intemporel, livrés chez vous.",
+    "cta_shop": "Acheter",
+    "cta_browse": "Voir la collection",
+    "trust_loved": "Adoré par plus de 12k clients",
+    "showcase_featured": "À la une",
+    "showcase_product": "Casque Studio",
+    "showcase_order_placed": "Commande passée",
+    "showcase_just_now": "À l'instant · 2 articles",
+    "showcase_free_shipping": "Livraison gratuite",
+    "showcase_progress": "75% pour votre cadeau",
+    "showcase_save": "-",
+    "brands_label": "Marques de confiance",
+    "featured_kicker": "Sélection",
+    "featured_title": "Produits en vedette",
+    "wishlist": "Ajouter aux favoris",
+    "quick_add": "Ajout rapide",
+    "badge_new": "Nouveau",
+    "badge_hot": "Top"
+  },
+  "perks": {
+    "support_title": "Assistance 24h/24 et 7j/7",
+    "support_desc": "Notre équipe est disponible toute la semaine de 9h à 22h.",
+    "return_title": "Retour facile",
+    "return_desc": "Échanges et retours sous 30 jours sans condition.",
+    "free_shipping_title": "Livraison gratuite",
+    "free_shipping_desc": "Livraison gratuite sur toutes les commandes ou pour toute commande de 99 € ou plus.",
+    "express_title": "Livraison express",
+    "express_desc": "Livraison rapide et gratuite dans toutes les villes du pays."
+  },
+  "footer": {
+    "tagline": "Des produits de haute qualité pour votre quotidien. Depuis 2026.",
+    "shop_heading": "Boutique",
+    "shop_all": "Tous les produits",
+    "shop_featured": "En vedette",
+    "shop_new": "Nouveautés",
+    "support_heading": "Support",
+    "faq": "FAQ",
+    "shipping_returns": "Livraison & Retours",
+    "contact": "Nous contacter",
+    "copyright": "© 2026 E-Store. Tous droits réservés."
+  },
+  "auth": {
+    "back_home": "Retour à l'accueil",
+    "login": {
+      "title": "Bon retour",
+      "subtitle": "Connectez-vous à votre compte avec votre e-mail",
+      "email_label": "Adresse e-mail",
+      "email_placeholder": "Entrez votre e-mail",
+      "password_label": "Mot de passe",
+      "password_placeholder": "Entrez votre mot de passe",
+      "remember": "Se souvenir de moi",
+      "forgot": "Mot de passe oublié ?",
+      "submit": "Se connecter",
+      "no_account": "Vous n'avez pas de compte ?",
+      "signup_link": "S'inscrire"
+    },
+    "signup": {
+      "title": "Créer un compte",
+      "subtitle": "Bienvenue ! Entrez vos informations pour vous inscrire",
+      "full_name_label": "Nom complet",
+      "full_name_placeholder": "Entrez votre nom complet",
+      "email_label": "Adresse e-mail",
+      "email_placeholder": "Entrez votre e-mail",
+      "password_label": "Mot de passe",
+      "password_placeholder": "Entrez votre mot de passe",
+      "accept_prefix": "J'accepte les",
+      "terms_link": "Conditions d'utilisation",
+      "submit": "S'inscrire",
+      "have_account": "Vous avez déjà un compte ?",
+      "login_link": "Se connecter"
+    }
+  },
+  "admin": {
+    "nav": {
+      "dashboard": "Tableau de bord",
+      "products": "Produits",
+      "orders": "Commandes",
+      "customers": "Clients",
+      "settings": "Paramètres",
+      "exit": "Quitter l'admin"
+    },
+    "search_placeholder": "Rechercher...",
+    "dashboard": {
+      "title": "Aperçu",
+      "customize": "Personnaliser la boutique",
+      "add_product": "Ajouter un produit",
+      "stats": {
+        "revenue": "Revenu total",
+        "orders": "Commandes",
+        "products": "Produits",
+        "customers": "Clients actifs"
+      },
+      "recent_title": "Produits récents",
+      "empty": "Aucun produit n'a encore été ajouté. Cliquez sur « Ajouter un produit » pour commencer.",
+      "headers": {
+        "product": "Produit",
+        "category": "Catégorie",
+        "price": "Prix",
+        "status": "Statut",
+        "actions": "Actions"
+      }
+    },
+    "products": {
+      "title": "Produits",
+      "subtitle": "Gérez votre stock, vos prix et vos annonces.",
+      "add": "Ajouter un produit",
+      "tabs": { "all": "Tous", "active": "Actifs", "draft": "Brouillons", "archived": "Archivés" },
+      "search": "Rechercher des produits...",
+      "headers": { "product": "Produit", "category": "Catégorie", "inventory": "Stock", "price": "Prix", "status": "Statut", "actions": "Actions", "stock": "Stock" },
+      "empty_title": "Aucun produit",
+      "empty_desc": "Ajoutez votre premier produit pour commencer à vendre."
+    },
+    "orders": {
+      "title": "Commandes",
+      "subtitle": "Suivez et préparez les commandes de vos clients.",
+      "export": "Exporter",
+      "stats": { "total": "Total commandes", "pending": "En attente", "shipped": "Expédiées", "revenue": "Revenu" },
+      "tabs": { "all": "Toutes", "pending": "En attente", "processing": "En cours", "shipped": "Expédiées", "delivered": "Livrées", "cancelled": "Annulées" },
+      "search": "Rechercher des commandes...",
+      "headers": { "order": "Commande", "customer": "Client", "date": "Date", "total": "Total", "status": "Statut", "action": "Action" },
+      "empty_title": "Aucune commande",
+      "empty_desc": "Les commandes apparaîtront ici lors des achats."
+    },
+    "customers": {
+      "title": "Clients",
+      "subtitle": "Consultez les détails clients, l'historique et la valeur à vie.",
+      "add": "Ajouter un client",
+      "stats": { "total": "Total clients", "new": "Nouveaux ce mois", "returning": "Récurrents", "avg": "Panier moyen" },
+      "all": "Tous les clients",
+      "search": "Rechercher des clients...",
+      "headers": { "name": "Nom", "email": "E-mail", "orders": "Commandes", "spent": "Dépensé", "joined": "Inscrit le", "action": "Action" },
+      "empty_title": "Aucun client",
+      "empty_desc": "Les clients apparaîtront ici après inscription ou première commande."
+    },
+    "settings": {
+      "title": "Paramètres de la boutique",
+      "subtitle": "Configurez votre boutique, les paiements et les opérations.",
+      "save": "Enregistrer",
+      "sections": {
+        "general": "Général",
+        "payments": "Paiements",
+        "shipping": "Livraison",
+        "notifications": "Notifications",
+        "localization": "Localisation"
+      },
+      "general": {
+        "title": "Général",
+        "desc": "Informations de base sur votre boutique.",
+        "store_name": "Nom de la boutique",
+        "store_name_hint": "Affiché dans l'onglet du navigateur et les e-mails.",
+        "contact_email": "E-mail de contact",
+        "description": "Description",
+        "description_hint": "Un bref résumé de votre boutique.",
+        "description_placeholder": "Dites aux clients ce que vous vendez..."
+      },
+      "payments": {
+        "title": "Paiements",
+        "desc": "Choisissez comment accepter les paiements.",
+        "currency": "Devise",
+        "stripe": "Clé API Stripe",
+        "stripe_hint": "Utilisée pour traiter les paiements par carte.",
+        "cod": "Paiement à la livraison"
+      },
+      "shipping": {
+        "title": "Livraison",
+        "desc": "Définissez vos zones et tarifs de livraison.",
+        "origin": "Pays d'origine par défaut",
+        "flat": "Tarif fixe",
+        "flat_hint": "Appliqué si aucune zone ne correspond.",
+        "free_threshold": "Seuil de livraison gratuite"
+      },
+      "notifications": {
+        "title": "Notifications",
+        "desc": "Contrôlez les e-mails que vous et vos clients recevez.",
+        "new_order": "E-mail de nouvelle commande",
+        "low_stock": "Alertes de stock bas",
+        "weekly": "Résumé hebdomadaire"
+      },
+      "localization": {
+        "title": "Localisation",
+        "desc": "Langue et fuseau horaire par défaut.",
+        "default_language": "Langue par défaut",
+        "timezone": "Fuseau horaire"
+      }
+    }
+  }
+}

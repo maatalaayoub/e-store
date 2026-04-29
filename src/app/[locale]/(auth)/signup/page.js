@@ -6,6 +6,7 @@ import { Eye, ArrowLeft, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { useDictionary } from "@/components/providers/LocaleProvider";
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState("");
@@ -15,6 +16,10 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+  const dict = useDictionary();
+  const t = dict?.auth?.signup ?? {};
+  const tCommon = dict?.common ?? {};
+  const tBack = dict?.auth?.back_home;
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -47,7 +52,7 @@ export default function SignupPage() {
     <div className="flex min-h-screen flex-col bg-white">
       {/* HEADER WITH BACK BUTTON */}
       <header className="absolute top-0 left-0 w-full flex h-16 items-center px-4 sm:px-8 bg-white border-b border-zinc-200">
-        <Link href="/" className="p-2 text-zinc-500 transition-colors hover:text-zinc-900" aria-label="Back to Home">
+        <Link href="/" className="p-2 text-zinc-500 transition-colors hover:text-zinc-900" aria-label={tBack}>
           <ArrowLeft className="h-6 w-6" />
         </Link>
       </header>
@@ -57,8 +62,8 @@ export default function SignupPage() {
         <div className="w-full max-w-md">
           <div className="mx-auto w-full sm:rounded-2xl sm:border border-transparent sm:border-zinc-200 bg-white px-2 py-8 sm:p-10">
           
-          <h1 className="mb-2 text-3xl font-bold text-zinc-900">Create an account</h1>
-          <p className="mb-8 text-sm text-zinc-500">Welcome! Enter your details to sign up</p>
+          <h1 className="mb-2 text-3xl font-bold text-zinc-900">{t.title}</h1>
+          <p className="mb-8 text-sm text-zinc-500">{t.subtitle}</p>
           
           {error && (
             <div className="mb-6 rounded-md bg-red-50 p-4 text-sm text-red-700">
@@ -68,10 +73,10 @@ export default function SignupPage() {
 
           <form className="flex flex-col gap-5" onSubmit={handleSignup}>
             <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-900">Full Name</label>
+              <label className="mb-2 block text-sm font-medium text-zinc-900">{t.full_name_label}</label>
               <input 
                 type="text" 
-                placeholder="Enter your Full name" 
+                placeholder={t.full_name_placeholder} 
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
@@ -79,10 +84,10 @@ export default function SignupPage() {
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-900">Email address</label>
+              <label className="mb-2 block text-sm font-medium text-zinc-900">{t.email_label}</label>
               <input 
                 type="email" 
-                placeholder="Enter your email" 
+                placeholder={t.email_placeholder} 
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -90,11 +95,11 @@ export default function SignupPage() {
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-900">Password</label>
+              <label className="mb-2 block text-sm font-medium text-zinc-900">{t.password_label}</label>
               <div className="relative">
                 <input 
                   type="password" 
-                  placeholder="Enter your password" 
+                  placeholder={t.password_placeholder} 
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -109,7 +114,7 @@ export default function SignupPage() {
             <div className="flex items-center gap-2">
               <input type="checkbox" required id="terms" className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-600" />
               <label htmlFor="terms" className="text-sm text-zinc-600">
-                I accept <a href="#" className="font-semibold text-zinc-900 hover:underline">Terms & Conditions</a>
+                {t.accept_prefix} <a href="#" className="font-semibold text-zinc-900 hover:underline">{t.terms_link}</a>
               </label>
             </div>
 
@@ -118,12 +123,12 @@ export default function SignupPage() {
               disabled={loading}
               className="mt-4 flex w-full justify-center items-center gap-2 rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              {loading ? <Loader2 className="h-5 w-5 animate-spin"/> : "Sign Up"}
+              {loading ? <Loader2 className="h-5 w-5 animate-spin"/> : t.submit}
             </button>
           </form>
           <div className="my-6 flex items-center justify-between">
              <hr className="w-full border-zinc-200" />
-             <span className="p-2 text-xs text-zinc-400">OR</span>
+             <span className="p-2 text-xs text-zinc-400">{tCommon.or}</span>
              <hr className="w-full border-zinc-200" />
           </div>
 
@@ -138,7 +143,7 @@ export default function SignupPage() {
             </button>
           </div>
           <p className="mt-8 text-center text-sm text-zinc-500">
-            Already have an account? <Link href="/login" className="font-semibold text-zinc-900 hover:underline">Log in</Link>
+            {t.have_account} <Link href="/login" className="font-semibold text-zinc-900 hover:underline">{t.login_link}</Link>
           </p>
         </div>
       </div>

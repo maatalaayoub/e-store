@@ -1,1 +1,213 @@
-{}
+{
+  "common": {
+    "search": "بحث",
+    "view": "عرض",
+    "view_all": "عرض الكل",
+    "filter": "تصفية",
+    "or": "أو",
+    "language": "اللغة",
+    "loading": "جارٍ التحميل..."
+  },
+  "nav": {
+    "home": "الرئيسية",
+    "shop": "المتجر",
+    "categories": "الفئات",
+    "about": "من نحن",
+    "login": "تسجيل الدخول",
+    "signup": "إنشاء حساب",
+    "dashboard": "لوحة التحكم",
+    "logout": "تسجيل الخروج",
+    "my_account": "حسابي",
+    "cart": "السلة"
+  },
+  "home": {
+    "title_part1": "أعد تعريف",
+    "title_highlight": "أناقتك",
+    "title_part2": "اليومية.",
+    "subtitle": "منتجات مميّزة مختارة للحياة العصرية. مواد عالية الجودة وتصميم بسيط أنيق، تُوصل إلى باب منزلك.",
+    "cta_shop": "تسوّق الآن",
+    "cta_browse": "تصفّح المجموعة",
+    "trust_loved": "محبوب من أكثر من 12 ألف عميل",
+    "showcase_featured": "مميّز",
+    "showcase_product": "سماعات ستوديو",
+    "showcase_order_placed": "تم تأكيد الطلب",
+    "showcase_just_now": "الآن · قطعتان",
+    "showcase_free_shipping": "شحن مجاني",
+    "showcase_progress": "75٪ نحو هديتك المجانية",
+    "showcase_save": "وفّر",
+    "brands_label": "موثوق به من قبل أفضل العلامات",
+    "featured_kicker": "اختياراتنا",
+    "featured_title": "المنتجات المميّزة",
+    "wishlist": "إضافة إلى المفضلة",
+    "quick_add": "إضافة سريعة",
+    "badge_new": "جديد",
+    "badge_hot": "الأكثر طلباً"
+  },
+  "perks": {
+    "support_title": "دعم على مدار الساعة",
+    "support_desc": "فريقنا متاح طوال الأسبوع من 9 صباحاً إلى 10 مساءً.",
+    "return_title": "إرجاع سهل",
+    "return_desc": "إرجاع وتبديل خلال 30 يوماً دون أي أسئلة.",
+    "free_shipping_title": "شحن مجاني",
+    "free_shipping_desc": "شحن مجاني لجميع الطلبات أو لأي طلب يتجاوز 99 دولاراً.",
+    "express_title": "توصيل سريع",
+    "express_desc": "توصيل سريع ومجاني إلى جميع مدن المملكة."
+  },
+  "footer": {
+    "tagline": "منتجات عالية الجودة لحياتك اليومية. تأسس عام 2026.",
+    "shop_heading": "المتجر",
+    "shop_all": "جميع المنتجات",
+    "shop_featured": "المميّزة",
+    "shop_new": "وصل حديثاً",
+    "support_heading": "الدعم",
+    "faq": "الأسئلة الشائعة",
+    "shipping_returns": "الشحن والإرجاع",
+    "contact": "اتصل بنا",
+    "copyright": "© 2026 E-Store. جميع الحقوق محفوظة."
+  },
+  "auth": {
+    "back_home": "العودة إلى الرئيسية",
+    "login": {
+      "title": "مرحباً بعودتك",
+      "subtitle": "سجّل الدخول إلى حسابك باستخدام بريدك الإلكتروني",
+      "email_label": "البريد الإلكتروني",
+      "email_placeholder": "أدخل بريدك الإلكتروني",
+      "password_label": "كلمة المرور",
+      "password_placeholder": "أدخل كلمة المرور",
+      "remember": "تذكّرني",
+      "forgot": "هل نسيت كلمة المرور؟",
+      "submit": "تسجيل الدخول",
+      "no_account": "ليس لديك حساب؟",
+      "signup_link": "إنشاء حساب"
+    },
+    "signup": {
+      "title": "إنشاء حساب",
+      "subtitle": "مرحباً! أدخل بياناتك لإنشاء حساب",
+      "full_name_label": "الاسم الكامل",
+      "full_name_placeholder": "أدخل اسمك الكامل",
+      "email_label": "البريد الإلكتروني",
+      "email_placeholder": "أدخل بريدك الإلكتروني",
+      "password_label": "كلمة المرور",
+      "password_placeholder": "أدخل كلمة المرور",
+      "accept_prefix": "أوافق على",
+      "terms_link": "الشروط والأحكام",
+      "submit": "إنشاء حساب",
+      "have_account": "هل لديك حساب بالفعل؟",
+      "login_link": "تسجيل الدخول"
+    }
+  },
+  "admin": {
+    "nav": {
+      "dashboard": "لوحة التحكم",
+      "products": "المنتجات",
+      "orders": "الطلبات",
+      "customers": "العملاء",
+      "settings": "إعدادات المتجر",
+      "exit": "الخروج من الإدارة"
+    },
+    "search_placeholder": "بحث...",
+    "dashboard": {
+      "title": "نظرة عامة",
+      "customize": "تخصيص المتجر",
+      "add_product": "إضافة منتج",
+      "stats": {
+        "revenue": "إجمالي الإيرادات",
+        "orders": "الطلبات",
+        "products": "المنتجات",
+        "customers": "العملاء النشطون"
+      },
+      "recent_title": "أحدث المنتجات",
+      "empty": "لم تتم إضافة أي منتج بعد. اضغط على «إضافة منتج» للبدء.",
+      "headers": {
+        "product": "المنتج",
+        "category": "الفئة",
+        "price": "السعر",
+        "status": "الحالة",
+        "actions": "الإجراءات"
+      }
+    },
+    "products": {
+      "title": "المنتجات",
+      "subtitle": "أدر مخزونك وأسعارك وعروضك.",
+      "add": "إضافة منتج",
+      "tabs": { "all": "الكل", "active": "نشط", "draft": "مسودة", "archived": "مؤرشف" },
+      "search": "ابحث في المنتجات...",
+      "headers": { "product": "المنتج", "category": "الفئة", "inventory": "المخزون", "price": "السعر", "status": "الحالة", "actions": "الإجراءات", "stock": "المخزون" },
+      "empty_title": "لا توجد منتجات بعد",
+      "empty_desc": "أضف منتجك الأول لتبدأ البيع."
+    },
+    "orders": {
+      "title": "الطلبات",
+      "subtitle": "تتبّع طلبات عملائك وقم بتنفيذها.",
+      "export": "تصدير",
+      "stats": { "total": "إجمالي الطلبات", "pending": "قيد الانتظار", "shipped": "تم الشحن", "revenue": "الإيرادات" },
+      "tabs": { "all": "الكل", "pending": "قيد الانتظار", "processing": "قيد المعالجة", "shipped": "مشحون", "delivered": "تم التوصيل", "cancelled": "ملغى" },
+      "search": "ابحث في الطلبات...",
+      "headers": { "order": "الطلب", "customer": "العميل", "date": "التاريخ", "total": "المجموع", "status": "الحالة", "action": "الإجراء" },
+      "empty_title": "لا توجد طلبات بعد",
+      "empty_desc": "ستظهر الطلبات هنا عند شراء العملاء."
+    },
+    "customers": {
+      "title": "العملاء",
+      "subtitle": "اعرض تفاصيل العملاء وسجل الطلبات والقيمة الإجمالية.",
+      "add": "إضافة عميل",
+      "stats": { "total": "إجمالي العملاء", "new": "جدد هذا الشهر", "returning": "عائدون", "avg": "متوسط قيمة الطلب" },
+      "all": "كل العملاء",
+      "search": "ابحث في العملاء...",
+      "headers": { "name": "الاسم", "email": "البريد", "orders": "الطلبات", "spent": "أنفق", "joined": "انضم في", "action": "الإجراء" },
+      "empty_title": "لا يوجد عملاء بعد",
+      "empty_desc": "سيظهر العملاء هنا بعد التسجيل أو إجراء أول طلب."
+    },
+    "settings": {
+      "title": "إعدادات المتجر",
+      "subtitle": "اضبط واجهة متجرك والمدفوعات والعمليات.",
+      "save": "حفظ التغييرات",
+      "sections": {
+        "general": "عام",
+        "payments": "المدفوعات",
+        "shipping": "الشحن",
+        "notifications": "الإشعارات",
+        "localization": "التوطين"
+      },
+      "general": {
+        "title": "عام",
+        "desc": "معلومات أساسية عن متجرك.",
+        "store_name": "اسم المتجر",
+        "store_name_hint": "يظهر في علامة تبويب المتصفح ورسائل البريد.",
+        "contact_email": "بريد التواصل",
+        "description": "الوصف",
+        "description_hint": "ملخّص قصير عن متجرك.",
+        "description_placeholder": "أخبر العملاء بما تبيعه..."
+      },
+      "payments": {
+        "title": "المدفوعات",
+        "desc": "اختر كيفية قبول المدفوعات.",
+        "currency": "العملة",
+        "stripe": "مفتاح Stripe API",
+        "stripe_hint": "يُستخدم لمعالجة مدفوعات البطاقة.",
+        "cod": "الدفع عند الاستلام"
+      },
+      "shipping": {
+        "title": "الشحن",
+        "desc": "حدد مناطق الشحن والأسعار.",
+        "origin": "بلد المنشأ الافتراضي",
+        "flat": "تعرفة موحّدة",
+        "flat_hint": "تُطبَّق عند عدم وجود منطقة مطابقة.",
+        "free_threshold": "حد الشحن المجاني"
+      },
+      "notifications": {
+        "title": "الإشعارات",
+        "desc": "تحكّم في الرسائل التي تتلقّاها أنت وعملاؤك.",
+        "new_order": "إشعار طلب جديد",
+        "low_stock": "تنبيه نفاد المخزون",
+        "weekly": "ملخّص أسبوعي"
+      },
+      "localization": {
+        "title": "التوطين",
+        "desc": "اللغة والمنطقة الزمنية الافتراضية.",
+        "default_language": "اللغة الافتراضية",
+        "timezone": "المنطقة الزمنية"
+      }
+    }
+  }
+}
