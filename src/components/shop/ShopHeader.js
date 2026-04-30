@@ -99,7 +99,7 @@ export default function ShopHeader({ onOpenCart }) {
                 isScrolled ? "text-zinc-900" : "text-white"
               }`}
             >
-              E-STORE.
+              My store
             </Link>
           </div>
 
@@ -114,6 +114,8 @@ export default function ShopHeader({ onOpenCart }) {
             <button
               onClick={() => setIsSearchOpen((v) => !v)}
               className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
+                isSearchOpen ? "opacity-0 pointer-events-none" : ""
+              } ${
                 isScrolled
                   ? "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
                   : "text-white hover:bg-white/10"
@@ -171,7 +173,7 @@ export default function ShopHeader({ onOpenCart }) {
                 : "opacity-0 scale-95 pointer-events-none"
             }`}
           >
-            <div className="flex w-full items-center gap-3 rounded-full border border-zinc-200 bg-white px-4 py-2 shadow-md">
+            <div className="flex w-full items-center gap-3 rounded-full border border-zinc-200 bg-white px-4 py-2">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="h-5 w-5 shrink-0 text-zinc-400">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
               </svg>

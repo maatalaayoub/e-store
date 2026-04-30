@@ -10,7 +10,7 @@ export default function ShopFooter() {
     <footer className="border-t border-zinc-200 px-6 py-12 text-center">
       <div className="mx-auto max-w-7xl grid gap-8 md:grid-cols-3 items-start text-left mb-12">
         <div>
-          <div className="text-2xl font-bold tracking-tighter mb-4">E-STORE.</div>
+          <div className="text-2xl font-bold tracking-tighter mb-4">My store</div>
           <p className="text-sm text-zinc-500 max-w-xs">{tFooter.tagline}</p>
         </div>
         <div className="flex flex-col gap-2">

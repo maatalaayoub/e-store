@@ -92,7 +92,7 @@ export default function ShopSidebarNav({ isOpen, onClose }) {
           >
             <XIcon className="w-5 h-5" />
           </button>
-          <span className="text-lg font-bold tracking-tight">E-STORE.</span>
+          <span className="text-lg font-bold tracking-tight">My store</span>
         </div>
 
         <div className="flex flex-col flex-1 overflow-y-auto scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
