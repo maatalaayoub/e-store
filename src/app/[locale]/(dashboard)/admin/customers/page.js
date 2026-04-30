@@ -2,6 +2,7 @@
 
 import { Search, Filter, UserPlus, Users as UsersIcon, Mail } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
+import { AdminCustomersSkeleton } from "@/components/skeletons";
 
 export default function AdminCustomersPage() {
   const customers = [];
@@ -9,6 +10,8 @@ export default function AdminCustomersPage() {
   const t = dict?.admin?.customers ?? {};
   const tStats = t.stats ?? {};
   const tH = t.headers ?? {};
+
+  if (!dict?.admin?.customers) return <AdminCustomersSkeleton />;
 
   const stats = [
     { label: tStats.total, value: "0" },

@@ -42,7 +42,7 @@ function FlagCircle({ src, code, size = 28 }) {
   );
 }
 
-export default function LocaleSwitcher({ className = "", align = "right" }) {
+export default function LocaleSwitcher({ className = "", align = "right", direction = "down" }) {
   const pathname = usePathname();
   const { locale: current } = useParams();
   const [open, setOpen] = useState(false);
@@ -104,7 +104,7 @@ export default function LocaleSwitcher({ className = "", align = "right" }) {
         <div
           dir="ltr"
           role="listbox"
-          className={`locale-dropdown absolute ${anchor} z-[200] mt-2 w-52 overflow-hidden border border-zinc-100 bg-white py-1.5 shadow-xl`}
+          className={`locale-dropdown absolute ${anchor} ${direction === "up" ? "bottom-full mb-2" : "mt-2"} z-[200] w-52 overflow-hidden border border-zinc-100 bg-white py-1.5 shadow-xl`}
           style={{ borderRadius: '5px' }}
         >
           {locales.map((code) => {

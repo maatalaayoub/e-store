@@ -1,4 +1,16 @@
 {
+  "cart": {
+    "title": "سلة التسوق",
+    "empty_state_title": "سلة التسوق فارغة",
+    "empty_state_desc": "أضف منتجات للبدء.",
+    "continue_shopping": "مواصلة التسوق",
+    "free_shipping_unlocked": "🎉 لقد حصلت على شحن مجاني!",
+    "add_more": "أضف ",
+    "more_for_free_shipping": " إضافية للحصول على شحن مجاني",
+    "subtotal": "المجموع",
+    "shipping_calculated": "يتم حساب الشحن والضرائب عند الدفع",
+    "checkout": "الدفع"
+  },
   "common": {
     "search": "بحث",
     "view": "عرض",
@@ -40,6 +52,7 @@
     "featured_title": "المنتجات المميّزة",
     "wishlist": "إضافة إلى المفضلة",
     "quick_add": "إضافة سريعة",
+    "buy_now": "أضف إلى السلة",
     "badge_new": "جديد",
     "badge_hot": "الأكثر طلباً"
   },

@@ -10,6 +10,7 @@ import {
   Save,
 } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
+import { AdminSettingsSkeleton } from "@/components/skeletons";
 
 const SECTION_DEFS = [
   { id: "general", icon: Store },
@@ -24,6 +25,8 @@ export default function AdminSettingsPage() {
   const dict = useDictionary();
   const t = dict?.admin?.settings ?? {};
   const tSec = t.sections ?? {};
+
+  if (!dict?.admin?.settings) return <AdminSettingsSkeleton />;
 
   return (
     <>

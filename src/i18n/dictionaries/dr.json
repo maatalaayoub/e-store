@@ -1,4 +1,16 @@
 {
+  "cart": {
+    "title": "القفة ديالك",
+    "empty_state_title": "القفة ديالك خاوية",
+    "empty_state_desc": "زيد السلعة باش تبدا.",
+    "continue_shopping": "كمل التقضية",
+    "free_shipping_unlocked": "🎉 راك ربحتي التوصيل فابور!",
+    "add_more": "زيد ",
+    "more_for_free_shipping": " باش تاخد التوصيل فابور",
+    "subtotal": "المجموع",
+    "shipping_calculated": "التوصيل والضرائب كايتحسبو ف الخلاص",
+    "checkout": "خلص"
+  },
   "common": {
     "search": "قلّب",
     "view": "شوف",
@@ -40,6 +52,7 @@
     "featured_title": "منتجات مميّزة",
     "wishlist": "زيد للمفضلة",
     "quick_add": "زيد بسرعة",
+    "buy_now": "زيد للقفة",
     "badge_new": "جديد",
     "badge_hot": "كيدور بزّاف"
   },

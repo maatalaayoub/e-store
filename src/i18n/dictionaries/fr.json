@@ -1,4 +1,16 @@
 {
+  "cart": {
+    "title": "Votre Panier",
+    "empty_state_title": "Votre panier est vide",
+    "empty_state_desc": "Ajoutez des articles pour commencer.",
+    "continue_shopping": "Continuer vos achats",
+    "free_shipping_unlocked": "🎉 Vous avez débloqué la livraison gratuite !",
+    "add_more": "Ajoutez ",
+    "more_for_free_shipping": " de plus pour la livraison gratuite",
+    "subtotal": "Sous-total",
+    "shipping_calculated": "Livraison et taxes calculées au paiement",
+    "checkout": "Passer à la caisse"
+  },
   "common": {
     "search": "Rechercher",
     "view": "Voir",
@@ -40,6 +52,7 @@
     "featured_title": "Produits en vedette",
     "wishlist": "Ajouter aux favoris",
     "quick_add": "Ajout rapide",
+    "buy_now": "Ajouter au panier",
     "badge_new": "Nouveau",
     "badge_hot": "Top"
   },

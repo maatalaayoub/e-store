@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Search, Filter, Download, ShoppingCart } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
+import { AdminOrdersSkeleton } from "@/components/skeletons";
 
 const TAB_KEYS = ["all", "pending", "processing", "shipped", "delivered", "cancelled"];
 
@@ -22,6 +23,8 @@ export default function AdminOrdersPage() {
   const tStats = t.stats ?? {};
   const tTabs = t.tabs ?? {};
   const tH = t.headers ?? {};
+
+  if (!dict?.admin?.orders) return <AdminOrdersSkeleton />;
 
   const stats = [
     { label: tStats.total, value: "0" },

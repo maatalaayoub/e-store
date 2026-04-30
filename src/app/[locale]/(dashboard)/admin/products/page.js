@@ -11,6 +11,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
+import { AdminProductsSkeleton } from "@/components/skeletons";
 
 const TAB_KEYS = ["all", "active", "draft", "archived"];
 
@@ -21,6 +22,8 @@ export default function AdminProductsPage() {
   const t = dict?.admin?.products ?? {};
   const tTabs = t.tabs ?? {};
   const tH = t.headers ?? {};
+
+  if (!dict?.admin?.products) return <AdminProductsSkeleton />;
 
   return (
     <>

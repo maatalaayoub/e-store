@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Plus, Settings, MoreVertical } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
+import { AdminDashboardSkeleton } from "@/components/skeletons";
 
 export default function AdminDashboard() {
   const { locale } = useParams();
@@ -11,6 +12,8 @@ export default function AdminDashboard() {
   const t = dict?.admin?.dashboard ?? {};
   const tStats = t.stats ?? {};
   const tH = t.headers ?? {};
+
+  if (!dict?.admin?.dashboard) return <AdminDashboardSkeleton />;
 
   const stats = [
     { label: tStats.revenue, value: "$0.00", trend: "+0.0%" },

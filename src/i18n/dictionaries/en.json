@@ -1,4 +1,16 @@
 {
+  "cart": {
+    "title": "Your Cart",
+    "empty_state_title": "Your cart is empty",
+    "empty_state_desc": "Add items to get started.",
+    "continue_shopping": "Continue shopping",
+    "free_shipping_unlocked": "🎉 You've unlocked free shipping!",
+    "add_more": "Add ",
+    "more_for_free_shipping": " more for free shipping",
+    "subtotal": "Subtotal",
+    "shipping_calculated": "Shipping & taxes calculated at checkout",
+    "checkout": "Checkout"
+  },
   "common": {
     "search": "Search",
     "view": "View",
@@ -40,6 +52,7 @@
     "featured_title": "Featured Products",
     "wishlist": "Add to wishlist",
     "quick_add": "Quick add",
+    "buy_now": "Add to Cart",
     "badge_new": "New",
     "badge_hot": "Hot"
   },
