@@ -1,25 +1,31 @@
 -- SQL snippet for manual Supabase execution (do not run via API route)
 -- Schema Setup for E-commerce Platform
+-- Last updated: 2026
 
-CREATE TABLE if not exists users (
-  id uuid references auth.users(id) on delete cascade primary key,
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- ========================
+-- USERS
+-- ========================
+CREATE TABLE IF NOT EXISTS users (
+  id uuid REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   full_name text,
-  email text unique not null,
+  email text UNIQUE NOT NULL,
   phone_number text,
   address text,
-  role text check (role in ('client', 'admin')) default 'client',
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+  role text CHECK (role IN ('client', 'admin')) DEFAULT 'client',
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Trigger to automatically add new signups (Email, Google, Facebook) to the users table
-CREATE OR REPLACE FUNCTION public.handle_new_user() 
+-- Trigger: auto-insert user row on signup
+CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
   INSERT INTO public.users (id, full_name, email, role)
   VALUES (
-    new.id, 
-    new.raw_user_meta_data->>'full_name', 
-    new.email, 
+    new.id,
+    new.raw_user_meta_data->>'full_name',
+    new.email,
     'client'
   );
   RETURN new;
@@ -30,45 +36,140 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
-CREATE TABLE if not exists categories (
-  id uuid default uuid_generate_v4() primary key,
-  name text not null unique,
-  slug text not null unique,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+-- ========================
+-- CATEGORIES
+-- ========================
+CREATE TABLE IF NOT EXISTS categories (
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  name text NOT NULL UNIQUE,
+  slug text NOT NULL UNIQUE,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-CREATE TABLE if not exists products (
-  id uuid default uuid_generate_v4() primary key,
-  category_id uuid references categories(id) on delete set null,
-  title text not null,
+-- ========================
+-- PRODUCTS
+-- ========================
+CREATE TABLE IF NOT EXISTS products (
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  category_id uuid REFERENCES categories(id) ON DELETE SET NULL,
+  name text NOT NULL,
   description text,
-  price numeric(10, 2) not null check (price >= 0),
-  stock integer not null default 0 check (stock >= 0),
-  image_urls text[], -- Supabase storage paths
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+  price numeric(10, 2) NOT NULL CHECK (price >= 0),
+  -- Discount: set one or none. discount_price takes priority if both set.
+  discount_price numeric(10, 2) CHECK (discount_price >= 0),
+  discount_percentage numeric(5, 2) CHECK (discount_percentage >= 0 AND discount_percentage <= 100),
+  stock integer NOT NULL DEFAULT 0 CHECK (stock >= 0),
+  status text CHECK (status IN ('active', 'draft', 'archived')) DEFAULT 'draft',
+  is_featured boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-CREATE TABLE if not exists orders (
-  id uuid default uuid_generate_v4() primary key,
-  user_id uuid references auth.users(id) on delete restrict,
-  status text check (status in ('pending', 'processing', 'shipped', 'delivered', 'cancelled')) default 'pending',
-  total_amount numeric(10, 2) not null,
-  shipping_address jsonb not null,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+-- ========================
+-- PRODUCT IMAGES
+-- ========================
+CREATE TABLE IF NOT EXISTS product_images (
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  product_id uuid REFERENCES products(id) ON DELETE CASCADE NOT NULL,
+  url text NOT NULL,          -- full public URL
+  storage_path text NOT NULL, -- Supabase Storage object path
+  is_main boolean DEFAULT false,
+  display_order integer DEFAULT 0,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-CREATE TABLE if not exists order_items (
-  id uuid default uuid_generate_v4() primary key,
-  order_id uuid references orders(id) on delete cascade,
-  product_id uuid references products(id) on delete restrict,
-  quantity integer not null check (quantity > 0),
-  unit_price numeric(10, 2) not null
+-- Enforce a single main image per product
+CREATE UNIQUE INDEX IF NOT EXISTS product_images_one_main
+  ON product_images (product_id)
+  WHERE is_main = true;
+
+-- ========================
+-- ORDERS
+-- ========================
+CREATE TABLE IF NOT EXISTS orders (
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id uuid REFERENCES auth.users(id) ON DELETE RESTRICT,
+  status text CHECK (status IN ('pending', 'processing', 'shipped', 'delivered', 'cancelled')) DEFAULT 'pending',
+  total_amount numeric(10, 2) NOT NULL,
+  shipping_address jsonb NOT NULL,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Basic RLS for products (Public read, authenticated Admin write)
+CREATE TABLE IF NOT EXISTS order_items (
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  order_id uuid REFERENCES orders(id) ON DELETE CASCADE,
+  product_id uuid REFERENCES products(id) ON DELETE RESTRICT,
+  quantity integer NOT NULL CHECK (quantity > 0),
+  unit_price numeric(10, 2) NOT NULL
+);
+
+-- ========================
+-- TRIGGER: updated_at
+-- ========================
+CREATE OR REPLACE FUNCTION public.set_updated_at()
+RETURNS trigger AS $$
+BEGIN
+  NEW.updated_at = timezone('utc'::text, now());
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER products_updated_at
+  BEFORE UPDATE ON products
+  FOR EACH ROW EXECUTE PROCEDURE public.set_updated_at();
+
+-- ========================
+-- ROW LEVEL SECURITY
+-- ========================
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own profile" ON users FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can update own profile" ON users FOR UPDATE USING (auth.uid() = id);
+
+ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Categories are public" ON categories FOR SELECT USING (true);
+CREATE POLICY "Admins manage categories" ON categories
+  FOR ALL USING (EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'));
+
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public profiles are viewable by everyone." 
-  ON products FOR SELECT USING (true);
-  
--- Assume an "admin" role or metadata approach for actual insert/update policy
+-- Public can read active products; admins see everything
+CREATE POLICY "Public reads active products" ON products
+  FOR SELECT USING (
+    status = 'active'
+    OR EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin')
+  );
+CREATE POLICY "Admins manage products" ON products
+  FOR ALL USING (EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'));
+
+ALTER TABLE product_images ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Product images visible with product" ON product_images
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM products p
+      WHERE p.id = product_id
+        AND (p.status = 'active'
+          OR EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'))
+    )
+  );
+CREATE POLICY "Admins manage product images" ON product_images
+  FOR ALL USING (EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'));
+
+-- ========================
+-- STORAGE BUCKET (run in Supabase Dashboard > Storage, or via SQL)
+-- ========================
+-- INSERT INTO storage.buckets (id, name, public)
+--   VALUES ('product-images', 'product-images', true)
+--   ON CONFLICT (id) DO NOTHING;
+
+-- Storage policies (create in Supabase Dashboard or add here):
+-- CREATE POLICY "Public read product images" ON storage.objects
+--   FOR SELECT USING (bucket_id = 'product-images');
+-- CREATE POLICY "Admins upload product images" ON storage.objects
+--   FOR INSERT WITH CHECK (
+--     bucket_id = 'product-images'
+--     AND EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin')
+--   );
+-- CREATE POLICY "Admins delete product images" ON storage.objects
+--   FOR DELETE USING (
+--     bucket_id = 'product-images'
+--     AND EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin')
+--   );

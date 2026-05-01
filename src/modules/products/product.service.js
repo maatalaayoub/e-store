@@ -1,18 +1,79 @@
 import { productRepository } from './product.repository';
 
+/** Compute derived fields so every layer works with a consistent shape. */
+export function normalizeProduct(raw) {
+  if (!raw) return null;
+  const images = Array.isArray(raw.product_images) ? raw.product_images : [];
+  const sortedImages = [...images].sort((a, b) => {
+    if (a.is_main !== b.is_main) return a.is_main ? -1 : 1;
+    return (a.display_order ?? 0) - (b.display_order ?? 0);
+  });
+
+  const mainImage = sortedImages.find((img) => img.is_main) ?? sortedImages[0] ?? null;
+
+  let effective_price = raw.price;
+  if (raw.discount_price != null) {
+    effective_price = raw.discount_price;
+  } else if (raw.discount_percentage != null) {
+    effective_price = raw.price * (1 - raw.discount_percentage / 100);
+  }
+
+  let badge = null;
+  if (raw.discount_percentage) badge = `-${Math.round(raw.discount_percentage)}%`;
+  else if (raw.discount_price) {
+    const pct = Math.round(((raw.price - raw.discount_price) / raw.price) * 100);
+    if (pct > 0) badge = `-${pct}%`;
+  }
+
+  return {
+    ...raw,
+    image: mainImage?.url ?? null,
+    main_image: mainImage?.url ?? null,
+    images: sortedImages,
+    effective_price,
+    badge,
+    category: raw.categories?.name ?? null,
+  };
+}
+
 export class ProductService {
-  async getProducts() {
-    return productRepository.findAll();
+  async getProducts(options = {}) {
+    const raw = await productRepository.findAll(options);
+    return raw.map(normalizeProduct);
   }
 
   async getProductById(id) {
     if (!id) throw new Error('Product ID required');
-    return productRepository.findById(id);
+    const raw = await productRepository.findById(id);
+    return normalizeProduct(raw);
   }
 
   async createProduct(data) {
-    // validation could happen here optionally or via controller layer
-    return productRepository.create(data);
+    const raw = await productRepository.create(data);
+    return normalizeProduct(raw);
+  }
+
+  async updateProduct(id, data) {
+    if (!id) throw new Error('Product ID required');
+    const raw = await productRepository.update(id, data);
+    return normalizeProduct(raw);
+  }
+
+  async deleteProduct(id) {
+    if (!id) throw new Error('Product ID required');
+    return productRepository.delete(id);
+  }
+
+  async addImage(productId, imageData) {
+    return productRepository.addImage(productId, imageData);
+  }
+
+  async setMainImage(productId, imageId) {
+    return productRepository.setMainImage(productId, imageId);
+  }
+
+  async deleteImage(productId, imageId) {
+    return productRepository.deleteImage(productId, imageId);
   }
 }
 

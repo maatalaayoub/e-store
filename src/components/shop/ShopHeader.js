@@ -67,7 +67,7 @@ export default function ShopHeader({ onOpenCart }) {
         ref={headerRef}
         className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ease-out ${
           isScrolled
-            ? "bg-white/90 backdrop-blur-md border-b border-zinc-200"
+            ? "bg-white border-b border-zinc-200"
             : "bg-transparent border-b border-transparent"
         }`}
       >

@@ -12,6 +12,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
 
 // Inline — path aliases (@/) are not resolved in the Edge Runtime.
 // Keep in sync with src/i18n/config.js.
@@ -41,16 +42,44 @@ function detectLocale(request) {
  *
  * @param {import('next/server').NextRequest} request
  */
-export function proxy(request) {
+export async function proxy(request) {
   const { pathname } = request.nextUrl;
 
-  // Pass through Next.js internals, API routes, and static assets.
+  // Pass through Next.js internals and static assets.
   const isInternal =
     pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
     /\.[\w-]+$/.test(pathname); // e.g. /favicon.ico, /robots.txt
 
   if (isInternal) return NextResponse.next();
+
+  // Refresh Supabase session so API routes receive a valid user.
+  let response = NextResponse.next({ request });
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (supabaseUrl && supabaseAnonKey) {
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
+          response = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
+        },
+      },
+    });
+    await supabase.auth.getUser();
+  }
+
+  // API routes — skip locale redirect but keep session-refreshed response.
+  if (pathname.startsWith('/api')) return response;
 
   // Already locale-prefixed — nothing to do.
   const hasLocalePrefix = locales.some(
@@ -58,7 +87,7 @@ export function proxy(request) {
       pathname === `/${locale}` || pathname.startsWith(`/${locale}/`),
   );
 
-  if (hasLocalePrefix) return NextResponse.next();
+  if (hasLocalePrefix) return response;
 
   // Redirect to the locale-prefixed equivalent.
   const locale = detectLocale(request);
