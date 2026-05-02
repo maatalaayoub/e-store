@@ -1,13 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { useRouter, useParams } from "next/navigation";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import CartSidebar from "@/components/ui/CartSidebar";
+import { isRtlLocale } from "@/config/constants";
 
 export default function ProductPageHeader() {
   const router = useRouter();
+  const params = useParams();
+  const locale = params?.locale ?? "en";
+  const isRtl = isRtlLocale(locale);
+  const BackIcon = isRtl ? ArrowRight : ArrowLeft;
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [visible, setVisible] = useState(true);
   const lastY = useRef(0);
@@ -63,7 +68,7 @@ export default function ProductPageHeader() {
             aria-label="Go back"
             className="flex h-10 w-10 items-center justify-center rounded-full text-zinc-700 hover:bg-zinc-100 transition-colors"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <BackIcon className="h-5 w-5" />
           </button>
 
           {/* Right: cart only */}

@@ -18,7 +18,8 @@
     "filter": "Filtrer",
     "or": "OU",
     "language": "Langue",
-    "loading": "Chargement..."
+    "loading": "Chargement...",
+    "store_name": "Ma Boutique"
   },
   "nav": {
     "home": "Accueil",
@@ -30,7 +31,11 @@
     "dashboard": "Tableau de bord",
     "logout": "Déconnexion",
     "my_account": "Mon compte",
-    "cart": "Panier"
+    "cart": "Panier",
+    "my_orders": "Mes commandes",
+    "favorites": "Favoris",
+    "privacy_policy": "Politique de confidentialité",
+    "contact": "Nous contacter"
   },
   "home": {
     "title_part1": "Redéfinissez votre",
@@ -257,5 +262,92 @@
         "timezone": "Fuseau horaire"
       }
     }
+  },
+  "orders": {
+    "title": "Mes commandes",
+    "subtitle": "Suivez et gérez vos achats",
+    "order_id": "N\u00b0 commande",
+    "date": "Date",
+    "total": "Total",
+    "qty": "Qté",
+    "shipped_to": "Envoyé à",
+    "start_shopping": "Commencer mes achats",
+    "empty_title": "Aucune commande pour l'instant",
+    "empty_desc": "Une fois votre commande passée, elle apparaîtra ici.",
+    "failed": "Impossible de charger les commandes.",
+    "cancel_order": "Annuler la commande",
+    "cancel_confirm": "Êtes-vous sûr de vouloir annuler cette commande ?",
+    "cancel_failed": "Impossible d'annuler la commande. Veuillez réessayer.",
+    "status": {
+      "pending": "En attente",
+      "processing": "En cours",
+      "shipped": "Expédiée",
+      "delivered": "Livrée",
+      "cancelled": "Annulée"
+    }
+  },
+  "favorites": {
+    "title": "Favoris",
+    "subtitle_one": "article sauvegardé",
+    "subtitle_many": "articles sauvegardés",
+    "subtitle_default": "Vos articles sauvegardés",
+    "empty_title": "Aucun favori pour l'instant",
+    "empty_desc": "Appuyez sur l'icône cœur sur un produit pour le sauvegarder ici.",
+    "browse": "Parcourir les produits",
+    "add_to_cart": "Ajouter au panier",
+    "added": "Ajouté !",
+    "unavailable": "Indisponible",
+    "remove": "Retirer des favoris",
+    "failed": "Impossible de charger les favoris."
+  },
+  "product": {
+    "homepage": "Accueil",
+    "no_reviews": "Aucun avis pour l'instant",
+    "sold": "vendu(s)",
+    "description": "Description",
+    "delivery": "CGV Livraison",
+    "color": "Couleur",
+    "size": "Taille",
+    "size_chart": "Voir le guide des tailles",
+    "quantity": "Quantité",
+    "total": "Total",
+    "out_of_stock": "Rupture de stock",
+    "available": "disponible(s)",
+    "added_to_cart": "Ajouté au panier",
+    "add_to_cart": "Ajouter au panier",
+    "checkout_now": "Commander maintenant",
+    "unavailable": "Indisponible"
+  },
+  "checkout": {
+    "contact_info": "Coordonnées",
+    "required": "Obligatoire",
+    "required_marker": "* Obligatoire",
+    "phone_label": "E-mail ou numéro de téléphone",
+    "shipping_address": "Adresse de livraison",
+    "full_name": "Nom complet",
+    "country": "Pays",
+    "city": "Ville",
+    "state": "Région/Province",
+    "zip": "Code postal",
+    "street_address": "Adresse",
+    "discount_placeholder": "Code de réduction",
+    "apply": "Appliquer",
+    "subtotal": "Sous-total",
+    "total": "Total",
+    "place_order": "Passer la commande",
+    "placing_order": "Commande en cours…",
+    "order_whatsapp": "Commander via WhatsApp",
+    "cart_empty": "Votre panier est vide",
+    "failed": "Échec de la commande. Veuillez réessayer."
+  },
+  "order_confirmed": {
+    "title": "Commande reçue !",
+    "subtitle": "Merci pour votre commande. Nous vous appellerons bientôt pour confirmer votre commande.",
+    "what_next": "Que se passe-t-il ensuite ?",
+    "step1": "Notre équipe va examiner votre commande.",
+    "step2": "Nous vous appellerons pour confirmer votre commande.",
+    "step3": "Votre commande sera préparée et expédiée.",
+    "continue": "Continuer vos achats",
+    "orders": "Mes commandes"
   }
 }

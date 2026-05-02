@@ -18,7 +18,8 @@
     "filter": "تصفية",
     "or": "أو",
     "language": "اللغة",
-    "loading": "جارٍ التحميل..."
+    "loading": "جارٍ التحميل...",
+    "store_name": "متجري"
   },
   "nav": {
     "home": "الرئيسية",
@@ -30,7 +31,11 @@
     "dashboard": "لوحة التحكم",
     "logout": "تسجيل الخروج",
     "my_account": "حسابي",
-    "cart": "السلة"
+    "cart": "السلة",
+    "my_orders": "طلباتي",
+    "favorites": "المفضلة",
+    "privacy_policy": "سياسة الخصوصية",
+    "contact": "تواصل معنا"
   },
   "home": {
     "title_part1": "أعد تعريف",
@@ -257,5 +262,92 @@
         "timezone": "المنطقة الزمنية"
       }
     }
+  },
+  "orders": {
+    "title": "طلباتي",
+    "subtitle": "تتبع طلباتك",
+    "order_id": "رقم الطلب",
+    "date": "التاريخ",
+    "total": "المجموع",
+    "qty": "الكمية",
+    "shipped_to": "يُشحن إلى",
+    "start_shopping": "ابدأ التسوق",
+    "empty_title": "لا توجد طلبات بعد",
+    "empty_desc": "بمجرد تقديم طلب، سيظهر هنا.",
+    "failed": "فشل تحميل الطلبات.",
+    "cancel_order": "إلغاء الطلب",
+    "cancel_confirm": "هل أنت متأكد من إلغاء هذا الطلب؟",
+    "cancel_failed": "فشل إلغاء الطلب. يرجى المحاولة مرة أخرى.",
+    "status": {
+      "pending": "قيد الانتظار",
+      "processing": "قيد المعالجة",
+      "shipped": "تم الشحن",
+      "delivered": "تم التسليم",
+      "cancelled": "ملغي"
+    }
+  },
+  "favorites": {
+    "title": "المفضلة",
+    "subtitle_one": "عنصر محفوظ",
+    "subtitle_many": "عنصر محفوظ",
+    "subtitle_default": "العناصر المحفوظة",
+    "empty_title": "لا توجد مفضلة بعد",
+    "empty_desc": "اضغط على أيقونة القلب على أي منتج لحفظه هنا.",
+    "browse": "تصفح المنتجات",
+    "add_to_cart": "أضف إلى السلة",
+    "added": "تمت الإضافة!",
+    "unavailable": "غير متوفر",
+    "remove": "إزالة من المفضلة",
+    "failed": "فشل تحميل المفضلة."
+  },
+  "product": {
+    "homepage": "الرئيسية",
+    "no_reviews": "لا توجد مراجعات بعد",
+    "sold": "مباع",
+    "description": "الوصف",
+    "delivery": "شروط التوصيل",
+    "color": "اللون",
+    "size": "المقاس",
+    "size_chart": "جدول المقاييس",
+    "quantity": "الكمية",
+    "total": "المجموع",
+    "out_of_stock": "نفد المخزون",
+    "available": "متاح",
+    "added_to_cart": "أضيف إلى السلة",
+    "add_to_cart": "أضف إلى السلة",
+    "checkout_now": "اشترِ الآن",
+    "unavailable": "غير متوفر"
+  },
+  "checkout": {
+    "contact_info": "معلومات التواصل",
+    "required": "مطلوب",
+    "required_marker": "* مطلوب",
+    "phone_label": "البريد الإلكتروني أو رقم الهاتف",
+    "shipping_address": "عنوان الشحن",
+    "full_name": "الاسم الكامل",
+    "country": "الدولة",
+    "city": "المدينة",
+    "state": "الولاية/المقاطعة",
+    "zip": "الرمز البريدي",
+    "street_address": "العنوان",
+    "discount_placeholder": "رمز الخصم",
+    "apply": "تطبيق",
+    "subtotal": "المجموع الفرعي",
+    "total": "الإجمالي",
+    "place_order": "تأكيد الطلب",
+    "placing_order": "جارٍ تقديم الطلب…",
+    "order_whatsapp": "الطلب عبر واتساب",
+    "cart_empty": "سلتك فارغة",
+    "failed": "فشل تقديم الطلب. يرجى المحاولة مرة أخرى."
+  },
+  "order_confirmed": {
+    "title": "تم استلام طلبك!",
+    "subtitle": "شكراً على طلبك. سنتصل بك قريباً لتأكيد طلبك.",
+    "what_next": "ما الذي سيحدث بعد ذلك؟",
+    "step1": "سيراجع فريقنا طلبك.",
+    "step2": "سنتصل بك لتأكيد طلبك.",
+    "step3": "سيتم تجهيز طلبك وشحنه.",
+    "continue": "مواصلة التسوق",
+    "orders": "طلباتي"
   }
 }

@@ -18,7 +18,8 @@
     "filter": "Filter",
     "or": "OR",
     "language": "Language",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "store_name": "My Store"
   },
   "nav": {
     "home": "Home",
@@ -30,7 +31,11 @@
     "dashboard": "Dashboard",
     "logout": "Log out",
     "my_account": "My Account",
-    "cart": "Cart"
+    "cart": "Cart",
+    "my_orders": "My Orders",
+    "favorites": "Favorites",
+    "privacy_policy": "Privacy Policy",
+    "contact": "Contact Us"
   },
   "home": {
     "title_part1": "Redefine your",
@@ -257,5 +262,92 @@
         "timezone": "Timezone"
       }
     }
+  },
+  "orders": {
+    "title": "My Orders",
+    "subtitle": "Track and manage your purchases",
+    "order_id": "Order ID",
+    "date": "Date",
+    "total": "Total",
+    "qty": "Qty",
+    "shipped_to": "Shipped to",
+    "start_shopping": "Start Shopping",
+    "empty_title": "No orders yet",
+    "empty_desc": "Once you place an order, it will appear here.",
+    "failed": "Failed to load orders.",
+    "cancel_order": "Cancel Order",
+    "cancel_confirm": "Are you sure you want to cancel this order?",
+    "cancel_failed": "Failed to cancel order. Please try again.",
+    "status": {
+      "pending": "Pending",
+      "processing": "Processing",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    }
+  },
+  "favorites": {
+    "title": "Favorites",
+    "subtitle_one": "saved item",
+    "subtitle_many": "saved items",
+    "subtitle_default": "Your saved items",
+    "empty_title": "No favorites yet",
+    "empty_desc": "Tap the heart icon on any product to save it here.",
+    "browse": "Browse Products",
+    "add_to_cart": "Add to Cart",
+    "added": "Added!",
+    "unavailable": "Unavailable",
+    "remove": "Remove from favorites",
+    "failed": "Failed to load favorites."
+  },
+  "product": {
+    "homepage": "Homepage",
+    "no_reviews": "No reviews yet",
+    "sold": "Sold",
+    "description": "Description",
+    "delivery": "Delivery T&C",
+    "color": "Color",
+    "size": "Size",
+    "size_chart": "View Size Chart",
+    "quantity": "Quantity",
+    "total": "Total",
+    "out_of_stock": "Out of stock",
+    "available": "available",
+    "added_to_cart": "Added to Cart",
+    "add_to_cart": "Add To Cart",
+    "checkout_now": "Checkout Now",
+    "unavailable": "Unavailable"
+  },
+  "checkout": {
+    "contact_info": "Contact Information",
+    "required": "Required",
+    "required_marker": "* Required",
+    "phone_label": "Email or Phone Number",
+    "shipping_address": "Shipping Address",
+    "full_name": "Full Name",
+    "country": "Country",
+    "city": "City",
+    "state": "State/Province",
+    "zip": "Zip/Postal Code",
+    "street_address": "Street Address",
+    "discount_placeholder": "Discount code",
+    "apply": "Apply",
+    "subtotal": "Subtotal",
+    "total": "Total",
+    "place_order": "Place Order",
+    "placing_order": "Placing Order…",
+    "order_whatsapp": "Order via WhatsApp",
+    "cart_empty": "Your cart is empty",
+    "failed": "Failed to place order. Please try again."
+  },
+  "order_confirmed": {
+    "title": "Order Received!",
+    "subtitle": "Thank you for your order. We will call you shortly to confirm your order.",
+    "what_next": "What happens next?",
+    "step1": "Our team will review your order.",
+    "step2": "We will call you to confirm your order.",
+    "step3": "Your order will be prepared and shipped.",
+    "continue": "Continue Shopping",
+    "orders": "My Orders"
   }
 }

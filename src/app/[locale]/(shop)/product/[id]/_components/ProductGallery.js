@@ -3,11 +3,13 @@
 import { useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, Share2, Heart } from "lucide-react";
+import { useFavorite } from "@/hooks/useFavorite";
 
-export default function ProductGallery({ images = [], productName }) {
+export default function ProductGallery({ images = [], productName, productId }) {
   const fallback = "/placeholder-view.svg";
   const list = images?.length > 0 ? images : [{ url: fallback, id: "fb" }];
   const [idx, setIdx] = useState(0);
+  const { isFavorited, toggle: toggleFavorite } = useFavorite(productId);
 
   const prev = () => setIdx((i) => (i === 0 ? list.length - 1 : i - 1));
   const next = () => setIdx((i) => (i === list.length - 1 ? 0 : i + 1));
@@ -51,6 +53,16 @@ export default function ProductGallery({ images = [], productName }) {
           className="object-cover object-center"
         />
 
+        {/* Favorite button overlay — mobile only */}
+        <button
+          type="button"
+          onClick={toggleFavorite}
+          aria-label="Add to wishlist"
+          className={`lg:hidden absolute top-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm border border-zinc-200 transition-colors ${isFavorited ? "text-red-500 border-red-200" : "text-zinc-400"}`}
+        >
+          <Heart className="h-4 w-4" fill={isFavorited ? "currentColor" : "none"} strokeWidth={1.5} />
+        </button>
+
         {/* Prev/Next arrows on small screens */}
         {list.length > 1 && (
           <>
@@ -83,10 +95,11 @@ export default function ProductGallery({ images = [], productName }) {
         </button>
         <button
           type="button"
+          onClick={toggleFavorite}
           aria-label="Add to wishlist"
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-red-500"
+          className={`flex h-10 w-10 items-center justify-center rounded-lg border transition-colors ${isFavorited ? "border-red-200 text-red-500" : "border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-red-400"}`}
         >
-          <Heart className="h-4 w-4" />
+          <Heart className="h-4 w-4" fill={isFavorited ? "currentColor" : "none"} strokeWidth={1.5} />
         </button>
 
         {list.length > 1 && (

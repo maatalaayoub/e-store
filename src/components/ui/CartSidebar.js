@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useCartStore } from "@/store/useCartStore";
 import { useDictionary } from "@/components/providers/LocaleProvider";
+import { useCurrency } from "@/components/providers/CurrencyProvider";
 import { FREE_SHIPPING_THRESHOLD_USD, isRtlLocale } from "@/config/constants";
 import { CartSkeleton } from "@/components/skeletons";
 
@@ -25,9 +26,10 @@ export default function CartSidebar({ isOpen, onClose }) {
   // Zustand persist hydrates async — track when store is ready
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => setHydrated(true), []);
+  const { formatPrice } = useCurrency();
 
   const subtotal = items.reduce(
-    (acc, item) => acc + parsePrice(item.price) * item.quantity,
+    (acc, item) => acc + parsePrice(item.effective_price ?? item.price) * item.quantity,
     0
   );
   const totalItems = items.reduce((acc, i) => acc + i.quantity, 0);
@@ -136,7 +138,7 @@ export default function CartSidebar({ isOpen, onClose }) {
                         {item.category}
                       </p>
                     )}
-                    <p className="text-sm font-bold text-zinc-900">{item.price}</p>
+                    <p className="text-sm font-bold text-zinc-900">{formatPrice(parsePrice(item.effective_price ?? item.price))}</p>
 
                     {/* Qty + Remove row */}
                     <div className="mt-auto flex items-center justify-between pt-1">
@@ -185,7 +187,7 @@ export default function CartSidebar({ isOpen, onClose }) {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-zinc-600">{t.subtotal || "Subtotal"}</span>
                 <span className="text-base font-bold text-zinc-900">
-                  ${subtotal.toFixed(2)}
+                  {formatPrice(subtotal)}
                 </span>
               </div>
               <p className="text-[11px] text-zinc-400 text-center">
@@ -196,7 +198,7 @@ export default function CartSidebar({ isOpen, onClose }) {
                 onClick={onClose}
                 className="block w-full rounded-xl bg-zinc-900 py-3.5 text-center text-sm font-semibold text-white shadow-md transition-all hover:bg-zinc-700 hover:-translate-y-0.5 hover:shadow-lg active:scale-95"
               >
-                {t.checkout || "Checkout"} — ${subtotal.toFixed(2)}
+                {t.checkout || "Checkout"} — {formatPrice(subtotal)}
               </Link>
               <button
                 onClick={onClose}

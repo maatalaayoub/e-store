@@ -61,9 +61,16 @@ CREATE TABLE IF NOT EXISTS products (
   stock integer NOT NULL DEFAULT 0 CHECK (stock >= 0),
   status text CHECK (status IN ('active', 'draft', 'archived')) DEFAULT 'draft',
   is_featured boolean DEFAULT false,
+  -- Variant options stored as JSON arrays
+  colors jsonb DEFAULT NULL,  -- [{ "name": "Red", "hex": "#ff0000" }, ...]
+  sizes  jsonb DEFAULT NULL,  -- ["S", "M", "L", "XL", ...]
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Run these on your existing Supabase database to add the new columns:
+ALTER TABLE products ADD COLUMN IF NOT EXISTS colors jsonb DEFAULT NULL;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS sizes  jsonb DEFAULT NULL;
 
 -- ========================
 -- PRODUCT IMAGES
@@ -90,10 +97,17 @@ CREATE TABLE IF NOT EXISTS orders (
   id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id uuid REFERENCES auth.users(id) ON DELETE RESTRICT,
   status text CHECK (status IN ('pending', 'processing', 'shipped', 'delivered', 'cancelled')) DEFAULT 'pending',
-  total_amount numeric(10, 2) NOT NULL,
-  shipping_address jsonb NOT NULL,
+  total_amount numeric(10, 2) NOT NULL,         -- always stored in MAD (base currency)
+  currency_code text DEFAULT 'MAD',             -- customer-facing currency at order time
+  exchange_rate numeric(12, 6) DEFAULT 1.0,     -- rate: 1 MAD → currency_code at order time
+  shipping_address jsonb NOT NULL,              -- { full_name, phone, address, city, state, zip, country }
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Run once to add columns to existing orders table (idempotent):
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS currency_code text DEFAULT 'MAD';
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS exchange_rate numeric(12, 6) DEFAULT 1.0;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS cancelled_by text CHECK (cancelled_by IN ('customer', 'admin')) DEFAULT NULL;
 
 CREATE TABLE IF NOT EXISTS order_items (
   id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -173,3 +187,31 @@ CREATE POLICY "Admins manage product images" ON product_images
 --     bucket_id = 'product-images'
 --     AND EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin')
 --   );
+
+-- ========================
+-- ROW LEVEL SECURITY: Orders & Order Items
+-- ========================
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+-- Authenticated users can view their own orders
+CREATE POLICY "Users view own orders" ON orders
+  FOR SELECT USING (auth.uid() = user_id);
+-- Anyone can place an order (guest checkout: user_id may be null)
+CREATE POLICY "Anyone can create orders" ON orders
+  FOR INSERT WITH CHECK (true);
+-- Admins can do everything (read, update status, etc.)
+CREATE POLICY "Admins manage all orders" ON orders
+  FOR ALL USING (EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'));
+
+ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
+-- Users can view items for their own orders
+CREATE POLICY "Users view own order items" ON order_items
+  FOR SELECT USING (
+    EXISTS (SELECT 1 FROM orders WHERE id = order_id AND user_id = auth.uid())
+  );
+-- Anyone can insert order items (mirrors the orders insert policy)
+CREATE POLICY "Anyone can insert order items" ON order_items
+  FOR INSERT WITH CHECK (true);
+-- Admins can do everything
+CREATE POLICY "Admins manage all order items" ON order_items
+  FOR ALL USING (EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'));
+

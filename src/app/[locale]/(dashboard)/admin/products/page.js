@@ -26,7 +26,7 @@ const STATUS_STYLES = {
 
 function formatPrice(price, effectivePrice) {
   if (price == null) return "—";
-  const fmt = (n) => `$${Number(n).toFixed(2)}`;
+  const fmt = (n) => `${Number(n).toFixed(2)} DH`;
   if (effectivePrice != null && effectivePrice < price) {
     return (
       <span className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1.5">

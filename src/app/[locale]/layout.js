@@ -12,6 +12,7 @@ import { notFound } from 'next/navigation';
 import { locales } from '@/i18n/config';
 import { getDictionary } from '@/i18n/getDictionary';
 import LocaleProvider from '@/components/providers/LocaleProvider';
+import CurrencyProvider from '@/components/providers/CurrencyProvider';
 
 /**
  * Pre-render one static param set per supported locale.
@@ -30,7 +31,9 @@ export default async function LocaleLayout({ children, params }) {
 
   return (
     <LocaleProvider locale={locale} dictionary={dictionary}>
-      {children}
+      <CurrencyProvider>
+        {children}
+      </CurrencyProvider>
     </LocaleProvider>
   );
 }

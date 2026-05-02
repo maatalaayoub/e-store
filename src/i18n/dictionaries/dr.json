@@ -18,7 +18,8 @@
     "filter": "فلتر",
     "or": "ولا",
     "language": "اللغة",
-    "loading": "كيتحمّل..."
+    "loading": "كيتحمّل...",
+    "store_name": "حانوتي"
   },
   "nav": {
     "home": "الرئيسية",
@@ -30,7 +31,11 @@
     "dashboard": "اللوحة",
     "logout": "خروج",
     "my_account": "الحساب ديالي",
-    "cart": "الكارّيطة"
+    "cart": "الكارّيطة",
+    "my_orders": "طلباتي",
+    "favorites": "المفضلة",
+    "privacy_policy": "سياسة الخصوصية",
+    "contact": "تواصل معانا"
   },
   "home": {
     "title_part1": "بدّل",
@@ -257,5 +262,92 @@
         "timezone": "المنطقة الزمنية"
       }
     }
+  },
+  "orders": {
+    "title": "طلباتي",
+    "subtitle": "تابع ودبّر طلباتك",
+    "order_id": "رقم الطلب",
+    "date": "التاريخ",
+    "total": "المجموع",
+    "qty": "العدد",
+    "shipped_to": "كيتوصل ل",
+    "start_shopping": "ابدا التقضية",
+    "empty_title": "ما عندك حتا طلب",
+    "empty_desc": "منين تطلب، غادي يبان هنا.",
+    "failed": "ما تقدرش تحمل الطلبات.",
+    "cancel_order": "لغي الطلب",
+    "cancel_confirm": "واخا تلغي هاد الطلب؟",
+    "cancel_failed": "ما قدرناش نلغيو الطلب. عاود وخد.",
+    "status": {
+      "pending": "كيتسنّى",
+      "processing": "كيتعالج",
+      "shipped": "تشحن",
+      "delivered": "توصل",
+      "cancelled": "ملغي"
+    }
+  },
+  "favorites": {
+    "title": "المفضلة",
+    "subtitle_one": "سلعة محفوظة",
+    "subtitle_many": "سلع محفوظة",
+    "subtitle_default": "السلع اللي حفظتيها",
+    "empty_title": "ما عندك حتا مفضلة",
+    "empty_desc": "دغز على أيقونة القلب فاي منتج باش تحفظو هنا.",
+    "browse": "شوف المنتجات",
+    "add_to_cart": "زيد للقفة",
+    "added": "تزاد!",
+    "unavailable": "ما كاينش",
+    "remove": "حيّد من المفضلة",
+    "failed": "ما تقدرش تحمل المفضلة."
+  },
+  "product": {
+    "homepage": "الرئيسية",
+    "no_reviews": "ما كاينش تقييمات بعد",
+    "sold": "تباع",
+    "description": "الوصف",
+    "delivery": "شروط التوصيل",
+    "color": "اللون",
+    "size": "القياس",
+    "size_chart": "جدول المقاسات",
+    "quantity": "الكمية",
+    "total": "التوتال",
+    "out_of_stock": "خلا الستوك",
+    "available": "\u0648اجد",
+    "added_to_cart": "تزاد للقفة",
+    "add_to_cart": "زيد للقفة",
+    "checkout_now": "شري دابا",
+    "unavailable": "ما كاينش"
+  },
+  "checkout": {
+    "contact_info": "معلومات التواصل",
+    "required": "ضروري",
+    "required_marker": "* ضروري",
+    "phone_label": "الإيميل ولا رقم التليفون",
+    "shipping_address": "عنوان التوصيل",
+    "full_name": "الاسم الكامل",
+    "country": "البلاد",
+    "city": "المدينة",
+    "state": "الولاية/الجهة",
+    "zip": "الرمز البريدي",
+    "street_address": "العنوان",
+    "discount_placeholder": "كود التخفيض",
+    "apply": "طبّق",
+    "subtotal": "المجموع",
+    "total": "التوتال",
+    "place_order": "أكد الطلب",
+    "placing_order": "كيتقدّم الطلب…",
+    "order_whatsapp": "طلب عبر واتساب",
+    "cart_empty": "القفة خاوية",
+    "failed": "ما تقدرش تكمل الطلب. عاود مرة أخرى."
+  },
+  "order_confirmed": {
+    "title": "وصل الطلب ديالك!",
+    "subtitle": "شكراً على الطلب ديالك. غادي نتصلو بيك قريباً باش نأكدو الطلب ديالك.",
+    "what_next": "شنو اللي غادي يوقع دابا؟",
+    "step1": "الفريق ديالنا غادي يراجع الطلب ديالك.",
+    "step2": "غادي نتصلو بيك باش نأكدو الطلب ديالك.",
+    "step3": "غادي يتجهز الطلب ديالك ويتصيفط.",
+    "continue": "كمل التقضية",
+    "orders": "طلباتي"
   }
 }

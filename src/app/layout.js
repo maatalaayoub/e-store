@@ -12,6 +12,7 @@
 
 import { Geist } from "next/font/google";
 import "./globals.css";
+import AbortErrorSuppressor from "@/components/providers/AbortErrorSuppressor";
 
 const geist = Geist({
   variable: "--font-geist",
@@ -26,6 +27,7 @@ export default function RootLayout({ children }) {
   return (
     <html suppressHydrationWarning className={`${geist.variable} h-full antialiased`}>
       <body suppressHydrationWarning className="min-h-full flex flex-col">
+        <AbortErrorSuppressor />
         {children}
       </body>
     </html>

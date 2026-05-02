@@ -2,10 +2,10 @@ import { notFound } from "next/navigation";
 import { ChevronRight, Star } from "lucide-react";
 import { productService } from "@/modules/products/product.service";
 import { getDictionary } from "@/i18n/getDictionary";
-import ShopFooter from "@/components/shop/ShopFooter";
 import ProductGallery from "./_components/ProductGallery";
 import ProductPurchasePanel from "./_components/ProductPurchasePanel";
 import ProductPageHeader from "./_components/ProductPageHeader";
+import ProductPrice from "./_components/ProductPrice";
 
 export default async function ProductDetailsPage({ params }) {
   const { locale, id } = await params;
@@ -20,7 +20,6 @@ export default async function ProductDetailsPage({ params }) {
   }
 
   const isDiscounted = product.effective_price < product.price;
-  const fmt = (n) => `$${Number(n).toFixed(2)}`;
 
   const colors = Array.isArray(product.colors) ? product.colors : [];
   const sizes = Array.isArray(product.sizes) ? product.sizes : [];
@@ -37,7 +36,7 @@ export default async function ProductDetailsPage({ params }) {
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-20 pb-10 lg:py-10 lg:pt-20">
         <nav className="flex items-center gap-1.5 text-sm text-zinc-500 mb-8">
-          <a href={`/${locale}`} className="hover:text-zinc-900">Homepage</a>
+          <a href={`/${locale}`} className="hover:text-zinc-900">{dict?.product?.homepage ?? "Homepage"}</a>
           {product.category && (
             <>
               <ChevronRight className="h-3.5 w-3.5" />
@@ -50,7 +49,7 @@ export default async function ProductDetailsPage({ params }) {
 
         <div className="lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16">
           <div className="relative pb-20 lg:pb-0">
-            <ProductGallery images={product.images} productName={product.name} />
+            <ProductGallery images={product.images} productName={product.name} productId={product.id} />
           </div>
 
           <div className="mt-10 lg:mt-0">            {product.category && (
@@ -62,18 +61,11 @@ export default async function ProductDetailsPage({ params }) {
             </h1>
 
             <div className="mt-4 flex flex-wrap items-center justify-between gap-y-3 border-b border-zinc-100 pb-5">
-              <div className="flex items-baseline gap-3">
-                {isDiscounted && (
-                  <span className="text-lg text-zinc-400 line-through">{fmt(product.price)}</span>
-                )}
-                <span className="text-2xl sm:text-3xl font-bold text-zinc-900">
-                  {fmt(product.effective_price)}
-                </span>
-              </div>
+              <ProductPrice price={product.price} effectivePrice={product.effective_price} />
               <div className="flex items-center gap-4 text-sm text-zinc-600">
                 {soldCount > 0 && (
                   <>
-                    <span>{soldCount.toLocaleString()} Sold</span>
+                    <span>{soldCount.toLocaleString()} {dict?.product?.sold ?? "Sold"}</span>
                     <span className="text-zinc-300">•</span>
                   </>
                 )}
@@ -84,14 +76,14 @@ export default async function ProductDetailsPage({ params }) {
                     {reviewCount > 0 && <span className="text-zinc-400">({reviewCount})</span>}
                   </span>
                 ) : (
-                  <span className="text-zinc-400 text-xs">No reviews yet</span>
+                  <span className="text-zinc-400 text-xs">{dict?.product?.no_reviews ?? "No reviews yet"}</span>
                 )}
               </div>
             </div>
 
             {product.description && (
               <div className="mt-6">
-                <h3 className="font-semibold text-zinc-900 mb-2">Description:</h3>
+                <h3 className="font-semibold text-zinc-900 mb-2">{dict?.product?.description ?? "Description"}:</h3>
                 <p className="text-sm text-zinc-600 leading-relaxed whitespace-pre-line">
                   {product.description}
                 </p>
@@ -104,18 +96,17 @@ export default async function ProductDetailsPage({ params }) {
               sizes={sizes}
               hasColors={hasColors}
               hasSizes={hasSizes}
+              dict={dict}
             />
 
             <div className="mt-6">
               <a href="#" className="text-sm font-medium text-zinc-900 underline underline-offset-4 decoration-zinc-300 hover:decoration-zinc-700">
-                Delivery T&amp;C
+                {dict?.product?.delivery ?? "Delivery T&C"}
               </a>
             </div>
           </div>
         </div>
       </main>
-
-      <ShopFooter dict={dict} />
     </div>
   );
 }

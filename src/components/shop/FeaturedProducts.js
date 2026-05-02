@@ -16,11 +16,15 @@ export default function FeaturedProducts({ onItemAdded }) {
   const [products, setProducts] = useState(null);
 
   useEffect(() => {
+    let mounted = true;
     const controller = new AbortController();
     fetchFeaturedProducts({ signal: controller.signal })
-      .then((data) => setProducts(data))
+      .then((data) => { if (mounted) setProducts(data); })
       .catch(() => {});
-    return () => controller.abort();
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
   }, []);
 
   if (!products) return <FeaturedProductsSkeleton />;

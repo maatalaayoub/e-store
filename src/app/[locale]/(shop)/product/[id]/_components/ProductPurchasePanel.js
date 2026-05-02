@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter, useParams } from "next/navigation";
 import { Check, Minus, Plus, ShoppingCart } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 
@@ -10,12 +11,17 @@ export default function ProductPurchasePanel({
   sizes,
   hasColors,
   hasSizes,
+  dict,
 }) {
   const [selectedColor, setSelectedColor] = useState(hasColors ? colors[0] : null);
   const [selectedSize, setSelectedSize] = useState(hasSizes ? sizes[0] : null);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const { addItem } = useCartStore();
+  const router = useRouter();
+  const params = useParams();
+  const locale = params?.locale || "en";
+  const tProduct = dict?.product ?? {};
 
   const isOutOfStock = product.stock <= 0;
 
@@ -33,34 +39,66 @@ export default function ProductPurchasePanel({
     setTimeout(() => setAdded(false), 1800);
   };
 
+  const handleCheckout = () => {
+    addItem({ ...product, selectedColor, selectedSize }, qty);
+    router.push(`/${locale}/checkout`);
+  };
+
   return (
     <div className="mt-6 space-y-6">
       {/* Colors */}
       {hasColors && (
         <div>
           <p className="text-sm text-zinc-700 mb-3">
-            Color: <span className="font-semibold text-zinc-900">{selectedColor?.name}</span>
+            {tProduct.color ?? "Color"}:{" "}
+            <span className="font-semibold text-zinc-900">{selectedColor?.name}</span>
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-3">
             {colors.map((c) => {
               const active = selectedColor?.name === c.name && selectedColor?.hex === c.hex;
+              // Decide checkmark color based on brightness of the swatch
+              const isDark = (() => {
+                const hex = c.hex.replace("#", "");
+                const r = parseInt(hex.slice(0, 2), 16);
+                const g = parseInt(hex.slice(2, 4), 16);
+                const b = parseInt(hex.slice(4, 6), 16);
+                return (r * 299 + g * 587 + b * 114) / 1000 < 128;
+              })();
               return (
-                <button
-                  key={`${c.name}-${c.hex}`}
-                  type="button"
-                  onClick={() => setSelectedColor(c)}
-                  aria-label={c.name}
-                  className={`flex h-11 w-11 items-center justify-center rounded-lg border transition-all ${
-                    active
-                      ? "border-zinc-900 ring-1 ring-zinc-900 ring-offset-1"
-                      : "border-zinc-200 hover:border-zinc-400"
-                  }`}
-                >
-                  <span
-                    className="block h-7 w-7 rounded-md"
-                    style={{ backgroundColor: c.hex }}
-                  />
-                </button>
+                <div key={`${c.name}-${c.hex}`} className="relative group">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedColor(c)}
+                    aria-label={c.name}
+                    title={c.name}
+                    style={{
+                      backgroundColor: c.hex,
+                      boxShadow: active ? `0 0 0 2px white, 0 0 0 4px ${c.hex}` : undefined,
+                    }}
+                    className={`h-9 w-9 rounded-full transition-all duration-200 flex items-center justify-center
+                      ${active ? "scale-110" : "hover:scale-105 ring-1 ring-zinc-200 hover:ring-zinc-400"}
+                    `}
+                  >
+                    {active && (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={3}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className={`h-4 w-4 ${isDark ? "text-white" : "text-zinc-900"}`}
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
+                  </button>
+                  {/* Tooltip */}
+                  <span className="pointer-events-none absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-zinc-900 px-2 py-0.5 text-[10px] text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                    {c.name}
+                  </span>
+                </div>
               );
             })}
           </div>
@@ -72,10 +110,10 @@ export default function ProductPurchasePanel({
         <div>
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm text-zinc-700">
-              Size: <span className="font-semibold text-zinc-900">{selectedSize}</span>
+              {tProduct.size ?? "Size"}: <span className="font-semibold text-zinc-900">{selectedSize}</span>
             </p>
             <a href="#" className="text-sm text-zinc-600 underline underline-offset-2 hover:text-zinc-900">
-              View Size Chart
+              {tProduct.size_chart ?? "View Size Chart"}
             </a>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -103,9 +141,9 @@ export default function ProductPurchasePanel({
       {/* Quantity + Total */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-sm text-zinc-700">Quantity</p>
+          <p className="text-sm text-zinc-700">{tProduct.quantity ?? "Quantity"}</p>
           <p className="text-sm text-zinc-500">
-            Total:{" "}
+            {tProduct.total ?? "Total"}:{" "}
             <span className="text-lg font-bold text-zinc-900">
               ${(Number(product.effective_price) * qty).toFixed(2)}
             </span>
@@ -130,7 +168,7 @@ export default function ProductPurchasePanel({
             </button>
           </div>
           <span className="text-xs text-zinc-500">
-            {isOutOfStock ? "Out of stock" : `${product.stock} available`}
+            {isOutOfStock ? (tProduct.out_of_stock ?? "Out of stock") : `${product.stock} ${tProduct.available ?? "available"}`}
           </span>
         </div>
       </div>
@@ -151,20 +189,21 @@ export default function ProductPurchasePanel({
           {added ? (
             <>
               <Check className="h-4 w-4" />
-              Added to Cart
+              {tProduct.added_to_cart ?? "Added to Cart"}
             </>
           ) : (
             <>
               <ShoppingCart className="h-4 w-4" />
-              Add To Cart
+              {tProduct.add_to_cart ?? "Add To Cart"}
             </>
           )}
         </button>
         <button
+          onClick={handleCheckout}
           disabled={isOutOfStock}
           className="w-full flex items-center justify-center rounded-xl border-2 border-zinc-900 px-6 h-13 text-base font-semibold text-zinc-900 hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Checkout Now
+          {tProduct.checkout_now ?? "Checkout Now"}
         </button>
       </div>
     </div>

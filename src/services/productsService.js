@@ -19,7 +19,7 @@ export async function fetchFeaturedProducts({ signal } = {}) {
     }
     return featuredProductsFallback;
   } catch (err) {
-    if (err?.name === "AbortError") throw err;
+    if (err?.name === "AbortError") return []; // request was cancelled — do nothing
     if (process.env.NODE_ENV !== "production") {
       console.warn("[productsService] using fallback:", err?.message);
     }

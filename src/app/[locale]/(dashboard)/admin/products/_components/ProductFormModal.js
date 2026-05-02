@@ -206,8 +206,15 @@ export default function ProductFormModal({
         stock: parseInt(form.stock, 10),
         status: form.status,
         is_featured: form.is_featured,
-        colors: form.colors.length > 0 ? form.colors : null,
-        sizes: form.sizes.length > 0 ? form.sizes : null,
+        // Strip incomplete entries so Zod min(1) never fails
+        colors: (() => {
+          const valid = form.colors.filter((c) => c.name.trim() && c.hex.trim());
+          return valid.length > 0 ? valid : null;
+        })(),
+        sizes: (() => {
+          const valid = form.sizes.map((s) => s.trim()).filter(Boolean);
+          return valid.length > 0 ? valid : null;
+        })(),
       };
 
       // 1. Create or update product
@@ -420,7 +427,7 @@ export default function ProductFormModal({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-zinc-700 mb-1">
-                  Price ($) <span className="text-red-500">*</span>
+                  Price (DH) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
