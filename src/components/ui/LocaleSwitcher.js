@@ -131,6 +131,7 @@ export default function LocaleSwitcher({ className = "", align = "right", direct
                   className={`flex-1 text-sm ${
                     isActive ? "font-semibold text-zinc-900" : "font-medium text-zinc-700"
                   }`}
+                  style={(code === "ar" || code === "dr") ? { fontFamily: "var(--font-cairo), Arial, sans-serif" } : undefined}
                 >
                   {info.label}
                 </span>

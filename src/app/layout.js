@@ -10,13 +10,20 @@
  * those attributes on the client.
  */
 
-import { Geist } from "next/font/google";
+import { Inter, Cairo } from "next/font/google";
 import "./globals.css";
 import AbortErrorSuppressor from "@/components/providers/AbortErrorSuppressor";
 
-const geist = Geist({
-  variable: "--font-geist",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+});
+
+const cairo = Cairo({
+  variable: "--font-cairo",
+  subsets: ["arabic", "latin"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata = {
@@ -25,7 +32,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html suppressHydrationWarning className={`${geist.variable} h-full antialiased`}>
+    <html suppressHydrationWarning className={`${inter.variable} ${cairo.variable} h-full antialiased`}>
       <body suppressHydrationWarning className="min-h-full flex flex-col">
         <AbortErrorSuppressor />
         {children}

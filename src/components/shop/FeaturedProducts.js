@@ -32,7 +32,7 @@ export default function FeaturedProducts({ onItemAdded }) {
   return (
     <section
       id="featured"
-      className="bg-[#f5f5f5] px-4 py-20 sm:px-6 sm:py-24"
+      className="bg-white px-4 py-20 sm:px-6 sm:py-24"
     >
       <div className="mx-auto max-w-7xl">
         <div className="mb-14 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
