@@ -35,7 +35,8 @@
     "my_orders": "طلباتي",
     "favorites": "المفضلة",
     "privacy_policy": "سياسة الخصوصية",
-    "contact": "تواصل معنا"
+    "contact": "تواصل معنا",
+    "account_settings": "إعدادات الحساب"
   },
   "home": {
     "title_part1": "أعد تعريف",
@@ -317,6 +318,29 @@
     "add_to_cart": "أضف إلى السلة",
     "checkout_now": "اشترِ الآن",
     "unavailable": "غير متوفر"
+  },
+  "account": {
+    "title": "إعدادات الحساب",
+    "personal_info": "المعلومات الشخصية",
+    "address_info": "العنوان",
+    "full_name": "الاسم الكامل",
+    "full_name_placeholder": "اسمك الكامل",
+    "phone": "رقم الهاتف",
+    "phone_placeholder": "مثال: +212 6 00 00 00 00",
+    "city": "المدينة",
+    "city_placeholder": "مدينتك",
+    "address": "عنوان الشارع",
+    "address_placeholder": "شارع محمد الخامس",
+    "country": "البلد",
+    "country_placeholder": "اختر بلدك",
+    "save": "حفظ التغييرات",
+    "saved": "تم الحفظ!",
+    "no_name": "لم يتم تعيين اسم",
+    "save_error": "فشل حفظ التغييرات.",
+    "page_title": "المعلومات الشخصية ومعلومات الشحن",
+    "edit": "تعديل",
+    "cancel": "إلغاء",
+    "load_error": "تعذّر تحميل الملف الشخصي."
   },
   "checkout": {
     "contact_info": "معلومات التواصل",

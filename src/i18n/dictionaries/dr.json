@@ -35,7 +35,8 @@
     "my_orders": "طلباتي",
     "favorites": "المفضلة",
     "privacy_policy": "سياسة الخصوصية",
-    "contact": "تواصل معانا"
+    "contact": "تواصل معانا",
+    "account_settings": "إعدادات الحساب"
   },
   "home": {
     "title_part1": "بدّل",
@@ -317,6 +318,29 @@
     "add_to_cart": "زيد للقفة",
     "checkout_now": "شري دابا",
     "unavailable": "ما كاينش"
+  },
+  "account": {
+    "title": "إعدادات الحساب",
+    "personal_info": "المعلومات ديالك",
+    "address_info": "العنوان",
+    "full_name": "الاسم الكامل",
+    "full_name_placeholder": "سميتك الكاملة",
+    "phone": "رقم التيليفون",
+    "phone_placeholder": "+212 6 00 00 00 00",
+    "city": "المدينة",
+    "city_placeholder": "المدينة ديالك",
+    "address": "العنوان",
+    "address_placeholder": "درب محمد الخامس",
+    "country": "البلد",
+    "country_placeholder": "ختار بلادك",
+    "save": "حفظ التغييرات",
+    "saved": "تحفظ!",
+    "no_name": "ما دارتشي اسم",
+    "save_error": "ما قدرناش نحفظو.",
+    "page_title": "المعلومات الشخصية ديال الشحن",
+    "edit": "عدل",
+    "cancel": "لغي",
+    "load_error": "ما قدرناش نجيبو المعطيات."
   },
   "checkout": {
     "contact_info": "معلومات التواصل",

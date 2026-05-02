@@ -35,7 +35,8 @@
     "my_orders": "My Orders",
     "favorites": "Favorites",
     "privacy_policy": "Privacy Policy",
-    "contact": "Contact Us"
+    "contact": "Contact Us",
+    "account_settings": "Account Settings"
   },
   "home": {
     "title_part1": "Redefine your",
@@ -318,10 +319,30 @@
     "checkout_now": "Checkout Now",
     "unavailable": "Unavailable"
   },
+  "account": {
+    "title": "Account Settings",
+    "personal_info": "Personal Information",
+    "address_info": "Address",
+    "full_name": "Full Name",
+    "full_name_placeholder": "Your full name",
+    "phone": "Phone Number",
+    "phone_placeholder": "+1 555 000 0000",
+    "city": "City",
+    "city_placeholder": "Your city",
+    "address": "Street Address",
+    "address_placeholder": "123 Main St",
+    "country": "Country",
+    "country_placeholder": "Select your country",
+    "save": "Save Changes",
+    "saved": "Saved!",
+    "no_name": "No name set",
+    "save_error": "Failed to save changes.",
+    "page_title": "Personal & Shipping Information",
+    "edit": "Edit",
+    "cancel": "Cancel",
+    "load_error": "Failed to load profile."
+  },
   "checkout": {
-    "contact_info": "Contact Information",
-    "required": "Required",
-    "required_marker": "* Required",
     "phone_label": "Email or Phone Number",
     "shipping_address": "Shipping Address",
     "full_name": "Full Name",

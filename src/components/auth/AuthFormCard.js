@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+import { useLocale } from "@/components/providers/LocaleProvider";
 
 export default function AuthFormCard({
   title,
@@ -12,6 +13,8 @@ export default function AuthFormCard({
   children,
   footer,
 }) {
+  const { dir } = useLocale();
+  const BackIcon = dir === "rtl" ? ArrowRight : ArrowLeft;
   return (
     <div className="flex min-h-screen flex-col bg-white">
       <header className="absolute top-0 left-0 w-full flex h-16 items-center px-4 sm:px-8 bg-white border-b border-zinc-200">
@@ -20,7 +23,7 @@ export default function AuthFormCard({
           aria-label={backLabel}
           className="p-2 text-zinc-500 transition-colors hover:text-zinc-900"
         >
-          <ArrowLeft className="h-6 w-6" />
+          <BackIcon className="h-6 w-6" />
         </Link>
       </header>
 

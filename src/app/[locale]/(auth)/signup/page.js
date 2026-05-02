@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Eye, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useDictionary } from "@/components/providers/LocaleProvider";
+import { isRtlLocale } from "@/config/constants";
 import { getSiteOrigin } from "@/lib/url";
 import AuthFormCard from "@/components/auth/AuthFormCard";
 import FormInput from "@/components/auth/FormInput";
@@ -16,9 +17,12 @@ export default function SignupPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { locale } = useParams();
+  const isRtl = isRtlLocale(locale);
   const supabase = createClient();
   const dict = useDictionary();
   const t = dict?.auth?.signup ?? {};
@@ -41,7 +45,7 @@ export default function SignupPage() {
       setError(signUpError.message);
       setLoading(false);
     } else {
-      router.push("/login?message=Check your email to verify your account");
+      router.push(`/${locale}/login?message=Check your email to verify your account`);
     }
   };
 
@@ -57,12 +61,13 @@ export default function SignupPage() {
       title={t.title}
       subtitle={t.subtitle}
       error={error}
+      backHref={`/${locale}`}
       backLabel={tBack}
       footer={
         <>
           {t.have_account}{" "}
           <Link
-            href="/login"
+            href={`/${locale}/login`}
             className="font-semibold text-zinc-900 hover:underline"
           >
             {t.login_link}
@@ -89,18 +94,20 @@ export default function SignupPage() {
         />
         <FormInput
           label={t.password_label}
-          type="password"
+          type={showPassword ? "text" : "password"}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder={t.password_placeholder}
           required
+          isRtl={isRtl}
           rightSlot={
             <button
               type="button"
+              onClick={() => setShowPassword((v) => !v)}
               className="text-zinc-400 hover:text-zinc-600"
               aria-label="Toggle password visibility"
             >
-              <Eye className="h-5 w-5" />
+              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
           }
         />

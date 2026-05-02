@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Trash2, Minus, Plus } from "lucide-react";
+import { City } from "country-state-city";
 import { useCartStore } from "@/store/useCartStore";
 import { WHATSAPP_NUMBER } from "@/config/constants";
 import { isRtlLocale } from "@/config/constants";
+import SearchableCombobox from "@/components/ui/SearchableCombobox";
+import { COUNTRIES, findCountry, detectCountryFromIp } from "@/data/countries";
 
 /* ── Per-country placeholder text ── */
 const COUNTRY_HINTS = {
@@ -43,18 +46,36 @@ export default function CheckoutClient({ locale, dict }) {
   useEffect(() => {
     setHydrated(true);
     const controller = new AbortController();
+
     const fetchCountry = async () => {
+      const detected = await detectCountryFromIp(controller.signal);
+      if (detected) setForm((f) => ({ ...f, country: detected }));
+    };
+
+    const fetchProfile = async () => {
       try {
-        const res = await fetch("https://get.geojs.io/v1/ip/geo.json", { signal: controller.signal });
+        const res = await fetch("/api/v1/users/me", { signal: controller.signal });
         if (res.ok) {
-          const data = await res.json();
-          if (data?.country) setForm((f) => ({ ...f, country: data.country }));
+          const json = await res.json();
+          if (json.success) {
+            const d = json.data;
+            setForm((f) => ({
+              ...f,
+              fullName: d.full_name || f.fullName,
+              phone: d.phone_number || f.phone,
+              address: d.address || f.address,
+              city: d.city || f.city,
+              country: d.country || f.country,
+            }));
+          }
         }
       } catch (err) {
-        if (err?.name !== "AbortError") { /* ignore extension blockers */ }
+        if (err?.name !== "AbortError") { /* ignore — guest checkout still works */ }
       }
     };
+
     fetchCountry().catch(() => {});
+    fetchProfile().catch(() => {});
     return () => controller.abort();
   }, []);
 
@@ -126,6 +147,17 @@ export default function CheckoutClient({ locale, dict }) {
     setForm((f) => ({ ...f, [field]: e.target.value }));
     setErrors((err) => ({ ...err, [field]: undefined }));
   };
+
+  /* ── Cities powered by country-state-city (offline) ── */
+  const selectedIso = useMemo(
+    () => findCountry(form.country)?.isoCode ?? null,
+    [form.country]
+  );
+  const cities = useMemo(() => {
+    if (!selectedIso) return [];
+    const names = (City.getCitiesOfCountry(selectedIso) ?? []).map((c) => c.name);
+    return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
+  }, [selectedIso]);
 
   const validate = () => {
     const e = {};
@@ -288,24 +320,18 @@ export default function CheckoutClient({ locale, dict }) {
                   <label className="block text-sm text-zinc-700 mb-1.5">
                     {tCheckout.country ?? "Country"} <span className="text-zinc-900">*</span>
                   </label>
-                  <select
+                  <SearchableCombobox
+                    items={COUNTRIES}
                     value={form.country}
-                    onChange={set("country")}
-                    className="w-full rounded border px-3 py-2.5 text-sm outline-none transition-colors border-zinc-200 bg-zinc-50/50 hover:bg-white focus:bg-white focus:border-zinc-400"
-                  >
-                    <option value="United States">United States</option>
-                    <option value="United Kingdom">United Kingdom</option>
-                    <option value="Canada">Canada</option>
-                    <option value="Australia">Australia</option>
-                    <option value="Morocco">Morocco</option>
-                    <option value="France">France</option>
-                    <option value="Germany">Germany</option>
-                    <option value="Italy">Italy</option>
-                    <option value="Spain">Spain</option>
-                    <option value="Netherlands">Netherlands</option>
-                    <option value="Belgium">Belgium</option>
-                    <option value="Sweden">Sweden</option>
-                  </select>
+                    onChange={(val) => {
+                      setForm((f) => ({ ...f, country: val, city: "", state: "", zip: "" }));
+                      setErrors((err) => ({ ...err, country: undefined, city: undefined, zip: undefined }));
+                    }}
+                    placeholder={tCheckout.country_placeholder ?? "Select your country"}
+                    disabledMsg="No countries available"
+                    searchPlaceholder="Search country..."
+                    isRtl={isRtl}
+                  />
                   {errors.country && <p className="mt-1 text-xs text-red-500">{errors.country}</p>}
                 </div>
 
@@ -315,12 +341,17 @@ export default function CheckoutClient({ locale, dict }) {
                     <label className="block text-sm text-zinc-700 mb-1.5">
                       {tCheckout.city ?? "City"} <span className="text-zinc-900">*</span>
                     </label>
-                    <input
-                      type="text"
+                    <SearchableCombobox
+                      items={cities}
                       value={form.city}
-                      onChange={set("city")}
-                      placeholder={hint(form.country, "city")}
-                      className={inputCls("city")}
+                      onChange={(val) => {
+                        setForm((f) => ({ ...f, city: val }));
+                        setErrors((err) => ({ ...err, city: undefined }));
+                      }}
+                      placeholder={tCheckout.city_placeholder ?? "Select your city"}
+                      disabledMsg="Select a country first"
+                      searchPlaceholder="Search city..."
+                      isRtl={isRtl}
                     />
                     {errors.city && <p className="mt-1 text-xs text-red-500">{errors.city}</p>}
                   </div>

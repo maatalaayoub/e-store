@@ -125,19 +125,7 @@ export default function ShopSidebarNav({ isOpen, onClose }) {
               }`}
               style={{ transitionDelay: `${isOpen ? 120 : 0}ms` }}
             >
-              <div className="flex items-center gap-3 rounded-2xl bg-zinc-50 p-3 border border-zinc-100">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold uppercase">
-                  {(user.user_metadata?.full_name || user.email || "U").charAt(0)}
-                </div>
-                <div className="flex flex-col min-w-0 flex-1">
-                  <span className="text-sm font-semibold text-zinc-900 truncate">
-                    {user.user_metadata?.full_name || tNav.my_account}
-                  </span>
-                  <span className="text-xs text-zinc-500 truncate">{user.email}</span>
-                </div>
-              </div>
-
-              <div className="mt-3 flex flex-col gap-0.5">
+              <div className="mt-0 flex flex-col gap-0.5">
                 <Link href={`/${locale}/orders`} onClick={onClose} className="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 transition-colors">
                   <ClipboardList className="h-5 w-5 shrink-0" strokeWidth={1.5} />
                   <span>{tNav.my_orders ?? "My Orders"}</span>
@@ -149,6 +137,10 @@ export default function ShopSidebarNav({ isOpen, onClose }) {
                 <Link href={`/${locale}/categories`} onClick={onClose} className="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 transition-colors">
                   <LayoutGrid className="h-5 w-5 shrink-0" strokeWidth={1.5} />
                   <span>{tNav.categories ?? "Categories"}</span>
+                </Link>
+                <Link href={`/${locale}/account`} onClick={onClose} className="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 transition-colors">
+                  <UserIcon className="h-5 w-5 shrink-0" strokeWidth={1.5} />
+                  <span>{tNav.account_settings ?? "Account Settings"}</span>
                 </Link>
                 {userIsAdmin && (
                   <Link

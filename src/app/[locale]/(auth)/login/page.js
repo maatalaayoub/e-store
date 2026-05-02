@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Eye, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useDictionary } from "@/components/providers/LocaleProvider";
+import { isRtlLocale } from "@/config/constants";
 import { getSiteOrigin } from "@/lib/url";
 import AuthFormCard from "@/components/auth/AuthFormCard";
 import FormInput from "@/components/auth/FormInput";
@@ -15,9 +16,12 @@ import { AuthFormSkeleton } from "@/components/skeletons";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { locale } = useParams();
+  const isRtl = isRtlLocale(locale);
   const supabase = createClient();
   const dict = useDictionary();
   const t = dict?.auth?.login ?? {};
@@ -41,7 +45,7 @@ export default function LoginPage() {
     } else {
       const user = data?.user;
       const role = user?.user_metadata?.role || user?.app_metadata?.role;
-      router.push(role === "admin" ? "/admin" : "/");
+      router.push(role === "admin" ? `/${locale}/admin` : `/${locale}`);
       router.refresh();
     }
   };
@@ -58,12 +62,13 @@ export default function LoginPage() {
       title={t.title}
       subtitle={t.subtitle}
       error={error}
+      backHref={`/${locale}`}
       backLabel={tBack}
       footer={
         <>
           {t.no_account}{" "}
           <Link
-            href="/signup"
+            href={`/${locale}/signup`}
             className="font-semibold text-zinc-900 hover:underline"
           >
             {t.signup_link}
@@ -82,18 +87,20 @@ export default function LoginPage() {
         />
         <FormInput
           label={t.password_label}
-          type="password"
+          type={showPassword ? "text" : "password"}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder={t.password_placeholder}
           required
+          isRtl={isRtl}
           rightSlot={
             <button
               type="button"
+              onClick={() => setShowPassword((v) => !v)}
               className="text-zinc-400 hover:text-zinc-600"
               aria-label="Toggle password visibility"
             >
-              <Eye className="h-5 w-5" />
+              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
           }
         />

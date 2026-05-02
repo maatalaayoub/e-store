@@ -35,7 +35,8 @@
     "my_orders": "Mes commandes",
     "favorites": "Favoris",
     "privacy_policy": "Politique de confidentialité",
-    "contact": "Nous contacter"
+    "contact": "Nous contacter",
+    "account_settings": "Paramètres du compte"
   },
   "home": {
     "title_part1": "Redéfinissez votre",
@@ -317,6 +318,29 @@
     "add_to_cart": "Ajouter au panier",
     "checkout_now": "Commander maintenant",
     "unavailable": "Indisponible"
+  },
+  "account": {
+    "title": "Paramètres du compte",
+    "personal_info": "Informations personnelles",
+    "address_info": "Adresse",
+    "full_name": "Nom complet",
+    "full_name_placeholder": "Votre nom complet",
+    "phone": "Numéro de téléphone",
+    "phone_placeholder": "+33 1 00 00 00 00",
+    "city": "Ville",
+    "city_placeholder": "Votre ville",
+    "address": "Adresse postale",
+    "address_placeholder": "12 Rue de Rivoli",
+    "country": "Pays",
+    "country_placeholder": "Sélectionnez votre pays",
+    "save": "Enregistrer",
+    "saved": "Enregistré !",
+    "no_name": "Aucun nom défini",
+    "save_error": "Impossible d'enregistrer les modifications.",
+    "page_title": "Informations personnelles et d'expédition",
+    "edit": "Modifier",
+    "cancel": "Annuler",
+    "load_error": "Impossible de charger le profil."
   },
   "checkout": {
     "contact_info": "Coordonnées",

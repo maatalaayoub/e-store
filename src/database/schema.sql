@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS users (
   email text UNIQUE NOT NULL,
   phone_number text,
   address text,
+  city text,
+  country text,
   role text CHECK (role IN ('client', 'admin')) DEFAULT 'client',
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -109,6 +111,19 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS currency_code text DEFAULT 'MAD';
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS exchange_rate numeric(12, 6) DEFAULT 1.0;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS cancelled_by text CHECK (cancelled_by IN ('customer', 'admin')) DEFAULT NULL;
 
+-- Run once to add city column to existing users table (idempotent):
+ALTER TABLE users ADD COLUMN IF NOT EXISTS city text;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS country text;
+
+-- Run once: allow users to upsert their own profile row (needed for account settings save):
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'users' AND policyname = 'Users can insert own profile'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can insert own profile" ON users FOR INSERT WITH CHECK (auth.uid() = id)';
+  END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS order_items (
   id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
   order_id uuid REFERENCES orders(id) ON DELETE CASCADE,
@@ -138,6 +153,7 @@ CREATE OR REPLACE TRIGGER products_updated_at
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own profile" ON users FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can update own profile" ON users FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Users can insert own profile" ON users FOR INSERT WITH CHECK (auth.uid() = id);
 
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Categories are public" ON categories FOR SELECT USING (true);
