@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
+import { sendTelegramMessage, buildOrderMessage } from '@/lib/telegram';
 
 async function getAdminUser(supabase) {
   const { data: { user } } = await supabase.auth.getUser();
@@ -25,14 +27,23 @@ export async function POST(req) {
       );
     }
 
-    // Get current user id if authenticated (null for guest orders)
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    // Try to get current user id (null for guests, or if auth call fails)
+    let userId = null;
+    try {
+      const sessionClient = await createClient();
+      const { data: { user } } = await sessionClient.auth.getUser();
+      userId = user?.id ?? null;
+    } catch {
+      userId = null;
+    }
 
-    const { data: order, error: orderErr } = await supabase
+    // Use service client to bypass RLS — guests can create orders too
+    const db = createServiceClient();
+
+    const { data: order, error: orderErr } = await db
       .from('orders')
       .insert({
-        user_id: user?.id ?? null,
+        user_id: userId,
         status: 'pending',
         total_amount: total_mad,
         currency_code: currency_code ?? 'MAD',
@@ -51,13 +62,53 @@ export async function POST(req) {
       unit_price: item.unit_price_mad,
     }));
 
-    const { error: itemsErr } = await supabase.from('order_items').insert(orderItems);
+    const { error: itemsErr } = await db.from('order_items').insert(orderItems);
     if (itemsErr) throw itemsErr;
 
-    return NextResponse.json({ success: true, data: { id: order.id } }, { status: 201 });
+    // Respond immediately — notification runs fully fire-and-forget
+    const response = NextResponse.json({ success: true, data: { id: order.id } }, { status: 201 });
+
+    // Build + send Telegram notification (never blocks or breaks the order)
+    ;(async () => {
+      try {
+        const { data: products } = await db
+          .from('products')
+          .select('id, name')
+          .in('id', items.map((i) => i.id));
+        const productMap = Object.fromEntries((products ?? []).map((p) => [p.id, p.name]));
+
+        const message = buildOrderMessage({
+          id: order.id.slice(0, 8).toUpperCase(),
+          customerName: shipping.full_name || 'Guest',
+          phone: shipping.phone ?? '',
+          address: shipping.address ?? '',
+          city: shipping.city ?? '',
+          country: shipping.country ?? '',
+          items: items.map((item) => ({
+            name: productMap[item.id] ?? `Product #${item.id.slice(0, 6)}`,
+            qty: item.quantity,
+            price: `${item.unit_price_mad} MAD`,
+          })),
+          total: total_mad,
+          currency: currency_code ?? 'MAD',
+        });
+        await sendTelegramMessage(message);
+      } catch { /* notification errors must never surface */ }
+    })();
+
+    return response;
   } catch (err) {
-    console.error('[POST /api/v1/orders]', err?.message ?? err);
-    return NextResponse.json({ success: false, error: 'Failed to create order' }, { status: 500 });
+    console.error('[POST /api/v1/orders]', err);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to create order',
+        details: err?.message ?? String(err),
+        code: err?.code,
+        hint: err?.hint,
+      },
+      { status: 500 }
+    );
   }
 }
 

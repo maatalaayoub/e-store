@@ -221,6 +221,7 @@
         "payments": "المدفوعات",
         "shipping": "الشحن",
         "notifications": "الإشعارات",
+        "integrations": "التكاملات",
         "localization": "التوطين"
       },
       "general": {
@@ -255,6 +256,22 @@
         "new_order": "إشعار طلب جديد",
         "low_stock": "تنبيه نفاد المخزون",
         "weekly": "ملخّص أسبوعي"
+      },
+      "integrations": {
+        "title": "التكاملات",
+        "desc": "ربط Telegram وWhatsApp Business لاستقبال إشعارات الطلبات.",
+        "telegram": "بوت تيليغرام",
+        "bot_token": "رمز البوت",
+        "bot_token_hint": "احصل عليه من @BotFather على تيليغرام",
+        "chat_id": "معرّف المحادثة",
+        "chat_id_hint": "معرّف المحادثة أو المجموعة لاستقبال تنبيهات الطلبات",
+        "whatsapp": "واتساب للأعمال",
+        "whatsapp_number": "رقم العمل",
+        "whatsapp_number_hint": "مع رمز الدولة، بدون + أو مسافات (مثال: 212600000000)",
+        "whatsapp_name": "اسم النشاط التجاري",
+        "saved": "تم حفظ التكاملات",
+        "saving": "جارٍ الحفظ…",
+        "save_btn": "حفظ التكاملات"
       },
       "localization": {
         "title": "التوطين",

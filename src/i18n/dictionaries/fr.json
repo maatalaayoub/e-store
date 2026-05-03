@@ -221,6 +221,7 @@
         "payments": "Paiements",
         "shipping": "Livraison",
         "notifications": "Notifications",
+        "integrations": "Intégrations",
         "localization": "Localisation"
       },
       "general": {
@@ -255,6 +256,22 @@
         "new_order": "E-mail de nouvelle commande",
         "low_stock": "Alertes de stock bas",
         "weekly": "Résumé hebdomadaire"
+      },
+      "integrations": {
+        "title": "Intégrations",
+        "desc": "Connectez Telegram et WhatsApp Business pour recevoir des notifications de commandes.",
+        "telegram": "Bot Telegram",
+        "bot_token": "Token du bot",
+        "bot_token_hint": "Obtenez-le via @BotFather sur Telegram",
+        "chat_id": "Chat ID",
+        "chat_id_hint": "L'identifiant du chat ou groupe pour recevoir les alertes",
+        "whatsapp": "WhatsApp Business",
+        "whatsapp_number": "Téléphone professionnel",
+        "whatsapp_number_hint": "Avec l'indicatif pays, sans + ni espaces (ex: 212600000000)",
+        "whatsapp_name": "Nom de l'entreprise",
+        "saved": "Intégrations enregistrées",
+        "saving": "Enregistrement…",
+        "save_btn": "Enregistrer les intégrations"
       },
       "localization": {
         "title": "Localisation",

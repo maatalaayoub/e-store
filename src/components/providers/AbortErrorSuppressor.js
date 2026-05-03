@@ -19,18 +19,37 @@ if (typeof window !== "undefined" && !window.__abortSuppressorInstalled) {
   const isAbort = (reason) => {
     if (!reason) return false;
     if (reason.name === "AbortError") return true;
+    if (reason.code === 20 || reason.code === "ABORT_ERR") return true; // DOMException ABORT_ERR
     if (typeof reason === "string" && /abort/i.test(reason)) return true;
-    if (typeof reason.message === "string" && /aborted|abortcontroller/i.test(reason.message)) return true;
+    if (typeof reason.message === "string" && /abort|signal is aborted/i.test(reason.message)) return true;
+    if (reason.cause && isAbort(reason.cause)) return true;
     return false;
   };
 
   window.addEventListener("unhandledrejection", (e) => {
-    if (isAbort(e.reason)) e.preventDefault();
-  });
+    if (isAbort(e.reason)) {
+      e.preventDefault();
+      e.stopImmediatePropagation?.();
+    }
+  }, true);
 
   window.addEventListener("error", (e) => {
-    if (isAbort(e.error) || isAbort(e.message)) e.preventDefault();
-  });
+    if (isAbort(e.error) || isAbort(e.message)) {
+      e.preventDefault();
+      e.stopImmediatePropagation?.();
+    }
+  }, true);
+
+  // Patch console.error to swallow abort messages too — Next.js dev overlay
+  // hooks console.error to surface errors in some cases.
+  const origConsoleError = console.error;
+  console.error = function (...args) {
+    for (const a of args) {
+      if (isAbort(a)) return;
+      if (typeof a === "string" && /signal is aborted|aborterror|abortsignal/i.test(a)) return;
+    }
+    return origConsoleError.apply(this, args);
+  };
 }
 
 export default function AbortErrorSuppressor() {

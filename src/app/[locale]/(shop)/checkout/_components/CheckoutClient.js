@@ -223,7 +223,10 @@ export default function CheckoutClient({ locale, dict }) {
         }),
       });
       const json = await res.json();
-      if (!json.success) throw new Error(json.error);
+      if (!json.success) {
+        console.error('[Order failed]', json);
+        throw new Error(json.details || json.error || 'Order failed');
+      }
       clearCart();
       router.push(`/${locale}/order-confirmed`);
     } catch (err) {

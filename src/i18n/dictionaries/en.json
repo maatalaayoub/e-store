@@ -221,6 +221,7 @@
         "payments": "Payments",
         "shipping": "Shipping",
         "notifications": "Notifications",
+        "integrations": "Integrations",
         "localization": "Localization"
       },
       "general": {
@@ -255,6 +256,22 @@
         "new_order": "New order email",
         "low_stock": "Low stock alerts",
         "weekly": "Weekly summary"
+      },
+      "integrations": {
+        "title": "Integrations",
+        "desc": "Connect Telegram and WhatsApp Business to receive order notifications.",
+        "telegram": "Telegram Bot",
+        "bot_token": "Bot Token",
+        "bot_token_hint": "Get it from @BotFather on Telegram",
+        "chat_id": "Chat ID",
+        "chat_id_hint": "The chat or group ID to receive order alerts",
+        "whatsapp": "WhatsApp Business",
+        "whatsapp_number": "Business Phone",
+        "whatsapp_number_hint": "Include country code, no + or spaces (e.g. 212600000000)",
+        "whatsapp_name": "Business Name",
+        "saved": "Integrations saved",
+        "saving": "Saving…",
+        "save_btn": "Save Integrations"
       },
       "localization": {
         "title": "Localization",
