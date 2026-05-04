@@ -191,26 +191,19 @@ export default function ShopSidebarNav({ isOpen, onClose }) {
           <div className="flex-1" />
 
           {/* ── Bottom: About, Privacy, Contact ── */}
-          <nav className="flex flex-col border-t border-zinc-100 py-2">
-            {bottomLinks.map((linkItem, idx) => {
-              const Chevron = isRtl ? ChevronLeft : ChevronRight;
-              return (
-                <Link
-                  key={linkItem.href}
-                  href={linkItem.href}
-                  onClick={onClose}
-                  className={`group flex items-center gap-4 px-5 py-3.5 text-base font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition-all duration-500 ease-out transform ${
-                    isOpen ? "translate-x-0 opacity-100" : isRtl ? "translate-x-8 opacity-0" : "-translate-x-8 opacity-0"
-                  }`}
-                  style={{ transitionDelay: `${isOpen ? idx * 50 + 300 : 0}ms` }}
-                >
-                  <linkItem.Icon className="h-5 w-5 text-zinc-400 group-hover:text-zinc-700 transition-colors shrink-0" strokeWidth={1.5} />
-                  <span className="flex-1">{linkItem.label}</span>
-                  <Chevron className="h-4 w-4 text-zinc-300 group-hover:text-zinc-600 transition-all" />
-                </Link>
-              );
-            })}
-          </nav>
+          <div className="md:hidden mx-5 border-t border-zinc-100 py-2 flex flex-col gap-0.5">
+            {bottomLinks.map((linkItem) => (
+              <Link
+                key={linkItem.href}
+                href={linkItem.href}
+                onClick={onClose}
+                className="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 transition-colors"
+              >
+                <linkItem.Icon className="h-5 w-5 shrink-0" strokeWidth={1.5} />
+                <span>{linkItem.label}</span>
+              </Link>
+            ))}
+          </div>
 
           <div className="border-t border-zinc-100 shrink-0">
             {!user && (

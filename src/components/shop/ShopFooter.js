@@ -44,6 +44,8 @@ export default function ShopFooter() {
             <a href="#" className="text-sm text-zinc-400 hover:text-white transition-colors">{tFooter.faq}</a>
             <a href="#" className="text-sm text-zinc-400 hover:text-white transition-colors">{tFooter.shipping_returns}</a>
             <a href="#" className="text-sm text-zinc-400 hover:text-white transition-colors">{tFooter.contact}</a>
+            <a href="#" className="text-sm text-zinc-400 hover:text-white transition-colors">{tFooter.about_us}</a>
+            <a href="#" className="text-sm text-zinc-400 hover:text-white transition-colors">{tFooter.privacy_policy}</a>
           </div>
         </div>
 

@@ -1,7 +1,8 @@
 import { productRepository } from './product.repository';
+import { resolveProductTranslation } from '@/lib/product-locale';
 
 /** Compute derived fields so every layer works with a consistent shape. */
-export function normalizeProduct(raw) {
+export function normalizeProduct(raw, locale) {
   if (!raw) return null;
   const images = Array.isArray(raw.product_images) ? raw.product_images : [];
   const sortedImages = [...images].sort((a, b) => {
@@ -25,7 +26,7 @@ export function normalizeProduct(raw) {
     if (pct > 0) badge = `-${pct}%`;
   }
 
-  return {
+  let product = {
     ...raw,
     image: mainImage?.url ?? null,
     main_image: mainImage?.url ?? null,
@@ -34,18 +35,23 @@ export function normalizeProduct(raw) {
     badge,
     category: raw.categories?.name ?? null,
   };
+
+  if (locale) product = resolveProductTranslation(product, locale);
+
+  return product;
 }
 
 export class ProductService {
   async getProducts(options = {}) {
-    const raw = await productRepository.findAll(options);
-    return raw.map(normalizeProduct);
+    const { locale, ...rest } = options;
+    const raw = await productRepository.findAll(rest);
+    return raw.map((r) => normalizeProduct(r, locale));
   }
 
-  async getProductById(id) {
+  async getProductById(id, locale) {
     if (!id) throw new Error('Product ID required');
     const raw = await productRepository.findById(id);
-    return normalizeProduct(raw);
+    return normalizeProduct(raw, locale);
   }
 
   async createProduct(data) {

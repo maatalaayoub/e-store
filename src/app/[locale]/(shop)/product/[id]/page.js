@@ -13,7 +13,7 @@ export default async function ProductDetailsPage({ params }) {
 
   let product;
   try {
-    product = await productService.getProductById(id);
+    product = await productService.getProductById(id, locale);
     if (!product || product.status !== "active") return notFound();
   } catch {
     return notFound();

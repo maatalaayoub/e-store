@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import { Check, ChevronDown, X, Loader2, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -8,9 +9,16 @@ import ImageManager from "./ImageManager";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
+const SUPPORTED_LANGS = ["en", "fr", "ar", "dr"];
+const LANG_LABELS = { en: "English", fr: "Français", ar: "العربية", dr: "الدارجة" };
+const RTL_LANGS = new Set(["ar", "dr"]);
+
+function emptyTranslations() {
+  return Object.fromEntries(SUPPORTED_LANGS.map((l) => [l, { name: "", description: "" }]));
+}
+
 const initialForm = {
-  name: "",
-  description: "",
+  translations: emptyTranslations(),
   category_id: "",
   price: "",
   discountType: "none", // "none" | "price" | "percentage"
@@ -27,6 +35,17 @@ function formReducer(state, action) {
   switch (action.type) {
     case "set":
       return { ...state, [action.field]: action.value };
+    case "set_translation":
+      return {
+        ...state,
+        translations: {
+          ...state.translations,
+          [action.lang]: {
+            ...state.translations[action.lang],
+            [action.field]: action.value,
+          },
+        },
+      };
     case "reset":
       return { ...initialForm, ...action.payload };
     default:
@@ -38,9 +57,26 @@ function productToForm(p) {
   let discountType = "none";
   if (p.discount_price != null) discountType = "price";
   else if (p.discount_percentage != null) discountType = "percentage";
+
+  const translations = emptyTranslations();
+  if (p.translations && typeof p.translations === "object") {
+    SUPPORTED_LANGS.forEach((l) => {
+      if (p.translations[l]) {
+        translations[l] = {
+          name: p.translations[l].name ?? "",
+          description: p.translations[l].description ?? "",
+        };
+      }
+    });
+  } else {
+    // Legacy product without translations: pre-fill all langs with existing name/description
+    SUPPORTED_LANGS.forEach((l) => {
+      translations[l] = { name: p.name ?? "", description: p.description ?? "" };
+    });
+  }
+
   return {
-    name: p.name ?? "",
-    description: p.description ?? "",
+    translations,
     category_id: p.category_id ?? "",
     price: p.price != null ? String(p.price) : "",
     discountType,
@@ -90,6 +126,9 @@ export default function ProductFormModal({
   const catPanelRef = useRef(null);
   const panelRef = useRef(null);
 
+  const params = useParams();
+  const locale = params?.locale || "en";
+  const [activeLang, setActiveLang] = useState(locale);
   const dict = useDictionary();
   const t = dict?.admin?.products?.form ?? {};
 
@@ -106,6 +145,7 @@ export default function ProductFormModal({
   useEffect(() => {
     if (open) {
       setMounted(true);
+      setActiveLang(locale);
       dispatch({ type: "reset", payload: product ? productToForm(product) : {} });
       setExistingImages(
         product?.images
@@ -241,9 +281,32 @@ export default function ProductFormModal({
     setSaving(true);
 
     try {
+      // Derive primary name/description from translations
+      const primaryTrans = form.translations[locale] ?? {};
+      const fallbackTrans = SUPPORTED_LANGS.map((l) => form.translations[l]).find((tr) => tr?.name?.trim());
+      const primaryName = primaryTrans.name?.trim() || fallbackTrans?.name?.trim() || "";
+      if (!primaryName) {
+        setError("Product name is required in at least one language.");
+        setSaving(false);
+        return;
+      }
+
+      // Build translations object — only include langs that have content
+      const translationsData = {};
+      SUPPORTED_LANGS.forEach((l) => {
+        const tr = form.translations[l];
+        if (tr?.name?.trim() || tr?.description?.trim()) {
+          translationsData[l] = {
+            name: tr.name.trim() || null,
+            description: tr.description.trim() || null,
+          };
+        }
+      });
+
       const payload = {
-        name: form.name.trim(),
-        description: form.description.trim() || null,
+        name: primaryName,
+        description: primaryTrans.description?.trim() || fallbackTrans?.description?.trim() || null,
+        translations: Object.keys(translationsData).length > 0 ? translationsData : null,
         category_id: form.category_id || null,
         price: parseFloat(form.price),
         discount_price:
@@ -406,6 +469,30 @@ export default function ProductFormModal({
               {t.section_details ?? "Product Details"}
             </h3>
 
+            {/* Language tab switcher */}
+            <div className="flex gap-1 p-1 bg-zinc-100 rounded-xl">
+              {SUPPORTED_LANGS.map((lang) => {
+                const hasContent = form.translations[lang]?.name?.trim();
+                return (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => setActiveLang(lang)}
+                    className={`relative flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                      activeLang === lang
+                        ? "bg-white text-zinc-900 shadow-sm"
+                        : "text-zinc-500 hover:text-zinc-700"
+                    }`}
+                  >
+                    {LANG_LABELS[lang]}
+                    {hasContent && (
+                      <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
             {/* Name */}
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1">
@@ -413,10 +500,11 @@ export default function ProductFormModal({
               </label>
               <input
                 type="text"
-                value={form.name}
-                onChange={f("name")}
-                required
-                minLength={2}
+                value={form.translations[activeLang]?.name ?? ""}
+                onChange={(e) =>
+                  dispatch({ type: "set_translation", lang: activeLang, field: "name", value: e.target.value })
+                }
+                dir={RTL_LANGS.has(activeLang) ? "rtl" : "ltr"}
                 placeholder={t.name_placeholder ?? "e.g. Premium Wireless Headphones"}
                 className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -506,8 +594,11 @@ export default function ProductFormModal({
                 {t.description_label ?? "Description"}
               </label>
               <textarea
-                value={form.description}
-                onChange={f("description")}
+                value={form.translations[activeLang]?.description ?? ""}
+                onChange={(e) =>
+                  dispatch({ type: "set_translation", lang: activeLang, field: "description", value: e.target.value })
+                }
+                dir={RTL_LANGS.has(activeLang) ? "rtl" : "ltr"}
                 rows={3}
                 placeholder={t.description_placeholder ?? "Product description..."}
                 className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"

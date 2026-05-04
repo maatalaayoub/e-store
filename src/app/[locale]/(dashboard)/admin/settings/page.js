@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   Store,
   CreditCard,
@@ -18,6 +19,8 @@ import {
   ChevronDown,
   ImageIcon,
   Loader2,
+  Maximize2,
+  X as XIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -153,7 +156,7 @@ function GeneralSection() {
         description={t.desc}
       />
       <Field label={t.store_name} hint={t.store_name_hint}>
-        <input className={inputClass} defaultValue="My Store" />
+        <input className={inputClass} defaultValue="My store" />
       </Field>
       <Field label={t.contact_email}>
         <input
@@ -360,10 +363,10 @@ function IntegrationsSection() {
           </svg>
           {t.whatsapp ?? 'WhatsApp Business'}
         </h3>
-        <Field label={t.whatsapp_number ?? 'Business Phone'} hint={t.whatsapp_number_hint ?? 'Include country code, no + or spaces (e.g. 212600000000)'}>
+        <Field label={t.whatsapp_number ?? 'Business Phone'} hint={t.whatsapp_number_hint ?? 'Include country code, no + or spaces (e.g. +212600000000)'}>
           <input
             className={inputClass}
-            placeholder="212600000000"
+            placeholder="+212600000000"
             value={form.whatsapp_number}
             onChange={handleChange('whatsapp_number')}
           />
@@ -371,7 +374,7 @@ function IntegrationsSection() {
         <Field label={t.whatsapp_name ?? 'Business Name'}>
           <input
             className={inputClass}
-            placeholder="My Store"
+            placeholder="My store"
             value={form.whatsapp_business_name}
             onChange={handleChange('whatsapp_business_name')}
           />
@@ -428,6 +431,7 @@ function HeroSection() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState({}); // { [idx]: true }
   const [confirmDelete, setConfirmDelete] = useState(null); // idx to confirm
+  const [previewImage, setPreviewImage] = useState(null); // url to preview fullscreen
 
   useEffect(() => {
     fetch('/api/v1/admin/hero-slides')
@@ -534,17 +538,9 @@ function HeroSection() {
                 <button onClick={() => move(idx, 1)} disabled={idx === slides.length - 1} className="p-1 rounded text-zinc-400 hover:text-zinc-700 disabled:opacity-30" title="Move down">
                   <ChevronDown className="h-4 w-4" />
                 </button>
-                {confirmDelete === idx ? (
-                  <span className="flex items-center gap-1 ms-1">
-                    <span className="text-xs text-red-500 font-medium">{t.delete_confirm ?? "Delete?"}</span>
-                    <button onClick={() => remove(idx)} className="rounded px-2 py-0.5 text-xs font-medium bg-red-500 text-white hover:bg-red-600">{t.yes ?? "Yes"}</button>
-                    <button onClick={() => setConfirmDelete(null)} className="rounded px-2 py-0.5 text-xs font-medium bg-zinc-100 text-zinc-700 hover:bg-zinc-200">{t.no ?? "No"}</button>
-                  </span>
-                ) : (
-                  <button onClick={() => setConfirmDelete(idx)} className="p-1 rounded text-red-400 hover:text-red-600" title="Remove slide">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                )}
+                <button onClick={() => setConfirmDelete(idx)} className="p-1 rounded text-red-400 hover:text-red-600" title="Remove slide">
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
             </div>
 
@@ -559,7 +555,14 @@ function HeroSection() {
                 <>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={slide.image_url} alt="" className="w-full h-40 object-cover rounded-xl" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl">
+                  <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-3 rounded-xl">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); setPreviewImage(slide.image_url); }}
+                      className="flex items-center gap-1.5 rounded-lg bg-white/20 hover:bg-white/30 px-3 py-2 text-white text-sm font-medium backdrop-blur-sm transition-colors"
+                    >
+                      <Maximize2 className="h-4 w-4" /> {t.preview_image ?? "Preview"}
+                    </button>
                     <span className="text-white text-sm font-medium flex items-center gap-1"><ImageIcon className="h-4 w-4" /> {t.change_image ?? "Change image"}</span>
                   </div>
                 </>
@@ -626,6 +629,63 @@ function HeroSection() {
           {saving ? (t.saving ?? 'Saving…') : (t.save ?? 'Save Slides')}
         </button>
       </div>
+
+      {/* ── Fullscreen image preview ── */}
+      {previewImage && typeof document !== "undefined" && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setPreviewImage(null)}
+        >
+          <button
+            onClick={() => setPreviewImage(null)}
+            className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+            aria-label="Close preview"
+          >
+            <XIcon className="h-5 w-5" />
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={previewImage}
+            alt="Hero preview"
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[90vh] max-w-full rounded-xl object-contain shadow-2xl"
+          />
+        </div>,
+        document.body
+      )}
+
+      {/* ── Delete confirmation dialog ── */}
+      {confirmDelete !== null && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setConfirmDelete(null)} />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6 flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 shrink-0">
+                <Trash2 className="h-5 w-5 text-red-600" />
+              </span>
+              <h3 className="text-base font-bold text-zinc-900">{t.dialog_title ?? "Delete Slide"}</h3>
+            </div>
+            <p className="text-sm text-zinc-500 leading-relaxed">
+              {t.dialog_desc ?? "Are you sure you want to delete this slide? This action cannot be undone."}
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+              >
+                {t.no ?? "Cancel"}
+              </button>
+              <button
+                onClick={() => remove(confirmDelete)}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+              >
+                {t.yes ?? "Yes, delete"}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </>
   );
 }
@@ -637,7 +697,11 @@ function Toggle({ defaultChecked = false, onChange }) {
       type="button"
       role="switch"
       aria-checked={on}
-      onClick={() => { setOn((v) => { onChange?.(!v); return !v; }); }}
+      onClick={() => {
+        const next = !on;
+        setOn(next);
+        onChange?.(next);
+      }}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
         on ? "bg-blue-600" : "bg-zinc-300"
       }`}

@@ -1,5 +1,32 @@
 import { SkeletonImage, SkeletonText, SkeletonButton } from "./primitives";
 
+// Mirrors HeroCarousel — full-viewport shimmer with centered text + button + dot indicators
+export function HeroCarouselSkeleton() {
+  return (
+    <section className="relative h-[100svh] w-full overflow-hidden -mt-[1px] bg-zinc-300 animate-pulse">
+      {/* dark overlay like the real hero */}
+      <div className="absolute inset-0 bg-black/30" />
+
+      {/* centered content placeholder */}
+      <div className="relative z-10 flex h-full w-full flex-col items-center justify-center px-6 gap-10">
+        {/* title placeholder — matches large uppercase heading */}
+        <div className="flex flex-col items-center gap-4 w-full max-w-xl">
+          <div className="h-12 sm:h-16 md:h-20 w-4/5 rounded bg-white/20" />
+        </div>
+        {/* CTA button placeholder — matches border button */}
+        <div className="h-11 w-44 rounded bg-white/20" />
+      </div>
+
+      {/* dot/progress indicators at bottom center */}
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-3">
+        <div className="h-[2px] w-12 rounded bg-white/40" />
+        <div className="h-[2px] w-6 rounded bg-white/20" />
+        <div className="h-[2px] w-6 rounded bg-white/20" />
+      </div>
+    </section>
+  );
+}
+
 // Mirrors ProductCard.js exactly:
 //   - aspect-square image area
 //   - 2-line product name (uppercase, tight tracking)

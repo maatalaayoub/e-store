@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS products (
 -- Run these on your existing Supabase database to add the new columns:
 ALTER TABLE products ADD COLUMN IF NOT EXISTS colors jsonb DEFAULT NULL;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS sizes  jsonb DEFAULT NULL;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS translations jsonb DEFAULT NULL;
 
 -- ========================
 -- PRODUCT IMAGES

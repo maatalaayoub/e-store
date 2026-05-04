@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -13,6 +14,7 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
+  AlertTriangle,
 } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
@@ -39,6 +41,7 @@ function OrderCard({ order, onCancel }) {
   const tStatus = tOrders.status ?? {};
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
   const STATUS_CONFIG = {
     pending:    { label: tStatus.pending    ?? "Pending",    Icon: Clock,         color: "text-amber-600",   bg: "bg-amber-50",   border: "border-amber-200" },
     processing: { label: tStatus.processing ?? "Processing", Icon: Loader2,       color: "text-blue-600",    bg: "bg-blue-50",    border: "border-blue-200" },
@@ -54,9 +57,9 @@ function OrderCard({ order, onCancel }) {
   });
 
   const handleCancel = async () => {
-    if (!window.confirm(tOrders.cancel_confirm ?? "Are you sure you want to cancel this order?")) return;
     setCancelling(true);
     setCancelError(null);
+    setShowConfirm(false);
     try {
       const res = await fetch("/api/v1/orders", {
         method: "PATCH",
@@ -142,7 +145,7 @@ function OrderCard({ order, onCancel }) {
             <p className="mb-2 text-xs text-red-500">{cancelError}</p>
           )}
           <button
-            onClick={handleCancel}
+            onClick={() => setShowConfirm(true)}
             disabled={cancelling}
             className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-4 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -150,6 +153,42 @@ function OrderCard({ order, onCancel }) {
             {cancelling ? "…" : (tOrders.cancel_order ?? "Cancel Order")}
           </button>
         </div>
+      )}
+
+      {/* Cancel confirmation dialog */}
+      {showConfirm && typeof document !== "undefined" && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+          onClick={() => setShowConfirm(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col items-center gap-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
+              <AlertTriangle className="h-6 w-6 text-red-500" />
+            </div>
+            <div className="text-center">
+              <p className="font-semibold text-zinc-900 text-base">{tOrders.cancel_confirm_title ?? "Cancel Order?"}</p>
+              <p className="mt-1 text-sm text-zinc-500">{tOrders.cancel_confirm_desc ?? "This action cannot be undone. The order will be permanently cancelled."}</p>
+            </div>
+            <div className="flex w-full gap-3 pt-1">
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="flex-1 rounded-xl border border-zinc-200 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors"
+              >
+                {tOrders.cancel_no ?? "Keep Order"}
+              </button>
+              <button
+                onClick={handleCancel}
+                className="flex-1 rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-700 transition-colors"
+              >
+                {tOrders.cancel_yes ?? "Yes, Cancel"}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

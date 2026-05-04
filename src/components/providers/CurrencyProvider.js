@@ -152,7 +152,7 @@ export default function CurrencyProvider({ children }) {
       if (madAmount == null) return '';
       const num = Number(String(madAmount).replace(/[^0-9.]/g, '')) || 0;
       const converted = num * rate;
-      return `${currency.sym} ${converted.toFixed(2)} ${currency.code}`;
+      return `\u200E${converted.toFixed(2)} ${currency.sym}`;
     },
   }), [currency, rate]);
 

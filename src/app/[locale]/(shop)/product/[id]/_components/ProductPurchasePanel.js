@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Check, Minus, Plus, ShoppingCart } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
+import { useCurrency } from "@/components/providers/CurrencyProvider";
 
 export default function ProductPurchasePanel({
   product,
@@ -24,6 +25,7 @@ export default function ProductPurchasePanel({
   const tProduct = dict?.product ?? {};
 
   const isOutOfStock = product.stock <= 0;
+  const { formatPrice } = useCurrency();
 
   const handleAdd = () => {
     addItem(
@@ -145,7 +147,7 @@ export default function ProductPurchasePanel({
           <p className="text-sm text-zinc-500">
             {tProduct.total ?? "Total"}:{" "}
             <span className="text-lg font-bold text-zinc-900">
-              ${(Number(product.effective_price) * qty).toFixed(2)}
+              {formatPrice(Number(product.effective_price) * qty)}
             </span>
           </p>
         </div>

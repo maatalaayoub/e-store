@@ -10,10 +10,12 @@ async function isAdmin(supabase, user) {
   return data?.role === 'admin';
 }
 
-export async function GET(_req, { params }) {
+export async function GET(req, { params }) {
   try {
     const { id } = await params;
-    const product = await productService.getProductById(id);
+    const { searchParams } = new URL(req.url);
+    const locale = searchParams.get('locale') ?? undefined;
+    const product = await productService.getProductById(id, locale);
     if (!product) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
     return NextResponse.json({ success: true, data: product });
   } catch {

@@ -10,6 +10,8 @@ import { WHATSAPP_NUMBER } from "@/config/constants";
 import { isRtlLocale } from "@/config/constants";
 import SearchableCombobox from "@/components/ui/SearchableCombobox";
 import { COUNTRIES, findCountry, detectCountryFromIp } from "@/data/countries";
+import { resolveProductTranslation } from "@/lib/product-locale";
+import { useCurrency } from "@/components/providers/CurrencyProvider";
 
 /* ── Per-country placeholder text ── */
 const COUNTRY_HINTS = {
@@ -44,12 +46,16 @@ export default function CheckoutClient({ locale, dict }) {
   /* ── Hydration & IP Country guard ── */
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
-    setHydrated(true);
+    let mounted = true;
     const controller = new AbortController();
 
     const fetchCountry = async () => {
-      const detected = await detectCountryFromIp(controller.signal);
-      if (detected) setForm((f) => ({ ...f, country: detected }));
+      try {
+        const detected = await detectCountryFromIp(controller.signal);
+        if (mounted && detected) setForm((f) => ({ ...f, country: detected }));
+      } catch (err) {
+        if (err?.name !== "AbortError") { /* ignore */ }
+      }
     };
 
     const fetchProfile = async () => {
@@ -57,7 +63,7 @@ export default function CheckoutClient({ locale, dict }) {
         const res = await fetch("/api/v1/users/me", { signal: controller.signal });
         if (res.ok) {
           const json = await res.json();
-          if (json.success) {
+          if (mounted && json.success) {
             const d = json.data;
             setForm((f) => ({
               ...f,
@@ -74,9 +80,13 @@ export default function CheckoutClient({ locale, dict }) {
       }
     };
 
-    fetchCountry().catch(() => {});
-    fetchProfile().catch(() => {});
-    return () => controller.abort();
+    if (mounted) setHydrated(true);
+    fetchCountry();
+    fetchProfile();
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
   }, []);
 
   /* ── Form state ── */
@@ -87,55 +97,13 @@ export default function CheckoutClient({ locale, dict }) {
     city: "",
     state: "",
     zip: "",
-    country: "United States",
+    country: "Morocco",
   });
   const [discount, setDiscount] = useState("");
   const [placing, setPlacing] = useState(false);
   const [errors, setErrors] = useState({});
 
-  /* ── Live exchange rates (base: MAD) ── */
-  const [rates, setRates] = useState({});
-  useEffect(() => {
-    const controller = new AbortController();
-    const fetchRates = async () => {
-      try {
-        const res = await fetch("https://open.er-api.com/v6/latest/MAD", { signal: controller.signal });
-        if (res.ok) {
-          const data = await res.json();
-          if (data?.rates) setRates(data.rates);
-        }
-      } catch (err) {
-        if (err?.name !== "AbortError") { /* rates unavailable — will show MAD fallback */ }
-      }
-    };
-    fetchRates().catch(() => {});
-    return () => controller.abort();
-  }, []);
-
-  const currencyMap = {
-    "United States":  { sym: "$",   code: "USD" },
-    "United Kingdom": { sym: "£",   code: "GBP" },
-    "Canada":         { sym: "C$",  code: "CAD" },
-    "Australia":      { sym: "A$",  code: "AUD" },
-    "Morocco":        { sym: "DH",  code: "MAD" },
-    "France":         { sym: "€",   code: "EUR" },
-    "Germany":        { sym: "€",   code: "EUR" },
-    "Italy":          { sym: "€",   code: "EUR" },
-    "Spain":          { sym: "€",   code: "EUR" },
-    "Netherlands":    { sym: "€",   code: "EUR" },
-    "Belgium":        { sym: "€",   code: "EUR" },
-    "Sweden":         { sym: "kr",  code: "SEK" },
-  };
-  const currency = currencyMap[form.country] ?? { sym: "DH", code: "MAD" };
-
-  /** Convert a MAD amount to the customer's display currency */
-  const toDisplay = (madAmount) => {
-    const rate = rates[currency.code];
-    if (!rate) return madAmount; // rates not loaded yet
-    return madAmount * rate;
-  };
-  const formatPrice = (madVal) =>
-    `${currency.sym} ${toDisplay(madVal).toFixed(2)} ${currency.code}`;
+  const { formatPrice } = useCurrency();
 
   /** Base subtotal always stays in MAD (stored in DB as MAD) */
   const subtotal = items.reduce(
@@ -183,8 +151,9 @@ export default function CheckoutClient({ locale, dict }) {
       ``,
       `*Items:*`,
       ...items.map((item) => {
+        const resolved = resolveProductTranslation(item, locale);
         const price = parsePrice(item.effective_price ?? item.price);
-        return `- ${item.name} x${item.quantity} = ${formatPrice(price * item.quantity)}`;
+        return `- ${resolved.name} x${item.quantity} = ${formatPrice(price * item.quantity)}`;
       }),
       ``,
       `*Total: ${formatPrice(subtotal)}*`,
@@ -415,6 +384,7 @@ export default function CheckoutClient({ locale, dict }) {
                   <p className="py-8 text-sm text-zinc-400 text-center">{tCart.empty_state_title ?? "Your cart is empty"}</p>
                 ) : (
                   items.map((item) => {
+                    const resolved = resolveProductTranslation(item, locale);
                     const price = parsePrice(item.effective_price ?? item.price);
                     const img = Array.isArray(item.images) && item.images[0]?.url
                       ? item.images[0].url
@@ -423,10 +393,10 @@ export default function CheckoutClient({ locale, dict }) {
                       <div key={item.id} className="flex items-start gap-4 py-4">
                         {/* Thumbnail */}
                         <div className="h-[4.5rem] w-[4.5rem] relative shrink-0 rounded overflow-hidden border border-zinc-200">
-                          <Image src={img} alt={item.name} fill className="object-cover" />
+                          <Image src={img} alt={resolved.name} fill className="object-cover" />
                         </div>
                         <div className="flex flex-1 flex-col gap-1 min-w-0">
-                          <span className="text-sm text-zinc-800 leading-snug">{item.name}</span>
+                          <span className="text-sm text-zinc-800 leading-snug">{resolved.name}</span>
                           <span className="text-sm font-medium text-zinc-900 whitespace-nowrap">
                             {formatPrice(price * item.quantity)}
                           </span>
@@ -459,7 +429,7 @@ export default function CheckoutClient({ locale, dict }) {
                             <button
                               type="button"
                               onClick={() => removeItem(item.id)}
-                              aria-label={`Remove ${item.name}`}
+                              aria-label={`Remove ${resolved.name}`}
                               className="text-zinc-300 hover:text-red-400 transition-colors"
                             >
                               <Trash2 className="h-4 w-4" />

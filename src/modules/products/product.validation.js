@@ -1,5 +1,10 @@
 import { z } from 'zod';
 
+const translationEntry = z.object({
+  name: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+});
+
 export const productSchema = z.object({
   name: z.string().min(2).max(200),
   description: z.string().optional().nullable(),
@@ -15,6 +20,7 @@ export const productSchema = z.object({
     .optional()
     .nullable(),
   sizes: z.array(z.string().min(1)).optional().nullable(),
+  translations: z.record(z.string(), translationEntry).optional().nullable(),
 });
 
 export const productUpdateSchema = productSchema.partial();

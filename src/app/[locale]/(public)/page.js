@@ -9,12 +9,14 @@ import FeaturedProducts from "@/components/shop/FeaturedProducts";
 import ShopPerks from "@/components/shop/ShopPerks";
 import ShopFooter from "@/components/shop/ShopFooter";
 import { useBfcacheReload } from "@/hooks/useBfcacheReload";
+import { HeroCarouselSkeleton } from "@/components/skeletons";
 
 export default function HomePage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const params = useParams();
   const locale = params?.locale || "en";
   const [slides, setSlides] = useState([]);
+  const [heroLoading, setHeroLoading] = useState(true);
 
   useBfcacheReload();
 
@@ -33,7 +35,8 @@ export default function HomePage() {
           );
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setHeroLoading(false));
   }, [locale]);
 
   return (
@@ -42,7 +45,7 @@ export default function HomePage() {
       <ShopHeader onOpenCart={() => setIsCartOpen(true)} />
 
       <main className="flex-1">
-        <HeroCarousel slides={slides} />
+        {heroLoading ? <HeroCarouselSkeleton /> : <HeroCarousel slides={slides} />}
         <FeaturedProducts />
         <ShopPerks />
       </main>

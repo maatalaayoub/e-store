@@ -1,18 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, Share2, Heart } from "lucide-react";
+import { ChevronLeft, ChevronRight, Share2, Heart, Maximize2, X as XIcon } from "lucide-react";
 import { useFavorite } from "@/hooks/useFavorite";
 
 export default function ProductGallery({ images = [], productName, productId }) {
   const fallback = "/placeholder-view.svg";
   const list = images?.length > 0 ? images : [{ url: fallback, id: "fb" }];
   const [idx, setIdx] = useState(0);
+  const [lightbox, setLightbox] = useState(false);
   const { isFavorited, toggle: toggleFavorite } = useFavorite(productId);
 
   const prev = () => setIdx((i) => (i === 0 ? list.length - 1 : i - 1));
   const next = () => setIdx((i) => (i === list.length - 1 ? 0 : i + 1));
+
+  const closeLightbox = useCallback(() => setLightbox(false), []);
+
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") closeLightbox();
+      if (e.key === "ArrowLeft") prev();
+      if (e.key === "ArrowRight") next();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lightbox]);
 
   const current = list[idx];
 
@@ -45,13 +61,25 @@ export default function ProductGallery({ images = [], productName, productId }) 
       {/* CENTER: main image */}
       <div className="relative flex-1 aspect-square overflow-hidden rounded-2xl bg-zinc-100">
         <Image
+          key={idx}
           src={current?.url || fallback}
           alt={productName}
           fill
           priority
           sizes="(max-width: 1024px) 100vw, 50vw"
-          className="object-cover object-center"
+          className="object-cover object-center cursor-zoom-in gallery-fade-in"
+          onClick={() => setLightbox(true)}
         />
+
+        {/* Expand button */}
+        <button
+          type="button"
+          onClick={() => setLightbox(true)}
+          aria-label="View full image"
+          className="absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm border border-zinc-200 text-zinc-600 hover:text-zinc-900 shadow transition-colors"
+        >
+          <Maximize2 className="h-4 w-4" />
+        </button>
 
         {/* Favorite button overlay — mobile only */}
         <button
@@ -144,6 +172,62 @@ export default function ProductGallery({ images = [], productName, productId }) 
             </button>
           ))}
         </div>
+      )}
+
+      {/* ── Lightbox ── */}
+      {lightbox && typeof document !== "undefined" && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
+          onClick={closeLightbox}
+        >
+          {/* Close */}
+          <button
+            onClick={closeLightbox}
+            aria-label="Close"
+            className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+          >
+            <XIcon className="h-5 w-5" />
+          </button>
+
+          {/* Prev */}
+          {list.length > 1 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); prev(); }}
+              aria-label="Previous image"
+              className="absolute left-4 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+          )}
+
+          {/* Image */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={current?.url || fallback}
+            alt={productName}
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain shadow-2xl"
+          />
+
+          {/* Next */}
+          {list.length > 1 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); next(); }}
+              aria-label="Next image"
+              className="absolute right-4 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
+          )}
+
+          {/* Counter */}
+          {list.length > 1 && (
+            <span className="absolute bottom-5 left-1/2 -translate-x-1/2 text-white/70 text-sm tabular-nums">
+              {idx + 1} / {list.length}
+            </span>
+          )}
+        </div>,
+        document.body
       )}
     </div>
   );

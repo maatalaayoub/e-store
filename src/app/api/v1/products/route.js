@@ -22,11 +22,12 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const featured = searchParams.get('featured') === 'true' ? true : undefined;
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')) : undefined;
+    const locale = searchParams.get('locale') ?? undefined;
     // Admins can filter by status (including 'all'); public only sees 'active'
     const statusParam = searchParams.get('status');
     const status = admin ? (statusParam ?? 'active') : 'active';
 
-    const products = await productService.getProducts({ status, featured, limit });
+    const products = await productService.getProducts({ status, featured, limit, locale });
     return NextResponse.json({ success: true, data: products });
   } catch (error) {
     return NextResponse.json(

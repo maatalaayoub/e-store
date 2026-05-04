@@ -4,17 +4,20 @@ import { useDictionary } from "@/components/providers/LocaleProvider";;
 import { useCurrency } from "@/components/providers/CurrencyProvider";
 import { useCartStore } from "@/store/useCartStore";
 import { useFavorite } from "@/hooks/useFavorite";
+import { resolveProductTranslation } from "@/lib/product-locale";
 import { Heart } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
-export default function ProductCard({ product, onAdded }) {
+export default function ProductCard({ product: rawProduct, onAdded }) {
   const dict = useDictionary();
   const { locale } = useParams();
   const tHome = dict?.home ?? {};
   const { addItem } = useCartStore();
   const { formatPrice } = useCurrency();
-  const { isFavorited, toggle: toggleFavorite } = useFavorite(product?.id);
+  const { isFavorited, toggle: toggleFavorite } = useFavorite(rawProduct?.id);
+
+  const product = resolveProductTranslation(rawProduct, locale);
 
   const handleAdd = () => {
     addItem(product);

@@ -18,7 +18,7 @@ export default function FeaturedProducts({ onItemAdded }) {
   useEffect(() => {
     let mounted = true;
     const controller = new AbortController();
-    fetchFeaturedProducts({ signal: controller.signal })
+    fetchFeaturedProducts({ signal: controller.signal, locale })
       .then((data) => { if (mounted) setProducts(data); })
       .catch(() => {});
     return () => {

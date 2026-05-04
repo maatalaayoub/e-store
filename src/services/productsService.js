@@ -4,9 +4,10 @@ import { featuredProductsFallback } from "@/data/featuredProducts";
  * Fetches featured + active products for the homepage.
  * Falls back to static data on failure so the storefront never shows empty.
  */
-export async function fetchFeaturedProducts({ signal } = {}) {
+export async function fetchFeaturedProducts({ signal, locale } = {}) {
   try {
-    const res = await fetch("/api/v1/products?status=active", {
+    const localeParam = locale ? `&locale=${locale}` : '';
+    const res = await fetch(`/api/v1/products?status=active${localeParam}`, {
       signal,
       cache: "no-store",
     });
