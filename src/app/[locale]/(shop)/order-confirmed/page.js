@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { CheckCircle2, Phone, Package, Truck, Download } from "lucide-react";
@@ -10,6 +10,14 @@ import { createClient } from "@/lib/supabase/client";
 import { downloadInvoiceById } from "@/lib/invoice-pdf";
 
 export default function OrderConfirmedPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white" />}>
+      <OrderConfirmedInner />
+    </Suspense>
+  );
+}
+
+function OrderConfirmedInner() {
   const { locale } = useParams();
   const searchParams = useSearchParams();
   const orderId = searchParams.get("id");
