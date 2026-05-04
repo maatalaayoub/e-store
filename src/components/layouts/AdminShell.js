@@ -41,6 +41,7 @@ export default function AdminShell({ children }) {
   const { locale } = useParams();
   const dict = useDictionary();
   const tNav = dict?.admin?.nav ?? {};
+  const isRtl = locale === "ar" || locale === "dr";
 
   const withLocale = (href) => `/${locale}${href}`;
 
@@ -61,8 +62,10 @@ export default function AdminShell({ children }) {
 
       {/* SIDEBAR */}
       <aside
-        className={`fixed inset-y-0 left-0 z-[100] w-64 border-r border-zinc-100 bg-white transition-all duration-300 lg:static lg:translate-x-0 ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-[100%]"
+        className={`fixed inset-y-0 z-[100] w-64 border-e border-zinc-100 bg-white transition-all duration-300 lg:static lg:translate-x-0 scrollbar-hide ${
+          isRtl ? "right-0" : "left-0"
+        } ${
+          isSidebarOpen ? "translate-x-0" : isRtl ? "translate-x-[100%]" : "-translate-x-[100%]"
         }`}
       >
         <div className="flex h-16 items-center justify-between border-b border-zinc-200 px-6">
@@ -146,13 +149,10 @@ export default function AdminShell({ children }) {
               <Bell className="h-5 w-5" />
               <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500" />
             </button>
-            <div className="h-8 w-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">
-              A
-            </div>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto scrollbar-hide p-4 sm:p-6 md:p-8">
+        <div data-scroll-main className="flex-1 overflow-y-auto scrollbar-hide p-4 sm:p-6 md:p-8" style={{ paddingBottom: "6rem" }}>
           {children}
         </div>
       </main>

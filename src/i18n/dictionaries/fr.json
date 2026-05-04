@@ -36,7 +36,34 @@
     "favorites": "Favoris",
     "privacy_policy": "Politique de confidentialité",
     "contact": "Nous contacter",
-    "account_settings": "Paramètres du compte"
+    "account_settings": "Paramètres du compte",
+    "track_order": "Suivre ma commande"
+  },
+  "track_order": {
+    "title": "Suivre votre commande",
+    "subtitle": "Entrez votre numéro de commande pour vérifier le statut actuel.",
+    "placeholder": "ex. 47382910",
+    "submit": "Suivre",
+    "searching": "Recherche…",
+    "not_found": "Aucune commande trouvée avec cet identifiant. Veuillez vérifier et réessayer.",
+    "error": "Une erreur s'est produite. Veuillez réessayer.",
+    "back": "Retour",
+    "status": "Statut",
+    "order_id": "N° de commande",
+    "customer": "Client",
+    "phone": "Téléphone",
+    "city": "Ville",
+    "date": "Date",
+    "items": "Articles",
+    "total": "Total",
+    "download_invoice": "Télécharger la facture",
+    "downloading": "Téléchargement…",
+    "status_pending": "En attente",
+    "status_confirmed": "Confirmée",
+    "status_processing": "En traitement",
+    "status_shipped": "Expédiée",
+    "status_delivered": "Livrée",
+    "status_cancelled": "Annulée"
   },
   "home": {
     "title_part1": "Redéfinissez votre",
@@ -154,6 +181,7 @@
       "headers": { "product": "Produit", "category": "Catégorie", "inventory": "Stock", "price": "Prix", "status": "Statut", "actions": "Actions", "stock": "Stock" },
       "empty_title": "Aucun produit",
       "empty_desc": "Ajoutez votre premier produit pour commencer à vendre.",
+      "filter_panel": { "category": "Catégorie", "all": "Tous", "featured_only": "En vedette uniquement", "has_discount": "Avec remise", "clear": "Effacer les filtres" },
       "form": {
         "add_title": "Ajouter un produit",
         "edit_title": "Modifier le produit",
@@ -187,7 +215,18 @@
         "images_upload": "Cliquer pour téléverser des images",
         "images_add_more": "Ajouter d'autres images",
         "images_no_main_warning": "Aucune image principale définie. La première image sera utilisée par défaut.",
-        "delete_confirm": "Supprimer \"{name}\" ? Cette action est irréversible."
+        "delete_confirm": "Supprimer \"{name}\" ? Cette action est irréversible.",
+        "status_active": "Actif",
+        "status_draft": "Brouillon",
+        "status_archived": "Archivé",
+        "section_variants": "Variantes",
+        "variants_optional": "optionnel",
+        "colors_label": "Couleurs",
+        "add_color": "+ Ajouter une couleur",
+        "color_name_placeholder": "Nom de couleur (ex. Brun royal)",
+        "sizes_label": "Tailles",
+        "add_size": "+ Ajouter une taille",
+        "size_placeholder": "Taille (ex. M, 42, XL)"
       }
     },
     "orders": {
@@ -195,11 +234,12 @@
       "subtitle": "Suivez et préparez les commandes de vos clients.",
       "export": "Exporter",
       "stats": { "total": "Total commandes", "pending": "En attente", "shipped": "Expédiées", "revenue": "Revenu" },
-      "tabs": { "all": "Toutes", "pending": "En attente", "processing": "En cours", "shipped": "Expédiées", "delivered": "Livrées", "cancelled": "Annulées" },
+      "tabs": { "all": "Toutes", "pending": "En attente", "confirmed": "Confirmée", "processing": "En cours", "shipped": "Expédiées", "delivered": "Livrées", "cancelled": "Annulées" },
       "search": "Rechercher des commandes...",
       "headers": { "order": "Commande", "customer": "Client", "date": "Date", "total": "Total", "status": "Statut", "action": "Action" },
       "empty_title": "Aucune commande",
-      "empty_desc": "Les commandes apparaîtront ici lors des achats."
+      "empty_desc": "Les commandes apparaîtront ici lors des achats.",
+      "filter_panel": { "date_range": "Période", "all_time": "Toujours", "today": "Aujourd'hui", "last_7": "7 derniers jours", "last_30": "30 derniers jours", "cancelled_by": "Annulé par", "any": "Tous", "customer": "Client", "admin_cancel": "Admin", "clear": "Effacer les filtres" }
     },
     "customers": {
       "title": "Clients",
@@ -389,6 +429,27 @@
     "step2": "Nous vous appellerons pour confirmer votre commande.",
     "step3": "Votre commande sera préparée et expédiée.",
     "continue": "Continuer vos achats",
-    "orders": "Mes commandes"
+    "orders": "Mes commandes",
+    "download_invoice": "Télécharger la facture",
+    "downloading": "Téléchargement…",
+    "order_number_label": "Numéro de commande"
+  },
+  "invoice": {
+    "title": "Facture",
+    "date": "Date",
+    "bill_to": "Facturé à",
+    "ship_to": "Adresse de livraison",
+    "item": "Article",
+    "qty": "Qté",
+    "price": "Prix",
+    "subtotal": "Sous-total",
+    "total": "Total",
+    "status": "Statut",
+    "thank_you": "Merci pour votre achat !",
+    "download": "Télécharger le PDF",
+    "generating": "Génération…",
+    "back": "Retour",
+    "loading": "Chargement de la facture…",
+    "go_home": "Aller à l'accueil"
   }
 }

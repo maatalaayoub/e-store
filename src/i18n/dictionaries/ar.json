@@ -36,7 +36,34 @@
     "favorites": "المفضلة",
     "privacy_policy": "سياسة الخصوصية",
     "contact": "تواصل معنا",
-    "account_settings": "إعدادات الحساب"
+    "account_settings": "إعدادات الحساب",
+    "track_order": "تتبع الطلب"
+  },
+  "track_order": {
+    "title": "تتبع طلبك",
+    "subtitle": "أدخل رقم طلبك للتحقق من حالته الحالية.",
+    "placeholder": "مثال: 47382910",
+    "submit": "تتبع",
+    "searching": "جارٍ البحث…",
+    "not_found": "لم يتم العثور على طلب بهذا الرقم. تحقق منه وأعد المحاولة.",
+    "error": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+    "back": "رجوع",
+    "status": "الحالة",
+    "order_id": "رقم الطلب",
+    "customer": "العميل",
+    "phone": "الهاتف",
+    "city": "المدينة",
+    "date": "التاريخ",
+    "items": "المنتجات",
+    "total": "الإجمالي",
+    "download_invoice": "تحميل الفاتورة",
+    "downloading": "جارٍ التحميل…",
+    "status_pending": "في الانتظار",
+    "status_confirmed": "مؤكد",
+    "status_processing": "قيد المعالجة",
+    "status_shipped": "تم الشحن",
+    "status_delivered": "تم التسليم",
+    "status_cancelled": "ملغى"
   },
   "home": {
     "title_part1": "أعد تعريف",
@@ -154,6 +181,7 @@
       "headers": { "product": "المنتج", "category": "الفئة", "inventory": "المخزون", "price": "السعر", "status": "الحالة", "actions": "الإجراءات", "stock": "المخزون" },
       "empty_title": "لا توجد منتجات بعد",
       "empty_desc": "أضف منتجك الأول لتبدأ البيع.",
+      "filter_panel": { "category": "الفئة", "all": "الكل", "featured_only": "المميزة فقط", "has_discount": "لديها خصم", "clear": "مسح الفلاتر" },
       "form": {
         "add_title": "إضافة منتج",
         "edit_title": "تعديل المنتج",
@@ -187,7 +215,18 @@
         "images_upload": "اضغط لرفع صور المنتج",
         "images_add_more": "إضافة صور أخرى",
         "images_no_main_warning": "لم يتم تحديد صورة رئيسية. سيتم استخدام أول صورة افتراضيًا.",
-        "delete_confirm": "حذف \"{name}\"؟ لا يمكن التراجع عن هذا الإجراء."
+        "delete_confirm": "حذف \"{name}\"؟ لا يمكن التراجع عن هذا الإجراء.",
+        "status_active": "نشط",
+        "status_draft": "مسودة",
+        "status_archived": "مؤرشف",
+        "section_variants": "الخيارات",
+        "variants_optional": "اختياري",
+        "colors_label": "الألوان",
+        "add_color": "+ أضف لوناً",
+        "color_name_placeholder": "اسم اللون (مثال: بني ملكي)",
+        "sizes_label": "المقاسات",
+        "add_size": "+ أضف مقاساً",
+        "size_placeholder": "المقاس (مثال: M، 42، XL)"
       }
     },
     "orders": {
@@ -195,11 +234,12 @@
       "subtitle": "تتبّع طلبات عملائك وقم بتنفيذها.",
       "export": "تصدير",
       "stats": { "total": "إجمالي الطلبات", "pending": "قيد الانتظار", "shipped": "تم الشحن", "revenue": "الإيرادات" },
-      "tabs": { "all": "الكل", "pending": "قيد الانتظار", "processing": "قيد المعالجة", "shipped": "مشحون", "delivered": "تم التوصيل", "cancelled": "ملغى" },
+      "tabs": { "all": "الكل", "pending": "قيد الانتظار", "confirmed": "مؤكد", "processing": "قيد المعالجة", "shipped": "مشحون", "delivered": "تم التوصيل", "cancelled": "ملغى" },
       "search": "ابحث في الطلبات...",
       "headers": { "order": "الطلب", "customer": "العميل", "date": "التاريخ", "total": "المجموع", "status": "الحالة", "action": "الإجراء" },
       "empty_title": "لا توجد طلبات بعد",
-      "empty_desc": "ستظهر الطلبات هنا عند شراء العملاء."
+      "empty_desc": "ستظهر الطلبات هنا عند شراء العملاء.",
+      "filter_panel": { "date_range": "نطاق التاريخ", "all_time": "كل الأوقات", "today": "اليوم", "last_7": "آخر 7 أيام", "last_30": "آخر 30 يومًا", "cancelled_by": "ألغاه", "any": "الكل", "customer": "العميل", "admin_cancel": "المشرف", "clear": "مسح الفلاتر" }
     },
     "customers": {
       "title": "العملاء",
@@ -389,6 +429,27 @@
     "step2": "سنتصل بك لتأكيد طلبك.",
     "step3": "سيتم تجهيز طلبك وشحنه.",
     "continue": "مواصلة التسوق",
-    "orders": "طلباتي"
+    "orders": "طلباتي",
+    "download_invoice": "تحميل الفاتورة",
+    "downloading": "جارٍ التحميل…",
+    "order_number_label": "رقم الطلب"
+  },
+  "invoice": {
+    "title": "فاتورة",
+    "date": "التاريخ",
+    "bill_to": "فوتر إلى",
+    "ship_to": "عنوان الشحن",
+    "item": "المنتج",
+    "qty": "الكمية",
+    "price": "السعر",
+    "subtotal": "المجموع الفرعي",
+    "total": "الإجمالي",
+    "status": "الحالة",
+    "thank_you": "شكراً لشرائك!",
+    "download": "تحميل PDF",
+    "generating": "جارٍ الإنشاء…",
+    "back": "رجوع",
+    "loading": "جارٍ تحميل الفاتورة…",
+    "go_home": "العودة للرئيسية"
   }
 }

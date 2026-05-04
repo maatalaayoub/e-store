@@ -18,6 +18,7 @@ export async function GET() {
       .from('orders')
       .select(`
         id,
+        order_number,
         status,
         total_amount,
         currency_code,

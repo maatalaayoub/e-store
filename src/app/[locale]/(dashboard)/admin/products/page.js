@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Plus,
   Search,
@@ -11,7 +12,9 @@ import {
   Trash2,
   Star,
   Loader2,
+  Check,
 } from "lucide-react";
+
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { AdminProductsSkeleton } from "@/components/skeletons";
 import ProductFormModal from "./_components/ProductFormModal";
@@ -46,11 +49,19 @@ export default function AdminProductsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filterCoords, setFilterCoords] = useState({ top: 0, left: 0 });
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterFeatured, setFilterFeatured] = useState(false);
+  const [filterDiscount, setFilterDiscount] = useState(false);
+  const filterBtnRef = useRef(null);
+  const filterPanelRef = useRef(null);
 
   const dict = useDictionary();
   const t = dict?.admin?.products ?? {};
   const tTabs = t.tabs ?? {};
   const tH = t.headers ?? {};
+  const tFp = t.filter_panel ?? {};
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
   const fetchProducts = useCallback(async () => {
@@ -116,15 +127,56 @@ export default function AdminProductsPage() {
     setCategories((prev) => [...prev, cat]);
   }
 
-  // ── Filter ─────────────────────────────────────────────────────────────────
+  // ── Filter panel ───────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!filterOpen) return;
+    const handler = (e) => {
+      if (
+        filterBtnRef.current && !filterBtnRef.current.contains(e.target) &&
+        filterPanelRef.current && !filterPanelRef.current.contains(e.target)
+      ) setFilterOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [filterOpen]);
+
+  const openFilter = () => {
+    if (filterOpen) { setFilterOpen(false); return; }
+    const rect = filterBtnRef.current?.getBoundingClientRect();
+    if (rect) {
+      const PANEL_H = 270;
+      const GAP = 8;
+      const scrollContainer = document.querySelector("[data-scroll-main]");
+      const overflow = rect.bottom + GAP + PANEL_H - window.innerHeight + 16;
+      if (overflow > 0 && scrollContainer) {
+        const canScroll = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight;
+        scrollContainer.scrollTop += Math.min(overflow, canScroll);
+      }
+      const r = filterBtnRef.current.getBoundingClientRect();
+      const isRtl = document.documentElement.dir === "rtl";
+      // position:fixed → pure viewport coords, no scrollX/Y
+      const left = isRtl ? r.left : Math.max(8, r.right - 240);
+      setFilterCoords({ top: r.bottom + GAP, left });
+    }
+    setFilterOpen(true);
+  };
+
+  const clearFilters = () => { setFilterCategory(""); setFilterFeatured(false); setFilterDiscount(false); };
+  const activeFilterCount = (filterCategory ? 1 : 0) + (filterFeatured ? 1 : 0) + (filterDiscount ? 1 : 0);
+
+  // ── Filtered list ──────────────────────────────────────────────────────────
   const filtered = (products ?? []).filter((p) => {
-    if (!search.trim()) return true;
-    const q = search.toLowerCase();
-    return (
-      p.name?.toLowerCase().includes(q) ||
-      p.category?.toLowerCase().includes(q)
-    );
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      if (!p.name?.toLowerCase().includes(q) && !p.category?.toLowerCase().includes(q)) return false;
+    }
+    if (filterCategory && p.category !== filterCategory) return false;
+    if (filterFeatured && !p.is_featured) return false;
+    if (filterDiscount && !(p.effective_price != null && p.effective_price < p.price)) return false;
+    return true;
   });
+
+  const uniqueCategories = [...new Set((products ?? []).map((p) => p.category).filter(Boolean))];
 
   if (!dict?.admin?.products) return <AdminProductsSkeleton />;
 
@@ -184,10 +236,97 @@ export default function AdminProductsPage() {
                 className="w-full sm:w-64 rounded-lg border border-zinc-200 bg-white pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
-            <button className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
+            <button
+              ref={filterBtnRef}
+              onClick={openFilter}
+              className={`relative flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                filterOpen || activeFilterCount > 0
+                  ? "border-blue-300 bg-blue-50 text-blue-700"
+                  : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
+              }`}
+            >
               <Filter className="h-4 w-4" />
-              <span className="hidden sm:inline">{dict?.common?.filter}</span>
+              <span className="hidden sm:inline">{dict?.common?.filter ?? "Filter"}</span>
+              {activeFilterCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
+                  {activeFilterCount}
+                </span>
+              )}
             </button>
+
+            {filterOpen && typeof document !== "undefined" && createPortal(
+              <div
+                ref={filterPanelRef}
+                style={{ position: "fixed", top: filterCoords.top, left: filterCoords.left, width: 240, zIndex: 9999 }}
+                className="rounded-xl border border-zinc-200 bg-white shadow-xl p-4 flex flex-col gap-4"
+              >
+                {/* Category */}
+                {uniqueCategories.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-2">{tFp.category ?? "Category"}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setFilterCategory("")}
+                        className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
+                          !filterCategory ? "bg-blue-600 text-white border-blue-600" : "bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50"
+                        }`}
+                      >
+                        {tFp.all ?? "All"}
+                      </button>
+                      {uniqueCategories.map((cat) => (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => setFilterCategory(cat === filterCategory ? "" : cat)}
+                          className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
+                            filterCategory === cat ? "bg-blue-600 text-white border-blue-600" : "bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50"
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Toggles */}
+                <div className="flex flex-col gap-2">
+                  {[
+                    { key: "featured", label: tFp.featured_only ?? "Featured only", value: filterFeatured, set: setFilterFeatured },
+                    { key: "discount", label: tFp.has_discount  ?? "Has discount",  value: filterDiscount, set: setFilterDiscount },
+                  ].map(({ key, label, value, set }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => set((v) => !v)}
+                      className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+                        value ? "border-blue-300 bg-blue-50 text-blue-700" : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50"
+                      }`}
+                    >
+                      <span className={`h-4 w-4 rounded border flex items-center justify-center shrink-0 ${
+                        value ? "bg-blue-600 border-blue-600" : "border-zinc-300"
+                      }`}>
+                        {value && <Check className="h-3 w-3 text-white" />}
+                      </span>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Footer */}
+                {activeFilterCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => { clearFilters(); setFilterOpen(false); }}
+                    className="w-full text-xs font-medium text-red-500 hover:text-red-600 border-t border-zinc-100 pt-3 mt-1"
+                  >
+                    {tFp.clear ?? "Clear filters"}
+                  </button>
+                )}
+              </div>,
+              document.body
+            )}
           </div>
         </div>
 
@@ -301,7 +440,7 @@ export default function AdminProductsPage() {
 
         {/* DESKTOP TABLE */}
         {filtered.length > 0 && (
-          <div className="hidden sm:block overflow-x-auto">
+          <div className="hidden sm:block overflow-x-auto scrollbar-hide">
             <table className="w-full text-left text-sm text-zinc-600">
               <thead className="bg-white text-xs uppercase text-zinc-400 border-b border-zinc-100">
                 <tr>

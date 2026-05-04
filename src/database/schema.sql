@@ -98,11 +98,13 @@ CREATE UNIQUE INDEX IF NOT EXISTS product_images_one_main
 CREATE TABLE IF NOT EXISTS orders (
   id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id uuid REFERENCES auth.users(id) ON DELETE RESTRICT,
-  status text CHECK (status IN ('pending', 'processing', 'shipped', 'delivered', 'cancelled')) DEFAULT 'pending',
+  status text CHECK (status IN ('pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled')) DEFAULT 'pending',
   total_amount numeric(10, 2) NOT NULL,         -- always stored in MAD (base currency)
   currency_code text DEFAULT 'MAD',             -- customer-facing currency at order time
   exchange_rate numeric(12, 6) DEFAULT 1.0,     -- rate: 1 MAD → currency_code at order time
   shipping_address jsonb NOT NULL,              -- { full_name, phone, address, city, state, zip, country }
+  cancelled_by text CHECK (cancelled_by IN ('customer', 'admin')) DEFAULT NULL,
+  order_number BIGINT,                          -- 8-digit random app-generated ID shown to customers
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -110,6 +112,14 @@ CREATE TABLE IF NOT EXISTS orders (
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS currency_code text DEFAULT 'MAD';
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS exchange_rate numeric(12, 6) DEFAULT 1.0;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS cancelled_by text CHECK (cancelled_by IN ('customer', 'admin')) DEFAULT NULL;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_number BIGINT;
+-- Update CHECK constraint to include 'confirmed' status (run once on existing DB):
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check;
+ALTER TABLE orders ADD CONSTRAINT orders_status_check
+  CHECK (status IN ('pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'));
+-- Backfill any NULL order_numbers and create unique index:
+UPDATE orders SET order_number = floor(random() * 90000000 + 10000000)::bigint WHERE order_number IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS orders_order_number_idx ON orders (order_number);
 
 -- Run once to add city column to existing users table (idempotent):
 ALTER TABLE users ADD COLUMN IF NOT EXISTS city text;

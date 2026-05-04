@@ -40,18 +40,32 @@ export async function POST(req) {
     // Use service client to bypass RLS — guests can create orders too
     const db = createServiceClient();
 
-    const { data: order, error: orderErr } = await db
-      .from('orders')
-      .insert({
-        user_id: userId,
-        status: 'pending',
-        total_amount: total_mad,
-        currency_code: currency_code ?? 'MAD',
-        exchange_rate: exchange_rate ?? 1,
-        shipping_address: shipping,
-      })
-      .select('id')
-      .single();
+    // Generate a random 8-digit order number; retry up to 5 times on collision
+    const randomOrderNumber = () => Math.floor(10000000 + Math.random() * 90000000);
+
+    let order, orderErr;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const result = await db
+        .from('orders')
+        .insert({
+          user_id: userId,
+          status: 'pending',
+          total_amount: total_mad,
+          currency_code: currency_code ?? 'MAD',
+          exchange_rate: exchange_rate ?? 1,
+          shipping_address: shipping,
+          order_number: randomOrderNumber(),
+        })
+        .select('id, order_number')
+        .single();
+
+      // 23505 = unique_violation — try a different number
+      if (!result.error || result.error.code !== '23505') {
+        order = result.data;
+        orderErr = result.error;
+        break;
+      }
+    }
 
     if (orderErr) throw orderErr;
 
@@ -66,7 +80,7 @@ export async function POST(req) {
     if (itemsErr) throw itemsErr;
 
     // Respond immediately — notification runs fully fire-and-forget
-    const response = NextResponse.json({ success: true, data: { id: order.id } }, { status: 201 });
+    const response = NextResponse.json({ success: true, data: { id: order.id, order_number: order.order_number } }, { status: 201 });
 
     // Build + send Telegram notification (never blocks or breaks the order)
     ;(async () => {
@@ -78,7 +92,7 @@ export async function POST(req) {
         const productMap = Object.fromEntries((products ?? []).map((p) => [p.id, p.name]));
 
         const message = buildOrderMessage({
-          id: order.id.slice(0, 8).toUpperCase(),
+          id: String(order.order_number),
           customerName: shipping.full_name || 'Guest',
           phone: shipping.phone ?? '',
           address: shipping.address ?? '',
@@ -98,7 +112,7 @@ export async function POST(req) {
 
     return response;
   } catch (err) {
-    console.error('[POST /api/v1/orders]', err);
+    console.error('[POST /api/v1/orders]', err?.message ?? err);
     return NextResponse.json(
       {
         success: false,
@@ -129,6 +143,7 @@ export async function GET() {
       .from('orders')
       .select(`
         id,
+        order_number,
         status,
         cancelled_by,
         total_amount,
@@ -168,7 +183,7 @@ export async function PATCH(req) {
     }
 
     const { id, status } = await req.json();
-    const allowed = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+    const allowed = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
     if (!id || !allowed.includes(status)) {
       return NextResponse.json({ success: false, error: 'Invalid id or status' }, { status: 400 });
     }

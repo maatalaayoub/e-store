@@ -18,6 +18,7 @@ import {
   Shield,
   Phone,
   X as XIcon,
+  Search,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useDictionary } from "@/components/providers/LocaleProvider";
@@ -160,9 +161,12 @@ export default function ShopSidebarNav({ isOpen, onClose }) {
               </div>
             </div>
           ) : (
-            /* ── Guest: Categories only ── */
+            /* ── Guest: Categories + Track Order ── */
             <nav className="flex flex-col py-4">
-              {[{ href: `/${locale}/categories`, label: tNav.categories ?? "Categories", Icon: LayoutGrid }].map((linkItem, idx) => {
+              {[
+                { href: `/${locale}/categories`, label: tNav.categories ?? "Categories", Icon: LayoutGrid },
+                { href: `/${locale}/track-order`, label: tNav.track_order ?? "Track Order", Icon: Search },
+              ].map((linkItem, idx) => {
                 const Chevron = isRtl ? ChevronLeft : ChevronRight;
                 return (
                   <Link

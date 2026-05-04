@@ -228,7 +228,7 @@ export default function CheckoutClient({ locale, dict }) {
         throw new Error(json.details || json.error || 'Order failed');
       }
       clearCart();
-      router.push(`/${locale}/order-confirmed`);
+      router.push(`/${locale}/order-confirmed?id=${json.data.id}`);
     } catch (err) {
       console.error(err);
       setErrors((prev) => ({ ...prev, submit: tCheckout.failed ?? "Failed to place order. Please try again." }));

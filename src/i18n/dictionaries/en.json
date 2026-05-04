@@ -36,7 +36,34 @@
     "favorites": "Favorites",
     "privacy_policy": "Privacy Policy",
     "contact": "Contact Us",
-    "account_settings": "Account Settings"
+    "account_settings": "Account Settings",
+    "track_order": "Track Order"
+  },
+  "track_order": {
+    "title": "Track Your Order",
+    "subtitle": "Enter your order number to check the current status.",
+    "placeholder": "e.g. 47382910",
+    "submit": "Track",
+    "searching": "Searching…",
+    "not_found": "No order found with that ID. Please double-check and try again.",
+    "error": "Something went wrong. Please try again.",
+    "back": "Back",
+    "status": "Status",
+    "order_id": "Order ID",
+    "customer": "Customer",
+    "phone": "Phone",
+    "city": "City",
+    "date": "Date",
+    "items": "Items",
+    "total": "Total",
+    "download_invoice": "Download Invoice",
+    "downloading": "Downloading…",
+    "status_pending": "Pending",
+    "status_confirmed": "Confirmed",
+    "status_processing": "Processing",
+    "status_shipped": "Shipped",
+    "status_delivered": "Delivered",
+    "status_cancelled": "Cancelled"
   },
   "home": {
     "title_part1": "Redefine your",
@@ -153,8 +180,7 @@
       "search": "Search products...",
       "headers": { "product": "Product", "category": "Category", "inventory": "Inventory", "price": "Price", "status": "Status", "actions": "Actions", "stock": "Stock" },
       "empty_title": "No products yet",
-      "empty_desc": "Add your first product to start selling.",
-      "form": {
+      "empty_desc": "Add your first product to start selling.",      "filter_panel": { "category": "Category", "all": "All", "featured_only": "Featured only", "has_discount": "Has discount", "clear": "Clear filters" },      "form": {
         "add_title": "Add Product",
         "edit_title": "Edit Product",
         "section_details": "Product Details",
@@ -187,7 +213,18 @@
         "images_upload": "Click to upload product images",
         "images_add_more": "Add more images",
         "images_no_main_warning": "No main image set. The first image will be used by default.",
-        "delete_confirm": "Delete\"{name}\"? This cannot be undone."
+        "delete_confirm": "Delete \"{name}\"? This cannot be undone.",
+        "status_active": "Active",
+        "status_draft": "Draft",
+        "status_archived": "Archived",
+        "section_variants": "Variants",
+        "variants_optional": "optional",
+        "colors_label": "Colors",
+        "add_color": "+ Add color",
+        "color_name_placeholder": "Color name (e.g. Royal Brown)",
+        "sizes_label": "Sizes",
+        "add_size": "+ Add size",
+        "size_placeholder": "Size (e.g. M, 42, XL)"
       }
     },
     "orders": {
@@ -195,11 +232,12 @@
       "subtitle": "Track and fulfil orders placed by your customers.",
       "export": "Export",
       "stats": { "total": "Total Orders", "pending": "Pending", "shipped": "Shipped", "revenue": "Revenue" },
-      "tabs": { "all": "All", "pending": "Pending", "processing": "Processing", "shipped": "Shipped", "delivered": "Delivered", "cancelled": "Cancelled" },
+      "tabs": { "all": "All", "pending": "Pending", "confirmed": "Confirmed", "processing": "Processing", "shipped": "Shipped", "delivered": "Delivered", "cancelled": "Cancelled" },
       "search": "Search orders...",
       "headers": { "order": "Order", "customer": "Customer", "date": "Date", "total": "Total", "status": "Status", "action": "Action" },
       "empty_title": "No orders yet",
-      "empty_desc": "Orders will appear here as customers check out."
+      "empty_desc": "Orders will appear here as customers check out.",
+      "filter_panel": { "date_range": "Date range", "all_time": "All time", "today": "Today", "last_7": "Last 7 days", "last_30": "Last 30 days", "cancelled_by": "Cancelled by", "any": "Any", "customer": "Customer", "admin_cancel": "Admin", "clear": "Clear filters" }
     },
     "customers": {
       "title": "Customers",
@@ -386,6 +424,27 @@
     "step2": "We will call you to confirm your order.",
     "step3": "Your order will be prepared and shipped.",
     "continue": "Continue Shopping",
-    "orders": "My Orders"
+    "orders": "My Orders",
+    "download_invoice": "Download Invoice",
+    "downloading": "Downloading…",
+    "order_number_label": "Order Number"
+  },
+  "invoice": {
+    "title": "Invoice",
+    "date": "Date",
+    "bill_to": "Billed To",
+    "ship_to": "Shipping Address",
+    "item": "Item",
+    "qty": "Qty",
+    "price": "Price",
+    "subtotal": "Subtotal",
+    "total": "Total",
+    "status": "Status",
+    "thank_you": "Thank you for your purchase!",
+    "download": "Download PDF",
+    "generating": "Generating…",
+    "back": "Back",
+    "loading": "Loading invoice…",
+    "go_home": "Go to home"
   }
 }

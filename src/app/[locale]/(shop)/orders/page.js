@@ -79,7 +79,7 @@ function OrderCard({ order, onCancel }) {
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-zinc-100 bg-zinc-50">
         <div>
           <p className="text-xs text-zinc-400 font-medium mb-0.5">{tOrders.order_id ?? "Order ID"}</p>
-          <p className="font-mono text-sm font-semibold text-zinc-700 truncate max-w-[180px]">#{order.id.slice(0, 8).toUpperCase()}</p>
+          <p className="font-mono text-sm font-semibold text-zinc-700 truncate max-w-[180px]">#{order.order_number ?? order.id.slice(0, 8).toUpperCase()}</p>
         </div>
         <div>
           <p className="text-xs text-zinc-400 font-medium mb-0.5">{tOrders.date ?? "Date"}</p>

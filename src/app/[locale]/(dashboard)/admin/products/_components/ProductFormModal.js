@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useReducer, useRef, useState } from "react";
-import { X, Loader2, AlertCircle } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Check, ChevronDown, X, Loader2, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import ImageManager from "./ImageManager";
+import { useDictionary } from "@/components/providers/LocaleProvider";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const initialForm = {
@@ -80,7 +82,21 @@ export default function ProductFormModal({
   const [newCategoryName, setNewCategoryName] = useState("");
   const [addingCategory, setAddingCategory] = useState(false);
   const [showNewCat, setShowNewCat] = useState(false);
+  const [catOpen, setCatOpen] = useState(false);
+  const [catCoords, setCatCoords] = useState({ top: 0, left: 0, width: 0 });
+  const catBtnRef = useRef(null);
+  const catPanelRef = useRef(null);
   const panelRef = useRef(null);
+
+  const dict = useDictionary();
+  const t = dict?.admin?.products?.form ?? {};
+
+  const STATUS_STYLES = {
+    active:   { pill: "border-emerald-300 bg-emerald-50 text-emerald-700", dot: "bg-emerald-500" },
+    draft:    { pill: "border-zinc-300 bg-zinc-100 text-zinc-600",         dot: "bg-zinc-400"   },
+    archived: { pill: "border-amber-300 bg-amber-50 text-amber-700",       dot: "bg-amber-400"  },
+  };
+  const STATUS_OPTIONS = ["active", "draft", "archived"];
 
   const isEdit = Boolean(product?.id);
 
@@ -158,6 +174,27 @@ export default function ProductFormModal({
       prev.map((img) => ({ ...img, is_main: img.id === imageId }))
     );
     setPendingImages((prev) => prev.map((img) => ({ ...img, isMain: false })));
+  }
+
+  // ── category dropdown open/close ───────────────────────────────────────────
+  useEffect(() => {
+    if (!catOpen) return;
+    const handler = (e) => {
+      if (
+        catBtnRef.current && !catBtnRef.current.contains(e.target) &&
+        catPanelRef.current && !catPanelRef.current.contains(e.target)
+      ) setCatOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [catOpen]);
+
+  function openCatDropdown() {
+    const rect = catBtnRef.current?.getBoundingClientRect();
+    if (rect) {
+      setCatCoords({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+    }
+    setCatOpen((v) => !v);
   }
 
   // ── category creation ───────────────────────────────────────────────────────
@@ -298,8 +335,6 @@ export default function ProductFormModal({
       value: e.target.type === "checkbox" ? e.target.checked : e.target.value,
     });
 
-  const STATUS_OPTIONS = ["active", "draft", "archived"];
-
   return (
     <div className="fixed inset-0 z-50 flex">
       {/* Backdrop */}
@@ -316,7 +351,7 @@ export default function ProductFormModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4 shrink-0">
           <h2 className="text-lg font-bold text-zinc-900">
-            {isEdit ? "Edit Product" : "Add Product"}
+            {isEdit ? (t.edit_title ?? "Edit Product") : (t.add_title ?? "Add Product")}
           </h2>
           <button
             type="button"
@@ -343,13 +378,13 @@ export default function ProductFormModal({
           {/* ── Details ── */}
           <section className="space-y-4">
             <h3 className="text-sm font-semibold text-zinc-700 border-b border-zinc-100 pb-2">
-              Product Details
+              {t.section_details ?? "Product Details"}
             </h3>
 
             {/* Name */}
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1">
-                Name <span className="text-red-500">*</span>
+                {t.name_label ?? "Name"} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -357,7 +392,7 @@ export default function ProductFormModal({
                 onChange={f("name")}
                 required
                 minLength={2}
-                placeholder="e.g. Premium Wireless Headphones"
+                placeholder={t.name_placeholder ?? "e.g. Premium Wireless Headphones"}
                 className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -365,36 +400,67 @@ export default function ProductFormModal({
             {/* Category */}
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1">
-                Category
+                {t.category_label ?? "Category"}
               </label>
               <div className="flex gap-2">
-                <select
-                  value={form.category_id}
-                  onChange={f("category_id")}
-                  className="flex-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                {/* Custom dropdown trigger */}
+                <button
+                  ref={catBtnRef}
+                  type="button"
+                  onClick={openCatDropdown}
+                  className="flex-1 flex items-center justify-between gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-start focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors hover:bg-zinc-50"
                 >
-                  <option value="">No category</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
+                  <span className={form.category_id ? "text-zinc-900" : "text-zinc-400"}>
+                    {form.category_id
+                      ? (categories.find((c) => c.id === form.category_id)?.name ?? (t.category_none ?? "No category"))
+                      : (t.category_none ?? "No category")}
+                  </span>
+                  <ChevronDown className={`h-4 w-4 text-zinc-400 shrink-0 transition-transform ${catOpen ? "rotate-180" : ""}`} />
+                </button>
                 <button
                   type="button"
                   onClick={() => setShowNewCat((v) => !v)}
                   className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-50"
                 >
-                  + New
+                  {t.category_new ?? "+ New"}
                 </button>
               </div>
+
+              {/* Custom dropdown panel via portal */}
+              {catOpen && createPortal(
+                <div
+                  ref={catPanelRef}
+                  style={{ position: "fixed", top: catCoords.top, left: catCoords.left, width: catCoords.width, zIndex: 9999 }}
+                  className="rounded-xl border border-zinc-100 bg-white shadow-xl py-1.5 overflow-hidden"
+                >
+                  {[{ id: "", name: t.category_none ?? "No category" }, ...categories].map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        dispatch({ type: "set", field: "category_id", value: cat.id });
+                        setCatOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-sm transition-colors hover:bg-zinc-50 ${
+                        form.category_id === cat.id ? "text-zinc-900 font-medium" : "text-zinc-600"
+                      }`}
+                    >
+                      <span>{cat.name}</span>
+                      {form.category_id === cat.id && <Check className="h-3.5 w-3.5 text-blue-500 shrink-0" />}
+                    </button>
+                  ))}
+                </div>,
+                document.body
+              )}
+
               {showNewCat && (
                 <div className="mt-2 flex gap-2">
                   <input
                     type="text"
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
-                    placeholder="Category name"
+                    placeholder={t.category_name_placeholder ?? "Category name"}
                     className="flex-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <button
@@ -403,7 +469,7 @@ export default function ProductFormModal({
                     disabled={addingCategory || !newCategoryName.trim()}
                     className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                   >
-                    {addingCategory ? "..." : "Add"}
+                    {addingCategory ? "..." : (t.category_add ?? "Add")}
                   </button>
                 </div>
               )}
@@ -412,13 +478,13 @@ export default function ProductFormModal({
             {/* Description */}
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1">
-                Description
+                {t.description_label ?? "Description"}
               </label>
               <textarea
                 value={form.description}
                 onChange={f("description")}
                 rows={3}
-                placeholder="Product description..."
+                placeholder={t.description_placeholder ?? "Product description..."}
                 className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               />
             </div>
@@ -427,7 +493,7 @@ export default function ProductFormModal({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-zinc-700 mb-1">
-                  Price (DH) <span className="text-red-500">*</span>
+                  {t.price_label ?? "Price (DH)"} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
@@ -442,7 +508,7 @@ export default function ProductFormModal({
               </div>
               <div>
                 <label className="block text-sm font-medium text-zinc-700 mb-1">
-                  Stock <span className="text-red-500">*</span>
+                  {t.stock_label ?? "Stock"} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
@@ -460,13 +526,13 @@ export default function ProductFormModal({
             {/* Discount */}
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-2">
-                Discount
+                {t.discount_label ?? "Discount"}
               </label>
               <div className="flex gap-3 mb-3">
                 {[
-                  { val: "none", label: "None" },
-                  { val: "price", label: "Fixed price" },
-                  { val: "percentage", label: "Percentage" },
+                  { val: "none",       label: t.discount_none       ?? "None" },
+                  { val: "price",      label: t.discount_fixed      ?? "Fixed price" },
+                  { val: "percentage", label: t.discount_percentage ?? "Percentage" },
                 ].map(({ val, label }) => (
                   <label key={val} className="flex items-center gap-1.5 text-sm cursor-pointer">
                     <input
@@ -488,7 +554,7 @@ export default function ProductFormModal({
                   onChange={f("discount_price")}
                   min="0"
                   step="0.01"
-                  placeholder="Discounted price (e.g. 79.99)"
+                  placeholder={t.discount_price_placeholder ?? "Discounted price (e.g. 79.99)"}
                   className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               )}
@@ -500,31 +566,45 @@ export default function ProductFormModal({
                   min="0"
                   max="100"
                   step="0.1"
-                  placeholder="Discount % (e.g. 20)"
+                  placeholder={t.discount_pct_placeholder ?? "Discount % (e.g. 20)"}
                   className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               )}
             </div>
 
             {/* Status + Featured */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">
-                  Status
+                <label className="block text-sm font-medium text-zinc-700 mb-2">
+                  {t.status_label ?? "Status"}
                 </label>
-                <select
-                  value={form.status}
-                  onChange={f("status")}
-                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                >
-                  {STATUS_OPTIONS.map((s) => (
-                    <option key={s} value={s}>
-                      {s.charAt(0).toUpperCase() + s.slice(1)}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex gap-2">
+                  {STATUS_OPTIONS.map((s) => {
+                    const style = STATUS_STYLES[s];
+                    const label = t[`status_${s}`] ?? (s.charAt(0).toUpperCase() + s.slice(1));
+                    const isActive = form.status === s;
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => dispatch({ type: "set", field: "status", value: s })}
+                        className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-2 py-2.5 text-sm font-medium transition-all ${
+                          isActive
+                            ? style.pill
+                            : "border-zinc-200 bg-white text-zinc-400 hover:bg-zinc-50 hover:text-zinc-600"
+                        }`}
+                      >
+                        <span className={`h-2 w-2 rounded-full shrink-0 ${
+                          isActive ? style.dot : "bg-zinc-300"
+                        }`} />
+                        {label}
+                        {isActive && <Check className="h-3.5 w-3.5 shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="flex flex-col justify-end">
+              <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 cursor-pointer">
                   <input
                     type="checkbox"
@@ -532,7 +612,7 @@ export default function ProductFormModal({
                     onChange={f("is_featured")}
                     className="h-4 w-4 rounded accent-blue-600"
                   />
-                  Featured on homepage
+                  {t.featured_label ?? "Featured on homepage"}
                 </label>
               </div>
             </div>
@@ -541,13 +621,13 @@ export default function ProductFormModal({
           {/* ── Variants (Colors & Sizes) ── */}
           <section className="space-y-4">
             <h3 className="text-sm font-semibold text-zinc-700 border-b border-zinc-100 pb-2">
-              Variants <span className="text-xs font-normal text-zinc-400">(optional)</span>
+              {t.section_variants ?? "Variants"} <span className="text-xs font-normal text-zinc-400">({t.variants_optional ?? "optional"})</span>
             </h3>
 
             {/* Colors */}
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-2">
-                Colors
+                {t.colors_label ?? "Colors"}
               </label>
               <div className="space-y-2">
                 {form.colors.map((c, idx) => (
@@ -570,7 +650,7 @@ export default function ProductFormModal({
                         next[idx] = { ...next[idx], name: e.target.value };
                         dispatch({ type: "set", field: "colors", value: next });
                       }}
-                      placeholder="Color name (e.g. Royal Brown)"
+                      placeholder={t.color_name_placeholder ?? "Color name (e.g. Royal Brown)"}
                       className="flex-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <button
@@ -593,7 +673,7 @@ export default function ProductFormModal({
                   }}
                   className="text-sm font-medium text-blue-600 hover:text-blue-700"
                 >
-                  + Add color
+                  {t.add_color ?? "+ Add color"}
                 </button>
               </div>
             </div>
@@ -601,7 +681,7 @@ export default function ProductFormModal({
             {/* Sizes */}
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-2">
-                Sizes
+                {t.sizes_label ?? "Sizes"}
               </label>
               <div className="space-y-2">
                 {form.sizes.map((s, idx) => (
@@ -614,7 +694,7 @@ export default function ProductFormModal({
                         next[idx] = e.target.value;
                         dispatch({ type: "set", field: "sizes", value: next });
                       }}
-                      placeholder="Size (e.g. M, 42, XL)"
+                      placeholder={t.size_placeholder ?? "Size (e.g. M, 42, XL)"}
                       className="flex-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <button
@@ -636,7 +716,7 @@ export default function ProductFormModal({
                   }}
                   className="text-sm font-medium text-blue-600 hover:text-blue-700"
                 >
-                  + Add size
+                  {t.add_size ?? "+ Add size"}
                 </button>
               </div>
             </div>
@@ -645,7 +725,7 @@ export default function ProductFormModal({
           {/* ── Images ── */}
           <section className="space-y-4">
             <h3 className="text-sm font-semibold text-zinc-700 border-b border-zinc-100 pb-2">
-              Images
+              {t.section_images ?? "Images"}
             </h3>
             <ImageManager
               existingImages={existingImages}
@@ -666,7 +746,7 @@ export default function ProductFormModal({
             onClick={onClose}
             className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
           >
-            Cancel
+            {t.cancel ?? "Cancel"}
           </button>
           <button
             type="submit"
@@ -675,7 +755,7 @@ export default function ProductFormModal({
             className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-            {saving ? "Saving…" : isEdit ? "Save changes" : "Add product"}
+            {saving ? (t.saving ?? "Saving…") : isEdit ? (t.save ?? "Save changes") : (t.save_new ?? "Add product")}
           </button>
         </div>
       </div>

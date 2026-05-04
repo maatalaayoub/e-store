@@ -36,7 +36,34 @@
     "favorites": "المفضلة",
     "privacy_policy": "سياسة الخصوصية",
     "contact": "تواصل معانا",
-    "account_settings": "إعدادات الحساب"
+    "account_settings": "إعدادات الحساب",
+    "track_order": "تتبع الطلب"
+  },
+  "track_order": {
+    "title": "تتبع الطلب ديالك",
+    "subtitle": "دخل رقم الطلب ديالك باش تشوف حالته.",
+    "placeholder": "مثلا: 47382910",
+    "submit": "تتبع",
+    "searching": "كنقلب…",
+    "not_found": "ما لقيناش طلب بهاد الرقم. تحقق منه وعاود.",
+    "error": "وقع خطأ. عاود مرة أخرى.",
+    "back": "رجوع",
+    "status": "الحالة",
+    "order_id": "رقم الطلب",
+    "customer": "الزبون",
+    "phone": "التيليفون",
+    "city": "المدينة",
+    "date": "التاريخ",
+    "items": "المنتجات",
+    "total": "الإجمالي",
+    "download_invoice": "حمل الفاتورة",
+    "downloading": "كيتحمل…",
+    "status_pending": "في الانتظار",
+    "status_confirmed": "مؤكد",
+    "status_processing": "كيتعالج",
+    "status_shipped": "تصيفط",
+    "status_delivered": "وصل",
+    "status_cancelled": "ملغى"
   },
   "home": {
     "title_part1": "بدّل",
@@ -154,6 +181,7 @@
       "headers": { "product": "المنتج", "category": "الفئة", "inventory": "الستوك", "price": "الثمن", "status": "الحالة", "actions": "الإجراءات", "stock": "الستوك" },
       "empty_title": "ما كاينش منتجات",
       "empty_desc": "زيد أول منتج باش تبدا تبيع.",
+      "filter_panel": { "category": "الفئة", "all": "الكل", "featured_only": "المميزة فقط", "has_discount": "عندها سولد", "clear": "مسح الفلاتر" },
       "form": {
         "add_title": "زيد منتج",
         "edit_title": "عدّل المنتج",
@@ -187,7 +215,18 @@
         "images_upload": "ضغط باش ترفع صور المنتج",
         "images_add_more": "زيد صور أخرى",
         "images_no_main_warning": "ما حددتيش صورة رئيسية. غادي تتستعمل أول صورة بشكل افتراضي.",
-        "delete_confirm": "تحذف \"{name}\"؟ هاد الإجراء ما يرجعش."
+        "delete_confirm": "تحذف \"{name}\"؟ هاد الإجراء ما يرجعش.",
+        "status_active": "نشيط",
+        "status_draft": "مسوّدة",
+        "status_archived": "مأرشف",
+        "section_variants": "الخيارات",
+        "variants_optional": "اختياري",
+        "colors_label": "الألوان",
+        "add_color": "+ زيد لون",
+        "color_name_placeholder": "سمية اللون (مثال: بني ملكي)",
+        "sizes_label": "المقاسات",
+        "add_size": "+ زيد قياس",
+        "size_placeholder": "القياس (مثال: M، 42، XL)"
       }
     },
     "orders": {
@@ -195,11 +234,12 @@
       "subtitle": "تابع وحضّر طلبات العملاء.",
       "export": "تصدير",
       "stats": { "total": "كل الطلبات", "pending": "كتسنّى", "shipped": "تشحنات", "revenue": "المداخيل" },
-      "tabs": { "all": "الكل", "pending": "كتسنّى", "processing": "كتعالج", "shipped": "تشحنات", "delivered": "توصلات", "cancelled": "ملغية" },
+      "tabs": { "all": "الكل", "pending": "كتسنّى", "confirmed": "مأكد", "processing": "كتعالج", "shipped": "تشحنات", "delivered": "توصلات", "cancelled": "ملغية" },
       "search": "قلّب على طلب...",
       "headers": { "order": "الطلب", "customer": "العميل", "date": "التاريخ", "total": "المجموع", "status": "الحالة", "action": "الإجراء" },
       "empty_title": "ما كاينش طلبات",
-      "empty_desc": "الطلبات غادي يبانو هنا منين العملاء يشريو."
+      "empty_desc": "الطلبات غادي يبانو هنا منين العملاء يشريو.",
+      "filter_panel": { "date_range": "نطاق التاريخ", "all_time": "كل الأوقات", "today": "اليوم", "last_7": "آخر 7 أيام", "last_30": "آخر 30 يوم", "cancelled_by": "لغاه", "any": "الكل", "customer": "العميل", "admin_cancel": "الأدمين", "clear": "مسح الفلاتر" }
     },
     "customers": {
       "title": "العملاء",
@@ -389,6 +429,27 @@
     "step2": "غادي نتصلو بيك باش نأكدو الطلب ديالك.",
     "step3": "غادي يتجهز الطلب ديالك ويتصيفط.",
     "continue": "كمل التقضية",
-    "orders": "طلباتي"
+    "orders": "طلباتي",
+    "download_invoice": "حمل الفاتورة",
+    "downloading": "كيتحمل…",
+    "order_number_label": "رقم الطلب"
+  },
+  "invoice": {
+    "title": "فاتورة",
+    "date": "التاريخ",
+    "bill_to": "فوتورة ل",
+    "ship_to": "عنوان الشحن",
+    "item": "المنتوج",
+    "qty": "الكمية",
+    "price": "الثمن",
+    "subtotal": "المجموع",
+    "total": "الإجمالي",
+    "status": "الحالة",
+    "thank_you": "شكراً على الشراء!",
+    "download": "حمّل PDF",
+    "generating": "كنصاوبو…",
+    "back": "رجوع",
+    "loading": "كنحملو الفاتورة…",
+    "go_home": "رجع للرئيسية"
   }
 }
