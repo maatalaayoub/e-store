@@ -241,3 +241,22 @@ CREATE POLICY "Anyone can insert order items" ON order_items
 CREATE POLICY "Admins manage all order items" ON order_items
   FOR ALL USING (EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'));
 
+-- ========================
+-- HERO SLIDES
+-- ========================
+CREATE TABLE IF NOT EXISTS hero_slides (
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  image_url text NOT NULL,
+  title text NOT NULL,
+  cta_text text NOT NULL DEFAULT '',
+  href text NOT NULL DEFAULT '/shop',   -- path without locale prefix (e.g. /shop)
+  display_order integer NOT NULL DEFAULT 0,
+  is_active boolean DEFAULT true,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE hero_slides ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Hero slides are public" ON hero_slides FOR SELECT USING (true);
+CREATE POLICY "Admins manage hero slides" ON hero_slides
+  FOR ALL USING (EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'));
+

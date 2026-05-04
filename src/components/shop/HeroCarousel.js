@@ -46,6 +46,8 @@ export default function HeroCarousel({ slides }) {
   // Cleanup on unmount
   useEffect(() => () => transitionTimers.current.forEach(clearTimeout), []);
 
+  if (!slides || slides.length === 0) return null;
+
   return (
     <section className="relative h-[100svh] w-full overflow-hidden -mt-[1px]">
       {slides.map((slide, i) => (
@@ -68,13 +70,15 @@ export default function HeroCarousel({ slides }) {
       ))}
 
       {/* Preload next image */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={slides[(slideIndex + 1) % slides.length].image}
-        alt=""
-        aria-hidden="true"
-        className="hidden"
-      />
+      {slides.length > 1 && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={slides[(slideIndex + 1) % slides.length].image}
+          alt=""
+          aria-hidden="true"
+          className="hidden"
+        />
+      )}
 
       <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/60" />
       <div

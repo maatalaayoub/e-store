@@ -237,7 +237,8 @@
       "headers": { "order": "Order", "customer": "Customer", "date": "Date", "total": "Total", "status": "Status", "action": "Action" },
       "empty_title": "No orders yet",
       "empty_desc": "Orders will appear here as customers check out.",
-      "filter_panel": { "date_range": "Date range", "all_time": "All time", "today": "Today", "last_7": "Last 7 days", "last_30": "Last 30 days", "cancelled_by": "Cancelled by", "any": "Any", "customer": "Customer", "admin_cancel": "Admin", "clear": "Clear filters" }
+      "filter_panel": { "date_range": "Date range", "all_time": "All time", "today": "Today", "last_7": "Last 7 days", "last_30": "Last 30 days", "cancelled_by": "Cancelled by", "any": "Any", "customer": "Customer", "admin_cancel": "Admin", "clear": "Clear filters" },
+      "drawer": { "items": "Items", "qty": "Qty", "no_items": "No items found." }
     },
     "customers": {
       "title": "Customers",
@@ -256,6 +257,7 @@
       "save": "Save changes",
       "sections": {
         "general": "General",
+        "hero": "Hero",
         "payments": "Payments",
         "shipping": "Shipping",
         "notifications": "Notifications",
@@ -316,6 +318,28 @@
         "desc": "Default language and timezone for your storefront.",
         "default_language": "Default language",
         "timezone": "Timezone"
+      },
+      "hero": {
+        "title": "Hero Carousel",
+        "desc": "Manage the slides shown on the homepage hero section. Changes are live immediately after saving.",
+        "no_slides": "No slides yet. Add one below.",
+        "slide": "Slide",
+        "image_label": "Click to upload image",
+        "image_hint": "JPG, PNG, WebP",
+        "change_image": "Change image",
+        "uploading": "Uploading…",
+        "title_placeholder": "Title (e.g. THE LUXURY YOU DESERVE)",
+        "cta_placeholder": "Button text (e.g. SHOP NOW)",
+        "link_placeholder": "Link path (e.g. /shop)",
+        "active": "Active",
+        "delete_confirm": "Delete?",
+        "yes": "Yes",
+        "no": "No",
+        "add_slide": "Add Slide",
+        "save": "Save Slides",
+        "saving": "Saving…",
+        "saved": "Hero slides saved",
+        "upload_error": "Image upload failed"
       }
     }
   },

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Search, Filter, Download, ShoppingCart, RefreshCw, ChevronDown, Check } from "lucide-react";
+import { Search, Filter, Download, ShoppingCart, RefreshCw, ChevronDown, Check, X, MapPin, Phone, User, Package, Calendar } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { AdminOrdersSkeleton } from "@/components/skeletons";
 
@@ -110,12 +110,203 @@ function StatusSelect({ value, disabled, onChange, labels = {} }) {
 const DATE_RANGE_OPTIONS = ["all", "today", "week", "month"];
 const CANCELLED_BY_OPTIONS = ["any", "customer", "admin"];
 
+/* ── Order detail drawer ──────────────────────────────────────────────────── */
+function OrderDrawer({ order, onClose }) {
+  const [open, setOpen] = useState(false);
+  const [snapshot, setSnapshot] = useState(null);   // basic header info (available instantly)
+  const [detail, setDetail] = useState(null);        // full detail including items
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
+  const dict = useDictionary();
+  const tD = dict?.admin?.orders?.drawer ?? {};
+  const tH = dict?.admin?.orders?.headers ?? {};
+  const tTabs = dict?.admin?.orders?.tabs ?? {};
+
+  // Open immediately when order is set; fetch full detail in background
+  useEffect(() => {
+    if (order) {
+      setSnapshot(order);
+      setDetail(null);
+      setLoadingDetail(true);
+      // Open right away — no rAF delay
+      setOpen(true);
+      // Fetch full order detail (fresh, includes items)
+      fetch(`/api/v1/orders?id=${order.id}`)
+        .then((r) => r.json())
+        .then((json) => { if (json.success) setDetail(json.data); })
+        .catch(() => {})
+        .finally(() => setLoadingDetail(false));
+    } else {
+      setOpen(false);
+      const t = setTimeout(() => { setSnapshot(null); setDetail(null); }, 300);
+      return () => clearTimeout(t);
+    }
+  }, [order]);
+
+  const handleClose = useCallback(() => {
+    setOpen(false);
+    setTimeout(onClose, 300);
+  }, [onClose]);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => { if (e.key === "Escape") handleClose(); };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [open, handleClose]);
+
+  if (!snapshot || typeof document === "undefined") return null;
+
+  // Use fetched detail when available, fall back to the list snapshot
+  const data = detail ?? snapshot;
+  const addr = data.shipping_address ?? {};
+  const items = data.order_items ?? [];
+  const date = new Date(data.created_at).toLocaleString();
+  const style = STATUS_STYLES[data.status] ?? { pill: "bg-zinc-100 text-zinc-700 border-zinc-200", dot: "bg-zinc-400" };
+  const total = Number(data.total_amount ?? 0).toFixed(2);
+
+  return createPortal(
+    <>
+      {/* Backdrop */}
+      <div
+        className={`fixed inset-0 z-[10001] bg-black/30 backdrop-blur-[1px] transition-opacity duration-300 ease-out ${open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+        onClick={handleClose}
+      />
+
+      {/*
+        Mobile  → bottom sheet: slides up from bottom, rounded top corners, max 85vh
+        Desktop → side drawer:  slides in from right, full height, max-w-md
+      */}
+      <div
+        className={`
+          fixed z-[10002] bg-white shadow-2xl flex flex-col overflow-hidden transition-transform duration-300
+          bottom-0 left-0 right-0 max-h-[85vh] rounded-t-2xl
+          sm:bottom-auto sm:top-0 sm:left-auto sm:right-0 sm:h-full sm:max-h-none sm:w-full sm:max-w-md sm:rounded-none
+          ${open ? "translate-y-0 sm:translate-x-0" : "translate-y-full sm:translate-y-0 sm:translate-x-full"}
+        `}
+        style={{ transitionTimingFunction: open ? "cubic-bezier(0.32,0.72,0,1)" : "cubic-bezier(0.72,0,0.68,1)" }}
+      >
+        {/* Mobile drag handle */}
+        <div className="flex justify-center pt-3 pb-1 sm:hidden" aria-hidden="true">
+          <div className="h-1 w-10 rounded-full bg-zinc-200" />
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">{tH.order ?? "Order"}</p>
+            <h2 className="text-lg font-bold text-zinc-900 leading-tight">#{snapshot.order_number ?? snapshot.id.slice(0, 8)}</h2>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${style.pill}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${style.dot}`} />
+              {tTabs[data.status] ?? data.status}
+            </span>
+            <button
+              onClick={handleClose}
+              className="hidden sm:flex p-1.5 rounded-lg text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none" }}>
+          {/* Date */}
+          <div className="px-5 py-4 border-b border-zinc-50 flex items-center gap-2 text-sm text-zinc-500">
+            <Calendar className="h-4 w-4 text-zinc-300" />
+            {date}
+          </div>
+
+          {/* Customer */}
+          <div className="px-5 py-4 border-b border-zinc-100">
+            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400 mb-3">{tH.customer ?? "Customer"}</p>
+            <div className="flex flex-col gap-2">
+              {addr.full_name && (
+                <div className="flex items-start gap-2.5 text-sm text-zinc-700">
+                  <User className="h-4 w-4 text-zinc-400 mt-0.5 shrink-0" />
+                  <span className="font-medium">{addr.full_name}</span>
+                </div>
+              )}
+              {addr.phone && (
+                <div className="flex items-start gap-2.5 text-sm text-zinc-700">
+                  <Phone className="h-4 w-4 text-zinc-400 mt-0.5 shrink-0" />
+                  <span dir="ltr">{addr.phone}</span>
+                </div>
+              )}
+              {(addr.address || addr.city || addr.country) && (
+                <div className="flex items-start gap-2.5 text-sm text-zinc-700">
+                  <MapPin className="h-4 w-4 text-zinc-400 mt-0.5 shrink-0" />
+                  <span>{[addr.address, addr.city, addr.state, addr.country].filter(Boolean).join(", ")}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Items */}
+          <div className="px-5 py-4">
+            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400 mb-3">{tD.items ?? "Items"}</p>
+            {loadingDetail ? (
+              /* Skeleton */
+              <ul className="flex flex-col gap-2">
+                {[1, 2].map((n) => (
+                  <li key={n} className="flex items-center gap-3 rounded-xl bg-zinc-50 px-4 py-3 animate-pulse">
+                    <div className="h-7 w-7 rounded-lg bg-zinc-200 shrink-0" />
+                    <div className="flex-1 flex flex-col gap-1.5">
+                      <div className="h-3 w-2/3 rounded bg-zinc-200" />
+                      <div className="h-2.5 w-1/2 rounded bg-zinc-100" />
+                    </div>
+                    <div className="h-3 w-12 rounded bg-zinc-200 shrink-0" />
+                  </li>
+                ))}
+              </ul>
+            ) : items.length === 0 ? (
+              <p className="text-sm text-zinc-400">{tD.no_items ?? "No items found."}</p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {items.map((item, i) => {
+                  const name = item.products?.name ?? `Product #${i + 1}`;
+                  const subtotal = (Number(item.unit_price ?? 0) * Number(item.quantity ?? 1)).toFixed(2);
+                  return (
+                    <li key={i} className="flex items-start justify-between gap-3 rounded-xl bg-zinc-50 px-4 py-3">
+                      <div className="flex items-start gap-2.5 min-w-0">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-zinc-200 text-zinc-500">
+                          <Package className="h-3.5 w-3.5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-zinc-900 truncate">{name}</p>
+                          <p className="text-xs text-zinc-400 mt-0.5">{tD.qty ?? "Qty"}: {item.quantity} &times; {Number(item.unit_price ?? 0).toFixed(2)} DH</p>
+                        </div>
+                      </div>
+                      <span className="text-sm font-semibold text-zinc-900 whitespace-nowrap shrink-0">{subtotal} DH</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        {/* Footer: total */}
+        <div className="px-5 py-4 border-t border-zinc-100 bg-zinc-50 flex items-center justify-between">
+          <span className="text-sm font-medium text-zinc-500">{tH.total ?? "Total"}</span>
+          <span className="text-lg font-bold text-zinc-900">{total} DH</span>
+        </div>
+      </div>
+    </>,
+    document.body
+  );
+}
+
 export default function AdminOrdersPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterCoords, setFilterCoords] = useState({ top: 0, left: 0 });
   const [dateRange, setDateRange] = useState("all");
@@ -266,6 +457,7 @@ export default function AdminOrdersPage() {
 
   return (
     <>
+      <OrderDrawer order={selectedOrder} onClose={() => setSelectedOrder(null)} />
       <div className="flex flex-col items-start gap-4 mb-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900">{t.title ?? "Orders"}</h1>
@@ -442,7 +634,7 @@ export default function AdminOrdersPage() {
               const date = new Date(o.created_at).toLocaleDateString();
               const customerAmt = formatCustomerCurrency(o.total_amount, o.currency_code, o.exchange_rate);
               return (
-                <li key={o.id} className="px-4 py-4 flex flex-col gap-2">
+                <li key={o.id} className="px-4 py-4 flex flex-col gap-2 cursor-pointer hover:bg-zinc-50 active:bg-zinc-100 transition-colors" onClick={() => setSelectedOrder(o)}>
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-medium text-zinc-900 text-sm">#{o.order_number ?? o.id.slice(0, 8)}</span>
                   </div>
@@ -456,7 +648,7 @@ export default function AdminOrdersPage() {
                       {date}
                     </div>
                   </div>
-                  <div className="flex items-center justify-between pt-1">
+                  <div className="flex items-center justify-between pt-1" onClick={(e) => e.stopPropagation()}>
                     <div>
                       <span className="text-sm font-semibold text-zinc-900">{formatMAD(o.total_amount)}</span>
                       {customerAmt && <span className="ml-1.5 text-xs text-zinc-400">{customerAmt}</span>}
@@ -495,7 +687,7 @@ export default function AdminOrdersPage() {
                   const date     = new Date(o.created_at).toLocaleDateString();
                   const customerAmt = formatCustomerCurrency(o.total_amount, o.currency_code, o.exchange_rate);
                   return (
-                    <tr key={o.id} className="hover:bg-zinc-50">
+                    <tr key={o.id} className="hover:bg-zinc-50 cursor-pointer" onClick={() => setSelectedOrder(o)}>
                       <td className="px-6 py-4 font-mono text-xs text-zinc-500">#{o.order_number ?? o.id.slice(0, 8)}</td>
                       <td className="px-6 py-4">
                         <span className="font-medium text-zinc-900">{customer}</span>
@@ -508,7 +700,7 @@ export default function AdminOrdersPage() {
                       <td className="px-6 py-4 text-zinc-500 whitespace-nowrap">
                         {customerAmt ?? <span className="text-zinc-300">—</span>}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                         <StatusSelect
                           value={o.status}
                           disabled={updatingId === o.id || o.cancelled_by === "customer"}

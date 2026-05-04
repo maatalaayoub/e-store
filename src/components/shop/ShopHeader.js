@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
@@ -93,13 +94,15 @@ export default function ShopHeader({ onOpenCart }) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
               </svg>
             </button>
-            <Link
-              href={`/${locale}`}
-              className={`text-2xl font-bold tracking-tighter whitespace-nowrap transition-colors duration-500 ${
-                isScrolled ? "text-zinc-900" : "text-white"
-              }`}
-            >
-              My store
+            <Link href={`/${locale}`} className="flex items-center">
+              <Image
+                src={isScrolled ? "/images/shop-logo-darck.png" : "/images/shop-logo-white.png"}
+                alt="LaCérémonie"
+                width={160}
+                height={40}
+                className="h-5 w-auto object-contain transition-all duration-500"
+                priority
+              />
             </Link>
           </div>
 

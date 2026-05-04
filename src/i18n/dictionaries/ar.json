@@ -239,7 +239,8 @@
       "headers": { "order": "الطلب", "customer": "العميل", "date": "التاريخ", "total": "المجموع", "status": "الحالة", "action": "الإجراء" },
       "empty_title": "لا توجد طلبات بعد",
       "empty_desc": "ستظهر الطلبات هنا عند شراء العملاء.",
-      "filter_panel": { "date_range": "نطاق التاريخ", "all_time": "كل الأوقات", "today": "اليوم", "last_7": "آخر 7 أيام", "last_30": "آخر 30 يومًا", "cancelled_by": "ألغاه", "any": "الكل", "customer": "العميل", "admin_cancel": "المشرف", "clear": "مسح الفلاتر" }
+      "filter_panel": { "date_range": "نطاق التاريخ", "all_time": "كل الأوقات", "today": "اليوم", "last_7": "آخر 7 أيام", "last_30": "آخر 30 يومًا", "cancelled_by": "ألغاه", "any": "الكل", "customer": "العميل", "admin_cancel": "المشرف", "clear": "مسح الفلاتر" },
+      "drawer": { "items": "المنتجات", "qty": "الكمية", "no_items": "لا توجد منتجات." }
     },
     "customers": {
       "title": "العملاء",
@@ -258,6 +259,7 @@
       "save": "حفظ التغييرات",
       "sections": {
         "general": "عام",
+        "hero": "الواجهة الرئيسية",
         "payments": "المدفوعات",
         "shipping": "الشحن",
         "notifications": "الإشعارات",
@@ -318,6 +320,28 @@
         "desc": "اللغة والمنطقة الزمنية الافتراضية.",
         "default_language": "اللغة الافتراضية",
         "timezone": "المنطقة الزمنية"
+      },
+      "hero": {
+        "title": "الشرائح الرئيسية",
+        "desc": "إدارة الشرائح المعروضة في قسم الواجهة الرئيسية. التغييرات تظهر فوراً بعد الحفظ.",
+        "no_slides": "لا توجد شرائح بعد. أضف واحدة أدناه.",
+        "slide": "شريحة",
+        "image_label": "انقر لرفع صورة",
+        "image_hint": "JPG، PNG، WebP",
+        "change_image": "تغيير الصورة",
+        "uploading": "جارٍ الرفع…",
+        "title_placeholder": "العنوان (مثال: الفخامة التي تستحقها)",
+        "cta_placeholder": "نص الزر (مثال: تسوق الآن)",
+        "link_placeholder": "مسار الرابط (مثال: /shop)",
+        "active": "نشط",
+        "delete_confirm": "حذف؟",
+        "yes": "نعم",
+        "no": "لا",
+        "add_slide": "إضافة شريحة",
+        "save": "حفظ الشرائح",
+        "saving": "جارٍ الحفظ…",
+        "saved": "تم حفظ الشرائح",
+        "upload_error": "فشل رفع الصورة"
       }
     }
   },

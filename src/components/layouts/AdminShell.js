@@ -12,6 +12,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams, usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -69,14 +70,15 @@ export default function AdminShell({ children }) {
         }`}
       >
         <div className="flex h-16 items-center justify-between border-b border-zinc-200 px-6">
-          <Link
-            href={withLocale("/admin")}
-            className="flex items-center gap-2 font-bold tracking-tighter text-blue-600 text-xl"
-          >
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-blue-600 text-white text-xs">
-              E
-            </div>
-            <span className="text-zinc-900">ADMIN.</span>
+          <Link href={withLocale("/admin")} className="flex items-center">
+            <Image
+              src="/images/shop-logo-darck.png"
+              alt="LaCérémonie"
+              width={160}
+              height={40}
+              className="h-5 w-auto object-contain"
+              priority
+            />
           </Link>
           <button
             className="lg:hidden text-zinc-500"

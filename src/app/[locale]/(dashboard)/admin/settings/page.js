@@ -11,13 +11,22 @@ import {
   Zap,
   Eye,
   EyeOff,
+  Layers,
+  Trash2,
+  Plus,
+  ChevronUp,
+  ChevronDown,
+  ImageIcon,
+  Loader2,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { AdminSettingsSkeleton } from "@/components/skeletons";
 
 const SECTION_DEFS = [
   { id: "general", icon: Store },
+  { id: "hero", icon: Layers },
   { id: "payments", icon: CreditCard },
   { id: "shipping", icon: Truck },
   { id: "notifications", icon: Bell },
@@ -35,23 +44,15 @@ export default function AdminSettingsPage() {
 
   return (
     <>
-      <div className="flex flex-col items-start gap-4 mb-8 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-900">{t.title}</h1>
-          <p className="text-sm text-zinc-500 mt-1">
-            {t.subtitle}
-          </p>
-        </div>
-        <button className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-          <Save className="h-4 w-4" />
-          {t.save}
-        </button>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-zinc-900">{t.title}</h1>
+        <p className="text-sm text-zinc-500 mt-1">{t.subtitle}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6">
         {/* SECTION NAV */}
         <aside className="rounded-xl border border-zinc-100 bg-white p-2 h-max">
-          <nav className="flex lg:flex-col gap-1 overflow-x-auto">
+          <nav className="flex flex-wrap lg:flex-col gap-1">
             {SECTION_DEFS.map((s) => {
               const Icon = s.icon;
               const isActive = active === s.id;
@@ -76,6 +77,7 @@ export default function AdminSettingsPage() {
         {/* CONTENT */}
         <section className="rounded-xl border border-zinc-100 bg-white p-6">
           {active === "general" && <GeneralSection />}
+          {active === "hero" && <HeroSection />}
           {active === "payments" && <PaymentsSection />}
           {active === "shipping" && <ShippingSection />}
           {active === "notifications" && <NotificationsSection />}
@@ -84,6 +86,37 @@ export default function AdminSettingsPage() {
         </section>
       </div>
     </>
+  );
+}
+
+function SectionSaveButton({ onSave }) {
+  const [saving, setSaving] = useState(false);
+  const dict = useDictionary();
+  const label = dict?.admin?.settings?.save ?? 'Save changes';
+
+  const handle = async () => {
+    setSaving(true);
+    try {
+      await onSave?.();
+      toast.success('Saved');
+    } catch (err) {
+      toast.error(err?.message ?? 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="pt-4 mt-2 border-t border-zinc-100 flex justify-end">
+      <button
+        onClick={handle}
+        disabled={saving}
+        className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+      >
+        <Save className="h-4 w-4" />
+        {saving ? '…' : label}
+      </button>
+    </div>
   );
 }
 
@@ -136,6 +169,7 @@ function GeneralSection() {
           placeholder={t.description_placeholder}
         />
       </Field>
+      <SectionSaveButton />
     </>
   );
 }
@@ -165,6 +199,7 @@ function PaymentsSection() {
       <Field label={t.cod}>
         <Toggle defaultChecked />
       </Field>
+      <SectionSaveButton />
     </>
   );
 }
@@ -186,6 +221,7 @@ function ShippingSection() {
       <Field label={t.free_threshold}>
         <input className={inputClass} placeholder="100.00" />
       </Field>
+      <SectionSaveButton />
     </>
   );
 }
@@ -207,6 +243,7 @@ function NotificationsSection() {
       <Field label={t.weekly}>
         <Toggle />
       </Field>
+      <SectionSaveButton />
     </>
   );
 }
@@ -378,25 +415,236 @@ function LocalizationSection() {
           <option>Europe/Paris</option>
         </select>
       </Field>
+      <SectionSaveButton />
     </>
   );
 }
 
-function Toggle({ defaultChecked = false }) {
+function HeroSection() {
+  const dict = useDictionary();
+  const t = dict?.admin?.settings?.hero ?? {};
+  const [slides, setSlides] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState({}); // { [idx]: true }
+  const [confirmDelete, setConfirmDelete] = useState(null); // idx to confirm
+
+  useEffect(() => {
+    fetch('/api/v1/admin/hero-slides')
+      .then((r) => r.json())
+      .then((json) => { if (json.success) setSlides(json.data); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const update = (idx, field, value) =>
+    setSlides((prev) => prev.map((s, i) => (i === idx ? { ...s, [field]: value } : s)));
+
+  const move = (idx, dir) => {
+    const next = [...slides];
+    const target = idx + dir;
+    if (target < 0 || target >= next.length) return;
+    [next[idx], next[target]] = [next[target], next[idx]];
+    setSlides(next);
+  };
+
+  const add = () =>
+    setSlides((prev) => [
+      ...prev,
+      { image_url: '', title: '', cta_text: '', href: '/shop', is_active: true },
+    ]);
+
+  const remove = (idx) => {
+    setSlides((prev) => prev.filter((_, i) => i !== idx));
+    setConfirmDelete(null);
+  };
+
+  const handleImageUpload = async (idx, file) => {
+    if (!file) return;
+    setUploading((prev) => ({ ...prev, [idx]: true }));
+    try {
+      const supabase = createClient();
+      const ext = file.name.split('.').pop();
+      const path = `hero/${Date.now()}_${idx}.${ext}`;
+      const { error } = await supabase.storage
+        .from('hero-images')
+        .upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage
+        .from('hero-images')
+        .getPublicUrl(path);
+      update(idx, 'image_url', publicUrl);
+    } catch (err) {
+      toast.error((t.upload_error ?? 'Image upload failed') + ': ' + (err?.message ?? 'Unknown error'));
+    } finally {
+      setUploading((prev) => ({ ...prev, [idx]: false }));
+    }
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/v1/admin/hero-slides', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slides }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error ?? 'Save failed');
+      toast.success(t.saved ?? 'Hero slides saved');
+    } catch (err) {
+      toast.error(err.message ?? 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-4 animate-pulse">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="h-24 rounded-xl bg-zinc-100" />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <SectionHeader
+        title={t.title ?? "Hero Carousel"}
+        description={t.desc ?? "Manage the slides shown on the homepage hero section. Changes are live immediately after saving."}
+      />
+
+      <div className="flex flex-col gap-4 mb-4">
+        {slides.length === 0 && (
+          <p className="text-sm text-zinc-400 text-center py-8">
+            {t.no_slides ?? "No slides yet. Add one below."}
+          </p>
+        )}
+        {slides.map((slide, idx) => (
+          <div key={idx} className="border border-zinc-200 rounded-xl p-4 flex flex-col gap-3">
+            {/* Header row */}
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">{t.slide ?? "Slide"} {idx + 1}</span>
+              <div className="flex items-center gap-1">
+                <button onClick={() => move(idx, -1)} disabled={idx === 0} className="p-1 rounded text-zinc-400 hover:text-zinc-700 disabled:opacity-30" title="Move up">
+                  <ChevronUp className="h-4 w-4" />
+                </button>
+                <button onClick={() => move(idx, 1)} disabled={idx === slides.length - 1} className="p-1 rounded text-zinc-400 hover:text-zinc-700 disabled:opacity-30" title="Move down">
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+                {confirmDelete === idx ? (
+                  <span className="flex items-center gap-1 ms-1">
+                    <span className="text-xs text-red-500 font-medium">{t.delete_confirm ?? "Delete?"}</span>
+                    <button onClick={() => remove(idx)} className="rounded px-2 py-0.5 text-xs font-medium bg-red-500 text-white hover:bg-red-600">{t.yes ?? "Yes"}</button>
+                    <button onClick={() => setConfirmDelete(null)} className="rounded px-2 py-0.5 text-xs font-medium bg-zinc-100 text-zinc-700 hover:bg-zinc-200">{t.no ?? "No"}</button>
+                  </span>
+                ) : (
+                  <button onClick={() => setConfirmDelete(idx)} className="p-1 rounded text-red-400 hover:text-red-600" title="Remove slide">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Image upload area */}
+            <label className={`relative flex flex-col items-center justify-center w-full rounded-xl border-2 border-dashed cursor-pointer overflow-hidden transition-colors ${slide.image_url ? 'border-transparent' : 'border-zinc-200 hover:border-blue-400 bg-zinc-50 hover:bg-blue-50'}`} style={{ minHeight: '10rem' }}>
+              {uploading[idx] ? (
+                <div className="flex flex-col items-center gap-2 py-8 text-zinc-400">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                  <span className="text-sm">{t.uploading ?? "Uploading…"}</span>
+                </div>
+              ) : slide.image_url ? (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={slide.image_url} alt="" className="w-full h-40 object-cover rounded-xl" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl">
+                    <span className="text-white text-sm font-medium flex items-center gap-1"><ImageIcon className="h-4 w-4" /> {t.change_image ?? "Change image"}</span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center gap-2 py-8 text-zinc-400">
+                  <ImageIcon className="h-8 w-8" />
+                  <span className="text-sm font-medium">{t.image_label ?? "Click to upload image"}</span>
+                  <span className="text-xs">{t.image_hint ?? "JPG, PNG, WebP"}</span>
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleImageUpload(idx, e.target.files?.[0])}
+              />
+            </label>
+
+            <input
+              className={inputClass}
+              placeholder={t.title_placeholder ?? "Title (e.g. THE LUXURY YOU DESERVE)"}
+              value={slide.title}
+              onChange={(e) => update(idx, 'title', e.target.value)}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                className={inputClass}
+                placeholder={t.cta_placeholder ?? "Button text (e.g. SHOP NOW)"}
+                value={slide.cta_text}
+                onChange={(e) => update(idx, 'cta_text', e.target.value)}
+              />
+              <input
+                className={inputClass}
+                placeholder={t.link_placeholder ?? "Link path (e.g. /shop)"}
+                value={slide.href}
+                onChange={(e) => update(idx, 'href', e.target.value)}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Toggle
+                defaultChecked={slide.is_active}
+                onChange={(val) => update(idx, 'is_active', val)}
+              />
+              <span className="text-sm text-zinc-600">{t.active ?? "Active"}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between pt-2 border-t border-zinc-100">
+        <button
+          onClick={add}
+          className="flex items-center gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+        >
+          <Plus className="h-4 w-4" />
+          {t.add_slide ?? "Add Slide"}
+        </button>
+        <button
+          onClick={save}
+          disabled={saving}
+          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+        >
+          <Save className="h-4 w-4" />
+          {saving ? (t.saving ?? 'Saving…') : (t.save ?? 'Save Slides')}
+        </button>
+      </div>
+    </>
+  );
+}
+
+function Toggle({ defaultChecked = false, onChange }) {
   const [on, setOn] = useState(defaultChecked);
   return (
     <button
       type="button"
       role="switch"
       aria-checked={on}
-      onClick={() => setOn(!on)}
+      onClick={() => { setOn((v) => { onChange?.(!v); return !v; }); }}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
         on ? "bg-blue-600" : "bg-zinc-300"
       }`}
     >
       <span
         className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-          on ? "translate-x-6" : "translate-x-1"
+          on ? "translate-x-6 rtl:-translate-x-6" : "translate-x-1 rtl:-translate-x-1"
         }`}
       />
     </button>

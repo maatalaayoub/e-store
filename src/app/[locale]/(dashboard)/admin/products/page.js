@@ -6,18 +6,179 @@ import {
   Plus,
   Search,
   Filter,
-  MoreVertical,
   Package,
   Pencil,
   Trash2,
+  Archive,
+  FileText,
   Star,
   Loader2,
   Check,
+  AlertTriangle,
+  MoreVertical,
 } from "lucide-react";
 
+import { toast } from "sonner";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { AdminProductsSkeleton } from "@/components/skeletons";
 import ProductFormModal from "./_components/ProductFormModal";
+
+// ── Custom confirm modal ────────────────────────────────────────────────────
+function ConfirmModal({ open, title, message, orders, confirmLabel = "Confirm", confirmVariant = "red", cancelLabel = "Cancel", onConfirm, onCancel }) {
+  if (!open || typeof document === "undefined") return null;
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.4)" }}>
+      <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6 flex flex-col gap-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50">
+            <AlertTriangle className="h-5 w-5 text-red-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-zinc-900 text-sm">{title}</p>
+            {message && <p className="text-sm text-zinc-500 mt-1 leading-relaxed">{message}</p>}
+            {orders && orders.length > 0 && (
+              <ul className="mt-3 rounded-lg bg-zinc-50 border border-zinc-200 divide-y divide-zinc-100 text-xs max-h-36 overflow-y-auto">
+                {orders.map((o) => (
+                  <li key={o.id} className="flex items-center justify-between px-3 py-2 gap-2">
+                    <span className="font-mono font-medium text-zinc-700">#{o.order_number}</span>
+                    <span className="capitalize text-amber-600 font-medium">{o.status}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 pt-1">
+          <button
+            onClick={onCancel}
+            className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
+          >
+            {cancelLabel}
+          </button>
+          <button
+            onClick={onConfirm}
+            className={`rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors ${
+              confirmVariant === "amber"
+                ? "bg-amber-500 hover:bg-amber-600"
+                : "bg-red-600 hover:bg-red-700"
+            }`}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// ── Per-row action dropdown ────────────────────────────────────────────────
+function ActionMenu({ product, onEdit, onDelete, onSetStatus, disabled }) {
+  const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const btnRef = useRef(null);
+  const panelRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e) => {
+      if (
+        btnRef.current && !btnRef.current.contains(e.target) &&
+        panelRef.current && !panelRef.current.contains(e.target)
+      ) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  const toggle = () => {
+    if (open) { setOpen(false); return; }
+    const rect = btnRef.current?.getBoundingClientRect();
+    if (rect) {
+      const PANEL_W = 176;
+      // count visible menu items dynamically
+      const statusItems = ["active", "archived", "draft"].filter((s) => s !== product.status).length;
+      const PANEL_H = 44 + statusItems * 40 + 1 + 40; // edit + status items + divider + delete
+      const isRtl = document.documentElement.dir === "rtl";
+      const left = isRtl ? rect.left : Math.max(8, rect.right - PANEL_W);
+      const top = rect.bottom + 4 + PANEL_H > window.innerHeight
+        ? rect.top - PANEL_H - 4
+        : rect.bottom + 4;
+      setCoords({ top, left });
+    }
+    setOpen(true);
+  };
+
+  const pick = (fn) => { setOpen(false); fn(); };
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        onClick={toggle}
+        disabled={disabled}
+        className="p-1.5 text-zinc-400 hover:text-zinc-900 rounded hover:bg-zinc-100 disabled:opacity-40"
+        aria-label="Actions"
+      >
+        {disabled
+          ? <Loader2 className="h-4 w-4 animate-spin" />
+          : <MoreVertical className="h-4 w-4" />}
+      </button>
+
+      {open && typeof document !== "undefined" && createPortal(
+        <div
+          ref={panelRef}
+          style={{ position: "fixed", top: coords.top, left: coords.left, width: 176, zIndex: 10000 }}
+          className="rounded-xl border border-zinc-200 bg-white shadow-xl py-1 flex flex-col"
+        >
+          <button
+            onClick={() => pick(onEdit)}
+            className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
+          >
+            <Pencil className="h-4 w-4 text-zinc-400" />
+            Edit
+          </button>
+          {product.status !== "active" && (
+            <button
+              onClick={() => pick(() => onSetStatus("active"))}
+              className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
+            >
+              <Check className="h-4 w-4 text-emerald-500" />
+              Set as Active
+            </button>
+          )}
+          {product.status !== "archived" && (
+            <button
+              onClick={() => pick(() => onSetStatus("archived"))}
+              className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
+            >
+              <Archive className="h-4 w-4 text-zinc-400" />
+              Archive
+            </button>
+          )}
+          {product.status !== "draft" && (
+            <button
+              onClick={() => pick(() => onSetStatus("draft"))}
+              className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
+            >
+              <FileText className="h-4 w-4 text-zinc-400" />
+              Set as Draft
+            </button>
+          )}
+          <div className="border-t border-zinc-100 my-1" />
+          <button
+            onClick={() => pick(onDelete)}
+            className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete
+          </button>
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
 
 const TAB_KEYS = ["all", "active", "draft", "archived"];
 
@@ -48,7 +209,8 @@ export default function AdminProductsPage() {
   const [categories, setCategories] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [deletingId, setDeletingId] = useState(null);
+  const [actioningId, setActioningId] = useState(null);
+  const [confirmModal, setConfirmModal] = useState(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterCoords, setFilterCoords] = useState({ top: 0, left: 0 });
   const [filterCategory, setFilterCategory] = useState("");
@@ -106,17 +268,108 @@ export default function AdminProductsPage() {
   }
 
   async function handleDelete(product) {
-    const confirmed = window.confirm(
-      `Delete "${product.name}"? This cannot be undone.`
-    );
-    if (!confirmed) return;
-    setDeletingId(product.id);
-    try {
-      await fetch(`/api/v1/products/${product.id}`, { method: "DELETE" });
-      fetchProducts();
-    } finally {
-      setDeletingId(null);
+    setConfirmModal({
+      title: `Delete "${product.name}"?`,
+      message: "This cannot be undone.",
+      confirmLabel: "Delete",
+      confirmVariant: "red",
+      onConfirm: async () => {
+        setConfirmModal(null);
+        setActioningId(product.id);
+        try {
+          const res = await fetch(`/api/v1/products/${product.id}`, { method: "DELETE" });
+          if (res.ok) {
+            toast.success(`"${product.name}" deleted.`);
+            fetchProducts();
+          } else if (res.status === 409) {
+            const json = await res.json();
+            // Active orders block deletion — offer archive
+            setConfirmModal({
+              title: `Cannot delete "${product.name}"`,
+              message: "This product is linked to active orders. Archive it instead to hide it from the shop.",
+              orders: json.orders ?? [],
+              confirmLabel: "Archive instead",
+              confirmVariant: "amber",
+              onConfirm: async () => {
+                setConfirmModal(null);
+                const archiveRes = await fetch(`/api/v1/products/${product.id}`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ status: "archived" }),
+                });
+                if (archiveRes.ok) {
+                  toast.success(`"${product.name}" archived.`);
+                  fetchProducts();
+                } else {
+                  toast.error("Failed to archive product.");
+                }
+                setActioningId(null);
+              },
+            });
+            return;
+          } else {
+            toast.error("Failed to delete product.");
+          }
+        } catch {
+          toast.error("Something went wrong. Please try again.");
+        }
+        setActioningId(null);
+      },
+    });
+  }
+
+  async function handleSetStatus(product, status) {
+    // "Set as active" is safe — apply immediately without a confirm dialog
+    if (status === "active") {
+      setActioningId(product.id);
+      try {
+        const res = await fetch(`/api/v1/products/${product.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "active" }),
+        });
+        if (res.ok) {
+          toast.success(`"${product.name}" is now active.`);
+          fetchProducts();
+        } else {
+          toast.error("Failed to update product.");
+        }
+      } catch {
+        toast.error("Something went wrong.");
+      }
+      setActioningId(null);
+      return;
     }
+
+    const label = status === "archived" ? "Archive" : "Set as Draft";
+    setConfirmModal({
+      title: `${label} "${product.name}"?`,
+      message: status === "archived"
+        ? "Archived products are hidden from the shop."
+        : "Draft products are not visible in the shop.",
+      confirmLabel: label,
+      confirmVariant: "amber",
+      onConfirm: async () => {
+        setConfirmModal(null);
+        setActioningId(product.id);
+        try {
+          const res = await fetch(`/api/v1/products/${product.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status }),
+          });
+          if (res.ok) {
+            toast.success(`"${product.name}" set to ${status}.`);
+            fetchProducts();
+          } else {
+            toast.error("Failed to update product.");
+          }
+        } catch {
+          toast.error("Something went wrong.");
+        }
+        setActioningId(null);
+      },
+    });
   }
 
   function handleSaved() {
@@ -182,6 +435,16 @@ export default function AdminProductsPage() {
 
   return (
     <>
+      <ConfirmModal
+        open={!!confirmModal}
+        title={confirmModal?.title}
+        message={confirmModal?.message}
+        orders={confirmModal?.orders}
+        confirmLabel={confirmModal?.confirmLabel}
+        confirmVariant={confirmModal?.confirmVariant}
+        onConfirm={confirmModal?.onConfirm}
+        onCancel={() => { setConfirmModal(null); setActioningId(null); }}
+      />
       <ProductFormModal
         open={modalOpen}
         product={editingProduct}
@@ -383,13 +646,22 @@ export default function AdminProductsPage() {
                         <Star className="inline h-3 w-3 text-yellow-400 fill-yellow-400 ms-1" />
                       )}
                     </span>
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                        STATUS_STYLES[p.status] ?? "bg-zinc-100 text-zinc-500"
-                      }`}
-                    >
-                      {p.status}
-                    </span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                          STATUS_STYLES[p.status] ?? "bg-zinc-100 text-zinc-500"
+                        }`}
+                      >
+                        {p.status}
+                      </span>
+                      <ActionMenu
+                        product={p}
+                        disabled={actioningId === p.id}
+                        onEdit={() => openEdit(p)}
+                        onDelete={() => handleDelete(p)}
+                        onSetStatus={(status) => handleSetStatus(p, status)}
+                      />
+                    </div>
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-xs text-zinc-500 mt-1.5">
                     <div>
@@ -410,27 +682,6 @@ export default function AdminProductsPage() {
                       </span>
                       {formatPrice(p.price, p.effective_price)}
                     </div>
-                  </div>
-                  <div className="flex items-center gap-1 pt-2">
-                    <button
-                      onClick={() => openEdit(p)}
-                      className="p-1.5 text-zinc-400 hover:text-blue-600 rounded hover:bg-zinc-100"
-                      aria-label="Edit"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(p)}
-                      disabled={deletingId === p.id}
-                      className="p-1.5 text-zinc-400 hover:text-red-600 rounded hover:bg-zinc-100 disabled:opacity-50"
-                      aria-label="Delete"
-                    >
-                      {deletingId === p.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
-                    </button>
                   </div>
                 </div>
               </li>
@@ -496,29 +747,14 @@ export default function AdminProductsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => openEdit(p)}
-                          className="p-1.5 text-zinc-400 hover:text-blue-600 rounded hover:bg-zinc-100"
-                          aria-label="Edit"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(p)}
-                          disabled={deletingId === p.id}
-                          className="p-1.5 text-zinc-400 hover:text-red-600 rounded hover:bg-zinc-100 disabled:opacity-50"
-                          aria-label="Delete"
-                        >
-                          {deletingId === p.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                        </button>
-                        <button className="p-1.5 text-zinc-400 hover:text-zinc-900 rounded hover:bg-zinc-100">
-                          <MoreVertical className="h-4 w-4" />
-                        </button>
+                      <div className="flex items-center justify-end">
+                        <ActionMenu
+                          product={p}
+                          disabled={actioningId === p.id}
+                          onEdit={() => openEdit(p)}
+                          onDelete={() => handleDelete(p)}
+                          onSetStatus={(status) => handleSetStatus(p, status)}
+                        />
                       </div>
                     </td>
                   </tr>

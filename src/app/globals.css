@@ -15,16 +15,17 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+  /* Cairo is always included so Arabic characters render correctly in any locale */
+  font-family: var(--font-inter), var(--font-cairo), Arial, Helvetica, sans-serif;
 }
 
-/* Inter font for English and French locales */
+/* Inter + Cairo fallback for English and French locales */
 :root[lang="en"] body,
 :root[lang="fr"] body {
-  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), var(--font-cairo), Arial, Helvetica, sans-serif;
 }
 
-/* Cairo font for Arabic and Darija locales */
+/* Cairo primary for Arabic and Darija locales */
 :root[lang="ar"] body,
 :root[lang="dr"] body {
   font-family: var(--font-cairo), Arial, sans-serif;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, ChevronDown, X, Loader2, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -74,6 +74,8 @@ export default function ProductFormModal({
   onSaved,
   onCategoryCreated,
 }) {
+  const [animOpen, setAnimOpen] = useState(false);   // drives CSS transition
+  const [mounted, setMounted] = useState(false);     // keeps DOM alive during exit
   const [form, dispatch] = useReducer(formReducer, initialForm);
   const [pendingImages, setPendingImages] = useState([]); // { file, preview, isMain }
   const [existingImages, setExistingImages] = useState([]);
@@ -100,9 +102,10 @@ export default function ProductFormModal({
 
   const isEdit = Boolean(product?.id);
 
-  // Sync form when product changes
+  // Sync form when product changes + drive animation
   useEffect(() => {
     if (open) {
+      setMounted(true);
       dispatch({ type: "reset", payload: product ? productToForm(product) : {} });
       setExistingImages(
         product?.images
@@ -116,8 +119,19 @@ export default function ProductFormModal({
       setError(null);
       setShowNewCat(false);
       setNewCategoryName("");
+      // Trigger open transition after mount
+      requestAnimationFrame(() => requestAnimationFrame(() => setAnimOpen(true)));
+    } else {
+      setAnimOpen(false);
+      const t = setTimeout(() => setMounted(false), 300);
+      return () => clearTimeout(t);
     }
   }, [open, product]);
+
+  const handleClose = useCallback(() => {
+    setAnimOpen(false);
+    setTimeout(onClose, 300);
+  }, [onClose]);
 
   // Revoke object URLs on unmount / image removal
   useEffect(() => {
@@ -326,7 +340,7 @@ export default function ProductFormModal({
     }
   }
 
-  if (!open) return null;
+  if (!mounted || typeof document === "undefined") return null;
 
   const f = (field) => (e) =>
     dispatch({
@@ -335,19 +349,30 @@ export default function ProductFormModal({
       value: e.target.type === "checkbox" ? e.target.checked : e.target.value,
     });
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
+        className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ease-out ${animOpen ? "opacity-100" : "opacity-0"}`}
+        onClick={handleClose}
       />
 
-      {/* Panel */}
+      {/* Panel — slides in from right on desktop, up from bottom on mobile */}
       <div
         ref={panelRef}
-        className="relative ms-auto flex h-full w-full max-w-2xl flex-col bg-white shadow-2xl overflow-hidden"
+        className={`
+          relative mt-auto ms-auto flex w-full flex-col bg-white shadow-2xl overflow-hidden
+          transition-transform duration-300
+          h-[92dvh] rounded-t-2xl max-w-full
+          sm:h-full sm:max-w-2xl sm:rounded-none
+          ${animOpen ? "translate-y-0 sm:translate-x-0" : "translate-y-full sm:translate-y-0 sm:translate-x-full"}
+        `}
+        style={{ transitionTimingFunction: animOpen ? "cubic-bezier(0.32,0.72,0,1)" : "cubic-bezier(0.72,0,0.68,1)" }}
       >
+        {/* Mobile drag handle */}
+        <div className="flex justify-center pt-3 pb-1 sm:hidden" aria-hidden="true">
+          <div className="h-1 w-10 rounded-full bg-zinc-200" />
+        </div>
         {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4 shrink-0">
           <h2 className="text-lg font-bold text-zinc-900">
@@ -355,8 +380,8 @@ export default function ProductFormModal({
           </h2>
           <button
             type="button"
-            onClick={onClose}
-            className="rounded-lg p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700"
+            onClick={handleClose}
+            className="hidden sm:flex rounded-lg p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700"
           >
             <X className="h-5 w-5" />
           </button>
@@ -743,7 +768,7 @@ export default function ProductFormModal({
         <div className="flex items-center justify-end gap-3 border-t border-zinc-100 px-6 py-4 shrink-0">
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
           >
             {t.cancel ?? "Cancel"}
@@ -759,6 +784,7 @@ export default function ProductFormModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   LogOut,
   User as UserIcon,
@@ -113,7 +114,7 @@ export default function ShopSidebarNav({ isOpen, onClose }) {
           >
             <XIcon className="w-5 h-5" />
           </button>
-          <span className="text-lg font-bold tracking-tight">{dict?.common?.store_name ?? "My Store"}</span>
+          <Image src="/images/shop-logo-darck.png" alt="LaCérémonie" width={140} height={35} className="h-5 w-auto object-contain" />
         </div>
 
         <div className="flex flex-col flex-1 overflow-y-auto scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useDictionary, useLocale } from "@/components/providers/LocaleProvider";
 
 export default function ShopFooter() {
@@ -29,7 +30,7 @@ export default function ShopFooter() {
       <div className="px-6 pb-12 pt-4">
         <div className={`mx-auto max-w-7xl grid gap-8 md:grid-cols-3 items-start mb-12 ${isRtl ? "text-right" : "text-left"}`}>
           <div>
-            <div className="text-2xl font-bold tracking-tighter mb-4 text-white">My store</div>
+            <Image src="/images/shop-logo-white.png" alt="LaCérémonie" width={180} height={45} className="h-6 w-auto object-contain mb-4" />
             <p className={`text-sm text-zinc-400 max-w-xs ${isRtl ? "ms-auto md:ms-0" : ""}`}>{tFooter.tagline}</p>
           </div>
           <div className="flex flex-col gap-2">

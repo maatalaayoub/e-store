@@ -239,7 +239,8 @@
       "headers": { "order": "الطلب", "customer": "العميل", "date": "التاريخ", "total": "المجموع", "status": "الحالة", "action": "الإجراء" },
       "empty_title": "ما كاينش طلبات",
       "empty_desc": "الطلبات غادي يبانو هنا منين العملاء يشريو.",
-      "filter_panel": { "date_range": "نطاق التاريخ", "all_time": "كل الأوقات", "today": "اليوم", "last_7": "آخر 7 أيام", "last_30": "آخر 30 يوم", "cancelled_by": "لغاه", "any": "الكل", "customer": "العميل", "admin_cancel": "الأدمين", "clear": "مسح الفلاتر" }
+      "filter_panel": { "date_range": "نطاق التاريخ", "all_time": "كل الأوقات", "today": "اليوم", "last_7": "آخر 7 أيام", "last_30": "آخر 30 يوم", "cancelled_by": "لغاه", "any": "الكل", "customer": "العميل", "admin_cancel": "الأدمين", "clear": "مسح الفلاتر" },
+      "drawer": { "items": "المنتجات", "qty": "الكمية", "no_items": "ما كاين اشي." }
     },
     "customers": {
       "title": "العملاء",
@@ -258,6 +259,7 @@
       "save": "حفظ التغييرات",
       "sections": {
         "general": "عام",
+        "hero": "الواجهة الرئيسية",
         "payments": "المدفوعات",
         "shipping": "التوصيل",
         "notifications": "الإشعارات",
@@ -318,6 +320,28 @@
         "desc": "اللغة و التوقيت الافتراضي.",
         "default_language": "اللغة الافتراضية",
         "timezone": "المنطقة الزمنية"
+      },
+      "hero": {
+        "title": "الشرائح الرئيسية",
+        "desc": "دبّر الشرائح ديال الواجهة الرئيسية. التغييرات كتظهر مباشرة بعد الحفظ.",
+        "no_slides": "ما كاينة شرائح. زيد واحدة من تحت.",
+        "slide": "شريحة",
+        "image_label": "كليك باش ترفع صورة",
+        "image_hint": "JPG، PNG، WebP",
+        "change_image": "بدّل الصورة",
+        "uploading": "كيترفع…",
+        "title_placeholder": "العنوان (مثال: الفخامة اللي تستاهلها)",
+        "cta_placeholder": "نص الزر (مثال: تسوّق دابا)",
+        "link_placeholder": "مسار الرابط (مثال: /shop)",
+        "active": "نشيط",
+        "delete_confirm": "تمسح؟",
+        "yes": "إيه",
+        "no": "لا",
+        "add_slide": "زيد شريحة",
+        "save": "حفظ الشرائح",
+        "saving": "كيتحفظ…",
+        "saved": "تحفظات الشرائح",
+        "upload_error": "فشل رفع الصورة"
       }
     }
   },

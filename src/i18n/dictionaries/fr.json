@@ -239,7 +239,8 @@
       "headers": { "order": "Commande", "customer": "Client", "date": "Date", "total": "Total", "status": "Statut", "action": "Action" },
       "empty_title": "Aucune commande",
       "empty_desc": "Les commandes apparaîtront ici lors des achats.",
-      "filter_panel": { "date_range": "Période", "all_time": "Toujours", "today": "Aujourd'hui", "last_7": "7 derniers jours", "last_30": "30 derniers jours", "cancelled_by": "Annulé par", "any": "Tous", "customer": "Client", "admin_cancel": "Admin", "clear": "Effacer les filtres" }
+      "filter_panel": { "date_range": "Période", "all_time": "Toujours", "today": "Aujourd'hui", "last_7": "7 derniers jours", "last_30": "30 derniers jours", "cancelled_by": "Annulé par", "any": "Tous", "customer": "Client", "admin_cancel": "Admin", "clear": "Effacer les filtres" },
+      "drawer": { "items": "Articles", "qty": "Qté", "no_items": "Aucun article trouvé." }
     },
     "customers": {
       "title": "Clients",
@@ -258,6 +259,7 @@
       "save": "Enregistrer",
       "sections": {
         "general": "Général",
+        "hero": "Hero",
         "payments": "Paiements",
         "shipping": "Livraison",
         "notifications": "Notifications",
@@ -318,6 +320,28 @@
         "desc": "Langue et fuseau horaire par défaut.",
         "default_language": "Langue par défaut",
         "timezone": "Fuseau horaire"
+      },
+      "hero": {
+        "title": "Carrousel Hero",
+        "desc": "Gérez les diapositives de la section hero. Les modifications sont effectives immédiatement après l'enregistrement.",
+        "no_slides": "Aucune diapositive. Ajoutez-en une ci-dessous.",
+        "slide": "Diapositive",
+        "image_label": "Cliquez pour télécharger une image",
+        "image_hint": "JPG, PNG, WebP",
+        "change_image": "Changer l'image",
+        "uploading": "Téléchargement…",
+        "title_placeholder": "Titre (ex. LE LUXE QUE VOUS MÉRITEZ)",
+        "cta_placeholder": "Texte du bouton (ex. EXPLORER)",
+        "link_placeholder": "Chemin du lien (ex. /shop)",
+        "active": "Actif",
+        "delete_confirm": "Supprimer ?",
+        "yes": "Oui",
+        "no": "Non",
+        "add_slide": "Ajouter une diapositive",
+        "save": "Enregistrer",
+        "saving": "Enregistrement…",
+        "saved": "Diapositives enregistrées",
+        "upload_error": "Échec du téléchargement"
       }
     }
   },

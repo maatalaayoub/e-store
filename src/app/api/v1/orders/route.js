@@ -129,9 +129,9 @@ export async function POST(req) {
 /**
  * GET /api/v1/orders
  * List all orders — admin only.
- * Returns orders with items, product names, and shipping address.
+ * GET /api/v1/orders?id=<uuid>  — fetch a single order by id (admin only).
  */
-export async function GET() {
+export async function GET(req) {
   try {
     const anonClient = await createClient();
     const adminUser = await getAdminUser(anonClient);
@@ -139,24 +139,53 @@ export async function GET() {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    // List query — only the fields needed to render the table/cards
+    const listFields = `
+      id,
+      order_number,
+      status,
+      cancelled_by,
+      total_amount,
+      currency_code,
+      exchange_rate,
+      created_at,
+      shipping_address
+    `;
+
+    // Detail query — includes full item breakdown (only fetched on click)
+    const detailFields = `
+      id,
+      order_number,
+      status,
+      cancelled_by,
+      total_amount,
+      currency_code,
+      exchange_rate,
+      created_at,
+      shipping_address,
+      order_items (
+        quantity,
+        unit_price,
+        products ( name )
+      )
+    `;
+
+    if (id) {
+      const { data, error } = await anonClient
+        .from('orders')
+        .select(detailFields)
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+      return NextResponse.json({ success: true, data });
+    }
+
     const { data: orders, error } = await anonClient
       .from('orders')
-      .select(`
-        id,
-        order_number,
-        status,
-        cancelled_by,
-        total_amount,
-        currency_code,
-        exchange_rate,
-        created_at,
-        shipping_address,
-        order_items (
-          quantity,
-          unit_price,
-          products ( name )
-        )
-      `)
+      .select(listFields)
       .order('created_at', { ascending: false });
 
     if (error) throw error;

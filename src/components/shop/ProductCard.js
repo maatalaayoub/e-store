@@ -21,6 +21,8 @@ export default function ProductCard({ product, onAdded }) {
     onAdded?.();
   };
 
+  const isArabicName = /[\u0600-\u06FF]/.test(product.name ?? "");
+
   // Resolve discount — prices are stored in MAD
   let effectivePrice = product.effective_price ?? product.price;
   const originalPrice = product.price;
@@ -73,7 +75,7 @@ export default function ProductCard({ product, onAdded }) {
 
       <div className="mt-4 sm:mt-5 flex flex-1 flex-col text-center">
         <Link href={`/${locale}/product/${product.id}`}>
-          <h3 className="line-clamp-2 text-[10px] font-bold uppercase tracking-[0.15em] text-zinc-900 leading-snug sm:text-xs sm:tracking-[0.18em] hover:text-blue-600 transition-colors">
+          <h3 className={`line-clamp-2 text-zinc-900 leading-snug hover:text-blue-600 transition-colors ${isArabicName ? "text-sm sm:text-base font-semibold tracking-normal font-[family-name:var(--font-cairo)]" : "text-xs sm:text-sm font-bold uppercase tracking-[0.15em] sm:tracking-[0.18em]"}`}>
             {product.name}
           </h3>
         </Link>
