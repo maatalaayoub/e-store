@@ -26,6 +26,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { AdminSettingsSkeleton } from "@/components/skeletons";
+import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
 
 const SECTION_DEFS = [
   { id: "general", icon: Store },
@@ -655,37 +656,16 @@ function HeroSection() {
       )}
 
       {/* ── Delete confirmation dialog ── */}
-      {confirmDelete !== null && typeof document !== "undefined" && createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setConfirmDelete(null)} />
-          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6 flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 shrink-0">
-                <Trash2 className="h-5 w-5 text-red-600" />
-              </span>
-              <h3 className="text-base font-bold text-zinc-900">{t.dialog_title ?? "Delete Slide"}</h3>
-            </div>
-            <p className="text-sm text-zinc-500 leading-relaxed">
-              {t.dialog_desc ?? "Are you sure you want to delete this slide? This action cannot be undone."}
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setConfirmDelete(null)}
-                className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-              >
-                {t.no ?? "Cancel"}
-              </button>
-              <button
-                onClick={() => remove(confirmDelete)}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
-              >
-                {t.yes ?? "Yes, delete"}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+      <ConfirmationDialog
+        isOpen={confirmDelete !== null}
+        title={t.dialog_title ?? "Delete Slide"}
+        description={t.dialog_desc ?? "Are you sure you want to delete this slide? This action cannot be undone."}
+        confirmText={t.yes ?? "Yes, delete"}
+        cancelText={t.no ?? "Cancel"}
+        icon={<Trash2 className="h-5 w-5" />}
+        onConfirm={() => remove(confirmDelete)}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </>
   );
 }

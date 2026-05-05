@@ -15,15 +15,7 @@ import { useDictionary } from "@/components/providers/LocaleProvider";
 import { isRtlLocale } from "@/config/constants";
 import { downloadInvoicePdf } from "@/lib/invoice-pdf";
 import PageHeader from "@/components/ui/PageHeader";
-
-const STATUS_CONFIG = {
-  pending:    { Icon: Clock,         color: "text-amber-600",  bg: "bg-amber-50",  border: "border-amber-200" },
-  confirmed:  { Icon: CheckCircle2,  color: "text-blue-600",   bg: "bg-blue-50",   border: "border-blue-200"  },
-  processing: { Icon: Package,       color: "text-violet-600", bg: "bg-violet-50", border: "border-violet-200"},
-  shipped:    { Icon: Truck,         color: "text-indigo-600", bg: "bg-indigo-50", border: "border-indigo-200"},
-  delivered:  { Icon: CheckCircle2,  color: "text-emerald-600",bg: "bg-emerald-50",border: "border-emerald-200"},
-  cancelled:  { Icon: XCircle,       color: "text-red-600",    bg: "bg-red-50",    border: "border-red-200"   },
-};
+import { TRACK_ORDER_STATUS_CONFIG as STATUS_CONFIG } from "@/lib/order-status";
 
 export default function TrackOrderPage() {
   const { locale } = useParams();

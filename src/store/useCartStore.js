@@ -10,6 +10,8 @@ export const useCartStore = create(
         set((state) => {
           const existing = state.items.find((i) => i.id === product.id);
           if (existing) {
+            const stock = existing.stock ?? product.stock;
+            if (stock != null && existing.quantity >= stock) return state;
             return {
               items: state.items.map((i) =>
                 i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i

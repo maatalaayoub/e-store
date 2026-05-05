@@ -7,11 +7,12 @@ import { Check, ChevronDown, X, Loader2, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import ImageManager from "./ImageManager";
 import { useDictionary } from "@/components/providers/LocaleProvider";
+import { RTL_LOCALES } from "@/config/constants";
 
-// ── helpers ──────────────────────────────────────────────────────────────────
+// ── helpers ─────────────────────────────────────────────────────────────────────
 const SUPPORTED_LANGS = ["en", "fr", "ar", "dr"];
 const LANG_LABELS = { en: "English", fr: "Français", ar: "العربية", dr: "الدارجة" };
-const RTL_LANGS = new Set(["ar", "dr"]);
+const RTL_LANGS = new Set(RTL_LOCALES);
 
 function emptyTranslations() {
   return Object.fromEntries(SUPPORTED_LANGS.map((l) => [l, { name: "", description: "" }]));

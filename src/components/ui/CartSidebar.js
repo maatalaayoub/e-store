@@ -8,13 +8,9 @@ import { useParams } from "next/navigation";
 import { useCartStore } from "@/store/useCartStore";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
-import { FREE_SHIPPING_THRESHOLD_USD, isRtlLocale } from "@/config/constants";
+import { isRtlLocale } from "@/config/constants";
 import { CartSkeleton } from "@/components/skeletons";
-
-function parsePrice(price) {
-  if (typeof price === "number") return price;
-  return parseFloat(String(price).replace(/[^0-9.]/g, "")) || 0;
-}
+import { parsePrice } from "@/lib/price";
 
 export default function CartSidebar({ isOpen, onClose }) {
   const { items, removeItem, updateQuantity } = useCartStore();
@@ -33,10 +29,6 @@ export default function CartSidebar({ isOpen, onClose }) {
     0
   );
   const totalItems = items.reduce((acc, i) => acc + i.quantity, 0);
-  // eslint-disable-next-line no-unused-vars
-  const remaining = Math.max(FREE_SHIPPING_THRESHOLD_USD - subtotal, 0);
-  // eslint-disable-next-line no-unused-vars
-  const progress = Math.min((subtotal / FREE_SHIPPING_THRESHOLD_USD) * 100, 100);
 
   return (
     <>

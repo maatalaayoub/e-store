@@ -444,6 +444,7 @@
     "state": "الولاية/الجهة",
     "zip": "الرمز البريدي",
     "street_address": "العنوان",
+    "order_summary": "ملخص الطلب",
     "discount_placeholder": "كود التخفيض",
     "apply": "طبّق",
     "subtotal": "المجموع",

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -9,30 +8,14 @@ import {
   Package,
   ChevronRight,
   ChevronLeft,
-  Clock,
-  Truck,
-  CheckCircle2,
   XCircle,
-  Loader2,
-  AlertTriangle,
 } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
 import { useDictionary } from "@/components/providers/LocaleProvider";
-
-const STATUS_CONFIG = {
-  pending:    { Icon: Clock,         color: "text-amber-600",   bg: "bg-amber-50",   border: "border-amber-200" },
-  processing: { Icon: Loader2,       color: "text-blue-600",    bg: "bg-blue-50",    border: "border-blue-200" },
-  shipped:    { Icon: Truck,         color: "text-indigo-600",  bg: "bg-indigo-50",  border: "border-indigo-200" },
-  delivered:  { Icon: CheckCircle2,  color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" },
-  cancelled:  { Icon: XCircle,       color: "text-red-600",     bg: "bg-red-50",     border: "border-red-200" },
-};
-
-function getMainImage(product) {
-  const images = product?.product_images ?? [];
-  const main = images.find((i) => i.is_main) ?? images[0];
-  return main?.url ?? null;
-}
+import { getMainImage } from "@/lib/product-image";
+import { buildStatusConfig } from "@/lib/order-status";
+import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
 
 function OrderCard({ order, onCancel }) {
   const { formatPrice } = useCurrency();
@@ -42,13 +25,7 @@ function OrderCard({ order, onCancel }) {
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
-  const STATUS_CONFIG = {
-    pending:    { label: tStatus.pending    ?? "Pending",    Icon: Clock,         color: "text-amber-600",   bg: "bg-amber-50",   border: "border-amber-200" },
-    processing: { label: tStatus.processing ?? "Processing", Icon: Loader2,       color: "text-blue-600",    bg: "bg-blue-50",    border: "border-blue-200" },
-    shipped:    { label: tStatus.shipped    ?? "Shipped",    Icon: Truck,         color: "text-indigo-600",  bg: "bg-indigo-50",  border: "border-indigo-200" },
-    delivered:  { label: tStatus.delivered  ?? "Delivered",  Icon: CheckCircle2,  color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" },
-    cancelled:  { label: tStatus.cancelled  ?? "Cancelled",  Icon: XCircle,       color: "text-red-600",     bg: "bg-red-50",     border: "border-red-200" },
-  };
+  const STATUS_CONFIG = buildStatusConfig(tStatus);
   const status = STATUS_CONFIG[order.status] ?? STATUS_CONFIG.pending;
   const statusLabel = tStatus[order.status] ?? order.status ?? "Pending";
   const StatusIcon = status.Icon;
@@ -156,40 +133,16 @@ function OrderCard({ order, onCancel }) {
       )}
 
       {/* Cancel confirmation dialog */}
-      {showConfirm && typeof document !== "undefined" && createPortal(
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-          onClick={() => setShowConfirm(false)}
-        >
-          <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col items-center gap-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
-              <AlertTriangle className="h-6 w-6 text-red-500" />
-            </div>
-            <div className="text-center">
-              <p className="font-semibold text-zinc-900 text-base">{tOrders.cancel_confirm_title ?? "Cancel Order?"}</p>
-              <p className="mt-1 text-sm text-zinc-500">{tOrders.cancel_confirm_desc ?? "This action cannot be undone. The order will be permanently cancelled."}</p>
-            </div>
-            <div className="flex w-full gap-3 pt-1">
-              <button
-                onClick={() => setShowConfirm(false)}
-                className="flex-1 rounded-xl border border-zinc-200 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors"
-              >
-                {tOrders.cancel_no ?? "Keep Order"}
-              </button>
-              <button
-                onClick={handleCancel}
-                className="flex-1 rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-700 transition-colors"
-              >
-                {tOrders.cancel_yes ?? "Yes, Cancel"}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+      <ConfirmationDialog
+        isOpen={showConfirm}
+        title={tOrders.cancel_confirm_title ?? "Cancel Order?"}
+        description={tOrders.cancel_confirm_desc ?? "This action cannot be undone. The order will be permanently cancelled."}
+        confirmText={tOrders.cancel_yes ?? "Yes, Cancel"}
+        cancelText={tOrders.cancel_no ?? "Keep Order"}
+        onConfirm={handleCancel}
+        onCancel={() => setShowConfirm(false)}
+        isLoading={cancelling}
+      />
     </div>
   );
 }

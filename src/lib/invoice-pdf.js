@@ -7,6 +7,24 @@ export async function downloadInvoicePdf(order) {
   const autoTableMod = await import("jspdf-autotable");
   const autoTable = autoTableMod.default ?? autoTableMod.autoTable;
 
+  // Safe base64 encoder for large ArrayBuffers (avoids call-stack overflow)
+  const toBase64 = (buf) => {
+    const bytes = new Uint8Array(buf);
+    let binary = "";
+    for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+    return btoa(binary);
+  };
+
+  // Detect Arabic/RTL characters
+  const isArabic = (str) => /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(String(str ?? ""));
+
+  // Load Cairo font (supports Arabic + Latin) and logo in parallel
+  const [regularBuf, boldBuf, logoBuf] = await Promise.all([
+    fetch("/fonts/Cairo-Regular.ttf").then((r) => r.arrayBuffer()),
+    fetch("/fonts/Cairo-Bold.ttf").then((r) => r.arrayBuffer()),
+    fetch("/images/shop-logo-darck.png").then((r) => r.arrayBuffer()).catch(() => null),
+  ]);
+
   const ship = order.shipping_address ?? {};
   const items = order.order_items ?? [];
   const created = new Date(order.created_at);
@@ -21,50 +39,60 @@ export async function downloadInvoicePdf(order) {
   const rate = Number(order.exchange_rate ?? 1);
 
   const doc = new jsPDF({ unit: "mm", format: "a4" });
+
+  // Embed Cairo font so Arabic glyphs render correctly
+  doc.addFileToVFS("Cairo-Regular.ttf", toBase64(regularBuf));
+  doc.addFont("Cairo-Regular.ttf", "Cairo", "normal");
+  doc.addFileToVFS("Cairo-Bold.ttf", toBase64(boldBuf));
+  doc.addFont("Cairo-Bold.ttf", "Cairo", "bold");
+
   const pageW = doc.internal.pageSize.getWidth();
   const margin = 15;
 
-  // Header
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(22);
+  // ── Header: INVOICE (left) | DATE (right) ─────────────────────────────
+  doc.setFont("Cairo", "bold");
+  doc.setFontSize(26);
   doc.setTextColor(24, 24, 27);
-  doc.text("INVOICE", margin, 22);
+  doc.text("INVOICE", margin, 24);
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont("Cairo", "normal");
   doc.setFontSize(10);
   doc.setTextColor(113, 113, 122);
-  doc.text(`#${shortId}`, margin, 28);
+  doc.text(`#${shortId}`, margin, 31);
 
-  doc.setFontSize(9);
-  doc.text("DATE", pageW - margin, 22, { align: "right" });
-  doc.setFont("helvetica", "bold");
+  // Date block — top-right
+  doc.setFontSize(8);
+  doc.setTextColor(161, 161, 170);
+  doc.text("DATE", pageW - margin, 18, { align: "right" });
+  doc.setFont("Cairo", "bold");
   doc.setFontSize(10);
   doc.setTextColor(24, 24, 27);
-  doc.text(dateStr, pageW - margin, 27, { align: "right" });
-  doc.setFont("helvetica", "normal");
+  doc.text(dateStr, pageW - margin, 24, { align: "right" });
+  doc.setFont("Cairo", "normal");
   doc.setFontSize(9);
   doc.setTextColor(113, 113, 122);
-  doc.text(timeStr, pageW - margin, 32, { align: "right" });
+  doc.text(timeStr, pageW - margin, 30, { align: "right" });
 
+  const dividerY = 38;
   doc.setDrawColor(228, 228, 231);
   doc.setLineWidth(0.3);
-  doc.line(margin, 38, pageW - margin, 38);
+  doc.line(margin, dividerY, pageW - margin, dividerY);
 
-  // Customer info
-  let y = 48;
-  doc.setFont("helvetica", "bold");
+  // ── Customer info ────────────────────────────────────────────────────────
+  let y = dividerY + 10;
+  doc.setFont("Cairo", "bold");
   doc.setFontSize(9);
   doc.setTextColor(161, 161, 170);
   doc.text("BILLED TO", margin, y);
   doc.text("SHIPPING ADDRESS", pageW / 2, y);
 
   y += 6;
-  doc.setFont("helvetica", "bold");
+  doc.setFont("Cairo", "bold");
   doc.setFontSize(11);
   doc.setTextColor(24, 24, 27);
   doc.text(ship.full_name || "Guest", margin, y);
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont("Cairo", "normal");
   doc.setFontSize(10);
   doc.setTextColor(82, 82, 91);
   const addressLines = [
@@ -80,7 +108,7 @@ export async function downloadInvoicePdf(order) {
     doc.text(String(ship.phone), margin, y + 5);
   }
 
-  // Items table
+  // ── Items table ──────────────────────────────────────────────────────────
   const tableStartY = y + Math.max(addressLines.length * 5, 10) + 8;
   const body = items.map((it) => {
     const unit = Number(it.unit_price) * rate;
@@ -98,8 +126,9 @@ export async function downloadInvoicePdf(order) {
     head: [["Item", "Qty", "Price", "Subtotal"]],
     body,
     theme: "plain",
-    styles: { fontSize: 10, cellPadding: 3, textColor: [39, 39, 42] },
+    styles: { font: "Cairo", fontSize: 10, cellPadding: 3, textColor: [39, 39, 42] },
     headStyles: {
+      font: "Cairo",
       fillColor: [244, 244, 245],
       textColor: [82, 82, 91],
       fontStyle: "bold",
@@ -111,20 +140,26 @@ export async function downloadInvoicePdf(order) {
       2: { halign: "right", cellWidth: 35 },
       3: { halign: "right", cellWidth: 35, fontStyle: "bold" },
     },
+    // Right-align Arabic product names
+    didParseCell: (data) => {
+      if (data.column.index === 0 && isArabic(data.cell.raw)) {
+        data.cell.styles.halign = "right";
+      }
+    },
     margin: { left: margin, right: margin },
   });
 
-  // Total
+  // ── Total ────────────────────────────────────────────────────────────────
   const finalY = doc.lastAutoTable.finalY + 10;
   doc.setDrawColor(228, 228, 231);
   doc.line(pageW - margin - 70, finalY, pageW - margin, finalY);
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont("Cairo", "normal");
   doc.setFontSize(10);
   doc.setTextColor(113, 113, 122);
   doc.text("TOTAL", pageW - margin - 70, finalY + 7);
 
-  doc.setFont("helvetica", "bold");
+  doc.setFont("Cairo", "bold");
   doc.setFontSize(14);
   doc.setTextColor(24, 24, 27);
   doc.text(
@@ -134,22 +169,27 @@ export async function downloadInvoicePdf(order) {
     { align: "right" }
   );
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont("Cairo", "normal");
   doc.setFontSize(8);
   doc.setTextColor(161, 161, 170);
   doc.text("STATUS", pageW - margin - 70, finalY + 13);
   doc.text(String(order.status).toUpperCase(), pageW - margin, finalY + 13, { align: "right" });
 
-  // Footer
-  doc.setFont("helvetica", "italic");
-  doc.setFontSize(9);
+  // ── Footer: logo centered + thank-you text ─────────────────────────────
+  const pageH = doc.internal.pageSize.getHeight();
+  const logoH = 10;
+  const logoW = logoH * 4;
+  if (logoBuf) {
+    doc.addImage(
+      toBase64(logoBuf), "PNG",
+      (pageW - logoW) / 2, pageH - 24,
+      logoW, logoH
+    );
+  }
+  doc.setFont("Cairo", "normal");
+  doc.setFontSize(8);
   doc.setTextColor(161, 161, 170);
-  doc.text(
-    "Thank you for your purchase!",
-    pageW / 2,
-    doc.internal.pageSize.getHeight() - 15,
-    { align: "center" }
-  );
+  doc.text("Thank you for your purchase!", pageW / 2, pageH - 10, { align: "center" });
 
   doc.save(`invoice-${shortId}.pdf`);
 }

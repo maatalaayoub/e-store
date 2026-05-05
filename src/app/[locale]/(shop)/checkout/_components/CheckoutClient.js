@@ -12,6 +12,7 @@ import SearchableCombobox from "@/components/ui/SearchableCombobox";
 import { COUNTRIES, findCountry, detectCountryFromIp } from "@/data/countries";
 import { resolveProductTranslation } from "@/lib/product-locale";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
+import { parsePrice } from "@/lib/price";
 
 /* ── Per-country placeholder text ── */
 const COUNTRY_HINTS = {
@@ -29,11 +30,6 @@ const COUNTRY_HINTS = {
   "Sweden":         { phone: "+46 8 000 0000", city: "Stockholm",       address: "Kungsgatan 12, 2 tr",         zip: "111 43", state: "Stockholm" },
 };
 const hint = (country, field) => COUNTRY_HINTS[country]?.[field] ?? "";
-
-function parsePrice(p) {
-  if (typeof p === "number") return p;
-  return parseFloat(String(p).replace(/[^0-9.]/g, "")) || 0;
-}
 
 export default function CheckoutClient({ locale, dict }) {
   const router = useRouter();
@@ -103,7 +99,7 @@ export default function CheckoutClient({ locale, dict }) {
   const [placing, setPlacing] = useState(false);
   const [errors, setErrors] = useState({});
 
-  const { formatPrice } = useCurrency();
+  const { formatPrice, currency, rate } = useCurrency();
 
   /** Base subtotal always stays in MAD (stored in DB as MAD) */
   const subtotal = items.reduce(
@@ -167,7 +163,6 @@ export default function CheckoutClient({ locale, dict }) {
     if (Object.keys(e).length) { setErrors(e); return; }
     setPlacing(true);
     try {
-      const rate = rates[currency.code] ?? 1;
       const res = await fetch("/api/v1/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -375,11 +370,15 @@ export default function CheckoutClient({ locale, dict }) {
           </div>
 
           {/* ════ RIGHT COLUMN — Order summary ════ */}
-          <div className="lg:sticky lg:top-10 h-fit max-w-sm w-full -mx-4 sm:mx-0 px-4 sm:px-0">
+          <div className="lg:sticky lg:top-10 h-fit w-full lg:max-w-sm border-t border-zinc-100 lg:border-t-0 pt-8 lg:pt-0">
             <div className="bg-white">
 
               {/* Items */}
-              <div className="divide-y divide-zinc-100">
+              <div className="mb-4 pb-1">
+                <h3 className="text-xs font-semibold uppercase tracking-widest text-zinc-400 mb-3">
+                  {tCheckout.order_summary ?? "Order Summary"}
+                </h3>
+                <div className="divide-y divide-zinc-100 rounded-xl border border-zinc-200 overflow-hidden">
                 {items.length === 0 ? (
                   <p className="py-8 text-sm text-zinc-400 text-center">{tCart.empty_state_title ?? "Your cart is empty"}</p>
                 ) : (
@@ -390,18 +389,18 @@ export default function CheckoutClient({ locale, dict }) {
                       ? item.images[0].url
                       : "/placeholder-view.svg";
                     return (
-                      <div key={item.id} className="flex items-start gap-4 py-4">
+                      <div key={item.id} className="flex items-center gap-4 px-4 py-4 bg-white">
                         {/* Thumbnail */}
-                        <div className="h-[4.5rem] w-[4.5rem] relative shrink-0 rounded overflow-hidden border border-zinc-200">
-                          <Image src={img} alt={resolved.name} fill className="object-cover" />
+                        <div className="h-16 w-16 relative shrink-0 rounded-lg overflow-hidden border border-zinc-200 bg-white">
+                          <Image src={img} alt={resolved.name} fill sizes="64px" loading="eager" className="object-cover" />
                         </div>
                         <div className="flex flex-1 flex-col gap-1 min-w-0">
-                          <span className="text-sm text-zinc-800 leading-snug">{resolved.name}</span>
-                          <span className="text-sm font-medium text-zinc-900 whitespace-nowrap">
+                          <span className="text-sm font-semibold text-zinc-900 leading-snug truncate">{resolved.name}</span>
+                          <span className="text-sm font-bold text-zinc-900">
                             {formatPrice(price * item.quantity)}
                           </span>
                           {/* Qty stepper + delete */}
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center gap-2 mt-0.5">
                             <div className="flex items-center gap-0.5 rounded-full border border-zinc-200 bg-white px-1">
                               <button
                                 type="button"
@@ -420,7 +419,8 @@ export default function CheckoutClient({ locale, dict }) {
                               <button
                                 type="button"
                                 onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                className="flex h-6 w-6 items-center justify-center rounded-full text-zinc-600 hover:bg-zinc-100 transition-colors"
+                                disabled={item.stock != null && item.quantity >= item.stock}
+                                className="flex h-6 w-6 items-center justify-center rounded-full text-zinc-600 hover:bg-zinc-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                                 aria-label="Increase quantity"
                               >
                                 <Plus className="h-3 w-3" />
@@ -440,10 +440,8 @@ export default function CheckoutClient({ locale, dict }) {
                     );
                   })
                 )}
+                </div>
               </div>
-
-              {/* Spacer */}
-              <div className="h-6" />
 
               <div className="border-t border-zinc-100" />
 

@@ -439,6 +439,7 @@
     "state": "State/Province",
     "zip": "Zip/Postal Code",
     "street_address": "Street Address",
+    "order_summary": "Order Summary",
     "discount_placeholder": "Discount code",
     "apply": "Apply",
     "subtotal": "Subtotal",

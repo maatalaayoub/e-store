@@ -3,9 +3,7 @@
 import { useDictionary } from "@/components/providers/LocaleProvider";;
 import { useCurrency } from "@/components/providers/CurrencyProvider";
 import { useCartStore } from "@/store/useCartStore";
-import { useFavorite } from "@/hooks/useFavorite";
 import { resolveProductTranslation } from "@/lib/product-locale";
-import { Heart } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
@@ -15,7 +13,6 @@ export default function ProductCard({ product: rawProduct, onAdded }) {
   const tHome = dict?.home ?? {};
   const { addItem } = useCartStore();
   const { formatPrice } = useCurrency();
-  const { isFavorited, toggle: toggleFavorite } = useFavorite(rawProduct?.id);
 
   const product = resolveProductTranslation(rawProduct, locale);
 
@@ -66,14 +63,6 @@ export default function ProductCard({ product: rawProduct, onAdded }) {
             {badge}
           </span>
         )}
-
-        <button
-          aria-label={tHome.wishlist}
-          onClick={toggleFavorite}
-          className={`absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200 ${isFavorited ? "text-red-500" : "text-zinc-400 hover:text-red-400"}`}
-        >
-          <Heart className="h-[17px] w-[17px]" fill={isFavorited ? "currentColor" : "none"} strokeWidth={1.5} />
-        </button>
       </Link>
 
       <div className="mt-4 sm:mt-5 flex flex-1 flex-col text-center">

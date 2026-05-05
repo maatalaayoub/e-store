@@ -148,6 +148,7 @@ export default function CurrencyProvider({ children }) {
 
   const value = useMemo(() => ({
     currency,
+    rate,
     formatPrice: (madAmount) => {
       if (madAmount == null) return '';
       const num = Number(String(madAmount).replace(/[^0-9.]/g, '')) || 0;

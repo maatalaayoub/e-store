@@ -51,6 +51,7 @@ export default function ProductGallery({ images = [], productName, productId }) 
                 src={img.url}
                 alt={`${productName} ${i + 1}`}
                 fill
+                sizes="64px"
                 className="object-cover object-center"
               />
             </button>
@@ -167,6 +168,7 @@ export default function ProductGallery({ images = [], productName, productId }) 
                 src={img.url}
                 alt={`${productName} ${i + 1}`}
                 fill
+                sizes="64px"
                 className="object-cover object-center"
               />
             </button>

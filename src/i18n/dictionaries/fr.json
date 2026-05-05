@@ -444,6 +444,7 @@
     "state": "Région/Province",
     "zip": "Code postal",
     "street_address": "Adresse",
+    "order_summary": "Récapitulatif de commande",
     "discount_placeholder": "Code de réduction",
     "apply": "Appliquer",
     "subtotal": "Sous-total",
