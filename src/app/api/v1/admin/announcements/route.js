@@ -8,11 +8,14 @@ async function getAdminUser(supabase) {
   return data?.role === 'admin' ? user : null;
 }
 
-const ALLOWED_TYPES = ['promotion', 'shipping', 'limited', 'social', 'notification'];
+const ALLOWED_TYPES = ['promotion', 'shipping', 'limited', 'social', 'notification', 'marquee'];
 const ALLOWED_POSITIONS = ['top', 'bottom'];
 const ALLOWED_BEHAVIORS = ['static', 'sticky'];
 const ALLOWED_SCOPES = ['all', 'home'];
 const ALLOWED_PLATFORMS = ['whatsapp', 'facebook', 'instagram', 'tiktok'];
+const ALLOWED_MARQUEE_DIRECTIONS = ['left', 'right'];
+const ALLOWED_MARQUEE_SCROLL_MODES = ['together', 'individual'];
+const ALLOWED_CTA_DISPLAY_MODES = ['static', 'swap'];
 
 function sanitize(a, idx = 0) {
   return {
@@ -34,6 +37,19 @@ function sanitize(a, idx = 0) {
     social_platforms: Array.isArray(a.social_platforms)
       ? [...new Set(a.social_platforms.filter((p) => ALLOWED_PLATFORMS.includes(p)))]
       : [],
+    marquee_messages: Array.isArray(a.marquee_messages)
+      ? a.marquee_messages
+          .map((m) => String(m ?? '').slice(0, 300))
+          .filter((m) => m.trim().length > 0)
+          .slice(0, 20)
+      : [],
+    marquee_speed: Math.max(10, Math.min(400, Number(a.marquee_speed) || 60)),
+    marquee_direction: ALLOWED_MARQUEE_DIRECTIONS.includes(a.marquee_direction) ? a.marquee_direction : 'left',
+    marquee_pause_on_hover: a.marquee_pause_on_hover == null ? true : !!a.marquee_pause_on_hover,
+    marquee_separator: a.marquee_separator != null ? String(a.marquee_separator).slice(0, 8) : '•',
+    marquee_scroll_mode: ALLOWED_MARQUEE_SCROLL_MODES.includes(a.marquee_scroll_mode) ? a.marquee_scroll_mode : 'together',
+    cta_display_mode: ALLOWED_CTA_DISPLAY_MODES.includes(a.cta_display_mode) ? a.cta_display_mode : (a.type === 'social' ? 'static' : 'swap'),
+    cta_swap_seconds: Math.max(1, Math.min(30, Number(a.cta_swap_seconds) || 4)),
     position: ALLOWED_POSITIONS.includes(a.position) ? a.position : 'top',
     behavior: ALLOWED_BEHAVIORS.includes(a.behavior) ? a.behavior : 'sticky',
     scope: ALLOWED_SCOPES.includes(a.scope) ? a.scope : 'all',

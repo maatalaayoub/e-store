@@ -57,6 +57,29 @@ body {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
 }
+@keyframes marquee-right {
+  from { transform: translateX(-50%); }
+  to   { transform: translateX(0); }
+}
+@keyframes marquee-single {
+  from { transform: translateX(var(--msingle-from, 100vw)); }
+  to   { transform: translateX(var(--msingle-to, -100%)); }
+}
+/* Text ↔ Button vertical swap. Both elements ALWAYS slide downward.
+   - Text: visible → slides down out → invisibly teleported above → slides down back in.
+   - Button: invisibly waits above → slides down in → visible → slides down out.
+   Counter and other siblings stay outside this stack and don't move. */
+@keyframes swap-text {
+  0%, 42%      { transform: translateY(0);     opacity: 1; }
+  50%          { transform: translateY(120%);  opacity: 0; }
+  50.01%, 92%  { transform: translateY(-120%); opacity: 0; }
+  100%         { transform: translateY(0);     opacity: 1; }
+}
+@keyframes swap-button {
+  0%, 42%      { transform: translateY(-120%); opacity: 0; }
+  50%, 92%     { transform: translateY(0);     opacity: 1; }
+  100%         { transform: translateY(120%);  opacity: 0; }
+}
 @keyframes gallery-fade {
   from { opacity: 0; transform: scale(1.04); }
   to   { opacity: 1; transform: scale(1); }
@@ -70,6 +93,11 @@ body {
 .animate-blob       { animation: blob 14s ease-in-out infinite; }
 .animate-fade-up    { animation: fade-up .8s ease-out both; }
 .animate-marquee    { animation: marquee 40s linear infinite; }
+.animate-marquee-left  { animation: marquee var(--marquee-duration, 20s) linear infinite; }
+.animate-marquee-right { animation: marquee-right var(--marquee-duration, 20s) linear infinite; }
+.animate-marquee-single { animation: marquee-single var(--msingle-dur, 8s) linear forwards; }
+.animate-swap-text   { animation: swap-text   var(--swap-dur, 8s) ease-in-out infinite; will-change: transform, opacity; }
+.animate-swap-button { animation: swap-button var(--swap-dur, 8s) ease-in-out infinite; will-change: transform, opacity; }
 
 .bg-shimmer {
   background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);

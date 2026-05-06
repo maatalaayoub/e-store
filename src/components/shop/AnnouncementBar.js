@@ -15,7 +15,7 @@
  */
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import {
   X,
@@ -129,7 +129,7 @@ function pathIsAdmin(pathname) {
 }
 
 /* ─────────────────── Countdown sub-component ─────────────────── */
-function Countdown({ endAt, labels }) {
+export function Countdown({ endAt, labels }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -146,15 +146,20 @@ function Countdown({ endAt, labels }) {
   const s = Math.floor((diff % 60000) / 1000);
 
   const pad = (n) => String(n).padStart(2, "0");
-  const parts = [];
-  if (d > 0) parts.push(`${d}${labels?.d ?? "d"}`);
-  parts.push(`${pad(h)}${labels?.h ?? "h"}`);
-  parts.push(`${pad(m)}${labels?.m ?? "m"}`);
-  parts.push(`${pad(s)}${labels?.s ?? "s"}`);
+  const units = [];
+  if (d > 0) units.push({ v: d,      l: labels?.d ?? 'd' });
+  units.push(          { v: pad(h), l: labels?.h ?? 'h' });
+  units.push(          { v: pad(m), l: labels?.m ?? 'm' });
+  units.push(          { v: pad(s), l: labels?.s ?? 's' });
 
   return (
-    <span className="font-mono text-xs sm:text-sm tabular-nums px-2 py-0.5 rounded bg-black/15 ml-2">
-      {parts.join(" ")}
+    <span className="inline-flex items-center gap-1 ml-3">
+      {units.map(({ v, l }) => (
+        <span key={l} className="inline-flex flex-col items-center justify-center px-1.5 py-0.5 rounded border border-current/35 bg-black/10 min-w-[1.75rem]">
+          <span className="font-mono font-semibold text-xs tabular-nums leading-none">{v}</span>
+          <span className="text-[9px] opacity-60 uppercase tracking-wide leading-none">{l}</span>
+        </span>
+      ))}
     </span>
   );
 }
@@ -184,17 +189,79 @@ function PromoCode({ code, label = "Copy" }) {
   );
 }
 
+/* ─────────────────── Swap stack (text ↔ button vertical swap) ─────────────────── */
+/**
+ * Stacks textNode and buttonNode in the same grid cell, animating them
+ * vertically so the text slides down and out, then the button slides
+ * down into its place. Counter / promo code stay outside this stack.
+ *
+ * @param {{ textNode: ReactNode, buttonNode: ReactNode, seconds?: number }} props
+ *   `seconds` is how long EACH side stays visible. Full cycle = 2 * seconds.
+ */
+export function SwapStack({ textNode, buttonNode, seconds = 4 }) {
+  const cycle = Math.max(2, Math.min(60, Number(seconds) || 4) * 2);
+  return (
+    <span
+      className="relative inline-grid items-center justify-items-center overflow-hidden align-middle"
+      style={{ '--swap-dur': `${cycle}s`, minHeight: '1.5rem', lineHeight: 1.2 }}
+    >
+      <span
+        className="animate-swap-text whitespace-nowrap inline-flex items-center"
+        style={{ gridArea: '1 / 1' }}
+      >
+        {textNode}
+      </span>
+      <span
+        className="animate-swap-button whitespace-nowrap inline-flex items-center"
+        style={{ gridArea: '1 / 1' }}
+      >
+        {buttonNode}
+      </span>
+    </span>
+  );
+}
+
 /* ─────────────────── Single announcement renderer ─────────────────── */
 function AnnouncementContent({ a, dict }) {
   // For social type the platform buttons serve as the icon — suppress the generic icon
   const Icon = (a.icon_enabled && a.icon && a.type !== 'social') ? (ICONS[a.icon] ?? null) : null;
 
-  const inner = (
-    <span className="inline-flex items-center gap-2 flex-wrap justify-center">
-      {Icon && <Icon className="h-4 w-4 shrink-0" />}
-      <span style={{ fontSize: a.font_size ? `${a.font_size}px` : undefined }}>
-        {a.text}
+  const textNode = (
+    <span style={{ fontSize: a.font_size ? `${a.font_size}px` : undefined }}>
+      {a.text}
+    </span>
+  );
+
+  const ctaNode = a.cta_text ? (
+    a.cta_href ? (
+      <Link
+        href={a.cta_href}
+        className="inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide bg-white text-black hover:bg-white/90 active:scale-95 transition-all shadow-sm"
+      >
+        {a.cta_text}
+      </Link>
+    ) : (
+      <span className="inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide bg-white text-black shadow-sm">
+        {a.cta_text}
       </span>
+    )
+  ) : null;
+
+  const swapMode = a.cta_display_mode === 'swap';
+  const swapSeconds = Math.max(1, Math.min(30, Number(a.cta_swap_seconds) || 4));
+
+  const inner = (
+    <span className="inline-flex items-center gap-4 flex-wrap justify-center">
+      {Icon && <Icon className="h-4 w-4 shrink-0" />}
+
+      {swapMode && ctaNode ? (
+        <SwapStack textNode={textNode} buttonNode={ctaNode} seconds={swapSeconds} />
+      ) : (
+        <>
+          {textNode}
+          {!swapMode && ctaNode && <span className="ms-1">{ctaNode}</span>}
+        </>
+      )}
 
       {a.type === "promotion" && a.promo_code && (
         <PromoCode code={a.promo_code} label={dict?.copy_code ?? "Copy code"} />
@@ -240,19 +307,202 @@ function AnnouncementContent({ a, dict }) {
           );
         });
       })()}
-
-      {a.cta_text && a.cta_href && a.type !== "social" && (
-        <Link
-          href={a.cta_href}
-          className="inline-flex items-center gap-1 ml-2 px-3 py-0.5 rounded font-semibold text-xs sm:text-sm border border-current hover:bg-white/20 transition-colors"
-        >
-          {a.cta_text}
-        </Link>
-      )}
     </span>
   );
 
   return inner;
+}
+
+/* ─────────────────── Marquee (scrolling banner) ─────────────────── */
+
+/**
+ * Renders one "copy" of all messages separated by `sep`.
+ * Defined outside Marquee so React doesn't remount it on every render.
+ */
+function MarqueeCopy({ messages, icon: Icon, fontSize, sep }) {
+  return (
+    <>
+      {messages.map((msg, i) => (
+        <span key={i} className="inline-flex items-center shrink-0">
+          {Icon && <Icon className="h-4 w-4 me-2" />}
+          <span style={{ fontSize: fontSize ? `${fontSize}px` : undefined }}>{msg}</span>
+          <span className="mx-4 opacity-60 select-none" aria-hidden="true">{sep}</span>
+        </span>
+      ))}
+    </>
+  );
+}
+
+/* ─── Individual mode: one message scrolls across and exits before the next ── */
+function IndividualMarquee({ messages, speed, direction, pauseOnHover, Icon, fontSize }) {
+  const containerRef = useRef(null);
+  const probeRef = useRef(null);
+  const [idx, setIdx] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const msg = messages[idx % messages.length];
+
+  // Set CSS vars synchronously before paint so the animation reads correct values
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    const probe = probeRef.current;
+    if (!container || !probe) return;
+    const vw = container.offsetWidth;
+    const iw = probe.offsetWidth;
+    if (!vw || !iw) return;
+    // left: enter from right edge, exit past left edge
+    // right: enter from left edge, exit past right edge
+    const fromX = direction === 'right' ? -iw : vw;
+    const toX   = direction === 'right' ? vw  : -iw;
+    const dur   = Math.max(2, (vw + iw) / speed);
+    container.style.setProperty('--msingle-from', `${fromX}px`);
+    container.style.setProperty('--msingle-to',   `${toX}px`);
+    container.style.setProperty('--msingle-dur',  `${dur}s`);
+  }, [idx, speed, direction, msg]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="overflow-hidden w-full relative min-h-[1.25rem]"
+      onMouseEnter={() => pauseOnHover && setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      {/* Invisible probe — measures the current message width before animation starts */}
+      <span
+        ref={probeRef}
+        className="absolute top-0 start-0 invisible pointer-events-none inline-flex items-center whitespace-nowrap"
+        aria-hidden="true"
+      >
+        {Icon && <Icon className="h-4 w-4 me-2" />}
+        <span style={{ fontSize: fontSize ? `${fontSize}px` : undefined }}>{msg}</span>
+      </span>
+
+      {/* Animated element — key forces remount (animation restart) on each new message */}
+      <span
+        key={idx}
+        className="absolute top-1/2 -translate-y-1/2 inline-flex items-center whitespace-nowrap animate-marquee-single"
+        style={{ animationPlayState: paused ? 'paused' : 'running' }}
+        onAnimationEnd={() => setIdx((i) => (i + 1) % messages.length)}
+      >
+        {Icon && <Icon className="h-4 w-4 me-2" />}
+        <span style={{ fontSize: fontSize ? `${fontSize}px` : undefined }}>{msg}</span>
+      </span>
+    </div>
+  );
+}
+
+/* ─── Dispatcher: routes to group or individual mode ─────────────────────── */
+export function MarqueePreview({ a }) {
+  const messages = (Array.isArray(a.marquee_messages) && a.marquee_messages.length > 0)
+    ? a.marquee_messages
+    : (a.text ? [a.text] : []);
+  const speed     = Math.max(10, Math.min(400, Number(a.marquee_speed) || 60));
+  const direction = a.marquee_direction === 'right' ? 'right' : 'left';
+  const pauseOnHover = a.marquee_pause_on_hover !== false;
+  const sep       = (a.marquee_separator ?? '•') || '•';
+  const Icon      = (a.icon_enabled && a.icon) ? (ICONS[a.icon] ?? null) : null;
+  const scrollMode = a.marquee_scroll_mode === 'individual' ? 'individual' : 'together';
+
+  if (messages.length === 0) return null;
+
+  if (scrollMode === 'individual') {
+    return (
+      <IndividualMarquee
+        messages={messages}
+        speed={speed}
+        direction={direction}
+        pauseOnHover={pauseOnHover}
+        Icon={Icon}
+        fontSize={a.font_size}
+      />
+    );
+  }
+
+  // ── Group mode (all messages scroll together as one continuous band) ──────
+  return <GroupMarquee messages={messages} speed={speed} direction={direction} pauseOnHover={pauseOnHover} sep={sep} Icon={Icon} fontSize={a.font_size} />;
+}
+
+function GroupMarquee({ messages, speed, direction, pauseOnHover, sep, Icon, fontSize }) {
+  const containerRef = useRef(null);
+  const probeRef = useRef(null);
+  const [viewportW, setViewportW] = useState(0);
+  const [duration, setDuration] = useState(20);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    const probe = probeRef.current;
+    if (!container || !probe) return;
+
+    const update = () => {
+      const vw = container.offsetWidth;
+      const cw = probe.offsetWidth;
+      if (vw <= 0 || cw <= 0) return;
+      setViewportW(vw);
+      // One period = content travels (vw + cw) pixels: enter from right edge, exit past left edge
+      setDuration(Math.max(4, (vw + cw) / speed));
+    };
+
+    update();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(update) : null;
+    ro?.observe(container);
+    ro?.observe(probe);
+    return () => ro?.disconnect();
+  }, [speed, messages.join('|'), sep]);
+
+  if (messages.length === 0) return null;
+
+  const copyProps = { messages, icon: Icon, fontSize, sep };
+
+  /*
+   * Track layout: [gap=vw] [copy1] [gap=vw] [copy2]
+   * Total track width = 2*(vw + cw).
+   *
+   * Left animation (0 → -50%):
+   *   - At t=0: gap1 fills viewport (blank). copy1 sits exactly at the right edge → enters immediately.
+   *   - copy1 fully exits the left edge at the same moment copy2 enters the right edge. No overlap.
+   *
+   * Right animation (-50% → 0):
+   *   - Symmetric: gap2 fills viewport at start. copy1 enters from the left edge.
+   */
+  const [paused, setPaused] = useState(false);
+
+  return (
+    <div
+      ref={containerRef}
+      className="overflow-hidden w-full relative"
+      style={{ '--marquee-duration': `${duration}s` }}
+      onMouseEnter={() => pauseOnHover && setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      {/* Invisible probe — measures the rendered width of one copy */}
+      <div
+        ref={probeRef}
+        className="absolute top-0 start-0 invisible pointer-events-none inline-flex items-center"
+        aria-hidden="true"
+      >
+        <MarqueeCopy {...copyProps} />
+      </div>
+
+      <div
+        className={`inline-flex items-center w-max ${
+          direction === 'right' ? 'animate-marquee-right' : 'animate-marquee-left'
+        }`}
+        style={{ animationPlayState: paused ? 'paused' : 'running' }}
+      >
+        {/* Leading gap — this is what fills the viewport at the start of each cycle */}
+        <div style={{ width: viewportW, flexShrink: 0 }} aria-hidden="true" />
+        {/* Copy 1 */}
+        <span className="inline-flex items-center shrink-0">
+          <MarqueeCopy {...copyProps} />
+        </span>
+        {/* Middle gap — separates copy1 from copy2 so they never overlap */}
+        <div style={{ width: viewportW, flexShrink: 0 }} aria-hidden="true" />
+        {/* Copy 2 — seamless clone */}
+        <span className="inline-flex items-center shrink-0" aria-hidden="true">
+          <MarqueeCopy {...copyProps} />
+        </span>
+      </div>
+    </div>
+  );
 }
 
 /* ─────────────────── Main component ─────────────────── */
@@ -341,11 +591,22 @@ export default function AnnouncementBar() {
     if (activeIdx >= visible.length) setActiveIdx(0);
   }, [visible.length, activeIdx]);
 
+  // Static bars slide out of view when user scrolls down
+  const [scrollHidden, setScrollHidden] = useState(false);
+  useEffect(() => {
+    if (visible.length === 0) { setScrollHidden(false); return; }
+    const cur = visible[activeIdx] ?? visible[0];
+    const isStatic = cur?.behavior === 'static';
+    const posTop = (cur?.position ?? 'top') === 'top';
+    if (!isStatic || !posTop) { setScrollHidden(false); return; }
+    const onScroll = () => setScrollHidden(window.scrollY > 5);
+    onScroll(); // run immediately on mount / bar change
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => { window.removeEventListener('scroll', onScroll); setScrollHidden(false); };
+  }, [visible, activeIdx]);
+
   // Sync --bar-height CSS variable so the header knows how far to offset.
-  // - Sticky+top: offset by the bar's full height (constant).
-  // - Static+top: offset by the bar's *visible* height as the user scrolls
-  //   (bar bottom edge clamped to viewport), so the header eases back to
-  //   top: 0 once the bar has scrolled out of view.
+  // All bars are fixed at the top, so --bar-height always equals the bar's full height.
   const barRef = useRef(null);
   useEffect(() => {
     const el = barRef.current;
@@ -356,7 +617,6 @@ export default function AnnouncementBar() {
     }
     const current = visible[activeIdx] ?? visible[0];
     const positionTop = (current?.position ?? 'top') === 'top';
-    const sticky = current?.behavior === 'sticky' || !current?.behavior;
 
     if (!positionTop) {
       root.style.removeProperty('--bar-height');
@@ -365,38 +625,12 @@ export default function AnnouncementBar() {
 
     const setOffset = (px) => root.style.setProperty('--bar-height', `${Math.max(0, px)}px`);
 
-    if (sticky) {
-      const update = () => setOffset(el.offsetHeight);
-      update();
-      const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(update) : null;
-      ro?.observe(el);
-      return () => { ro?.disconnect(); root.style.removeProperty('--bar-height'); };
-    }
-
-    // Static + top: track how much of the bar is still above the viewport top.
-    let raf = 0;
-    const update = () => {
-      raf = 0;
-      const rect = el.getBoundingClientRect();
-      // visible portion below y=0 (i.e. how far the header should be pushed down)
-      setOffset(Math.min(rect.bottom, el.offsetHeight));
-    };
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(update);
-    };
+    const update = () => setOffset(scrollHidden ? 0 : el.offsetHeight);
     update();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(update) : null;
     ro?.observe(el);
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
-      ro?.disconnect();
-      if (raf) cancelAnimationFrame(raf);
-      root.style.removeProperty('--bar-height');
-    };
-  }, [visible, activeIdx]);
+    return () => { ro?.disconnect(); root.style.removeProperty('--bar-height'); };
+  }, [visible, activeIdx, scrollHidden]);
 
   // Clear on unmount
   useEffect(() => {
@@ -406,7 +640,6 @@ export default function AnnouncementBar() {
   if (!items || visible.length === 0) return null;
 
   const current = visible[activeIdx] ?? visible[0];
-  const isSticky = current.behavior === "sticky";
   const positionTop = (current.position ?? "top") === "top";
 
   const handleDismiss = (id) => {
@@ -420,11 +653,9 @@ export default function AnnouncementBar() {
     setActiveIdx((i) => (i - 1 + visible.length) % visible.length);
   const goNext = () => setActiveIdx((i) => (i + 1) % visible.length);
 
-  // Position classes
+  // Always fixed at top/bottom so the bar is never mixed into page content
   const positionClass = positionTop ? "top-0" : "bottom-0";
-  const stickyClass = isSticky
-    ? `fixed inset-x-0 ${positionClass} z-[51]`
-    : `relative w-full z-[51]`;
+  const stickyClass = `fixed inset-x-0 ${positionClass} z-[51]`;
 
   const borderClass = current.border_enabled
     ? positionTop
@@ -437,52 +668,76 @@ export default function AnnouncementBar() {
       ref={barRef}
       role="region"
       aria-label="Site announcement"
-      className={`${stickyClass} ${borderClass} transition-colors duration-300`}
+      className={`${stickyClass} ${borderClass} transition-transform duration-300 flex flex-col justify-center`}
       style={{
         backgroundColor: current.bg_color || "#111111",
         color: current.text_color || "#ffffff",
-        // Reserve space for content; min height prevents CLS
-        minHeight: "2.25rem",
+        height: "2.5rem",
+        transform: scrollHidden ? 'translateY(-100%)' : 'translateY(0)',
       }}
     >
-      <div className="mx-auto flex max-w-7xl items-center gap-2 px-3 sm:px-6 py-2 text-sm">
-        {visible.length > 1 && (
-          <button
-            type="button"
-            onClick={goPrev}
-            aria-label="Previous announcement"
-            className="hidden sm:inline-flex h-6 w-6 items-center justify-center rounded hover:bg-white/15 transition-colors shrink-0"
-          >
-            <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
-          </button>
-        )}
-
-        <div className="flex-1 min-w-0 text-center">
-          <AnnouncementContent a={current} />
+      {current.type === 'marquee' ? (
+        <div className="relative flex items-center justify-center w-full py-1.5 text-sm">
+          <div className="flex-1 min-w-0">
+            <MarqueePreview a={current} />
+          </div>
+          {current.dismissible !== false && (
+            <button
+              type="button"
+              onClick={() => handleDismiss(current.id)}
+              aria-label="Dismiss"
+              className="absolute end-2 sm:end-4 inline-flex h-6 w-6 items-center justify-center rounded hover:bg-white/15 transition-colors shrink-0"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
+      ) : (
+        <div className="grid items-center h-full px-2 sm:px-4 text-sm" style={{ gridTemplateColumns: 'auto 1fr auto' }}>
+          {/* Left: prev button (or spacer) */}
+          <div className="flex items-center">
+            {visible.length > 1 && (
+              <button
+                type="button"
+                onClick={goPrev}
+                aria-label="Previous announcement"
+                className="hidden sm:inline-flex h-6 w-6 items-center justify-center rounded hover:bg-white/15 transition-colors shrink-0"
+              >
+                <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
+              </button>
+            )}
+          </div>
 
-        {visible.length > 1 && (
-          <button
-            type="button"
-            onClick={goNext}
-            aria-label="Next announcement"
-            className="hidden sm:inline-flex h-6 w-6 items-center justify-center rounded hover:bg-white/15 transition-colors shrink-0"
-          >
-            <ChevronRight className="h-4 w-4 rtl:rotate-180" />
-          </button>
-        )}
+          {/* Center: always truly centered */}
+          <div className="flex items-center justify-center text-center min-w-0">
+            <AnnouncementContent a={current} />
+          </div>
 
-        {current.dismissible !== false && (
-          <button
-            type="button"
-            onClick={() => handleDismiss(current.id)}
-            aria-label="Dismiss"
-            className="inline-flex h-6 w-6 items-center justify-center rounded hover:bg-white/15 transition-colors shrink-0"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
-      </div>
+          {/* Right: next + dismiss */}
+          <div className="flex items-center gap-1">
+            {visible.length > 1 && (
+              <button
+                type="button"
+                onClick={goNext}
+                aria-label="Next announcement"
+                className="hidden sm:inline-flex h-6 w-6 items-center justify-center rounded hover:bg-white/15 transition-colors shrink-0"
+              >
+                <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+              </button>
+            )}
+            {current.dismissible !== false && (
+              <button
+                type="button"
+                onClick={() => handleDismiss(current.id)}
+                aria-label="Dismiss"
+                className="inline-flex h-6 w-6 items-center justify-center rounded hover:bg-white/15 transition-colors shrink-0"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

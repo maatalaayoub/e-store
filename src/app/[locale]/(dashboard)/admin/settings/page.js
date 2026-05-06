@@ -22,9 +22,10 @@ import {
   Maximize2,
   X as XIcon,
   Megaphone,
+  Clock,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { invalidateBarCache } from "@/components/shop/AnnouncementBar";
+import { invalidateBarCache, MarqueePreview, Countdown, SwapStack } from "@/components/shop/AnnouncementBar";
 import { toast } from "sonner";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { AdminSettingsSkeleton } from "@/components/skeletons";
@@ -709,6 +710,7 @@ const ANNOUNCEMENT_TYPES = [
   { id: 'limited',      label: 'Limited Offer', bg: '#7f1d1d', text: '#ffffff', icon: 'clock'     },
   { id: 'social',       label: 'Social',        bg: '#1e3a8a', text: '#ffffff', icon: 'whatsapp'  },
   { id: 'notification', label: 'Notification',  bg: '#1f2937', text: '#ffffff', icon: 'bell'      },
+  { id: 'marquee',      label: 'Scrolling',     bg: '#0b3b2e', text: '#ffffff', icon: 'megaphone' },
 ];
 
 const ICON_OPTIONS = ['megaphone', 'truck', 'clock', 'bell', 'whatsapp', 'facebook', 'instagram', 'tiktok'];
@@ -738,6 +740,15 @@ function BrandIcon({ name, className: cls = 'h-4 w-4' }) {
   return null;
 }
 
+/* Icon renderer shared by both card and drawer announcement previews */
+const PREVIEW_ICONS = { megaphone: Megaphone, truck: Truck, clock: Clock, bell: Bell };
+function PreviewAnnouncementIcon({ icon, className = 'h-3.5 w-3.5 shrink-0' }) {
+  const LucideIcon = PREVIEW_ICONS[icon];
+  if (LucideIcon) return <LucideIcon className={className} />;
+  if (['whatsapp', 'facebook', 'instagram', 'tiktok'].includes(icon)) return <BrandIcon name={icon} className={className} />;
+  return null;
+}
+
 const SOCIAL_PLATFORMS = [
   { id: 'whatsapp',  label: 'WhatsApp',  color: '#25D366', field: 'social_whatsapp',  placeholder: '212600000000',  hrefFn: (v) => `https://wa.me/${v}` },
   { id: 'facebook',  label: 'Facebook',  color: '#1877F2', field: 'social_facebook',  placeholder: 'your.page',     hrefFn: (v) => `https://facebook.com/${v}` },
@@ -751,8 +762,16 @@ function blankAnnouncement(type = 'promotion') {
     type, text: '', icon_enabled: true, icon: tp.icon,
     bg_color: tp.bg, text_color: tp.text, font_size: 14, border_enabled: false,
     cta_text: '', cta_href: '', promo_code: '',
+    cta_display_mode: type === 'social' ? 'static' : 'swap',
+    cta_swap_seconds: 4,
     social_whatsapp: '', social_facebook: '', social_instagram: '', social_tiktok: '',
     social_platforms: ['whatsapp'],
+    marquee_messages: type === 'marquee' ? [''] : [],
+    marquee_speed: 60,
+    marquee_direction: 'left',
+    marquee_pause_on_hover: true,
+    marquee_separator: '•',
+    marquee_scroll_mode: 'together',
     position: 'top', behavior: 'sticky', scope: 'all',
     carousel_enabled: false, rotation_seconds: 5, dismissible: true,
     start_at: null, end_at: null, priority: 0, is_active: true,
@@ -870,7 +889,7 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
     >
       {/* Live preview bar */}
       <div
-        className={`rounded-t-md px-4 py-2.5 text-xs sm:text-sm text-center font-medium overflow-hidden truncate ${
+        className={`rounded-t-md overflow-hidden text-xs sm:text-sm font-medium ${
           value.is_active ? '' : 'opacity-50 grayscale'
         }`}
         style={{
@@ -880,38 +899,52 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
           borderBottom: value.border_enabled ? '1px solid rgba(0,0,0,0.15)' : 'none',
         }}
       >
-        {value.text || (
-          <span className="opacity-60 italic">
-            {t.preview_placeholder ?? 'Your message preview…'}
-          </span>
+        {value.type === 'marquee' ? (
+          <div className="py-2.5">
+            {((value.marquee_messages ?? []).filter((m) => m && m.trim().length)).length > 0
+              ? <MarqueePreview a={value} />
+              : <p className="text-center opacity-60 italic px-4">{t.preview_placeholder ?? 'Your message preview…'}</p>
+            }
+          </div>
+        ) : (
+          <div className="px-4 py-2.5 text-center">
+            <span className="inline-flex items-center gap-1.5 flex-wrap justify-center">
+              {value.icon_enabled && value.icon && value.type !== 'social' && (
+                <PreviewAnnouncementIcon icon={value.icon} className="h-3.5 w-3.5 shrink-0" />
+              )}
+              {(() => {
+                const textNode = <span>{value.text || <span className="opacity-60 italic">{t.preview_placeholder ?? 'Your message preview…'}</span>}</span>;
+                const ctaNode = value.cta_text ? (
+                  <span className="px-3 py-1.5 rounded-full bg-white text-black text-[11px] font-bold tracking-wide shadow-sm">{value.cta_text}</span>
+                ) : null;
+                if (ctaNode && value.cta_display_mode === 'swap') {
+                  return <SwapStack textNode={textNode} buttonNode={ctaNode} seconds={value.cta_swap_seconds ?? 4} />;
+                }
+                return <>{textNode}{ctaNode && <span className="ms-1">{ctaNode}</span>}</>;
+              })()}
+              {value.type === 'promotion' && value.promo_code && (
+                <span className="px-2 py-0.5 rounded bg-white/20 font-mono text-[11px]">{value.promo_code}</span>
+              )}
+              {value.type === 'limited' && value.end_at && (
+                <Countdown endAt={value.end_at} labels={{ d: 'd', h: 'h', m: 'm', s: 's' }} />
+              )}
+              {value.type === 'social' && (() => {
+                const platforms = (value.social_platforms ?? []).filter((pid) => value[`social_${pid}`]);
+                if (platforms.length === 0) return null;
+                return platforms.map((pid) => {
+                  const p = SOCIAL_PLATFORMS.find((x) => x.id === pid);
+                  if (!p) return null;
+                  return (
+                    <span key={pid} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/20 text-[11px] font-semibold">
+                      <BrandIcon name={pid} className="h-3 w-3" />
+                      {p.label}
+                    </span>
+                  );
+                });
+              })()}
+            </span>
+          </div>
         )}
-        {value.type === 'promotion' && value.promo_code && (
-          <span className="ml-2 px-2 py-0.5 rounded bg-white/20 font-mono text-[11px]">
-            {value.promo_code}
-          </span>
-        )}
-        {value.cta_text && value.type !== 'social' && (
-          <span className="ml-2 px-2 py-0.5 rounded border border-current text-[11px] font-semibold">
-            {value.cta_text}
-          </span>
-        )}
-        {value.type === 'social' && (() => {
-          const platforms = (value.social_platforms ?? []).filter(
-            (pid) => value[`social_${pid}`]
-          );
-          if (platforms.length === 0) return null;
-          return platforms.map((pid) => {
-            const p = SOCIAL_PLATFORMS.find((x) => x.id === pid);
-            if (!p) return null;
-            return (
-              <span key={pid}
-                className="inline-flex items-center gap-1 ml-2 px-2 py-0.5 rounded bg-white/20 text-[11px] font-semibold">
-                <BrandIcon name={pid} className="h-3 w-3" />
-                {p.label}
-              </span>
-            );
-          });
-        })()}
       </div>
 
       {/* Meta + actions */}
@@ -1085,7 +1118,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
         <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4 space-y-5">
           {/* Preview */}
           <div
-            className="rounded-xl px-4 py-3 text-sm text-center font-medium"
+            className="rounded-xl overflow-hidden text-sm font-medium"
             style={{
               backgroundColor: value.bg_color || '#111',
               color: value.text_color || '#fff',
@@ -1093,20 +1126,160 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
               fontSize: value.font_size ? `${value.font_size}px` : undefined,
             }}
           >
-            {value.text || <span className="opacity-50">{t.preview_placeholder ?? 'Your message preview…'}</span>}
-            {value.type === 'promotion' && value.promo_code && (
-              <span className="ml-2 px-2 py-0.5 rounded bg-white/20 font-mono text-xs">{value.promo_code}</span>
-            )}
-            {value.cta_text && value.type !== 'social' && (
-              <span className="ml-2 px-2 py-0.5 rounded border border-current text-xs font-semibold">{value.cta_text}</span>
+            {value.type === 'marquee' ? (
+              <div className="py-3">
+                {((value.marquee_messages ?? []).filter((m) => m && m.trim().length)).length > 0
+                  ? <MarqueePreview a={value} />
+                  : <p className="text-center opacity-50 py-0.5">{t.preview_placeholder ?? 'Your message preview…'}</p>
+                }
+              </div>
+            ) : (
+              <div className="px-4 py-3 text-center">
+                <span className="inline-flex items-center gap-2 flex-wrap justify-center">
+                  {value.icon_enabled && value.icon && value.type !== 'social' && (
+                    <PreviewAnnouncementIcon icon={value.icon} className="h-4 w-4 shrink-0" />
+                  )}
+                  {(() => {
+                    const textNode = <span>{value.text || <span className="opacity-50">{t.preview_placeholder ?? 'Your message preview…'}</span>}</span>;
+                    const ctaNode = value.cta_text ? (
+                      <span className="px-4 py-2 rounded-full bg-white text-black text-xs font-bold tracking-wide shadow-sm">{value.cta_text}</span>
+                    ) : null;
+                    if (ctaNode && value.cta_display_mode === 'swap') {
+                      return <SwapStack textNode={textNode} buttonNode={ctaNode} seconds={value.cta_swap_seconds ?? 4} />;
+                    }
+                    return <>{textNode}{ctaNode && <span className="ms-1">{ctaNode}</span>}</>;
+                  })()}
+                  {value.type === 'promotion' && value.promo_code && (
+                    <span className="px-2 py-0.5 rounded bg-white/20 font-mono text-xs">{value.promo_code}</span>
+                  )}
+                  {value.type === 'limited' && value.end_at && (
+                    <Countdown endAt={value.end_at} labels={{ d: 'd', h: 'h', m: 'm', s: 's' }} />
+                  )}
+                  {value.type === 'social' && (() => {
+                    const platforms = (value.social_platforms ?? []).filter((pid) => value[`social_${pid}`]);
+                    if (platforms.length === 0) return null;
+                    return platforms.map((pid) => {
+                      const p = SOCIAL_PLATFORMS.find((x) => x.id === pid);
+                      if (!p) return null;
+                      return (
+                        <span key={pid} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/20 text-xs font-semibold">
+                          <BrandIcon name={pid} className="h-3.5 w-3.5" />
+                          {p.label}
+                        </span>
+                      );
+                    });
+                  })()}
+                </span>
+              </div>
             )}
           </div>
 
-          {/* Message */}
-          <div>
-            <label className="block text-xs font-medium text-zinc-600 mb-1.5">{t.text ?? 'Message'}</label>
-            <input className={inputCls} placeholder={t.text_placeholder ?? 'e.g. Free shipping on orders over $99'} value={value.text} onChange={(e) => onUpdate('text', e.target.value)} />
-          </div>
+          {/* Message (single-line types) */}
+          {value.type !== 'marquee' && (
+            <div>
+              <label className="block text-xs font-medium text-zinc-600 mb-1.5">{t.text ?? 'Message'}</label>
+              <input className={inputCls} placeholder={t.text_placeholder ?? 'e.g. Free shipping on orders over $99'} value={value.text} onChange={(e) => onUpdate('text', e.target.value)} />
+            </div>
+          )}
+
+          {/* Marquee messages list + controls */}
+          {value.type === 'marquee' && (
+            <div className="space-y-3">
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-medium text-zinc-600">{t.marquee_messages ?? 'Messages'}</label>
+                  <button
+                    type="button"
+                    onClick={() => onUpdate('marquee_messages', [...(value.marquee_messages ?? []), ''])}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700"
+                  >
+                    <Plus className="h-3.5 w-3.5" /> {t.marquee_add_message ?? 'Add message'}
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {(value.marquee_messages ?? []).map((msg, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <input
+                        className={inputCls}
+                        placeholder={t.marquee_message_placeholder ?? `Message ${i + 1}`}
+                        value={msg}
+                        onChange={(e) => {
+                          const next = [...(value.marquee_messages ?? [])];
+                          next[i] = e.target.value;
+                          onUpdate('marquee_messages', next);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = (value.marquee_messages ?? []).filter((_, j) => j !== i);
+                          onUpdate('marquee_messages', next);
+                        }}
+                        className="p-2 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+                        aria-label={t.delete ?? 'Delete'}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1.5">
+                    {t.marquee_speed ?? 'Speed'} ({value.marquee_speed ?? 60})
+                  </label>
+                  <input
+                    type="range" min={10} max={400} step={5}
+                    value={value.marquee_speed ?? 60}
+                    onChange={(e) => onUpdate('marquee_speed', Number(e.target.value))}
+                    className="w-full accent-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1.5">{t.marquee_separator ?? 'Separator'}</label>
+                  <input
+                    className={inputCls}
+                    placeholder="•"
+                    value={value.marquee_separator ?? '•'}
+                    onChange={(e) => onUpdate('marquee_separator', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1.5">{t.marquee_direction ?? 'Direction'}</label>
+                  <AnnouncementSelect
+                    value={value.marquee_direction ?? 'left'}
+                    onChange={(e) => onUpdate('marquee_direction', e.target.value)}
+                    options={[
+                      { value: 'left', label: t.marquee_direction_left ?? 'Left' },
+                      { value: 'right', label: t.marquee_direction_right ?? 'Right' },
+                    ]}
+                  />
+                </div>
+                <label className="flex items-end justify-between gap-2 rounded-lg border border-zinc-100 px-3 py-2 cursor-pointer hover:bg-zinc-50">
+                  <span className="text-xs text-zinc-700">{t.marquee_pause_on_hover ?? 'Pause on hover'}</span>
+                  <Toggle defaultChecked={value.marquee_pause_on_hover !== false} onChange={(v) => onUpdate('marquee_pause_on_hover', v)} />
+                </label>
+                <div className="col-span-2">
+                  <label className="block text-xs font-medium text-zinc-600 mb-1.5">{t.marquee_scroll_mode ?? 'Scroll mode'}</label>
+                  <AnnouncementSelect
+                    value={value.marquee_scroll_mode ?? 'together'}
+                    onChange={(e) => onUpdate('marquee_scroll_mode', e.target.value)}
+                    options={[
+                      { value: 'together', label: t.marquee_scroll_together ?? 'All together' },
+                      { value: 'individual', label: t.marquee_scroll_individual ?? 'One by one' },
+                    ]}
+                  />
+                  <p className="text-xs text-zinc-400 mt-1">
+                    {value.marquee_scroll_mode === 'individual'
+                      ? (t.marquee_scroll_individual_hint ?? 'Each message scrolls across fully before the next one enters.')
+                      : (t.marquee_scroll_together_hint ?? 'All messages scroll in a continuous looping band.')}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {value.type === 'promotion' && (
             <div>
@@ -1144,16 +1317,40 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
             </div>
           )}
 
-          {value.type !== 'social' && (
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-zinc-600 mb-1.5">{t.cta_text_placeholder ?? 'Button text'}</label>
-                <input className={inputCls} placeholder="Shop now" value={value.cta_text ?? ''} onChange={(e) => onUpdate('cta_text', e.target.value)} />
+          {value.type !== 'marquee' && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1.5">{t.cta_text ?? 'Button text'}</label>
+                  <input className={inputCls} placeholder={t.cta_text_placeholder ?? 'Shop now'} value={value.cta_text ?? ''} onChange={(e) => onUpdate('cta_text', e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-600 mb-1.5">{t.cta_href ?? 'Link URL'}</label>
+                  <input className={inputCls} placeholder={t.cta_href_placeholder ?? '/shop'} value={value.cta_href ?? ''} onChange={(e) => onUpdate('cta_href', e.target.value)} />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-zinc-600 mb-1.5">{t.cta_href_placeholder ?? 'Link URL'}</label>
-                <input className={inputCls} placeholder="/shop" value={value.cta_href ?? ''} onChange={(e) => onUpdate('cta_href', e.target.value)} />
-              </div>
+              {value.cta_text && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-600 mb-1.5">{t.cta_display_mode ?? 'Button display'}</label>
+                    <AnnouncementSelect
+                      value={value.cta_display_mode ?? 'swap'}
+                      onChange={(e) => onUpdate('cta_display_mode', e.target.value)}
+                      options={[
+                        { value: 'swap',   label: t.cta_display_swap   ?? 'Swap with text (animated)' },
+                        { value: 'static', label: t.cta_display_static ?? 'Static (always visible)' },
+                      ]}
+                    />
+                  </div>
+                  {value.cta_display_mode !== 'static' && (
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-600 mb-1.5">{t.cta_swap_seconds ?? 'Swap timing (s)'}</label>
+                      <input type="number" min={1} max={30} value={value.cta_swap_seconds ?? 4}
+                        onChange={(e) => onUpdate('cta_swap_seconds', Number(e.target.value))} className={inputCls} />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -1405,6 +1602,17 @@ function AnnouncementsSection() {
         description={t.desc ?? 'Promotional banners shown across the storefront.'}
       />
 
+      <div className="flex justify-end mb-4">
+        <button
+          type="button"
+          onClick={startAdd}
+          className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+        >
+          <Plus className="h-4 w-4" />
+          {t.add ?? 'Add Announcement'}
+        </button>
+      </div>
+
       <div className="flex flex-col gap-3 mb-5">
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-14 rounded-2xl border border-dashed border-zinc-200 text-zinc-400">
@@ -1427,17 +1635,6 @@ function AnnouncementsSection() {
             />
           ))
         )}
-      </div>
-
-      <div className="flex items-center gap-3 border-t border-zinc-100 pt-4">
-        <button
-          type="button"
-          onClick={startAdd}
-          className="inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-700 transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          {t.add ?? 'Add Announcement'}
-        </button>
       </div>
 
       <AnnouncementTypePicker

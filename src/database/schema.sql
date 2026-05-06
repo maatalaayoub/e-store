@@ -275,7 +275,7 @@ CREATE TABLE IF NOT EXISTS announcements (
 
   -- Content
   type text NOT NULL DEFAULT 'notification'
-    CHECK (type IN ('promotion', 'shipping', 'limited', 'social', 'notification')),
+    CHECK (type IN ('promotion', 'shipping', 'limited', 'social', 'notification', 'marquee')),
   text text NOT NULL DEFAULT '',
   icon_enabled boolean NOT NULL DEFAULT true,
   icon text,                                  -- e.g. 'megaphone' | 'truck' | 'clock' | 'bell' | 'whatsapp' | 'instagram'
@@ -289,6 +289,21 @@ CREATE TABLE IF NOT EXISTS announcements (
   social_instagram text,                      -- social: Instagram handle
   social_tiktok    text,                      -- social: TikTok handle
   social_platforms text[] NOT NULL DEFAULT '{}'::text[],  -- enabled platform ids
+
+  -- Marquee (scrolling banner) extras
+  marquee_messages text[] NOT NULL DEFAULT '{}'::text[],     -- one or more messages to scroll
+  marquee_speed integer NOT NULL DEFAULT 60                  -- pixels per second
+    CHECK (marquee_speed >= 10 AND marquee_speed <= 400),
+  marquee_direction text NOT NULL DEFAULT 'left'
+    CHECK (marquee_direction IN ('left', 'right')),
+  marquee_pause_on_hover boolean NOT NULL DEFAULT true,
+  marquee_separator text NOT NULL DEFAULT '•',
+
+  -- CTA / button display behavior (all types)
+  cta_display_mode text NOT NULL DEFAULT 'swap'
+    CHECK (cta_display_mode IN ('static', 'swap')),
+  cta_swap_seconds integer NOT NULL DEFAULT 4
+    CHECK (cta_swap_seconds >= 1 AND cta_swap_seconds <= 30),
 
   -- Style
   bg_color text NOT NULL DEFAULT '#111111',
@@ -340,6 +355,26 @@ CREATE OR REPLACE TRIGGER announcements_updated_at
 ALTER TABLE announcements ADD COLUMN IF NOT EXISTS social_facebook  text;
 ALTER TABLE announcements ADD COLUMN IF NOT EXISTS social_tiktok    text;
 ALTER TABLE announcements ADD COLUMN IF NOT EXISTS social_platforms text[] NOT NULL DEFAULT '{}'::text[];
+
+-- Marquee additions (run on existing DBs to enable the scrolling-banner type)
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS marquee_messages text[] NOT NULL DEFAULT '{}'::text[];
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS marquee_speed integer NOT NULL DEFAULT 60;
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS marquee_direction text NOT NULL DEFAULT 'left';
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS marquee_pause_on_hover boolean NOT NULL DEFAULT true;
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS marquee_separator text NOT NULL DEFAULT '•';
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS marquee_scroll_mode text NOT NULL DEFAULT 'together'
+  CHECK (marquee_scroll_mode IN ('together', 'individual'));
+
+-- CTA swap behavior additions
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS cta_display_mode text NOT NULL DEFAULT 'swap'
+  CHECK (cta_display_mode IN ('static', 'swap'));
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS cta_swap_seconds integer NOT NULL DEFAULT 4
+  CHECK (cta_swap_seconds >= 1 AND cta_swap_seconds <= 30);
+
+-- Relax the type CHECK to include 'marquee' (drop+recreate; safe on fresh DBs too)
+ALTER TABLE announcements DROP CONSTRAINT IF EXISTS announcements_type_check;
+ALTER TABLE announcements ADD CONSTRAINT announcements_type_check
+  CHECK (type IN ('promotion', 'shipping', 'limited', 'social', 'notification', 'marquee'));
 
 ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
 -- Public can read only currently-active, in-schedule banners.
