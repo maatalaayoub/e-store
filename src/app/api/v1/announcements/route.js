@@ -4,10 +4,13 @@ import { createClient } from '@/lib/supabase/server';
 /**
  * GET /api/v1/announcements
  * Public — returns active, non-expired announcements ordered by priority (asc).
- * Schedule filtering uses the DB (start_at / end_at) for performance, then
- * the client re-filters defensively (covers cached responses).
+ * Schedule filtering is done in the DB query (single source of truth).
  *
  * Falls back gracefully (empty array) if the table doesn't exist.
+ *
+ * NOTE: We intentionally use `no-store` so admin edits are visible immediately.
+ * Announcement payloads are tiny and the client component already de-dupes
+ * with a module-level cache during a session.
  */
 export async function GET() {
   try {
@@ -25,10 +28,9 @@ export async function GET() {
 
     if (error) throw error;
 
-    // Cache for 30 seconds at the edge; clients also use module-level cache.
     return NextResponse.json(
       { success: true, data: data ?? [] },
-      { headers: { 'Cache-Control': 'public, max-age=30, s-maxage=30, stale-while-revalidate=60' } },
+      { headers: { 'Cache-Control': 'no-store' } },
     );
   } catch {
     return NextResponse.json({ success: false, data: [] });

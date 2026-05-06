@@ -1093,12 +1093,13 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
       />
       <div
         className={`fixed z-[61] bg-white flex flex-col shadow-2xl
-          left-2 right-2 bottom-2 rounded-lg max-h-[88dvh]
-          sm:left-1/2 sm:-translate-x-1/2 sm:bottom-4 sm:w-[min(560px,calc(100%-2rem))] sm:max-h-[88vh]
+          left-0 right-0 bottom-0 rounded-t-xl max-h-[88dvh]
+          sm:left-auto sm:right-0 sm:top-0 sm:bottom-0 sm:rounded-none sm:w-[min(560px,100vw)] sm:max-h-none sm:h-full
+          rtl:sm:right-auto rtl:sm:left-0
           transition-all duration-300 ease-out
           ${visible
-            ? 'translate-y-0 opacity-100 sm:-translate-x-1/2'
-            : 'translate-y-[110%] opacity-0 sm:-translate-x-1/2'}`}
+            ? 'translate-y-0 opacity-100 sm:translate-y-0 sm:translate-x-0'
+            : 'translate-y-[110%] opacity-0 sm:translate-y-0 sm:translate-x-full rtl:sm:-translate-x-full'}`}
       >
         {/* Drag handle (mobile) */}
         <div className="sm:hidden flex justify-center pt-2 pb-1 shrink-0">
@@ -1535,6 +1536,21 @@ function AnnouncementsSection() {
   // Called from drawer Save button. Commits draft → items, then persists.
   const saveDraft = async (afterClose) => {
     if (draft === null || editIdx === null) return;
+
+    // Client-side validation (server also re-validates)
+    if (draft.start_at && draft.end_at) {
+      const s = new Date(draft.start_at).getTime();
+      const e = new Date(draft.end_at).getTime();
+      if (Number.isFinite(s) && Number.isFinite(e) && e <= s) {
+        toast.error(t.validation_end_before_start ?? 'End date must be after start date');
+        return;
+      }
+    }
+    if (draft.cta_href && !/^(?:https?:\/\/|\/|#|mailto:|tel:)/i.test(String(draft.cta_href).trim())) {
+      toast.error(t.validation_invalid_url ?? 'Button link must start with http(s)://, /, # or mailto:');
+      return;
+    }
+
     const next = items.map((it, i) => (i === editIdx ? draft : it));
     setItems(next);
     setDrawerSaving(true);

@@ -17,18 +17,46 @@ const ALLOWED_MARQUEE_DIRECTIONS = ['left', 'right'];
 const ALLOWED_MARQUEE_SCROLL_MODES = ['together', 'individual'];
 const ALLOWED_CTA_DISPLAY_MODES = ['static', 'swap'];
 
+const HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+const SAFE_HREF_RE = /^(?:https?:\/\/|\/[^/]|\/$|#|mailto:|tel:)/i;
+
+function safeHex(v, fallback) {
+  if (!v) return fallback;
+  const s = String(v).trim();
+  return HEX_COLOR_RE.test(s) ? s : fallback;
+}
+
+function safeHref(v) {
+  if (!v) return null;
+  const s = String(v).trim().slice(0, 500);
+  return SAFE_HREF_RE.test(s) ? s : null;
+}
+
+function safeSchedule(start, end) {
+  // Drop end_at if it is on/before start_at (silently — admin form should warn).
+  if (start && end) {
+    const s = new Date(start).getTime();
+    const e = new Date(end).getTime();
+    if (Number.isFinite(s) && Number.isFinite(e) && e <= s) {
+      return { start_at: start || null, end_at: null };
+    }
+  }
+  return { start_at: start || null, end_at: end || null };
+}
+
 function sanitize(a, idx = 0) {
+  const sched = safeSchedule(a.start_at, a.end_at);
   return {
     type: ALLOWED_TYPES.includes(a.type) ? a.type : 'notification',
     text: String(a.text ?? '').slice(0, 500),
     icon_enabled: !!a.icon_enabled,
     icon: a.icon ? String(a.icon).slice(0, 32) : null,
-    bg_color: a.bg_color ? String(a.bg_color).slice(0, 16) : '#111111',
-    text_color: a.text_color ? String(a.text_color).slice(0, 16) : '#ffffff',
-    font_size: a.font_size != null ? Number(a.font_size) || null : null,
+    bg_color: safeHex(a.bg_color, '#111111'),
+    text_color: safeHex(a.text_color, '#ffffff'),
+    font_size: a.font_size != null ? Math.max(8, Math.min(32, Number(a.font_size) || 14)) : null,
     border_enabled: !!a.border_enabled,
     cta_text: a.cta_text ? String(a.cta_text).slice(0, 80) : null,
-    cta_href: a.cta_href ? String(a.cta_href).slice(0, 500) : null,
+    cta_href: safeHref(a.cta_href),
     promo_code: a.promo_code ? String(a.promo_code).slice(0, 40) : null,
     social_whatsapp: a.social_whatsapp ? String(a.social_whatsapp).slice(0, 30) : null,
     social_facebook: a.social_facebook ? String(a.social_facebook).slice(0, 60) : null,
@@ -56,8 +84,8 @@ function sanitize(a, idx = 0) {
     carousel_enabled: !!a.carousel_enabled,
     rotation_seconds: Math.max(2, Math.min(120, Number(a.rotation_seconds) || 5)),
     dismissible: a.dismissible == null ? true : !!a.dismissible,
-    start_at: a.start_at || null,
-    end_at: a.end_at || null,
+    start_at: sched.start_at,
+    end_at: sched.end_at,
     priority: Number.isFinite(Number(a.priority)) ? Number(a.priority) : idx,
     is_active: a.is_active == null ? true : !!a.is_active,
   };

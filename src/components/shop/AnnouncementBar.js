@@ -17,6 +17,7 @@
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
+import { useDictionary } from "@/components/providers/LocaleProvider";
 import {
   X,
   Copy,
@@ -30,9 +31,19 @@ import {
 } from "lucide-react";
 
 const DISMISS_KEY = "estore-announcements-dismissed";
+const DISMISS_TTL_DAYS = 30;
 
 // Module-level cache: persists across client navigations, cleared on hard refresh
 let _cache = null;
+let _fetchSeq = 0; // monotonically increasing — guards against out-of-order fetches
+
+/** Allowed CTA href schemes (defense in depth — server also validates) */
+const SAFE_HREF_RE = /^(?:https?:\/\/|\/|#|mailto:|tel:)/i;
+function safeHref(href) {
+  if (!href) return null;
+  const s = String(href).trim();
+  return SAFE_HREF_RE.test(s) ? s : null;
+}
 
 /** Call this after any admin change so the bar re-fetches on next render. */
 export function invalidateBarCache() {
@@ -91,21 +102,31 @@ const SOCIAL_LINKS = {
 };
 
 function readDismissed() {
-  if (typeof window === "undefined") return new Set();
+  if (typeof window === "undefined") return new Map();
   try {
     const raw = window.localStorage.getItem(DISMISS_KEY);
-    if (!raw) return new Set();
-    const arr = JSON.parse(raw);
-    return new Set(Array.isArray(arr) ? arr : []);
+    if (!raw) return new Map();
+    const parsed = JSON.parse(raw);
+    const now = Date.now();
+    const ttl = DISMISS_TTL_DAYS * 24 * 60 * 60 * 1000;
+    // Backwards compat: old format was a plain array of IDs.
+    if (Array.isArray(parsed)) return new Map(parsed.map((id) => [id, now]));
+    if (parsed && typeof parsed === 'object') {
+      return new Map(
+        Object.entries(parsed).filter(([, ts]) => Number(ts) && (now - Number(ts)) < ttl),
+      );
+    }
+    return new Map();
   } catch {
-    return new Set();
+    return new Map();
   }
 }
 
-function writeDismissed(set) {
+function writeDismissed(map) {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(DISMISS_KEY, JSON.stringify([...set]));
+    const obj = Object.fromEntries(map);
+    window.localStorage.setItem(DISMISS_KEY, JSON.stringify(obj));
   } catch {
     /* ignore quota */
   }
@@ -129,7 +150,7 @@ function pathIsAdmin(pathname) {
 }
 
 /* ─────────────────── Countdown sub-component ─────────────────── */
-export function Countdown({ endAt, labels }) {
+export function Countdown({ endAt, labels, expiredLabel }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -137,8 +158,20 @@ export function Countdown({ endAt, labels }) {
   }, []);
 
   const end = new Date(endAt).getTime();
+  if (!Number.isFinite(end)) return null;
   const diff = Math.max(0, end - now);
-  if (diff === 0) return null;
+  const isExpired = diff === 0;
+
+  if (isExpired) {
+    return (
+      <span
+        className="inline-flex items-center justify-center px-2 py-0.5 rounded border border-current/35 bg-black/10 text-[10px] uppercase tracking-wide font-semibold ml-3"
+        aria-live="polite"
+      >
+        {expiredLabel ?? 'Expired'}
+      </span>
+    );
+  }
 
   const d = Math.floor(diff / 86400000);
   const h = Math.floor((diff % 86400000) / 3600000);
@@ -203,7 +236,7 @@ export function SwapStack({ textNode, buttonNode, seconds = 4 }) {
   return (
     <span
       className="relative inline-grid items-center justify-items-center overflow-hidden align-middle"
-      style={{ '--swap-dur': `${cycle}s`, minHeight: '1.5rem', lineHeight: 1.2 }}
+      style={{ '--swap-dur': `${cycle}s`, minHeight: '2rem', lineHeight: 1.2 }}
     >
       <span
         className="animate-swap-text whitespace-nowrap inline-flex items-center"
@@ -232,10 +265,12 @@ function AnnouncementContent({ a, dict }) {
     </span>
   );
 
-  const ctaNode = a.cta_text ? (
-    a.cta_href ? (
+  // CTA isn't supported for marquee type (the message stream owns the bar).
+  const safeCtaHref = a.type !== 'marquee' ? safeHref(a.cta_href) : null;
+  const ctaNode = (a.type !== 'marquee' && a.cta_text) ? (
+    safeCtaHref ? (
       <Link
-        href={a.cta_href}
+        href={safeCtaHref}
         className="inline-flex items-center px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide bg-white text-black hover:bg-white/90 active:scale-95 transition-all shadow-sm"
       >
         {a.cta_text}
@@ -276,6 +311,7 @@ function AnnouncementContent({ a, dict }) {
             m: dict?.cd_m ?? "m",
             s: dict?.cd_s ?? "s",
           }}
+          expiredLabel={dict?.expired ?? "Expired"}
         />
       )}
 
@@ -381,7 +417,7 @@ function IndividualMarquee({ messages, speed, direction, pauseOnHover, Icon, fon
         key={idx}
         className="absolute top-1/2 -translate-y-1/2 inline-flex items-center whitespace-nowrap animate-marquee-single"
         style={{ animationPlayState: paused ? 'paused' : 'running' }}
-        onAnimationEnd={() => setIdx((i) => (i + 1) % messages.length)}
+        onAnimationEnd={() => setIdx((i) => (i + 1) % Math.max(1, messages.length))}
       >
         {Icon && <Icon className="h-4 w-4 me-2" />}
         <span style={{ fontSize: fontSize ? `${fontSize}px` : undefined }}>{msg}</span>
@@ -508,6 +544,8 @@ function GroupMarquee({ messages, speed, direction, pauseOnHover, sep, Icon, fon
 /* ─────────────────── Main component ─────────────────── */
 export default function AnnouncementBar() {
   const pathname = usePathname();
+  const dictionary = useDictionary();
+  const dict = dictionary?.admin?.settings?.announcements ?? {};
   const [items, setItems] = useState(() => _cache);
   const [dismissed, setDismissed] = useState(() => readDismissed());
   const [activeIdx, setActiveIdx] = useState(0);
@@ -527,13 +565,30 @@ export default function AnnouncementBar() {
   useEffect(() => {
     let mounted = true;
     const controller = new AbortController();
+    const seq = ++_fetchSeq;
     fetch("/api/v1/announcements", { signal: controller.signal })
       .then((r) => r.json())
       .then((json) => {
         if (!mounted) return;
+        // Drop response if a newer fetch was started after us — prevents stale overwrite.
+        if (seq !== _fetchSeq) return;
         const data = json?.success ? (json.data ?? []) : [];
         _cache = data;
         setItems(data);
+        // Prune dismissed entries for items the server no longer returns.
+        setDismissed((prev) => {
+          if (!prev || prev.size === 0) return prev;
+          const liveIds = new Set(data.map((d) => d.id));
+          let changed = false;
+          const next = new Map();
+          for (const [id, ts] of prev) {
+            if (liveIds.has(id)) next.set(id, ts);
+            else changed = true;
+          }
+          if (!changed) return prev;
+          writeDismissed(next);
+          return next;
+        });
       })
       .catch(() => {});
     return () => {
@@ -563,24 +618,17 @@ export default function AnnouncementBar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, pathname, dismissed, tick]);
 
-  // Auto-rotate carousel
+  // Auto-rotate carousel — only when there are multiple visible items.
+  // The legacy `carousel_enabled` flag is ignored: with multiple items we
+  // rotate, with a single item we never do (avoids pointless re-renders).
   useEffect(() => {
     if (rotationRef.current) clearInterval(rotationRef.current);
     if (visible.length <= 1) return;
-    const carouselOnes = visible.filter((a) => a.carousel_enabled);
-    // Use the longest interval among the rotating items, default 5s
     const interval =
       Math.max(...visible.map((a) => Number(a.rotation_seconds) || 0), 5) * 1000;
-    if (carouselOnes.length === 0 && visible.length > 1) {
-      // Even without explicit carousel flag, rotate when multiple items exist.
-      rotationRef.current = setInterval(() => {
-        setActiveIdx((i) => (i + 1) % visible.length);
-      }, interval);
-    } else if (carouselOnes.length > 0) {
-      rotationRef.current = setInterval(() => {
-        setActiveIdx((i) => (i + 1) % visible.length);
-      }, interval);
-    }
+    rotationRef.current = setInterval(() => {
+      setActiveIdx((i) => (i + 1) % visible.length);
+    }, interval);
     return () => {
       if (rotationRef.current) clearInterval(rotationRef.current);
     };
@@ -591,14 +639,13 @@ export default function AnnouncementBar() {
     if (activeIdx >= visible.length) setActiveIdx(0);
   }, [visible.length, activeIdx]);
 
-  // Static bars slide out of view when user scrolls down
+  // Static bars slide out of view when user scrolls down (works for both top & bottom)
   const [scrollHidden, setScrollHidden] = useState(false);
   useEffect(() => {
     if (visible.length === 0) { setScrollHidden(false); return; }
     const cur = visible[activeIdx] ?? visible[0];
     const isStatic = cur?.behavior === 'static';
-    const posTop = (cur?.position ?? 'top') === 'top';
-    if (!isStatic || !posTop) { setScrollHidden(false); return; }
+    if (!isStatic) { setScrollHidden(false); return; }
     const onScroll = () => setScrollHidden(window.scrollY > 5);
     onScroll(); // run immediately on mount / bar change
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -643,8 +690,8 @@ export default function AnnouncementBar() {
   const positionTop = (current.position ?? "top") === "top";
 
   const handleDismiss = (id) => {
-    const next = new Set(dismissed);
-    next.add(id);
+    const next = new Map(dismissed);
+    next.set(id, Date.now());
     setDismissed(next);
     writeDismissed(next);
   };
@@ -673,7 +720,9 @@ export default function AnnouncementBar() {
         backgroundColor: current.bg_color || "#111111",
         color: current.text_color || "#ffffff",
         height: "2.5rem",
-        transform: scrollHidden ? 'translateY(-100%)' : 'translateY(0)',
+        transform: scrollHidden
+          ? (positionTop ? 'translateY(-100%)' : 'translateY(100%)')
+          : 'translateY(0)',
       }}
     >
       {current.type === 'marquee' ? (
@@ -709,8 +758,12 @@ export default function AnnouncementBar() {
           </div>
 
           {/* Center: always truly centered */}
-          <div className="flex items-center justify-center text-center min-w-0">
-            <AnnouncementContent a={current} />
+          <div
+            className="flex items-center justify-center text-center min-w-0"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            <AnnouncementContent a={current} dict={dict} />
           </div>
 
           {/* Right: next + dismiss */}
