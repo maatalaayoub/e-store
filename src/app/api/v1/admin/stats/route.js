@@ -1,12 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-
-async function getAdminUser(supabase) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data } = await supabase.from('users').select('role').eq('id', user.id).single();
-  return data?.role === 'admin' ? user : null;
-}
+import { getAdminUser } from '@/middlewares/authGuard';
 
 /**
  * GET /api/v1/admin/stats

@@ -20,13 +20,13 @@ import {
   ShoppingCart,
   Users,
   Settings,
-  Search,
   Bell,
   Menu,
   X,
   LogOut,
 } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
+import AdminSearch from "@/components/layouts/AdminSearch";
 
 const NAV_ITEMS = [
   { href: "/admin", key: "dashboard", icon: LayoutDashboard, exact: true },
@@ -125,32 +125,34 @@ export default function AdminShell({ children }) {
       {/* MAIN COLUMN */}
       <main className="flex-1 flex flex-col w-0 min-w-0 bg-white">
         {/* HEADER */}
-        <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-zinc-100 bg-white px-4 sm:px-6 md:px-8">
-          <div className="flex items-center gap-4">
-            <button
-              className="lg:hidden text-zinc-500 hover:text-zinc-900"
-              onClick={() => setIsSidebarOpen(true)}
-              aria-label="Open sidebar"
-            >
-              <Menu className="h-6 w-6" />
-            </button>
-            <div className="hidden sm:flex relative items-center">
-              <Search className="absolute left-3 h-4 w-4 text-zinc-400" />
-              <input
-                type="text"
-                placeholder={dict?.admin?.search_placeholder ?? "Search..."}
-                className="w-64 rounded-full bg-zinc-50 pl-10 pr-4 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-blue-600"
-              />
+        <header className="sticky top-0 z-50 border-b border-zinc-100 bg-white px-4 sm:px-6 md:px-8">
+          {/* Main row */}
+          <div className="flex h-16 items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                className="lg:hidden text-zinc-500 hover:text-zinc-900"
+                onClick={() => setIsSidebarOpen(true)}
+                aria-label="Open sidebar"
+              >
+                <Menu className="h-6 w-6" />
+              </button>
+              <div className="hidden sm:flex relative items-center">
+                <AdminSearch locale={locale} isRtl={isRtl} />
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <button
+                className="relative p-2 text-zinc-500 hover:text-zinc-900"
+                aria-label="Notifications"
+              >
+                <Bell className="h-5 w-5" />
+                <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500" />
+              </button>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <button
-              className="relative p-2 text-zinc-500 hover:text-zinc-900"
-              aria-label="Notifications"
-            >
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500" />
-            </button>
+          {/* Mobile search row — only visible below sm */}
+          <div className="sm:hidden pb-3">
+            <AdminSearch locale={locale} isRtl={isRtl} />
           </div>
         </header>
 

@@ -25,8 +25,16 @@ export async function POST(req) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
-    const { name } = await req.json();
-    const category = await categoryService.createCategory(name);
+    const body = await req.json().catch(() => ({}));
+    const raw = typeof body?.name === 'string' ? body.name.trim() : '';
+    if (!raw || raw.length > 80) {
+      return NextResponse.json(
+        { success: false, error: 'name is required (1-80 chars)' },
+        { status: 400 },
+      );
+    }
+
+    const category = await categoryService.createCategory(raw);
     return NextResponse.json({ success: true, data: category }, { status: 201 });
   } catch (error) {
     return NextResponse.json(

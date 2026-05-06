@@ -154,6 +154,18 @@
       "exit": "Exit Admin"
     },
     "search_placeholder": "Search...",
+    "search": {
+      "hint_title": "Type to search",
+      "hint_desc": "Find pages, settings and quick actions.",
+      "no_results": "No results found",
+      "no_results_hint": "No matches for “{q}”.",
+      "group_pages": "Pages",
+      "group_settings": "Settings",
+      "group_actions": "Quick Actions",
+      "kbd_navigate": "Navigate",
+      "kbd_open": "Open",
+      "kbd_close": "Esc to close"
+    },
     "dashboard": {
       "title": "Overview",
       "customize": "Customize Store",

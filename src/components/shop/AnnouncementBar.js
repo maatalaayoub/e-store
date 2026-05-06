@@ -17,7 +17,8 @@
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
-import { useDictionary } from "@/components/providers/LocaleProvider";
+import { useDictionary, useLocale } from "@/components/providers/LocaleProvider";
+import { resolveAnnouncementTranslation } from "@/lib/announcement-locale";
 import {
   X,
   Copy,
@@ -336,9 +337,9 @@ function AnnouncementContent({ a, dict }) {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={link.label}
-              className="inline-flex items-center gap-1 ml-2 px-2 py-0.5 rounded bg-white/20 hover:bg-white/30 text-xs font-semibold transition-colors"
+              className="inline-flex items-center gap-1.5 ml-2 px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/30 text-[11px] font-bold tracking-wide transition-colors"
             >
-              <Icon className="h-3.5 w-3.5" /> {link.label}
+              <Icon className="h-4 w-4" /> {link.label}
             </a>
           );
         });
@@ -361,7 +362,7 @@ function MarqueeCopy({ messages, icon: Icon, fontSize, sep }) {
       {messages.map((msg, i) => (
         <span key={i} className="inline-flex items-center shrink-0">
           {Icon && <Icon className="h-4 w-4 me-2" />}
-          <span style={{ fontSize: fontSize ? `${fontSize}px` : undefined }}>{msg}</span>
+          <span dir="auto" style={{ fontSize: fontSize ? `${fontSize}px` : undefined }}>{msg}</span>
           <span className="mx-4 opacity-60 select-none" aria-hidden="true">{sep}</span>
         </span>
       ))}
@@ -399,17 +400,18 @@ function IndividualMarquee({ messages, speed, direction, pauseOnHover, Icon, fon
     <div
       ref={containerRef}
       className="overflow-hidden w-full relative min-h-[1.25rem]"
+      dir="ltr"
       onMouseEnter={() => pauseOnHover && setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
       {/* Invisible probe — measures the current message width before animation starts */}
       <span
         ref={probeRef}
-        className="absolute top-0 start-0 invisible pointer-events-none inline-flex items-center whitespace-nowrap"
+        className="absolute top-0 left-0 invisible pointer-events-none inline-flex items-center whitespace-nowrap"
         aria-hidden="true"
       >
         {Icon && <Icon className="h-4 w-4 me-2" />}
-        <span style={{ fontSize: fontSize ? `${fontSize}px` : undefined }}>{msg}</span>
+        <span dir="auto" style={{ fontSize: fontSize ? `${fontSize}px` : undefined }}>{msg}</span>
       </span>
 
       {/* Animated element — key forces remount (animation restart) on each new message */}
@@ -420,7 +422,7 @@ function IndividualMarquee({ messages, speed, direction, pauseOnHover, Icon, fon
         onAnimationEnd={() => setIdx((i) => (i + 1) % Math.max(1, messages.length))}
       >
         {Icon && <Icon className="h-4 w-4 me-2" />}
-        <span style={{ fontSize: fontSize ? `${fontSize}px` : undefined }}>{msg}</span>
+        <span dir="auto" style={{ fontSize: fontSize ? `${fontSize}px` : undefined }}>{msg}</span>
       </span>
     </div>
   );
@@ -505,6 +507,7 @@ function GroupMarquee({ messages, speed, direction, pauseOnHover, sep, Icon, fon
     <div
       ref={containerRef}
       className="overflow-hidden w-full relative"
+      dir="ltr"
       style={{ '--marquee-duration': `${duration}s` }}
       onMouseEnter={() => pauseOnHover && setPaused(true)}
       onMouseLeave={() => setPaused(false)}
@@ -512,7 +515,7 @@ function GroupMarquee({ messages, speed, direction, pauseOnHover, sep, Icon, fon
       {/* Invisible probe — measures the rendered width of one copy */}
       <div
         ref={probeRef}
-        className="absolute top-0 start-0 invisible pointer-events-none inline-flex items-center"
+        className="absolute top-0 left-0 invisible pointer-events-none inline-flex items-center"
         aria-hidden="true"
       >
         <MarqueeCopy {...copyProps} />
@@ -545,6 +548,7 @@ function GroupMarquee({ messages, speed, direction, pauseOnHover, sep, Icon, fon
 export default function AnnouncementBar() {
   const pathname = usePathname();
   const dictionary = useDictionary();
+  const { locale } = useLocale();
   const dict = dictionary?.admin?.settings?.announcements ?? {};
   const [items, setItems] = useState(() => _cache);
   const [dismissed, setDismissed] = useState(() => readDismissed());
@@ -613,10 +617,11 @@ export default function AnnouncementBar() {
       .filter((a) => a.is_active !== false)
       .filter((a) => (a.scope === "home" ? onHome : true))
       .filter((a) => isWithinSchedule(a, now))
-      .filter((a) => !dismissed.has(a.id));
+      .filter((a) => !dismissed.has(a.id))
+      .map((a) => resolveAnnouncementTranslation(a, locale));
     // tick included via ref; re-runs when schedule re-eval interval fires
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, pathname, dismissed, tick]);
+  }, [items, pathname, dismissed, tick, locale]);
 
   // Auto-rotate carousel — only when there are multiple visible items.
   // The legacy `carousel_enabled` flag is ignored: with multiple items we
@@ -624,8 +629,7 @@ export default function AnnouncementBar() {
   useEffect(() => {
     if (rotationRef.current) clearInterval(rotationRef.current);
     if (visible.length <= 1) return;
-    const interval =
-      Math.max(...visible.map((a) => Number(a.rotation_seconds) || 0), 5) * 1000;
+    const interval = (Number(visible[0]?.rotation_seconds) || 5) * 1000;
     rotationRef.current = setInterval(() => {
       setActiveIdx((i) => (i + 1) % visible.length);
     }, interval);
@@ -759,7 +763,9 @@ export default function AnnouncementBar() {
 
           {/* Center: always truly centered */}
           <div
+            key={activeIdx}
             className="flex items-center justify-center text-center min-w-0"
+            style={{ animation: 'announce-in 0.4s cubic-bezier(0.22,1,0.36,1) both' }}
             aria-live="polite"
             aria-atomic="true"
           >

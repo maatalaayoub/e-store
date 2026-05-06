@@ -1,12 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-
-async function getAdminUser(supabase) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data } = await supabase.from('users').select('role').eq('id', user.id).single();
-  return data?.role === 'admin' ? user : null;
-}
+import { createServiceClient } from '@/lib/supabase/service';
+import { getAdminUser } from '@/middlewares/authGuard';
 
 const ALLOWED_TYPES = ['promotion', 'shipping', 'limited', 'social', 'notification', 'marquee'];
 const ALLOWED_POSITIONS = ['top', 'bottom'];
@@ -16,6 +11,7 @@ const ALLOWED_PLATFORMS = ['whatsapp', 'facebook', 'instagram', 'tiktok'];
 const ALLOWED_MARQUEE_DIRECTIONS = ['left', 'right'];
 const ALLOWED_MARQUEE_SCROLL_MODES = ['together', 'individual'];
 const ALLOWED_CTA_DISPLAY_MODES = ['static', 'swap'];
+const ALLOWED_LOCALES = ['en', 'fr', 'ar', 'dr'];
 
 const HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 const SAFE_HREF_RE = /^(?:https?:\/\/|\/[^/]|\/$|#|mailto:|tel:)/i;
@@ -44,18 +40,81 @@ function safeSchedule(start, end) {
   return { start_at: start || null, end_at: end || null };
 }
 
+/**
+ * Validate & shape the per-locale translations object.
+ * Only `text`, `cta_text`, and `marquee_messages` are translatable.
+ * Returns null when no usable translation exists (so we store NULL not {}).
+ */
+function safeTranslations(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
+  const out = {};
+  let hasAny = false;
+  for (const locale of ALLOWED_LOCALES) {
+    const tr = input[locale];
+    if (!tr || typeof tr !== 'object') continue;
+    const entry = {};
+    if (typeof tr.text === 'string' && tr.text.trim()) {
+      entry.text = tr.text.slice(0, 500);
+    }
+    if (typeof tr.cta_text === 'string' && tr.cta_text.trim()) {
+      entry.cta_text = tr.cta_text.slice(0, 80);
+    }
+    if (Array.isArray(tr.marquee_messages)) {
+      const msgs = tr.marquee_messages
+        .map((m) => String(m ?? '').slice(0, 300))
+        .filter((m) => m.trim().length > 0)
+        .slice(0, 20);
+      if (msgs.length > 0) entry.marquee_messages = msgs;
+    }
+    if (Object.keys(entry).length > 0) {
+      out[locale] = entry;
+      hasAny = true;
+    }
+  }
+  return hasAny ? out : null;
+}
+
+/**
+ * Pick a sensible base value when the admin only filled per-locale fields.
+ * Returns the first non-empty value (in ALLOWED_LOCALES order).
+ * For arrays, requires at least one non-empty string element.
+ */
+function pickBase(translations, field) {
+  if (!translations) return null;
+  for (const loc of ALLOWED_LOCALES) {
+    const v = translations[loc]?.[field];
+    if (Array.isArray(v)) {
+      const meaningful = v.filter((s) => typeof s === 'string' && s.trim());
+      if (meaningful.length > 0) return meaningful;
+    } else if (typeof v === 'string' && v.trim()) {
+      return v;
+    }
+  }
+  return null;
+}
+
 function sanitize(a, idx = 0) {
   const sched = safeSchedule(a.start_at, a.end_at);
+  const translations = safeTranslations(a.translations);
+
+  // Base fields stay populated (legacy + fallback for clients without `translations`).
+  // If admin left them empty, fall back to the first non-empty locale.
+  const baseText = (a.text && String(a.text).trim()) ? String(a.text) : (pickBase(translations, 'text') ?? '');
+  const baseCta = (a.cta_text && String(a.cta_text).trim()) ? String(a.cta_text) : pickBase(translations, 'cta_text');
+  const baseMarquee = Array.isArray(a.marquee_messages) && a.marquee_messages.some((m) => String(m ?? '').trim())
+    ? a.marquee_messages
+    : (pickBase(translations, 'marquee_messages') ?? []);
+
   return {
     type: ALLOWED_TYPES.includes(a.type) ? a.type : 'notification',
-    text: String(a.text ?? '').slice(0, 500),
+    text: String(baseText).slice(0, 500),
     icon_enabled: !!a.icon_enabled,
     icon: a.icon ? String(a.icon).slice(0, 32) : null,
     bg_color: safeHex(a.bg_color, '#111111'),
     text_color: safeHex(a.text_color, '#ffffff'),
     font_size: a.font_size != null ? Math.max(8, Math.min(32, Number(a.font_size) || 14)) : null,
     border_enabled: !!a.border_enabled,
-    cta_text: a.cta_text ? String(a.cta_text).slice(0, 80) : null,
+    cta_text: baseCta ? String(baseCta).slice(0, 80) : null,
     cta_href: safeHref(a.cta_href),
     promo_code: a.promo_code ? String(a.promo_code).slice(0, 40) : null,
     social_whatsapp: a.social_whatsapp ? String(a.social_whatsapp).slice(0, 30) : null,
@@ -65,8 +124,8 @@ function sanitize(a, idx = 0) {
     social_platforms: Array.isArray(a.social_platforms)
       ? [...new Set(a.social_platforms.filter((p) => ALLOWED_PLATFORMS.includes(p)))]
       : [],
-    marquee_messages: Array.isArray(a.marquee_messages)
-      ? a.marquee_messages
+    marquee_messages: Array.isArray(baseMarquee)
+      ? baseMarquee
           .map((m) => String(m ?? '').slice(0, 300))
           .filter((m) => m.trim().length > 0)
           .slice(0, 20)
@@ -88,6 +147,7 @@ function sanitize(a, idx = 0) {
     end_at: sched.end_at,
     priority: Number.isFinite(Number(a.priority)) ? Number(a.priority) : idx,
     is_active: a.is_active == null ? true : !!a.is_active,
+    translations,
   };
 }
 
@@ -116,7 +176,13 @@ export async function GET() {
 
 /**
  * PUT /api/v1/admin/announcements
- * Full replace: deletes all and inserts the new set. Mirrors hero-slides API.
+ * Full replace: deletes all and inserts the new set.
+ *
+ * Uses the service client (bypasses RLS) because admin access is already
+ * enforced above via getAdminUser. A `type IN (...)` filter satisfies
+ * PostgREST's WHERE requirement while matching every row, since the CHECK
+ * constraint guarantees type is always one of the allowed values.
+ *
  * Body: { announcements: [...] }
  */
 export async function PUT(request) {
@@ -129,13 +195,35 @@ export async function PUT(request) {
     if (!Array.isArray(announcements)) {
       return NextResponse.json({ success: false, error: 'Invalid payload' }, { status: 400 });
     }
+    if (announcements.length > 50) {
+      return NextResponse.json({ success: false, error: 'Too many announcements (max 50)' }, { status: 400 });
+    }
 
-    await supabase.from('announcements').delete().not('id', 'is', null);
+    const rows = announcements.map((a, i) => sanitize(a, i));
 
-    if (announcements.length > 0) {
-      const rows = announcements.map((a, i) => sanitize(a, i));
-      const { error } = await supabase.from('announcements').insert(rows);
-      if (error) throw error;
+    // Service client — bypasses RLS for write operations.
+    const db = createServiceClient();
+
+    // Snapshot current rows so we can restore them if the insert fails.
+    const { data: snapshot } = await db.from('announcements').select('*');
+
+    // Delete all existing rows. The `in('type', [...])` filter satisfies
+    // PostgREST's WHERE requirement and matches every row due to the CHECK constraint.
+    const { error: delError } = await db
+      .from('announcements')
+      .delete()
+      .in('type', ALLOWED_TYPES);
+    if (delError) throw delError;
+
+    if (rows.length > 0) {
+      const { error: insError } = await db.from('announcements').insert(rows);
+      if (insError) {
+        // Best-effort restore to avoid data loss on insert failure.
+        if (Array.isArray(snapshot) && snapshot.length > 0) {
+          await db.from('announcements').insert(snapshot).catch(() => {});
+        }
+        throw insError;
+      }
     }
 
     return NextResponse.json({ success: true });

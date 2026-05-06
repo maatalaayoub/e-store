@@ -154,6 +154,18 @@
       "exit": "Quitter l'admin"
     },
     "search_placeholder": "Rechercher...",
+    "search": {
+      "hint_title": "Tapez pour rechercher",
+      "hint_desc": "Trouvez des pages, paramètres et actions rapides.",
+      "no_results": "Aucun résultat",
+      "no_results_hint": "Aucune correspondance pour « {q} ».",
+      "group_pages": "Pages",
+      "group_settings": "Paramètres",
+      "group_actions": "Actions rapides",
+      "kbd_navigate": "Naviguer",
+      "kbd_open": "Ouvrir",
+      "kbd_close": "Échap pour fermer"
+    },
     "dashboard": {
       "title": "Aperçu",
       "customize": "Personnaliser la boutique",

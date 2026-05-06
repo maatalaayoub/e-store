@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import {
   Store,
@@ -43,10 +44,24 @@ const SECTION_DEFS = [
 ];
 
 export default function AdminSettingsPage() {
-  const [active, setActive] = useState("general");
+  const searchParams = useSearchParams();
+  const initialTab = (() => {
+    const t = searchParams.get("tab");
+    return SECTION_DEFS.some((s) => s.id === t) ? t : "general";
+  })();
+  const [active, setActive] = useState(initialTab);
   const dict = useDictionary();
   const t = dict?.admin?.settings ?? {};
   const tSec = t.sections ?? {};
+
+  // Sync when the URL tab changes (e.g. when admin search navigates here).
+  useEffect(() => {
+    const next = searchParams.get("tab");
+    if (next && SECTION_DEFS.some((s) => s.id === next) && next !== active) {
+      setActive(next);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   if (!dict?.admin?.settings) return <AdminSettingsSkeleton />;
 
@@ -675,27 +690,37 @@ function HeroSection() {
   );
 }
 
-function Toggle({ defaultChecked = false, onChange }) {
-  const [on, setOn] = useState(defaultChecked);
+function Toggle({ defaultChecked = false, checked: controlledChecked, onChange, disabled = false, loading = false }) {
+  const isControlled = controlledChecked !== undefined;
+  const [internalOn, setInternalOn] = useState(defaultChecked);
+  const on = isControlled ? controlledChecked : internalOn;
   return (
     <button
       type="button"
       role="switch"
       aria-checked={on}
+      disabled={disabled || loading}
       onClick={() => {
+        if (disabled || loading) return;
         const next = !on;
-        setOn(next);
+        if (!isControlled) setInternalOn(next);
         onChange?.(next);
       }}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
         on ? "bg-blue-600" : "bg-zinc-300"
-      }`}
+      } ${disabled || loading ? 'opacity-60 cursor-not-allowed' : ''}`}
     >
-      <span
-        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-          on ? "translate-x-6 rtl:-translate-x-6" : "translate-x-1 rtl:-translate-x-1"
-        }`}
-      />
+      {loading ? (
+        <span className="absolute inset-0 flex items-center justify-center">
+          <span className="h-3.5 w-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+        </span>
+      ) : (
+        <span
+          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+            on ? "translate-x-6 rtl:-translate-x-6" : "translate-x-1 rtl:-translate-x-1"
+          }`}
+        />
+      )}
     </button>
   );
 }
@@ -775,7 +800,42 @@ function blankAnnouncement(type = 'promotion') {
     position: 'top', behavior: 'sticky', scope: 'all',
     carousel_enabled: false, rotation_seconds: 5, dismissible: true,
     start_at: null, end_at: null, priority: 0, is_active: true,
+    translations: {
+      en: { text: '', cta_text: '', marquee_messages: type === 'marquee' ? [''] : [] },
+      fr: { text: '', cta_text: '', marquee_messages: type === 'marquee' ? [''] : [] },
+      ar: { text: '', cta_text: '', marquee_messages: type === 'marquee' ? [''] : [] },
+      dr: { text: '', cta_text: '', marquee_messages: type === 'marquee' ? [''] : [] },
+    },
   };
+}
+
+const ANNOUNCEMENT_LOCALES = ['en', 'fr', 'ar', 'dr'];
+
+/**
+ * Hydrates an announcement row coming from the DB so the editor always sees a
+ * fully-populated `translations` object. Legacy rows (with no `translations`
+ * column or empty entries) get their base `text` / `cta_text` /
+ * `marquee_messages` mirrored into every locale slot — that way the admin
+ * doesn't lose data and just edits per-locale overrides as needed.
+ */
+function normalizeAnnouncementForEdit(a) {
+  const baseText = typeof a?.text === 'string' ? a.text : '';
+  const baseCta = typeof a?.cta_text === 'string' ? a.cta_text : '';
+  const baseMarquee = Array.isArray(a?.marquee_messages) ? a.marquee_messages : [];
+  const tr = (a?.translations && typeof a.translations === 'object') ? a.translations : {};
+
+  const translations = {};
+  for (const loc of ANNOUNCEMENT_LOCALES) {
+    const cur = tr[loc] && typeof tr[loc] === 'object' ? tr[loc] : {};
+    translations[loc] = {
+      text: typeof cur.text === 'string' ? cur.text : baseText,
+      cta_text: typeof cur.cta_text === 'string' ? cur.cta_text : baseCta,
+      marquee_messages: Array.isArray(cur.marquee_messages) && cur.marquee_messages.length > 0
+        ? [...cur.marquee_messages]
+        : [...baseMarquee],
+    };
+  }
+  return { ...a, translations };
 }
 
 function isoToLocalInput(iso) {
@@ -877,7 +937,7 @@ function AnnouncementSelect({ value, onChange, options, placeholder }) {
   );
 }
 
-function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle, onEdit }) {
+function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle, onEdit, toggling }) {
   const typeInfo = ANNOUNCEMENT_TYPES.find((x) => x.id === value.type) ?? ANNOUNCEMENT_TYPES[0];
   return (
     <div
@@ -935,8 +995,8 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
                   const p = SOCIAL_PLATFORMS.find((x) => x.id === pid);
                   if (!p) return null;
                   return (
-                    <span key={pid} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/20 text-[11px] font-semibold">
-                      <BrandIcon name={pid} className="h-3 w-3" />
+                    <span key={pid} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 text-[11px] font-bold tracking-wide">
+                      <BrandIcon name={pid} className="h-4 w-4" />
                       {p.label}
                     </span>
                   );
@@ -970,7 +1030,7 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
             <ChevronDown className="h-3.5 w-3.5" />
           </button>
           <div className="mx-1">
-            <Toggle defaultChecked={value.is_active} onChange={onToggle} />
+            <Toggle checked={value.is_active} onChange={onToggle} loading={toggling} disabled={toggling} />
           </div>
           <button onClick={onEdit}
             className="p-1.5 rounded-lg text-zinc-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
@@ -1057,6 +1117,38 @@ function AnnouncementTypePicker({ open, t, onPick, onClose }) {
 function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) {
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [activeLang, setActiveLang] = useState('en');
+
+  const ANN_LANGS = ['en', 'fr', 'ar', 'dr'];
+  const ANN_LANG_LABELS = { en: 'English', fr: 'Français', ar: 'العربية', dr: 'الدارجة' };
+  const ANN_RTL_LANGS = new Set(['ar', 'dr']);
+
+  /** Read a translatable field for the active locale, falling back to the base column. */
+  const readTr = (field) => {
+    const tr = value.translations?.[activeLang];
+    if (Array.isArray(tr?.[field])) return tr[field];
+    if (typeof tr?.[field] === 'string') return tr[field];
+    return Array.isArray(value[field]) ? value[field] : (value[field] ?? '');
+  };
+
+  /** Update a translatable field for the active locale (and mirror to base when active locale is the source-of-truth). */
+  const setTr = (field, val) => {
+    const prev = value.translations ?? {};
+    const cur = prev[activeLang] ?? { text: '', cta_text: '', marquee_messages: [] };
+    const nextTranslations = { ...prev, [activeLang]: { ...cur, [field]: val } };
+    onUpdate('translations', nextTranslations);
+    // Keep the legacy base column in sync from English so any non-localised
+    // consumer (or older clients) still has a meaningful value to display.
+    if (activeLang === 'en') onUpdate(field, val);
+  };
+
+  const previewTr = value.translations?.[activeLang] ?? {};
+  const previewText = (typeof previewTr.text === 'string' && previewTr.text) ? previewTr.text : value.text;
+  const previewCta = (typeof previewTr.cta_text === 'string' && previewTr.cta_text) ? previewTr.cta_text : value.cta_text;
+  const previewMarquee = (Array.isArray(previewTr.marquee_messages) && previewTr.marquee_messages.some((m) => m && m.trim().length))
+    ? previewTr.marquee_messages
+    : value.marquee_messages;
+  const previewValue = { ...value, text: previewText, cta_text: previewCta, marquee_messages: previewMarquee };
 
   useEffect(() => {
     setMounted(true);
@@ -1128,22 +1220,22 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
             }}
           >
             {value.type === 'marquee' ? (
-              <div className="py-3">
-                {((value.marquee_messages ?? []).filter((m) => m && m.trim().length)).length > 0
-                  ? <MarqueePreview a={value} />
+              <div className="py-3" dir={ANN_RTL_LANGS.has(activeLang) ? 'rtl' : 'ltr'}>
+                {((previewMarquee ?? []).filter((m) => m && m.trim().length)).length > 0
+                  ? <MarqueePreview a={previewValue} />
                   : <p className="text-center opacity-50 py-0.5">{t.preview_placeholder ?? 'Your message preview…'}</p>
                 }
               </div>
             ) : (
-              <div className="px-4 py-3 text-center">
+              <div className="px-4 py-3 text-center" dir={ANN_RTL_LANGS.has(activeLang) ? 'rtl' : 'ltr'}>
                 <span className="inline-flex items-center gap-2 flex-wrap justify-center">
                   {value.icon_enabled && value.icon && value.type !== 'social' && (
                     <PreviewAnnouncementIcon icon={value.icon} className="h-4 w-4 shrink-0" />
                   )}
                   {(() => {
-                    const textNode = <span>{value.text || <span className="opacity-50">{t.preview_placeholder ?? 'Your message preview…'}</span>}</span>;
-                    const ctaNode = value.cta_text ? (
-                      <span className="px-4 py-2 rounded-full bg-white text-black text-xs font-bold tracking-wide shadow-sm">{value.cta_text}</span>
+                    const textNode = <span>{previewText || <span className="opacity-50">{t.preview_placeholder ?? 'Your message preview…'}</span>}</span>;
+                    const ctaNode = previewCta ? (
+                      <span className="px-4 py-2 rounded-full bg-white text-black text-xs font-bold tracking-wide shadow-sm">{previewCta}</span>
                     ) : null;
                     if (ctaNode && value.cta_display_mode === 'swap') {
                       return <SwapStack textNode={textNode} buttonNode={ctaNode} seconds={value.cta_swap_seconds ?? 4} />;
@@ -1163,8 +1255,8 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
                       const p = SOCIAL_PLATFORMS.find((x) => x.id === pid);
                       if (!p) return null;
                       return (
-                        <span key={pid} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/20 text-xs font-semibold">
-                          <BrandIcon name={pid} className="h-3.5 w-3.5" />
+                        <span key={pid} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 text-[11px] font-bold tracking-wide">
+                          <BrandIcon name={pid} className="h-4 w-4" />
                           {p.label}
                         </span>
                       );
@@ -1175,11 +1267,45 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
             )}
           </div>
 
+          {/* Language tab switcher (translatable fields below) */}
+          <div className="flex gap-1 p-1 bg-zinc-100 rounded-xl">
+            {ANN_LANGS.map((lang) => {
+              const tr = value.translations?.[lang];
+              const hasContent =
+                (typeof tr?.text === 'string' && tr.text.trim()) ||
+                (typeof tr?.cta_text === 'string' && tr.cta_text.trim()) ||
+                (Array.isArray(tr?.marquee_messages) && tr.marquee_messages.some((m) => m && m.trim()));
+              return (
+                <button
+                  key={lang}
+                  type="button"
+                  onClick={() => setActiveLang(lang)}
+                  className={`relative flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                    activeLang === lang
+                      ? 'bg-white text-zinc-900 shadow-sm'
+                      : 'text-zinc-500 hover:text-zinc-700'
+                  }`}
+                >
+                  {ANN_LANG_LABELS[lang]}
+                  {hasContent && (
+                    <span className="absolute top-1 end-1 h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
           {/* Message (single-line types) */}
           {value.type !== 'marquee' && (
             <div>
               <label className="block text-xs font-medium text-zinc-600 mb-1.5">{t.text ?? 'Message'}</label>
-              <input className={inputCls} placeholder={t.text_placeholder ?? 'e.g. Free shipping on orders over $99'} value={value.text} onChange={(e) => onUpdate('text', e.target.value)} />
+              <input
+                className={inputCls}
+                placeholder={t.text_placeholder ?? 'e.g. Free shipping on orders over $99'}
+                value={readTr('text') ?? ''}
+                onChange={(e) => setTr('text', e.target.value)}
+                dir={ANN_RTL_LANGS.has(activeLang) ? 'rtl' : 'ltr'}
+              />
             </div>
           )}
 
@@ -1191,30 +1317,31 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
                   <label className="block text-xs font-medium text-zinc-600">{t.marquee_messages ?? 'Messages'}</label>
                   <button
                     type="button"
-                    onClick={() => onUpdate('marquee_messages', [...(value.marquee_messages ?? []), ''])}
+                    onClick={() => setTr('marquee_messages', [...(readTr('marquee_messages') ?? []), ''])}
                     className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700"
                   >
                     <Plus className="h-3.5 w-3.5" /> {t.marquee_add_message ?? 'Add message'}
                   </button>
                 </div>
                 <div className="space-y-2">
-                  {(value.marquee_messages ?? []).map((msg, i) => (
+                  {(readTr('marquee_messages') ?? []).map((msg, i) => (
                     <div key={i} className="flex items-center gap-2">
                       <input
                         className={inputCls}
                         placeholder={t.marquee_message_placeholder ?? `Message ${i + 1}`}
                         value={msg}
+                        dir={ANN_RTL_LANGS.has(activeLang) ? 'rtl' : 'ltr'}
                         onChange={(e) => {
-                          const next = [...(value.marquee_messages ?? [])];
+                          const next = [...(readTr('marquee_messages') ?? [])];
                           next[i] = e.target.value;
-                          onUpdate('marquee_messages', next);
+                          setTr('marquee_messages', next);
                         }}
                       />
                       <button
                         type="button"
                         onClick={() => {
-                          const next = (value.marquee_messages ?? []).filter((_, j) => j !== i);
-                          onUpdate('marquee_messages', next);
+                          const next = (readTr('marquee_messages') ?? []).filter((_, j) => j !== i);
+                          setTr('marquee_messages', next);
                         }}
                         className="p-2 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
                         aria-label={t.delete ?? 'Delete'}
@@ -1323,7 +1450,13 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-zinc-600 mb-1.5">{t.cta_text ?? 'Button text'}</label>
-                  <input className={inputCls} placeholder={t.cta_text_placeholder ?? 'Shop now'} value={value.cta_text ?? ''} onChange={(e) => onUpdate('cta_text', e.target.value)} />
+                  <input
+                    className={inputCls}
+                    placeholder={t.cta_text_placeholder ?? 'Shop now'}
+                    value={readTr('cta_text') ?? ''}
+                    onChange={(e) => setTr('cta_text', e.target.value)}
+                    dir={ANN_RTL_LANGS.has(activeLang) ? 'rtl' : 'ltr'}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-zinc-600 mb-1.5">{t.cta_href ?? 'Link URL'}</label>
@@ -1487,9 +1620,13 @@ function AnnouncementsSection() {
   const [loading, setLoading] = useState(true);
   const [drawerSaving, setDrawerSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [togglingIdxs, setTogglingIdxs] = useState(new Set());
   const [editIdx, setEditIdx] = useState(null);
   const [draft, setDraft] = useState(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [rotationSecs, setRotationSecs] = useState(5);
+  const [rotationSaving, setRotationSaving] = useState(false);
   // Use a ref (not state) so the close handler always reads the latest value.
   // The drawer closes asynchronously via setTimeout, so a stale state closure
   // would otherwise filter out an item that was just successfully saved.
@@ -1498,7 +1635,12 @@ function AnnouncementsSection() {
   useEffect(() => {
     fetch('/api/v1/admin/announcements')
       .then((r) => r.json())
-      .then((json) => { if (json.success) setItems(json.data); })
+      .then((json) => {
+        if (json.success) {
+          setItems(json.data);
+          setRotationSecs(json.data[0]?.rotation_seconds ?? 5);
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -1518,7 +1660,7 @@ function AnnouncementsSection() {
   };
 
   const openEdit = (idx) => {
-    setDraft({ ...items[idx] });
+    setDraft(normalizeAnnouncementForEdit(items[idx]));
     setEditIdx(idx);
     discardOnCloseRef.current = false;
   };
@@ -1577,9 +1719,28 @@ function AnnouncementsSection() {
   };
 
   const toggleActive = async (idx, val) => {
+    const prev = items;
     const next = items.map((it, i) => (i === idx ? { ...it, is_active: val } : it));
     setItems(next);
-    try { await persist(next); } catch (err) { toast.error(err.message); }
+    setTogglingIdxs((s) => { const n = new Set(s); n.add(idx); return n; });
+    try {
+      await persist(next);
+      toast.success(val ? (t.enabled ?? 'Announcement enabled') : (t.disabled ?? 'Announcement disabled'));
+    } catch (err) {
+      setItems(prev);
+      toast.error(err.message ?? 'Failed to update');
+    } finally {
+      setTogglingIdxs((s) => { const n = new Set(s); n.delete(idx); return n; });
+    }
+  };
+
+  const changeRotation = async (val) => {
+    const secs = Math.max(2, Math.min(60, val));
+    setRotationSecs(secs);
+    const next = items.map((it) => ({ ...it, rotation_seconds: secs }));
+    setItems(next);
+    setRotationSaving(true);
+    try { await persist(next); } catch (err) { toast.error(err.message); } finally { setRotationSaving(false); }
   };
 
   const startAdd = () => setPickerOpen(true);
@@ -1594,11 +1755,20 @@ function AnnouncementsSection() {
   };
 
   const remove = async (idx) => {
+    const prev = items;
     const next = items.filter((_, i) => i !== idx);
-    setItems(next);
-    setConfirmDelete(null);
-    try { await persist(next); }
-    catch (err) { toast.error(err.message); }
+    setDeleting(true);
+    try {
+      await persist(next);
+      setItems(next);
+      setConfirmDelete(null);
+      toast.success(t.deleted ?? 'Announcement deleted');
+    } catch (err) {
+      setItems(prev);
+      toast.error(err.message ?? 'Failed to delete');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   if (loading) {
@@ -1618,7 +1788,26 @@ function AnnouncementsSection() {
         description={t.desc ?? 'Promotional banners shown across the storefront.'}
       />
 
-      <div className="flex justify-end mb-4">
+      <div className="flex items-center justify-between mb-4 gap-4 flex-wrap">
+        {items.length > 1 && (
+          <div className="flex items-center gap-3 flex-1 min-w-0 px-4 py-2.5 rounded-xl bg-zinc-50 border border-zinc-100">
+            <Clock className="h-4 w-4 text-zinc-400 shrink-0" />
+            <span className="text-sm text-zinc-600 shrink-0">{t.rotation_speed ?? 'Rotation speed'}</span>
+            <input
+              type="range"
+              min={2}
+              max={60}
+              value={rotationSecs}
+              onChange={(e) => setRotationSecs(Number(e.target.value))}
+              onMouseUp={(e) => changeRotation(Number(e.target.value))}
+              onTouchEnd={(e) => changeRotation(Number(e.target.value))}
+              className="flex-1 min-w-[80px] accent-blue-600"
+            />
+            <span className="text-sm font-semibold text-zinc-700 w-10 text-right tabular-nums">
+              {rotationSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin inline" /> : `${rotationSecs}s`}
+            </span>
+          </div>
+        )}
         <button
           type="button"
           onClick={startAdd}
@@ -1646,6 +1835,7 @@ function AnnouncementsSection() {
               isLast={idx === items.length - 1}
               onMove={(dir) => move(idx, dir)}
               onToggle={(val) => toggleActive(idx, val)}
+              toggling={togglingIdxs.has(idx)}
               onEdit={() => openEdit(idx)}
               onDelete={() => setConfirmDelete(idx)}
             />
@@ -1678,8 +1868,9 @@ function AnnouncementsSection() {
         confirmText={t.yes ?? 'Yes, delete'}
         cancelText={t.no ?? 'Cancel'}
         icon={<Trash2 className="h-5 w-5" />}
+        isLoading={deleting}
         onConfirm={() => remove(confirmDelete)}
-        onCancel={() => setConfirmDelete(null)}
+        onCancel={() => { if (!deleting) setConfirmDelete(null); }}
       />
     </>
   );

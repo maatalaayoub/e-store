@@ -371,10 +371,19 @@ ALTER TABLE announcements ADD COLUMN IF NOT EXISTS cta_display_mode text NOT NUL
 ALTER TABLE announcements ADD COLUMN IF NOT EXISTS cta_swap_seconds integer NOT NULL DEFAULT 4
   CHECK (cta_swap_seconds >= 1 AND cta_swap_seconds <= 30);
 
+-- Carousel rotation speed (used by the global rotation-speed slider in the admin)
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS rotation_seconds integer NOT NULL DEFAULT 5;
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS carousel_enabled boolean NOT NULL DEFAULT false;
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS dismissible boolean NOT NULL DEFAULT true;
+
 -- Relax the type CHECK to include 'marquee' (drop+recreate; safe on fresh DBs too)
 ALTER TABLE announcements DROP CONSTRAINT IF EXISTS announcements_type_check;
 ALTER TABLE announcements ADD CONSTRAINT announcements_type_check
   CHECK (type IN ('promotion', 'shipping', 'limited', 'social', 'notification', 'marquee'));
+
+-- Per-locale overrides for translatable text fields.
+-- Shape: { "en": { "text": "...", "cta_text": "...", "marquee_messages": ["..."] }, "fr": {...}, ... }
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS translations jsonb DEFAULT NULL;
 
 ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
 -- Public can read only currently-active, in-schedule banners.
@@ -387,4 +396,125 @@ CREATE POLICY "Public reads active announcements" ON announcements
   );
 CREATE POLICY "Admins manage announcements" ON announcements
   FOR ALL USING (EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'));
+
+-- ========================================================================
+-- ATOMIC FULL-REPLACE RPCs
+-- ========================================================================
+-- These functions wrap the DELETE-then-INSERT pattern used by the admin
+-- "Save all" buttons in a single PL/pgSQL block. PostgreSQL runs every
+-- top-level function call inside an implicit transaction, so a failure
+-- partway through the INSERT automatically rolls back the DELETE — no
+-- snapshot/restore dance required from the application layer.
+--
+-- They are SECURITY INVOKER (the default) so the caller's RLS policies
+-- still apply. The admin routes call these via the session-aware
+-- supabase server client, so only authenticated admins can mutate.
+-- ========================================================================
+
+-- Replace ALL hero_slides with the supplied JSON array.
+-- Input shape: jsonb array of objects with keys
+--   { image_url, title, cta_text, href, display_order, is_active }
+CREATE OR REPLACE FUNCTION replace_hero_slides(p_slides jsonb)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF p_slides IS NULL OR jsonb_typeof(p_slides) <> 'array' THEN
+    RAISE EXCEPTION 'p_slides must be a JSON array';
+  END IF;
+
+  DELETE FROM hero_slides;
+
+  IF jsonb_array_length(p_slides) > 0 THEN
+    INSERT INTO hero_slides (image_url, title, cta_text, href, display_order, is_active)
+    SELECT
+      COALESCE(item->>'image_url', ''),
+      COALESCE(item->>'title', ''),
+      COALESCE(item->>'cta_text', ''),
+      COALESCE(item->>'href', '/shop'),
+      COALESCE((item->>'display_order')::int, (idx - 1)::int),
+      COALESCE((item->>'is_active')::boolean, true)
+    FROM jsonb_array_elements(p_slides) WITH ORDINALITY AS t(item, idx);
+  END IF;
+END;
+$$;
+
+-- Replace ALL announcements with the supplied JSON array.
+-- The admin route already sanitizes every field; this function trusts that
+-- shape and just maps JSON keys → columns. Unknown / missing keys fall back
+-- to the column defaults.
+CREATE OR REPLACE FUNCTION replace_announcements(p_rows jsonb)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF p_rows IS NULL OR jsonb_typeof(p_rows) <> 'array' THEN
+    RAISE EXCEPTION 'p_rows must be a JSON array';
+  END IF;
+
+  DELETE FROM announcements;
+
+  IF jsonb_array_length(p_rows) > 0 THEN
+    INSERT INTO announcements (
+      type, text, icon_enabled, icon,
+      bg_color, text_color, font_size, border_enabled,
+      cta_text, cta_href, promo_code,
+      social_whatsapp, social_facebook, social_instagram, social_tiktok,
+      social_platforms,
+      marquee_messages, marquee_speed, marquee_direction,
+      marquee_pause_on_hover, marquee_separator, marquee_scroll_mode,
+      cta_display_mode, cta_swap_seconds,
+      position, behavior, scope,
+      carousel_enabled, rotation_seconds, dismissible,
+      start_at, end_at, priority, is_active, translations
+    )
+    SELECT
+      COALESCE(item->>'type', 'notification'),
+      COALESCE(item->>'text', ''),
+      COALESCE((item->>'icon_enabled')::boolean, true),
+      NULLIF(item->>'icon', ''),
+      COALESCE(item->>'bg_color', '#111111'),
+      COALESCE(item->>'text_color', '#ffffff'),
+      NULLIF(item->>'font_size', '')::int,
+      COALESCE((item->>'border_enabled')::boolean, false),
+      NULLIF(item->>'cta_text', ''),
+      NULLIF(item->>'cta_href', ''),
+      NULLIF(item->>'promo_code', ''),
+      NULLIF(item->>'social_whatsapp', ''),
+      NULLIF(item->>'social_facebook', ''),
+      NULLIF(item->>'social_instagram', ''),
+      NULLIF(item->>'social_tiktok', ''),
+      COALESCE(
+        ARRAY(SELECT jsonb_array_elements_text(COALESCE(item->'social_platforms', '[]'::jsonb))),
+        '{}'::text[]
+      ),
+      COALESCE(
+        ARRAY(SELECT jsonb_array_elements_text(COALESCE(item->'marquee_messages', '[]'::jsonb))),
+        '{}'::text[]
+      ),
+      COALESCE((item->>'marquee_speed')::int, 60),
+      COALESCE(item->>'marquee_direction', 'left'),
+      COALESCE((item->>'marquee_pause_on_hover')::boolean, true),
+      COALESCE(item->>'marquee_separator', '•'),
+      COALESCE(item->>'marquee_scroll_mode', 'together'),
+      COALESCE(item->>'cta_display_mode', 'swap'),
+      COALESCE((item->>'cta_swap_seconds')::int, 4),
+      COALESCE(item->>'position', 'top'),
+      COALESCE(item->>'behavior', 'sticky'),
+      COALESCE(item->>'scope', 'all'),
+      COALESCE((item->>'carousel_enabled')::boolean, false),
+      COALESCE((item->>'rotation_seconds')::int, 5),
+      COALESCE((item->>'dismissible')::boolean, true),
+      NULLIF(item->>'start_at', '')::timestamptz,
+      NULLIF(item->>'end_at', '')::timestamptz,
+      COALESCE((item->>'priority')::int, (idx - 1)::int),
+      COALESCE((item->>'is_active')::boolean, true),
+      CASE WHEN item ? 'translations' AND jsonb_typeof(item->'translations') = 'object'
+           THEN item->'translations'
+           ELSE NULL
+      END
+    FROM jsonb_array_elements(p_rows) WITH ORDINALITY AS t(item, idx);
+  END IF;
+END;
+$$;
 

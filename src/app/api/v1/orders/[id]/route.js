@@ -1,29 +1,56 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/service';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 /**
  * GET /api/v1/orders/[id]
- * Public — returns order details by UUID.
- * Security: order IDs are unguessable UUIDs (only the customer who placed
- * the order knows the ID, since it's only returned in the order-creation
- * response). This is the same pattern Shopify/Stripe use for guest receipts.
+ * Public — returns order details by UUID or by 8-digit order_number.
+ *
+ * Security model: order IDs are unguessable UUIDs (the customer who placed
+ * the order is the only party who knows them, since they're only returned
+ * in the order-creation response). Numeric `order_number` lookups exist
+ * for the guest "track order" page; they are rate-limited per IP via the
+ * shared limiter (Upstash Redis when configured, in-memory fallback
+ * otherwise) to mitigate enumeration of the ~10^8 numeric space.
  */
-export async function GET(_req, { params }) {
+
+const NUMERIC_LOOKUP_LIMIT = 30;
+const NUMERIC_LOOKUP_WINDOW_MS = 60_000;
+
+export async function GET(req, { params }) {
   try {
     const { id } = await params;
     if (!id) {
       return NextResponse.json({ success: false, error: 'Missing order id' }, { status: 400 });
     }
 
-    const db = createServiceClient();
-
-    // Support three lookup modes:
-    //  - Pure digits (≤10 chars) → user-facing order_number (e.g. "47382910")
-    //  - Full UUID (36 chars with dashes) → internal id
-    //  - Short hex prefix → legacy short-id prefix match (kept for backward compat)
-    const isNumeric = /^\d{1,10}$/.test(id);
     const isFullUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const isNumeric = /^\d{6,10}$/.test(id);
 
+    // Reject anything else outright. The legacy "short hex prefix" lookup
+    // (ilike '<prefix>%') was removed because just 16 single-character
+    // queries could enumerate the entire table.
+    if (!isFullUuid && !isNumeric) {
+      return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
+    }
+
+    // Numeric (order_number) lookups are guessable — apply a per-IP brake.
+    if (isNumeric) {
+      const ip = getClientIp(req);
+      const { success, reset } = await rateLimit(`order-lookup:${ip ?? 'unknown'}`, {
+        limit: NUMERIC_LOOKUP_LIMIT,
+        windowMs: NUMERIC_LOOKUP_WINDOW_MS,
+      });
+      if (!success) {
+        const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
+        return NextResponse.json(
+          { success: false, error: 'Too many requests. Please try again in a minute.' },
+          { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+        );
+      }
+    }
+
+    const db = createServiceClient();
     let query = db
       .from('orders')
       .select(`
@@ -42,13 +69,10 @@ export async function GET(_req, { params }) {
         )
       `);
 
-    if (isNumeric) {
-      query = query.eq('order_number', parseInt(id, 10));
-    } else if (isFullUuid) {
+    if (isFullUuid) {
       query = query.eq('id', id);
     } else {
-      // Legacy: short hex prefix match
-      query = query.ilike('id', `${id.toLowerCase()}%`);
+      query = query.eq('order_number', parseInt(id, 10));
     }
 
     const { data: order, error } = await query.maybeSingle();

@@ -99,6 +99,12 @@ body {
 .animate-swap-text   { animation: swap-text   var(--swap-dur, 8s) ease-in-out infinite; will-change: transform, opacity; }
 .animate-swap-button { animation: swap-button var(--swap-dur, 8s) ease-in-out infinite; will-change: transform, opacity; }
 
+@keyframes announce-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-announce-in { animation: announce-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
 .bg-shimmer {
   background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
   background-size: 200% 100%;

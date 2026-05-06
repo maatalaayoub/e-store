@@ -55,7 +55,9 @@ export async function PATCH(req) {
       .filter(([k]) => ALLOWED_KEYS.includes(k))
       .map(([key, value]) => ({
         key,
-        value: String(value ?? ''),
+        // Hard-bound the stored value so a typo / pasted blob can't bloat
+        // the settings table.
+        value: String(value ?? '').slice(0, 1000),
         updated_at: new Date().toISOString(),
       }));
 

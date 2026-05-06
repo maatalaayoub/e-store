@@ -154,6 +154,18 @@
       "exit": "الخروج من الإدارة"
     },
     "search_placeholder": "بحث...",
+    "search": {
+      "hint_title": "اكتب للبحث",
+      "hint_desc": "ابحث عن الصفحات والإعدادات والإجراءات السريعة.",
+      "no_results": "لا توجد نتائج",
+      "no_results_hint": "لا توجد نتائج لـ «{q}».",
+      "group_pages": "الصفحات",
+      "group_settings": "الإعدادات",
+      "group_actions": "إجراءات سريعة",
+      "kbd_navigate": "تنقل",
+      "kbd_open": "فتح",
+      "kbd_close": "Esc للإغلاق"
+    },
     "dashboard": {
       "title": "نظرة عامة",
       "customize": "تخصيص المتجر",

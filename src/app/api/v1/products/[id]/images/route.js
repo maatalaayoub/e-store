@@ -23,17 +23,28 @@ export async function POST(req, { params }) {
     const { id: productId } = await params;
     const { storagePath, isMain = false, displayOrder = 0 } = await req.json();
 
-    if (!storagePath) {
+    if (typeof storagePath !== 'string' || !storagePath.trim()) {
       return NextResponse.json({ success: false, error: 'storagePath is required' }, { status: 400 });
+    }
+    // Reject anything that could escape the bucket prefix or carry control
+    // characters. Storage paths only ever contain ascii filenames + '/'.
+    const cleaned = storagePath.trim();
+    if (
+      cleaned.length > 500 ||
+      cleaned.startsWith('/') ||
+      cleaned.includes('..') ||
+      /[\x00-\x1f\\]/.test(cleaned) // eslint-disable-line no-control-regex
+    ) {
+      return NextResponse.json({ success: false, error: 'invalid storagePath' }, { status: 400 });
     }
 
     const { data: urlData } = supabase.storage
       .from('product-images')
-      .getPublicUrl(storagePath);
+      .getPublicUrl(cleaned);
 
     const image = await productService.addImage(productId, {
       url: urlData.publicUrl,
-      storagePath,
+      storagePath: cleaned,
       isMain,
       displayOrder,
     });

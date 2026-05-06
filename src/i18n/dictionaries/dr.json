@@ -154,6 +154,18 @@
       "exit": "خرج من الإدارة"
     },
     "search_placeholder": "قلّب...",
+    "search": {
+      "hint_title": "كتب باش تقلّب",
+      "hint_desc": "لقى الصفحات و الإعدادات و الإجراءات السريعة.",
+      "no_results": "ماكاين حتى نتيجة",
+      "no_results_hint": "ماكاين شي نتيجة لـ «{q}».",
+      "group_pages": "الصفحات",
+      "group_settings": "الإعدادات",
+      "group_actions": "إجراءات سريعة",
+      "kbd_navigate": "تنقل",
+      "kbd_open": "حلّ",
+      "kbd_close": "Esc باش تسدّ"
+    },
     "dashboard": {
       "title": "نظرة عامة",
       "customize": "خصّص الحانوت",

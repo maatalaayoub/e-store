@@ -36,3 +36,21 @@ export async function requireAdmin() {
   }
   return user;
 }
+
+/**
+ * Non-throwing variant for route handlers that prefer to return a 403
+ * NextResponse themselves. Pass the route's already-created supabase
+ * server client so we don't open a second one.
+ *
+ * Returns the user if they are an admin, or null otherwise.
+ */
+export async function getAdminUser(supabase) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+  return data?.role === 'admin' ? user : null;
+}

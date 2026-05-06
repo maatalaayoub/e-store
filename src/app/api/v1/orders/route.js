@@ -2,13 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { sendTelegramMessage, buildOrderMessage } from '@/lib/telegram';
-
-async function getAdminUser(supabase) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data } = await supabase.from('users').select('role').eq('id', user.id).single();
-  return data?.role === 'admin' ? user : null;
-}
+import { getAdminUser } from '@/middlewares/authGuard';
 
 /**
  * POST /api/v1/orders
@@ -128,9 +122,32 @@ export async function POST(req) {
 
 /**
  * GET /api/v1/orders
- * List all orders — admin only.
- * GET /api/v1/orders?id=<uuid>  — fetch a single order by id (admin only).
+ * Admin only.
+ *
+ * Single-order detail (existing usage):
+ *   GET /api/v1/orders?id=<uuid>
+ *
+ * List with pagination + filters + sort:
+ *   GET /api/v1/orders?page=1&limit=25&status=pending&sort=created_at:desc
+ *
+ * Query params (all optional):
+ *   - page    (default 1, min 1)
+ *   - limit   (default 25, max 100)
+ *   - status  (one of the allowed statuses; omitted = all)
+ *   - sort    `<field>:<asc|desc>` — field ∈ created_at | total_amount | order_number | status
+ *
+ * Backwards compatibility: when none of `page`, `limit`, `status`, `sort`
+ * are provided we keep the legacy unpaginated response shape (`{ data: [] }`)
+ * but cap the result at `LIST_HARD_MAX` rows so the table can't blow up
+ * memory once the order volume grows.
  */
+
+const LIST_DEFAULT_LIMIT = 25;
+const LIST_MAX_LIMIT = 100;
+const LIST_HARD_MAX = 500; // safety cap for the legacy unpaginated mode
+const SORTABLE_FIELDS = new Set(['created_at', 'total_amount', 'order_number', 'status']);
+const ALLOWED_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
+
 export async function GET(req) {
   try {
     const anonClient = await createClient();
@@ -183,14 +200,67 @@ export async function GET(req) {
       return NextResponse.json({ success: true, data });
     }
 
-    const { data: orders, error } = await anonClient
-      .from('orders')
-      .select(listFields)
-      .order('created_at', { ascending: false });
+    // ── Parse pagination / filter / sort params ─────────────────────────
+    const pageParam = searchParams.get('page');
+    const limitParam = searchParams.get('limit');
+    const statusParam = searchParams.get('status');
+    const sortParam = searchParams.get('sort');
 
+    const isPaginated =
+      pageParam != null || limitParam != null || statusParam != null || sortParam != null;
+
+    const page = Math.max(1, parseInt(pageParam ?? '1', 10) || 1);
+    const limit = Math.min(
+      LIST_MAX_LIMIT,
+      Math.max(1, parseInt(limitParam ?? String(LIST_DEFAULT_LIMIT), 10) || LIST_DEFAULT_LIMIT),
+    );
+
+    let sortField = 'created_at';
+    let sortAsc = false;
+    if (sortParam) {
+      const [f, dir] = sortParam.split(':');
+      if (SORTABLE_FIELDS.has(f)) sortField = f;
+      if (dir === 'asc') sortAsc = true;
+    }
+
+    let query = anonClient
+      .from('orders')
+      .select(listFields, isPaginated ? { count: 'exact' } : undefined)
+      .order(sortField, { ascending: sortAsc });
+
+    if (statusParam && ALLOWED_STATUSES.includes(statusParam)) {
+      query = query.eq('status', statusParam);
+    }
+
+    if (isPaginated) {
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+      query = query.range(from, to);
+    } else {
+      query = query.range(0, LIST_HARD_MAX - 1);
+    }
+
+    const { data: orders, error, count } = await query;
     if (error) throw error;
 
-    return NextResponse.json({ success: true, data: orders });
+    if (!isPaginated) {
+      // Legacy shape — preserves existing admin client behavior.
+      return NextResponse.json({ success: true, data: orders ?? [] });
+    }
+
+    const total = count ?? 0;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    return NextResponse.json({
+      success: true,
+      data: orders ?? [],
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasMore: page < totalPages,
+      },
+    });
   } catch (err) {
     console.error('[GET /api/v1/orders]', err?.message ?? err);
     return NextResponse.json({ success: false, error: 'Failed to fetch orders' }, { status: 500 });
