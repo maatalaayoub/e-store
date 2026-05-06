@@ -261,3 +261,95 @@ CREATE POLICY "Hero slides are public" ON hero_slides FOR SELECT USING (true);
 CREATE POLICY "Admins manage hero slides" ON hero_slides
   FOR ALL USING (EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'));
 
+-- ========================
+-- ANNOUNCEMENT / PROMO BARS
+-- ========================
+-- Global storefront banners with full admin control:
+--   • Multiple types: promotion / shipping / limited / social / notification
+--   • Style: bg color, text color, font size, optional icon, optional border
+--   • Behavior: position (top/bottom), sticky/static, scope (all/home), carousel
+--   • Scheduling: start_at / end_at (auto-disable when expired)
+--   • Priority ordering, dismissible flag, active flag
+CREATE TABLE IF NOT EXISTS announcements (
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+
+  -- Content
+  type text NOT NULL DEFAULT 'notification'
+    CHECK (type IN ('promotion', 'shipping', 'limited', 'social', 'notification')),
+  text text NOT NULL DEFAULT '',
+  icon_enabled boolean NOT NULL DEFAULT true,
+  icon text,                                  -- e.g. 'megaphone' | 'truck' | 'clock' | 'bell' | 'whatsapp' | 'instagram'
+  cta_text text,
+  cta_href text,                              -- locale-less path (e.g. '/shop') or absolute URL
+
+  -- Type-specific extras
+  promo_code text,                            -- promotion: copy-able code
+  social_whatsapp  text,                      -- social: WhatsApp number (no '+')
+  social_facebook  text,                      -- social: Facebook page handle
+  social_instagram text,                      -- social: Instagram handle
+  social_tiktok    text,                      -- social: TikTok handle
+  social_platforms text[] NOT NULL DEFAULT '{}'::text[],  -- enabled platform ids
+
+  -- Style
+  bg_color text NOT NULL DEFAULT '#111111',
+  text_color text NOT NULL DEFAULT '#ffffff',
+  font_size integer,                          -- px (10-24); null = default
+  border_enabled boolean NOT NULL DEFAULT false,
+
+  -- Behavior
+  position text NOT NULL DEFAULT 'top'
+    CHECK (position IN ('top', 'bottom')),
+  behavior text NOT NULL DEFAULT 'sticky'
+    CHECK (behavior IN ('static', 'sticky')),
+  scope text NOT NULL DEFAULT 'all'
+    CHECK (scope IN ('all', 'home')),
+  carousel_enabled boolean NOT NULL DEFAULT false,
+  rotation_seconds integer NOT NULL DEFAULT 5
+    CHECK (rotation_seconds >= 2 AND rotation_seconds <= 120),
+  dismissible boolean NOT NULL DEFAULT true,
+
+  -- Scheduling
+  start_at timestamp with time zone,
+  end_at   timestamp with time zone,
+
+  -- Ordering & visibility
+  priority integer NOT NULL DEFAULT 0,        -- lower = shown first
+  is_active boolean NOT NULL DEFAULT true,
+
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Performance indexes for the public read path:
+--   WHERE is_active = true
+--     AND (start_at IS NULL OR start_at <= now())
+--     AND (end_at   IS NULL OR end_at   >= now())
+--   ORDER BY priority ASC, created_at ASC
+CREATE INDEX IF NOT EXISTS announcements_active_priority_idx
+  ON announcements (is_active, priority, created_at);
+CREATE INDEX IF NOT EXISTS announcements_schedule_idx
+  ON announcements (start_at, end_at)
+  WHERE is_active = true;
+
+-- Reuse the existing set_updated_at() trigger function
+CREATE OR REPLACE TRIGGER announcements_updated_at
+  BEFORE UPDATE ON announcements
+  FOR EACH ROW EXECUTE PROCEDURE public.set_updated_at();
+
+-- Idempotent column additions for existing installations (safe no-ops on fresh DBs).
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS social_facebook  text;
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS social_tiktok    text;
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS social_platforms text[] NOT NULL DEFAULT '{}'::text[];
+
+ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
+-- Public can read only currently-active, in-schedule banners.
+-- (Admins also covered by the broader admin policy below.)
+CREATE POLICY "Public reads active announcements" ON announcements
+  FOR SELECT USING (
+    is_active = true
+    AND (start_at IS NULL OR start_at <= timezone('utc'::text, now()))
+    AND (end_at   IS NULL OR end_at   >= timezone('utc'::text, now()))
+  );
+CREATE POLICY "Admins manage announcements" ON announcements
+  FOR ALL USING (EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'));
+

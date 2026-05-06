@@ -70,7 +70,8 @@ export default function ShopHeader({ onOpenCart }) {
         ref={headerRef}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`fixed top-0 inset-x-0 z-50 transition-colors duration-500 ease-in-out ${
+        style={{ top: 'var(--bar-height, 0px)' }}
+        className={`fixed inset-x-0 z-50 transition-colors duration-500 ease-in-out ${
           isScrolled
             ? "bg-white border-b border-zinc-200"
             : "bg-transparent border-b border-transparent"

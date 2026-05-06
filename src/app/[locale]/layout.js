@@ -13,6 +13,7 @@ import { locales } from '@/i18n/config';
 import { getDictionary } from '@/i18n/getDictionary';
 import LocaleProvider from '@/components/providers/LocaleProvider';
 import CurrencyProvider from '@/components/providers/CurrencyProvider';
+import AnnouncementBar from '@/components/shop/AnnouncementBar';
 import { Toaster } from 'sonner';
 
 /**
@@ -33,6 +34,7 @@ export default async function LocaleLayout({ children, params }) {
   return (
     <LocaleProvider locale={locale} dictionary={dictionary}>
       <CurrencyProvider>
+        <AnnouncementBar />
         {children}
         <Toaster position="bottom-center" richColors />
       </CurrencyProvider>
