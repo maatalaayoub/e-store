@@ -719,16 +719,30 @@ export default function AnnouncementBar() {
       ref={barRef}
       role="region"
       aria-label="Site announcement"
-      className={`${stickyClass} ${borderClass} transition-transform duration-300 flex flex-col justify-center`}
+      className={`${stickyClass} ${borderClass} transition-transform duration-300 overflow-hidden`}
       style={{
-        backgroundColor: current.bg_color || "#111111",
-        color: current.text_color || "#ffffff",
         height: "2.5rem",
         transform: scrollHidden
           ? (positionTop ? 'translateY(-100%)' : 'translateY(100%)')
           : 'translateY(0)',
       }}
     >
+      {/* Animated background layer — remounts on every index change */}
+      <div
+        key={activeIdx}
+        aria-hidden="true"
+        style={{
+          position: 'absolute', inset: 0,
+          backgroundColor: current.bg_color || '#111111',
+        }}
+      />
+
+      {/* Content animates in on change */}
+      <div
+        key={`content-${activeIdx}`}
+        className="relative flex flex-col justify-center"
+        style={{ height: '100%', color: current.text_color || '#ffffff', animation: 'announce-bar-in 0.4s cubic-bezier(0.22,1,0.36,1) both' }}
+      >
       {current.type === 'marquee' ? (
         <div className="relative flex items-center justify-center w-full py-1.5 text-sm">
           <div className="flex-1 min-w-0">
@@ -763,9 +777,7 @@ export default function AnnouncementBar() {
 
           {/* Center: always truly centered */}
           <div
-            key={activeIdx}
             className="flex items-center justify-center text-center min-w-0"
-            style={{ animation: 'announce-in 0.4s cubic-bezier(0.22,1,0.36,1) both' }}
             aria-live="polite"
             aria-atomic="true"
           >
@@ -797,6 +809,7 @@ export default function AnnouncementBar() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
