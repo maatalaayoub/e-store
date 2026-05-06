@@ -8,24 +8,30 @@ import { fetchFeaturedProducts } from "@/services/productsService";
 import { FeaturedProductsSkeleton } from "@/components/skeletons";
 import ProductCard from "./ProductCard";
 
+// Module-level cache: persists across client-side navigations, cleared on hard refresh
+const _cache = new Map();
+
 export default function FeaturedProducts({ onItemAdded }) {
   const params = useParams();
   const locale = params?.locale || "en";
   const dict = useDictionary();
   const tHome = dict?.home ?? {};
-  const [products, setProducts] = useState(null);
+  const [products, setProducts] = useState(() => _cache.get(locale) ?? null);
 
   useEffect(() => {
     let mounted = true;
     const controller = new AbortController();
     fetchFeaturedProducts({ signal: controller.signal, locale })
-      .then((data) => { if (mounted) setProducts(data); })
+      .then((data) => {
+        _cache.set(locale, data);
+        if (mounted) setProducts(data);
+      })
       .catch(() => {});
     return () => {
       mounted = false;
       controller.abort();
     };
-  }, []);
+  }, [locale]);
 
   if (!products) return <FeaturedProductsSkeleton />;
 

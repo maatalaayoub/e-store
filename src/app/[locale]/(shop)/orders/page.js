@@ -17,6 +17,9 @@ import { getMainImage } from "@/lib/product-image";
 import { buildStatusConfig } from "@/lib/order-status";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
 
+// Module-level cache: persists across client-side navigations, cleared on hard refresh
+let _ordersCache = null;
+
 function OrderCard({ order, onCancel }) {
   const { formatPrice } = useCurrency();
   const dict = useDictionary();
@@ -155,7 +158,7 @@ export default function MyOrdersPage() {
   const tOrders = dict?.orders ?? {};
   const isRtl = ["ar", "dr"].includes(locale);
   const NavChevron = isRtl ? ChevronLeft : ChevronRight;
-  const [orders, setOrders] = useState(null);
+  const [orders, setOrders] = useState(() => _ordersCache);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -166,7 +169,10 @@ export default function MyOrdersPage() {
       .then((r) => r.json())
       .then((json) => {
         if (!mounted) return;
-        if (json.success) setOrders(json.data ?? []);
+        if (json.success) {
+          _ordersCache = json.data ?? [];
+          setOrders(json.data ?? []);
+        }
         else if (json.error === "Unauthorized") router.push(`/${locale}/login`);
         else setError(tOrders.failed ?? "Failed to load orders.");
       })
@@ -228,7 +234,11 @@ export default function MyOrdersPage() {
               <OrderCard
                 key={order.id}
                 order={order}
-                onCancel={(id) => setOrders((prev) => prev.map((o) => o.id === id ? { ...o, status: "cancelled" } : o))}
+                onCancel={(id) => setOrders((prev) => {
+                  const next = prev.map((o) => o.id === id ? { ...o, status: "cancelled" } : o);
+                  _ordersCache = next;
+                  return next;
+                })}
               />
             ))}
           </div>

@@ -8,14 +8,17 @@ import { useDictionary } from "@/components/providers/LocaleProvider";
 import { isRtlLocale } from "@/config/constants";
 import { downloadInvoicePdf } from "@/lib/invoice-pdf";
 
+// Module-level cache keyed by order id: persists across client-side navigations
+const _cache = new Map();
+
 export default function InvoicePage() {
   const { locale, id } = useParams();
   const dict = useDictionary();
   const t = dict?.invoice ?? {};
   const isRtl = isRtlLocale(locale);
 
-  const [order, setOrder] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [order, setOrder] = useState(() => _cache.get(id) ?? null);
+  const [loading, setLoading] = useState(() => !_cache.has(id));
   const [error, setError] = useState(null);
   const [generating, setGenerating] = useState(false);
 
@@ -23,7 +26,10 @@ export default function InvoicePage() {
     fetch(`/api/v1/orders/${id}`)
       .then((r) => r.json())
       .then(({ success, data, error }) => {
-        if (success && data) setOrder(data);
+        if (success && data) {
+          _cache.set(id, data);
+          setOrder(data);
+        }
         else setError(error || "Order not found");
       })
       .catch((e) => setError(e?.message ?? "Failed to load"))

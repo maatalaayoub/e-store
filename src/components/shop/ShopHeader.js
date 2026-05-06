@@ -15,6 +15,8 @@ export default function ShopHeader({ onOpenCart }) {
   const locale = params?.locale || "en";
   const dict = useDictionary();
   const isScrolled = useIsScrolled();
+  const [isHovered, setIsHovered] = useState(false);
+  const isLight = isScrolled || isHovered;
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -66,12 +68,24 @@ export default function ShopHeader({ onOpenCart }) {
 
       <header
         ref={headerRef}
-        className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ease-out ${
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className={`fixed top-0 inset-x-0 z-50 transition-colors duration-500 ease-in-out ${
           isScrolled
             ? "bg-white border-b border-zinc-200"
             : "bg-transparent border-b border-transparent"
         }`}
       >
+        {/* Hover backdrop: wipes down from top with blur */}
+        <div
+          aria-hidden="true"
+          className={`pointer-events-none absolute inset-x-0 top-0 transition-all duration-500 ease-in-out origin-top ${
+            !isScrolled && isHovered
+              ? "opacity-100 scale-y-100 backdrop-blur-md bg-white/95 shadow-sm"
+              : "opacity-0 scale-y-0 backdrop-blur-none bg-transparent"
+          }`}
+          style={{ height: "100%", zIndex: -1 }}
+        />
         <div className="relative mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           {/* Left: menu + logo */}
           <div
@@ -83,7 +97,7 @@ export default function ShopHeader({ onOpenCart }) {
           >
             <button
               className={`p-2 -ml-2 rounded-full hover:scale-110 active:scale-95 transition-all duration-200 ${
-                isScrolled
+                isLight
                   ? "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
                   : "text-white hover:bg-white/10"
               }`}
@@ -96,7 +110,7 @@ export default function ShopHeader({ onOpenCart }) {
             </button>
             <Link href={`/${locale}`} className="flex items-center">
               <Image
-                src={isScrolled ? "/images/shop-logo-darck.png" : "/images/shop-logo-white.png"}
+                src={isLight ? "/images/shop-logo-darck.png" : "/images/shop-logo-white.png"}
                 alt="LaCérémonie"
                 width={160}
                 height={40}
@@ -119,7 +133,7 @@ export default function ShopHeader({ onOpenCart }) {
               className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
                 isSearchOpen ? "opacity-0 pointer-events-none" : ""
               } ${
-                isScrolled
+                isLight
                   ? "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
                   : "text-white hover:bg-white/10"
               }`}
@@ -132,7 +146,7 @@ export default function ShopHeader({ onOpenCart }) {
             <button
               onClick={onOpenCart}
               className={`relative p-2 rounded-full transition-colors ${
-                isScrolled
+                isLight
                   ? "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100"
                   : "text-white hover:bg-white/10"
               }`}
@@ -143,7 +157,7 @@ export default function ShopHeader({ onOpenCart }) {
                 <span
                   aria-hidden="true"
                   className={`pointer-events-none absolute inset-0 rounded-full animate-cart-ring ${
-                    isScrolled ? "bg-zinc-900/20" : "bg-white/30"
+                    isLight ? "bg-zinc-900/20" : "bg-white/30"
                   }`}
                 />
               )}

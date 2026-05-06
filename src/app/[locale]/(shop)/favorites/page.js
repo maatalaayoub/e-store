@@ -18,6 +18,9 @@ import { useCartStore } from "@/store/useCartStore";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { getMainImage } from "@/lib/product-image";
 
+// Module-level cache: persists across client-side navigations, cleared on hard refresh
+let _favCache = null;
+
 function getEffectivePrice(product) {
   if (!product) return 0;
   if (product.discount_price != null) return Number(product.discount_price);
@@ -134,7 +137,7 @@ export default function FavoritesPage() {
   const tFav = dict?.favorites ?? {};
   const isRtl = ["ar", "dr"].includes(locale);
   const NavChevron = isRtl ? ChevronLeft : ChevronRight;
-  const [favorites, setFavorites] = useState(null);
+  const [favorites, setFavorites] = useState(() => _favCache);
   const [error, setError] = useState(null);
 
   const loadFavorites = useCallback(() => {
@@ -142,7 +145,10 @@ export default function FavoritesPage() {
     fetch("/api/v1/favorites", { signal: controller.signal })
       .then((r) => r.json())
       .then((json) => {
-        if (json.success) setFavorites(json.data ?? []);
+        if (json.success) {
+          _favCache = json.data ?? [];
+          setFavorites(json.data ?? []);
+        }
         else if (json.error === "Unauthorized") router.push(`/${locale}/login`);
         else setError(tFav.failed ?? "Failed to load favorites.");
       })
@@ -164,7 +170,11 @@ export default function FavoritesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ product_id: productId }),
       });
-      setFavorites((prev) => prev.filter((f) => f.product_id !== productId));
+      setFavorites((prev) => {
+        const next = prev.filter((f) => f.product_id !== productId);
+        _favCache = next;
+        return next;
+      });
     } catch {
       // ignore
     }

@@ -10,6 +10,9 @@ import { isRtlLocale } from "@/config/constants";
 import SearchableCombobox from "@/components/ui/SearchableCombobox";
 import { COUNTRIES, findCountry, detectCountryFromIp } from "@/data/countries";
 
+// Module-level cache: persists across client-side navigations, cleared on hard refresh
+let _accountCache = null;
+
 /* ─── Per-country placeholder hints ─────────────────────────── */
 const COUNTRY_HINTS = {
   "Morocco":        { phone: "+212 6 00 00 00 00", address: "25 Rue Mohammed V" },
@@ -61,13 +64,13 @@ export default function AccountSettingsPage() {
   const isRtl = isRtlLocale(locale);
   const BackIcon = isRtl ? ArrowRight : ArrowLeft;
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => _accountCache === null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState(null);
-  const [email, setEmail] = useState("");
-  const [form, setForm] = useState({
+  const [email, setEmail] = useState(() => _accountCache?.email ?? "");
+  const [form, setForm] = useState(() => _accountCache?.form ?? {
     full_name: "",
     phone_number: "",
     address: "",
@@ -89,6 +92,7 @@ export default function AccountSettingsPage() {
 
   /* ── Load profile + auto-detect country from IP via ISO country_code ── */
   useEffect(() => {
+    if (_accountCache !== null) return; // already cached, skip fetch
     const controller = new AbortController();
 
     const load = async () => {
@@ -99,23 +103,27 @@ export default function AccountSettingsPage() {
         if (!json.success) throw new Error(json.error);
 
         const d = json.data;
-        setEmail(d.email ?? "");
-        setForm({
+        const emailVal = d.email ?? "";
+        const formVal = {
           full_name:    d.full_name    ?? "",
           phone_number: d.phone_number ?? "",
           address:      d.address      ?? "",
           city:         d.city         ?? "",
           country:      d.country      ?? "",
-        });
+        };
+        setEmail(emailVal);
+        setForm(formVal);
 
         /* Auto-detect from IP only when no country is saved.
            Uses ISO country_code matching (see detectCountryFromIp). */
         if (!d.country) {
           const detected = await detectCountryFromIp(controller.signal);
           if (detected) {
+            formVal.country = detected;
             setForm((f) => ({ ...f, country: detected }));
           }
         }
+        _accountCache = { email: emailVal, form: formVal };
       } catch (err) {
         if (err?.name !== "AbortError")
           setError(tAccount.load_error ?? "Failed to load profile.");
@@ -154,6 +162,7 @@ export default function AccountSettingsPage() {
       const json = await res.json();
       if (!json.success) throw new Error(json.error);
       toast.success(tAccount.saved ?? "Changes saved!");
+      _accountCache = { email, form: { ...form } };
       setEditing(false);
     } catch (err) {
       setError(err.message || (tAccount.save_error ?? "Failed to save changes."));

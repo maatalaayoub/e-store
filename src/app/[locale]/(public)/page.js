@@ -11,12 +11,15 @@ import ShopFooter from "@/components/shop/ShopFooter";
 import { useBfcacheReload } from "@/hooks/useBfcacheReload";
 import { HeroCarouselSkeleton } from "@/components/skeletons";
 
+// Module-level cache: persists across client-side navigations, cleared on hard refresh
+const _heroCache = new Map();
+
 export default function HomePage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const params = useParams();
   const locale = params?.locale || "en";
-  const [slides, setSlides] = useState([]);
-  const [heroLoading, setHeroLoading] = useState(true);
+  const [slides, setSlides] = useState(() => _heroCache.get(locale) ?? []);
+  const [heroLoading, setHeroLoading] = useState(() => !_heroCache.has(locale));
 
   useBfcacheReload();
 
@@ -25,14 +28,14 @@ export default function HomePage() {
       .then((r) => r.json())
       .then((json) => {
         if (json.success && json.data?.length > 0) {
-          setSlides(
-            json.data.map((s) => ({
-              image: s.image_url,
-              title: s.title,
-              cta: s.cta_text,
-              href: s.href.startsWith("http") ? s.href : `/${locale}${s.href}`,
-            }))
-          );
+          const mapped = json.data.map((s) => ({
+            image: s.image_url,
+            title: s.title,
+            cta: s.cta_text,
+            href: s.href.startsWith("http") ? s.href : `/${locale}${s.href}`,
+          }));
+          _heroCache.set(locale, mapped);
+          setSlides(mapped);
         }
       })
       .catch(() => {})
