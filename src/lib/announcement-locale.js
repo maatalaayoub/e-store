@@ -18,7 +18,10 @@ export function resolveAnnouncementTranslation(a, locale) {
   const tryOrder = [locale, ...FALLBACK_LOCALES.filter((l) => l !== locale)];
 
   const next = { ...a };
-  let textResolved = false;
+  // For social type, an empty base text is intentional (buttons/info are the content).
+  // Don't let per-locale translations silently restore the old text.
+  const isSocialEmpty = a.type === 'social' && typeof a.text === 'string' && !a.text.trim();
+  let textResolved = isSocialEmpty; // treat as already resolved → skip override
   let ctaResolved = false;
   let marqueeResolved = false;
 

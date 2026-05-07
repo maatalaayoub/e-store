@@ -99,7 +99,11 @@ function sanitize(a, idx = 0) {
 
   // Base fields stay populated (legacy + fallback for clients without `translations`).
   // If admin left them empty, fall back to the first non-empty locale.
-  const baseText = (a.text && String(a.text).trim()) ? String(a.text) : (pickBase(translations, 'text') ?? '');
+  // Exception: social type allows an empty text (info panel + buttons are the content).
+  const isSocial = a.type === 'social';
+  const baseText = (a.text && String(a.text).trim())
+    ? String(a.text)
+    : (!isSocial ? (pickBase(translations, 'text') ?? '') : '');
   const baseCta = (a.cta_text && String(a.cta_text).trim()) ? String(a.cta_text) : pickBase(translations, 'cta_text');
   const baseMarquee = Array.isArray(a.marquee_messages) && a.marquee_messages.some((m) => String(m ?? '').trim())
     ? a.marquee_messages

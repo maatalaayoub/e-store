@@ -985,7 +985,7 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
                 )}
               </div>
               {/* Center: text */}
-              <div className="flex-1 text-center text-[11px]">
+              <div className="flex-1 text-center">
                 {value.text || <span className="opacity-60 italic">{t.preview_placeholder ?? 'Preview…'}</span>}
               </div>
               {/* Right: buttons */}
@@ -1264,7 +1264,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
                   )}
                 </div>
                 {/* Center: text */}
-                <div className="flex-1 text-center text-sm">
+                <div className="flex-1 text-center">
                   {previewText || <span className="opacity-50">{t.preview_placeholder ?? 'Your message preview…'}</span>}
                 </div>
                 {/* Right: buttons */}

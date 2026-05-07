@@ -336,7 +336,7 @@ function SocialInfoPanel({ a }) {
       {(showName || showPhone) && (
         <span className="flex flex-col leading-tight">
           {showName && <span className="text-[11px] font-bold">{a.social_business_name}</span>}
-          {showPhone && <span className="text-[10px] opacity-75">{phoneVal}</span>}
+          {showPhone && <span className="text-[11px] font-medium opacity-90">{phoneVal}</span>}
         </span>
       )}
     </span>
@@ -789,13 +789,13 @@ export default function AnnouncementBar() {
       ) : current.type === 'social' ? (
         /* Social bar owns the full row — always rendered LTR so info is
            physically left, text is centered, buttons+dismiss are on the right. */
-        <div className="flex items-center gap-2 h-full px-3 sm:px-4 text-sm" dir="ltr">
+        <div className="flex items-center justify-between lg:justify-center gap-2 lg:gap-16 h-full px-3 sm:px-4 text-sm" dir="ltr">
           {/* Far left: logo + name/phone */}
           <div className="flex items-center gap-2 shrink-0">
             <SocialInfoPanel a={current} />
           </div>
           {/* Center: announcement text */}
-          <div className="flex-1 text-center min-w-0" dir="auto">
+          <div className="flex-1 lg:flex-none text-center min-w-0" dir="auto">
             <span style={{ fontSize: current.font_size ? `${current.font_size}px` : undefined }}>
               {current.text}
             </span>
