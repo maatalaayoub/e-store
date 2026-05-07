@@ -781,6 +781,32 @@ const SOCIAL_PLATFORMS = [
   { id: 'tiktok',    label: 'TikTok',    color: '#000000', field: 'social_tiktok',    placeholder: '@yourhandle',   hrefFn: (v) => `https://tiktok.com/${v}` },
 ];
 
+/**
+ * Scope id → user-facing label fallback. The dictionary key (`scope_<id>`)
+ * always wins when present so the admin can translate page names.
+ */
+const SCOPE_LABEL_FALLBACKS = {
+  all:               'All pages',
+  home:              'Home',
+  product:           'Product page',
+  cart:              'Cart',
+  checkout:          'Checkout',
+  favorites:         'Favorites',
+  account:           'Account',
+  orders:            'Orders',
+  'order-confirmed': 'Order confirmed',
+  'track-order':     'Track order',
+  invoice:           'Invoice',
+  login:             'Login',
+  signup:            'Sign up',
+};
+
+function scopeLabel(t, scope) {
+  const id = scope || 'all';
+  const key = `scope_${id.replace(/-/g, '_')}`;
+  return t?.[key] ?? SCOPE_LABEL_FALLBACKS[id] ?? id;
+}
+
 function blankAnnouncement(type = 'promotion') {
   const tp = ANNOUNCEMENT_TYPES.find((x) => x.id === type) ?? ANNOUNCEMENT_TYPES[0];
   return {
@@ -1037,8 +1063,12 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
           <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: typeInfo.bg }} />
           {t[`type_${value.type}`] ?? typeInfo.label}
         </span>
+        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium bg-zinc-100 text-zinc-600">
+          <Megaphone className="h-3 w-3 opacity-60" />
+          {scopeLabel(t, value.scope)}
+        </span>
         <span className="text-[11px] text-zinc-400 capitalize hidden sm:inline">
-          {value.position ?? 'top'} · {value.scope ?? 'all'}
+          {value.position ?? 'top'}
         </span>
         <div className="flex-1" />
         <div className="flex items-center gap-0.5">
@@ -1637,8 +1667,19 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
                   value={value.scope}
                   onChange={(e) => onUpdate('scope', e.target.value)}
                   options={[
-                    { value: 'all', label: t.scope_all ?? 'All pages' },
-                    { value: 'home', label: t.scope_home ?? 'Home only' },
+                    { value: 'all',              label: t.scope_all              ?? 'All pages' },
+                    { value: 'home',             label: t.scope_home             ?? 'Home' },
+                    { value: 'product',          label: t.scope_product          ?? 'Product page' },
+                    { value: 'cart',             label: t.scope_cart             ?? 'Cart' },
+                    { value: 'checkout',         label: t.scope_checkout         ?? 'Checkout' },
+                    { value: 'favorites',        label: t.scope_favorites        ?? 'Favorites' },
+                    { value: 'account',          label: t.scope_account          ?? 'Account' },
+                    { value: 'orders',           label: t.scope_orders           ?? 'Orders' },
+                    { value: 'order-confirmed',  label: t.scope_order_confirmed  ?? 'Order confirmed' },
+                    { value: 'track-order',      label: t.scope_track_order      ?? 'Track order' },
+                    { value: 'invoice',          label: t.scope_invoice          ?? 'Invoice' },
+                    { value: 'login',            label: t.scope_login            ?? 'Login' },
+                    { value: 'signup',           label: t.scope_signup           ?? 'Sign up' },
                   ]}
                 />
               </div>
@@ -1715,8 +1756,11 @@ function AnnouncementsSection() {
   const [editIdx, setEditIdx] = useState(null);
   const [draft, setDraft] = useState(null);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [rotationSecs, setRotationSecs] = useState(5);
-  const [rotationSaving, setRotationSaving] = useState(false);
+  // Per-scope rotation save indicator. Holds the scope id currently being saved
+  // (or null when idle). The slider value itself lives on each item's row, so
+  // we don't track it here — the UI reads `rotation_seconds` from the first
+  // entry of each group, which is always in sync after a successful save.
+  const [rotationSavingScope, setRotationSavingScope] = useState(null);
   // Use a ref (not state) so the close handler always reads the latest value.
   // The drawer closes asynchronously via setTimeout, so a stale state closure
   // would otherwise filter out an item that was just successfully saved.
@@ -1728,7 +1772,6 @@ function AnnouncementsSection() {
       .then((json) => {
         if (json.success) {
           setItems(json.data);
-          setRotationSecs(json.data[0]?.rotation_seconds ?? 5);
         }
       })
       .catch(() => {})
@@ -1798,16 +1841,6 @@ function AnnouncementsSection() {
     }
   };
 
-  const move = async (idx, dir) => {
-    const next = [...items];
-    const target = idx + dir;
-    if (target < 0 || target >= next.length) return;
-    [next[idx], next[target]] = [next[target], next[idx]];
-    next.forEach((it, i) => (it.priority = i));
-    setItems(next);
-    try { await persist(next); } catch (err) { toast.error(err.message); }
-  };
-
   const toggleActive = async (idx, val) => {
     const prev = items;
     const next = items.map((it, i) => (i === idx ? { ...it, is_active: val } : it));
@@ -1824,13 +1857,42 @@ function AnnouncementsSection() {
     }
   };
 
-  const changeRotation = async (val) => {
+  const changeRotationForScope = async (scope, val) => {
     const secs = Math.max(2, Math.min(60, val));
-    setRotationSecs(secs);
-    const next = items.map((it) => ({ ...it, rotation_seconds: secs }));
+    const prev = items;
+    const next = items.map((it) =>
+      (it.scope || 'all') === scope ? { ...it, rotation_seconds: secs } : it,
+    );
     setItems(next);
-    setRotationSaving(true);
-    try { await persist(next); } catch (err) { toast.error(err.message); } finally { setRotationSaving(false); }
+    setRotationSavingScope(scope);
+    try {
+      await persist(next);
+    } catch (err) {
+      setItems(prev);
+      toast.error(err.message ?? 'Failed to update');
+    } finally {
+      setRotationSavingScope(null);
+    }
+  };
+
+  /**
+   * Move an item up/down within its scope group.
+   * `gIdx` is the position within the group, not the global items index.
+   */
+  const moveWithinScope = async (scope, gIdx, dir) => {
+    const groupGlobalIdxs = items
+      .map((it, i) => ({ it, i }))
+      .filter(({ it }) => (it.scope || 'all') === scope)
+      .map(({ i }) => i);
+    const target = gIdx + dir;
+    if (target < 0 || target >= groupGlobalIdxs.length) return;
+    const a = groupGlobalIdxs[gIdx];
+    const b = groupGlobalIdxs[target];
+    const next = [...items];
+    [next[a], next[b]] = [next[b], next[a]];
+    next.forEach((it, i) => (it.priority = i));
+    setItems(next);
+    try { await persist(next); } catch (err) { toast.error(err.message); }
   };
 
   const startAdd = () => setPickerOpen(true);
@@ -1878,26 +1940,7 @@ function AnnouncementsSection() {
         description={t.desc ?? 'Promotional banners shown across the storefront.'}
       />
 
-      <div className="flex items-center justify-between mb-4 gap-4 flex-wrap">
-        {items.length > 1 && (
-          <div className="flex items-center gap-3 flex-1 min-w-0 px-4 py-2.5 rounded-xl bg-zinc-50 border border-zinc-100">
-            <Clock className="h-4 w-4 text-zinc-400 shrink-0" />
-            <span className="text-sm text-zinc-600 shrink-0">{t.rotation_speed ?? 'Rotation speed'}</span>
-            <input
-              type="range"
-              min={2}
-              max={60}
-              value={rotationSecs}
-              onChange={(e) => setRotationSecs(Number(e.target.value))}
-              onMouseUp={(e) => changeRotation(Number(e.target.value))}
-              onTouchEnd={(e) => changeRotation(Number(e.target.value))}
-              className="flex-1 min-w-[80px] accent-blue-600"
-            />
-            <span className="text-sm font-semibold text-zinc-700 w-10 text-right tabular-nums">
-              {rotationSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin inline" /> : `${rotationSecs}s`}
-            </span>
-          </div>
-        )}
+      <div className="flex items-center justify-end mb-4 gap-4 flex-wrap">
         <button
           type="button"
           onClick={startAdd}
@@ -1908,7 +1951,7 @@ function AnnouncementsSection() {
         </button>
       </div>
 
-      <div className="flex flex-col gap-3 mb-5">
+      <div className="flex flex-col gap-4 mb-5">
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-14 rounded-2xl border border-dashed border-zinc-200 text-zinc-400">
             <Megaphone className="h-10 w-10 mb-3 opacity-40" />
@@ -1916,20 +1959,91 @@ function AnnouncementsSection() {
             <p className="text-xs text-zinc-400 mt-1">{t.no_items_hint ?? 'Click “Add Announcement” to create your first banner.'}</p>
           </div>
         ) : (
-          items.map((a, idx) => (
-            <AnnouncementRow
-              key={idx}
-              value={a}
-              t={t}
-              isFirst={idx === 0}
-              isLast={idx === items.length - 1}
-              onMove={(dir) => move(idx, dir)}
-              onToggle={(val) => toggleActive(idx, val)}
-              toggling={togglingIdxs.has(idx)}
-              onEdit={() => openEdit(idx)}
-              onDelete={() => setConfirmDelete(idx)}
-            />
-          ))
+          (() => {
+            // Group items by scope while preserving original priority order.
+            const groups = [];
+            const byScope = new Map();
+            items.forEach((a, idx) => {
+              const scope = a.scope || 'all';
+              if (!byScope.has(scope)) {
+                const g = { scope, entries: [] };
+                byScope.set(scope, g);
+                groups.push(g);
+              }
+              byScope.get(scope).entries.push({ a, idx });
+            });
+
+            return groups.map((g) => {
+              const groupRotation = g.entries[0]?.a.rotation_seconds ?? 5;
+              const showRotation = g.entries.length > 1;
+              return (
+                <section
+                  key={g.scope}
+                  className="rounded-2xl border border-zinc-200 bg-white/60 overflow-hidden"
+                >
+                  {/* Group header */}
+                  <header className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-zinc-100 bg-zinc-50/70 flex-wrap">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="inline-flex items-center justify-center h-6 w-6 rounded-md bg-blue-100 text-blue-600">
+                        <Megaphone className="h-3.5 w-3.5" />
+                      </span>
+                      <span className="text-sm font-semibold text-zinc-800 truncate">
+                        {scopeLabel(t, g.scope)}
+                      </span>
+                      <span className="text-[11px] text-zinc-400">
+                        · {g.entries.length} {g.entries.length === 1 ? (t.item_one ?? 'item') : (t.item_many ?? 'items')}
+                      </span>
+                    </div>
+                    {showRotation && (
+                      <div className="flex items-center gap-2 min-w-0 px-3 py-1.5 rounded-lg bg-white border border-zinc-200">
+                        <Clock className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+                        <span className="text-xs text-zinc-600 shrink-0 hidden sm:inline">
+                          {t.rotation_speed ?? 'Rotation'}
+                        </span>
+                        <input
+                          type="range"
+                          min={2}
+                          max={60}
+                          defaultValue={groupRotation}
+                          onMouseUp={(e) => changeRotationForScope(g.scope, Number(e.target.value))}
+                          onTouchEnd={(e) => changeRotationForScope(g.scope, Number(e.target.value))}
+                          onChange={(e) => {
+                            // Local visual feedback only — persist on release.
+                            e.target.nextElementSibling.textContent = `${e.target.value}s`;
+                          }}
+                          className="w-32 accent-blue-600"
+                          aria-label={t.rotation_speed ?? 'Rotation speed'}
+                        />
+                        <span className="text-xs font-semibold text-zinc-700 w-9 text-right tabular-nums">
+                          {rotationSavingScope === g.scope
+                            ? <Loader2 className="h-3 w-3 animate-spin inline" />
+                            : `${groupRotation}s`}
+                        </span>
+                      </div>
+                    )}
+                  </header>
+
+                  {/* Group items */}
+                  <div className="flex flex-col gap-2 p-3">
+                    {g.entries.map(({ a, idx }, gIdx) => (
+                      <AnnouncementRow
+                        key={idx}
+                        value={a}
+                        t={t}
+                        isFirst={gIdx === 0}
+                        isLast={gIdx === g.entries.length - 1}
+                        onMove={(dir) => moveWithinScope(g.scope, gIdx, dir)}
+                        onToggle={(val) => toggleActive(idx, val)}
+                        toggling={togglingIdxs.has(idx)}
+                        onEdit={() => openEdit(idx)}
+                        onDelete={() => setConfirmDelete(idx)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              );
+            });
+          })()
         )}
       </div>
 
