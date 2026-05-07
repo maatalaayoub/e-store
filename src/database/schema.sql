@@ -376,6 +376,14 @@ ALTER TABLE announcements ADD COLUMN IF NOT EXISTS rotation_seconds integer NOT 
 ALTER TABLE announcements ADD COLUMN IF NOT EXISTS carousel_enabled boolean NOT NULL DEFAULT false;
 ALTER TABLE announcements ADD COLUMN IF NOT EXISTS dismissible boolean NOT NULL DEFAULT true;
 
+-- Social announcement enhancements: custom button color, logo, business name, phone
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS social_btn_color text;
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS social_show_logo boolean NOT NULL DEFAULT false;
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS social_logo_url text;
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS social_show_name boolean NOT NULL DEFAULT false;
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS social_business_name text;
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS social_show_phone boolean NOT NULL DEFAULT false;
+
 -- Relax the type CHECK to include 'marquee' (drop+recreate; safe on fresh DBs too)
 ALTER TABLE announcements DROP CONSTRAINT IF EXISTS announcements_type_check;
 ALTER TABLE announcements ADD CONSTRAINT announcements_type_check

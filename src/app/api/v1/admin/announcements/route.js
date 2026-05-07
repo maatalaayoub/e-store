@@ -124,6 +124,13 @@ function sanitize(a, idx = 0) {
     social_platforms: Array.isArray(a.social_platforms)
       ? [...new Set(a.social_platforms.filter((p) => ALLOWED_PLATFORMS.includes(p)))]
       : [],
+    social_btn_color: safeHex(a.social_btn_color, null),
+    social_show_logo: !!a.social_show_logo,
+    social_logo_url: (a.social_logo_url && SAFE_HREF_RE.test(String(a.social_logo_url).trim()))
+      ? String(a.social_logo_url).trim().slice(0, 500) : null,
+    social_show_name: !!a.social_show_name,
+    social_business_name: a.social_business_name ? String(a.social_business_name).slice(0, 80) : null,
+    social_show_phone: !!a.social_show_phone,
     marquee_messages: Array.isArray(baseMarquee)
       ? baseMarquee
           .map((m) => String(m ?? '').slice(0, 300))

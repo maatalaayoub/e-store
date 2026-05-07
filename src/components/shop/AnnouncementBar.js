@@ -316,38 +316,65 @@ function AnnouncementContent({ a, dict }) {
         />
       )}
 
-      {a.type === "social" && (() => {
-        const platforms = Array.isArray(a.social_platforms) && a.social_platforms.length
-          ? a.social_platforms
-          : [
-              a.social_whatsapp  && 'whatsapp',
-              a.social_facebook  && 'facebook',
-              a.social_instagram && 'instagram',
-              a.social_tiktok    && 'tiktok',
-            ].filter(Boolean);
-        return platforms.map((pid) => {
-          const link = SOCIAL_LINKS[pid];
-          const handle = a[`social_${pid}`];
-          if (!link || !handle) return null;
-          const Icon = link.Icon;
-          return (
-            <a
-              key={pid}
-              href={link.hrefFn(handle)}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={link.label}
-              className="inline-flex items-center gap-1.5 ml-2 px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/30 text-[11px] font-bold tracking-wide transition-colors"
-            >
-              <Icon className="h-4 w-4" /> {link.label}
-            </a>
-          );
-        });
-      })()}
     </span>
   );
 
   return inner;
+}
+
+function SocialInfoPanel({ a }) {
+  const phoneVal = a.social_whatsapp || a.social_facebook || a.social_instagram || a.social_tiktok || '';
+  const showLogo = a.social_show_logo && a.social_logo_url;
+  const showName = a.social_show_name && a.social_business_name;
+  const showPhone = a.social_show_phone && phoneVal;
+  if (!showLogo && !showName && !showPhone) return null;
+  return (
+    <span className="inline-flex items-center gap-2">
+      {showLogo && (
+        <img src={a.social_logo_url} alt="" className="h-7 w-7 rounded-full object-cover shrink-0" />
+      )}
+      {(showName || showPhone) && (
+        <span className="flex flex-col leading-tight">
+          {showName && <span className="text-[11px] font-bold">{a.social_business_name}</span>}
+          {showPhone && <span className="text-[10px] opacity-75">{phoneVal}</span>}
+        </span>
+      )}
+    </span>
+  );
+}
+
+function SocialButtons({ a }) {
+  const platforms = Array.isArray(a.social_platforms) && a.social_platforms.length
+    ? a.social_platforms
+    : [
+        a.social_whatsapp  && 'whatsapp',
+        a.social_facebook  && 'facebook',
+        a.social_instagram && 'instagram',
+        a.social_tiktok    && 'tiktok',
+      ].filter(Boolean);
+  return (
+    <>
+      {platforms.map((pid) => {
+        const link = SOCIAL_LINKS[pid];
+        const handle = a[`social_${pid}`];
+        if (!link || !handle) return null;
+        const Icon = link.Icon;
+        return (
+          <a
+            key={pid}
+            href={link.hrefFn(handle)}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={link.label}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide transition-colors"
+            style={a.social_btn_color ? { backgroundColor: a.social_btn_color, color: '#fff' } : { backgroundColor: 'rgba(255,255,255,0.2)' }}
+          >
+            <Icon className="h-4 w-4" /> {link.label}
+          </a>
+        );
+      })}
+    </>
+  );
 }
 
 /* ─────────────────── Marquee (scrolling banner) ─────────────────── */
@@ -759,6 +786,43 @@ export default function AnnouncementBar() {
             </button>
           )}
         </div>
+      ) : current.type === 'social' ? (
+        /* Social bar owns the full row — always rendered LTR so info is
+           physically left, text is centered, buttons+dismiss are on the right. */
+        <div className="flex items-center gap-2 h-full px-3 sm:px-4 text-sm" dir="ltr">
+          {/* Far left: logo + name/phone */}
+          <div className="flex items-center gap-2 shrink-0">
+            <SocialInfoPanel a={current} />
+          </div>
+          {/* Center: announcement text */}
+          <div className="flex-1 text-center min-w-0" dir="auto">
+            <span style={{ fontSize: current.font_size ? `${current.font_size}px` : undefined }}>
+              {current.text}
+            </span>
+          </div>
+          {/* Far right: social platform buttons + dismiss */}
+          <div className="flex items-center gap-2 shrink-0">
+            <SocialButtons a={current} />
+            {visible.length > 1 && (
+              <>
+                <button type="button" onClick={goPrev} aria-label="Previous announcement"
+                  className="hidden sm:inline-flex h-6 w-6 items-center justify-center rounded hover:bg-white/15 transition-colors">
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button type="button" onClick={goNext} aria-label="Next announcement"
+                  className="hidden sm:inline-flex h-6 w-6 items-center justify-center rounded hover:bg-white/15 transition-colors">
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </>
+            )}
+            {current.dismissible !== false && (
+              <button type="button" onClick={() => handleDismiss(current.id)} aria-label="Dismiss"
+                className="inline-flex h-6 w-6 items-center justify-center rounded hover:bg-white/15 transition-colors">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
       ) : (
         <div className="grid items-center h-full px-2 sm:px-4 text-sm" style={{ gridTemplateColumns: 'auto 1fr auto' }}>
           {/* Left: prev button (or spacer) */}
@@ -777,7 +841,7 @@ export default function AnnouncementBar() {
 
           {/* Center: always truly centered */}
           <div
-            className="flex items-center justify-center text-center min-w-0"
+            className="flex items-center justify-center min-w-0"
             aria-live="polite"
             aria-atomic="true"
           >
