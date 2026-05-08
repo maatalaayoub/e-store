@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
@@ -31,11 +31,14 @@ import { toast } from "sonner";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { AdminSettingsSkeleton } from "@/components/skeletons";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
+import SectionsBuilder from "@/components/admin/product-sections/SectionsBuilder";
+import { Blocks } from "lucide-react";
 
 const SECTION_DEFS = [
   { id: "general", icon: Store },
   { id: "hero", icon: Layers },
   { id: "announcements", icon: Megaphone },
+  { id: "product_sections", icon: Blocks },
   { id: "payments", icon: CreditCard },
   { id: "shipping", icon: Truck },
   { id: "notifications", icon: Bell },
@@ -102,6 +105,7 @@ export default function AdminSettingsPage() {
           {active === "general" && <GeneralSection />}
           {active === "hero" && <HeroSection />}
           {active === "announcements" && <AnnouncementsSection />}
+          {active === "product_sections" && <ProductSectionsSection />}
           {active === "payments" && <PaymentsSection />}
           {active === "shipping" && <ShippingSection />}
           {active === "notifications" && <NotificationsSection />}
@@ -2076,6 +2080,93 @@ function AnnouncementsSection() {
         onConfirm={() => remove(confirmDelete)}
         onCancel={() => { if (!deleting) setConfirmDelete(null); }}
       />
+    </>
+  );
+}
+
+// ── Product Sections (global defaults) ──────────────────────────────────────
+function ProductSectionsSection() {
+  const dict = useDictionary();
+  const t = dict?.admin?.settings?.product_sections ?? {};
+  const [sections, setSections] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/v1/admin/product-sections");
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Failed to load");
+        if (!cancelled) setSections(Array.isArray(json.data) ? json.data : []);
+      } catch (err) {
+        if (!cancelled) {
+          toast.error(err?.message ?? "Failed to load");
+          setSections([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const saveToServer = async (data) => {
+    const res = await fetch("/api/v1/admin/product-sections", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sections: data }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || "Failed to save");
+    setSections(json.data);
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await saveToServer(sections);
+      toast.success(t.saved ?? "Product sections saved");
+    } catch (err) {
+      toast.error(err?.message ?? "Failed to save");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (next) => {
+    await saveToServer(next);
+    toast.success(t.saved ?? "Product sections saved");
+  };
+
+  return (
+    <>
+      <SectionHeader
+        title={t.title ?? "Product Page Sections"}
+        description={t.desc ?? "Build the default layout used by every product page. Per-product overrides live on the product itself."}
+      />
+      {loading || sections === null ? (
+        <p className="text-sm text-zinc-500 py-8 text-center">Loading...</p>
+      ) : (
+        <SectionsBuilder
+          value={sections}
+          onChange={setSections}
+          onDelete={handleDelete}
+          emptyText={t.empty ?? "No sections yet."}
+          context="global"
+        />
+      )}
+      <div className="pt-4 mt-2 border-t border-zinc-100 flex justify-end">
+        <button
+          onClick={save}
+          disabled={saving || loading}
+          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+        >
+          <Save className="h-4 w-4" />
+          {saving ? "Saving..." : (dict?.admin?.settings?.save ?? "Save changes")}
+        </button>
+      </div>
     </>
   );
 }

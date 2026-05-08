@@ -548,7 +548,7 @@
     "contact_info": "معلومات التواصل",
     "required": "مطلوب",
     "required_marker": "* مطلوب",
-    "phone_label": "البريد الإلكتروني أو رقم الهاتف",
+    "phone_label": "رقم الهاتف",
     "shipping_address": "عنوان الشحن",
     "full_name": "الاسم الكامل",
     "country": "الدولة",
@@ -565,7 +565,8 @@
     "placing_order": "جارٍ تقديم الطلب…",
     "order_whatsapp": "الطلب عبر واتساب",
     "cart_empty": "سلتك فارغة",
-    "failed": "فشل تقديم الطلب. يرجى المحاولة مرة أخرى."
+    "failed": "فشل تقديم الطلب. يرجى المحاولة مرة أخرى.",
+    "fill_required": "يرجى ملء الحقول المطلوبة: {fields}"
   },
   "order_confirmed": {
     "title": "تم استلام طلبك!",

@@ -145,6 +145,22 @@
     }
   },
   "admin": {
+    "sections_builder": {
+      "add_section": "Add section",
+      "reset_to_defaults": "Reset to defaults",
+      "reset_confirm_title": "Reset layout?",
+      "reset_confirm_desc": "This will replace all current sections with the built-in defaults.",
+      "reset_confirm_btn": "Reset",
+      "section_count_one": "1 section",
+      "section_count_many": "{n} sections",
+      "delete_title": "Remove section?",
+      "delete_desc_global": "This section will be removed from the default layout. All products using the default layout will no longer show it.",
+      "delete_desc_product": "This section will be removed from this product\u2019s page.",
+      "delete_confirm": "Remove",
+      "cancel": "Cancel",
+      "enable": "Enable section",
+      "disable": "Disable section"
+    },
     "nav": {
       "dashboard": "Dashboard",
       "products": "Products",
@@ -199,6 +215,10 @@
         "edit_title": "Edit Product",
         "section_details": "Product Details",
         "section_images": "Images",
+        "section_page_sections": "Product Page Sections",
+        "use_default_layout": "Use default product layout",
+        "use_default_layout_hint": "Inherit the global sections defined in Store Settings.",
+        "sections_empty": "Add sections to customize this product's page.",
         "name_label": "Name",
         "name_placeholder": "e.g. Premium Wireless Headphones",
         "category_label": "Category",
@@ -273,11 +293,18 @@
         "general": "General",
         "hero": "Hero",
         "announcements": "Announcements",
+        "product_sections": "Product Sections",
         "payments": "Payments",
         "shipping": "Shipping",
         "notifications": "Notifications",
         "integrations": "Integrations",
         "localization": "Localization"
+      },
+      "product_sections": {
+        "title": "Product Page Sections",
+        "desc": "Build the default layout used by every product page. Per-product overrides live on the product itself.",
+        "empty": "No sections yet. Click \u201CAdd section\u201D to get started.",
+        "saved": "Product sections saved"
       },
       "general": {
         "title": "General",
@@ -543,7 +570,7 @@
     "load_error": "Failed to load profile."
   },
   "checkout": {
-    "phone_label": "Email or Phone Number",
+    "phone_label": "Phone Number",
     "shipping_address": "Shipping Address",
     "full_name": "Full Name",
     "country": "Country",
@@ -560,7 +587,8 @@
     "placing_order": "Placing Order…",
     "order_whatsapp": "Order via WhatsApp",
     "cart_empty": "Your cart is empty",
-    "failed": "Failed to place order. Please try again."
+    "failed": "Failed to place order. Please try again.",
+    "fill_required": "Please fill in the required fields: {fields}"
   },
   "order_confirmed": {
     "title": "Order Received!",

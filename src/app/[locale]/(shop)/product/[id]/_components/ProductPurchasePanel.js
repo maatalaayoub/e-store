@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Check, Minus, Plus, ShoppingCart } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
+import { useProductQtyStore } from "@/store/useProductQtyStore";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
 
 export default function ProductPurchasePanel({
@@ -13,12 +14,18 @@ export default function ProductPurchasePanel({
   hasColors,
   hasSizes,
   dict,
+  hideCheckoutNow = false,
 }) {
   const [selectedColor, setSelectedColor] = useState(hasColors ? colors[0] : null);
   const [selectedSize, setSelectedSize] = useState(hasSizes ? sizes[0] : null);
-  const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const { addItem } = useCartStore();
+  const { getQty, setQty: storeSetQty } = useProductQtyStore();
+  const qty = getQty(product.id);
+  const setQty = (updater) => {
+    const next = typeof updater === "function" ? updater(qty) : updater;
+    storeSetQty(product.id, next);
+  };
   const router = useRouter();
   const params = useParams();
   const locale = params?.locale || "en";
@@ -177,36 +184,40 @@ export default function ProductPurchasePanel({
 
       {/* Action buttons */}
       <div className="flex flex-col gap-3 pt-2">
-        <button
-          onClick={handleAdd}
-          disabled={isOutOfStock}
-          className={`w-full flex items-center justify-center gap-2 rounded-xl px-6 h-13 text-base font-semibold text-white transition-colors ${
-            isOutOfStock
-              ? "bg-zinc-300 cursor-not-allowed"
-              : added
-              ? "bg-emerald-600"
-              : "bg-zinc-900 hover:bg-zinc-800"
-          }`}
-        >
-          {added ? (
-            <>
-              <Check className="h-4 w-4" />
-              {tProduct.added_to_cart ?? "Added to Cart"}
-            </>
-          ) : (
-            <>
-              <ShoppingCart className="h-4 w-4" />
-              {tProduct.add_to_cart ?? "Add To Cart"}
-            </>
-          )}
-        </button>
-        <button
-          onClick={handleCheckout}
-          disabled={isOutOfStock}
-          className="w-full flex items-center justify-center rounded-xl border-2 border-zinc-900 px-6 h-13 text-base font-semibold text-zinc-900 hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {tProduct.checkout_now ?? "Checkout Now"}
-        </button>
+        {!hideCheckoutNow && (
+          <button
+            onClick={handleAdd}
+            disabled={isOutOfStock}
+            className={`w-full flex items-center justify-center gap-2 rounded-xl px-6 h-13 text-base font-semibold text-white transition-colors ${
+              isOutOfStock
+                ? "bg-zinc-300 cursor-not-allowed"
+                : added
+                ? "bg-emerald-600"
+                : "bg-zinc-900 hover:bg-zinc-800"
+            }`}
+          >
+            {added ? (
+              <>
+                <Check className="h-4 w-4" />
+                {tProduct.added_to_cart ?? "Added to Cart"}
+              </>
+            ) : (
+              <>
+                <ShoppingCart className="h-4 w-4" />
+                {tProduct.add_to_cart ?? "Add To Cart"}
+              </>
+            )}
+          </button>
+        )}
+        {!hideCheckoutNow && (
+          <button
+            onClick={handleCheckout}
+            disabled={isOutOfStock}
+            className="w-full flex items-center justify-center rounded-xl border-2 border-zinc-900 px-6 h-13 text-base font-semibold text-zinc-900 hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {tProduct.checkout_now ?? "Checkout Now"}
+          </button>
+        )}
       </div>
     </div>
   );

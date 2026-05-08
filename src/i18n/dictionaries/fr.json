@@ -548,7 +548,7 @@
     "contact_info": "Coordonnées",
     "required": "Obligatoire",
     "required_marker": "* Obligatoire",
-    "phone_label": "E-mail ou numéro de téléphone",
+    "phone_label": "Numéro de téléphone",
     "shipping_address": "Adresse de livraison",
     "full_name": "Nom complet",
     "country": "Pays",
@@ -565,7 +565,8 @@
     "placing_order": "Commande en cours…",
     "order_whatsapp": "Commander via WhatsApp",
     "cart_empty": "Votre panier est vide",
-    "failed": "Échec de la commande. Veuillez réessayer."
+    "failed": "Échec de la commande. Veuillez réessayer.",
+    "fill_required": "Veuillez remplir les champs obligatoires : {fields}"
   },
   "order_confirmed": {
     "title": "Commande reçue !",

@@ -21,6 +21,11 @@ export const productSchema = z.object({
     .nullable(),
   sizes: z.array(z.string().min(1)).optional().nullable(),
   translations: z.record(z.string(), translationEntry).optional().nullable(),
+  // Dynamic Product Sections — see src/modules/product-sections.
+  // The sections array is sanitized server-side before persisting; here we
+  // only need a permissive shape so legitimate payloads pass validation.
+  use_default_sections: z.boolean().optional(),
+  sections_config: z.array(z.any()).optional().nullable(),
 });
 
 export const productUpdateSchema = productSchema.partial();

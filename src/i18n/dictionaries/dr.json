@@ -548,7 +548,7 @@
     "contact_info": "معلومات التواصل",
     "required": "ضروري",
     "required_marker": "* ضروري",
-    "phone_label": "الإيميل ولا رقم التليفون",
+    "phone_label": "رقم التليفون",
     "shipping_address": "عنوان التوصيل",
     "full_name": "الاسم الكامل",
     "country": "البلاد",
@@ -565,7 +565,8 @@
     "placing_order": "كيتقدّم الطلب…",
     "order_whatsapp": "طلب عبر واتساب",
     "cart_empty": "القفة خاوية",
-    "failed": "ما تقدرش تكمل الطلب. عاود مرة أخرى."
+    "failed": "ما تقدرش تكمل الطلب. عاود مرة أخرى.",
+    "fill_required": "عمر الخانات الضرورية: {fields}"
   },
   "order_confirmed": {
     "title": "وصل الطلب ديالك!",

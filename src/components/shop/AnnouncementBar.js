@@ -150,6 +150,28 @@ function pathIsAdmin(pathname) {
   return /^\/(?:en|fr|ar|dr)\/admin(?:\/|$)/.test(pathname);
 }
 
+/** Scope → regex map. A scope matches if the regex matches the current pathname. */
+const SCOPE_PATTERNS = {
+  home:              /^\/(?:en|fr|ar|dr)?\/?$/,
+  product:           /\/product(?:\/|$)/,
+  cart:              /\/cart(?:\/|$)/,
+  checkout:          /\/checkout(?:\/|$)/,
+  favorites:         /\/favorites(?:\/|$)/,
+  account:           /\/account(?:\/|$)/,
+  orders:            /\/orders(?:\/|$)/,
+  'order-confirmed': /\/order-confirmed(?:\/|$)/,
+  'track-order':     /\/track-order(?:\/|$)/,
+  invoice:           /\/invoice(?:\/|$)/,
+  login:             /\/login(?:\/|$)/,
+  signup:            /\/signup(?:\/|$)/,
+};
+
+function pathMatchesScope(pathname, scope) {
+  if (!scope || scope === 'all') return true;
+  const re = SCOPE_PATTERNS[scope];
+  return re ? re.test(pathname) : true;
+}
+
 /* ─────────────────── Countdown sub-component ─────────────────── */
 export function Countdown({ endAt, labels, expiredLabel }) {
   const [now, setNow] = useState(() => Date.now());
@@ -638,11 +660,10 @@ export default function AnnouncementBar() {
   const visible = useMemo(() => {
     if (!items || items.length === 0) return [];
     if (pathIsAdmin(pathname)) return [];
-    const onHome = pathIsHome(pathname);
     const now = Date.now();
     return items
       .filter((a) => a.is_active !== false)
-      .filter((a) => (a.scope === "home" ? onHome : true))
+      .filter((a) => pathMatchesScope(pathname, a.scope))
       .filter((a) => isWithinSchedule(a, now))
       .filter((a) => !dismissed.has(a.id))
       .map((a) => resolveAnnouncementTranslation(a, locale));

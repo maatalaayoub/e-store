@@ -317,7 +317,7 @@ CREATE TABLE IF NOT EXISTS announcements (
   behavior text NOT NULL DEFAULT 'sticky'
     CHECK (behavior IN ('static', 'sticky')),
   scope text NOT NULL DEFAULT 'all'
-    CHECK (scope IN ('all', 'home')),
+    CHECK (scope IN ('all', 'home', 'product', 'cart', 'checkout', 'favorites', 'account', 'orders', 'order-confirmed', 'track-order', 'invoice', 'login', 'signup')),
   carousel_enabled boolean NOT NULL DEFAULT false,
   rotation_seconds integer NOT NULL DEFAULT 5
     CHECK (rotation_seconds >= 2 AND rotation_seconds <= 120),
@@ -388,6 +388,11 @@ ALTER TABLE announcements ADD COLUMN IF NOT EXISTS social_show_phone boolean NOT
 ALTER TABLE announcements DROP CONSTRAINT IF EXISTS announcements_type_check;
 ALTER TABLE announcements ADD CONSTRAINT announcements_type_check
   CHECK (type IN ('promotion', 'shipping', 'limited', 'social', 'notification', 'marquee'));
+
+-- Expand the scope CHECK to include all page-level scopes
+ALTER TABLE announcements DROP CONSTRAINT IF EXISTS announcements_scope_check;
+ALTER TABLE announcements ADD CONSTRAINT announcements_scope_check
+  CHECK (scope IN ('all', 'home', 'product', 'cart', 'checkout', 'favorites', 'account', 'orders', 'order-confirmed', 'track-order', 'invoice', 'login', 'signup'));
 
 -- Per-locale overrides for translatable text fields.
 -- Shape: { "en": { "text": "...", "cta_text": "...", "marquee_messages": ["..."] }, "fr": {...}, ... }
@@ -522,6 +527,85 @@ BEGIN
            ELSE NULL
       END
     FROM jsonb_array_elements(p_rows) WITH ORDINALITY AS t(item, idx);
+  END IF;
+END;
+$$;
+
+-- ========================================================================
+-- DYNAMIC PRODUCT SECTIONS  (Product Page Builder)
+-- ========================================================================
+-- Two scopes:
+--   1. GLOBAL DEFAULTS  → singleton row in `product_section_defaults`
+--      stores the ordered list of section descriptors used by every
+--      product whose `use_default_sections = true`.
+--   2. PER-PRODUCT       → `products.sections_config` (jsonb) overrides
+--      the defaults for a single product when `use_default_sections = false`.
+--
+-- A "section descriptor" is an object of shape:
+--   {
+--     "id": "uuid-or-slug",         -- stable client-generated id
+--     "type": "description"|"gallery"|"specifications"|"shipping"
+--           |"reviews"|"ratings"|"faq"|"rich_text"|"image_text"
+--           |"video"|"banner"|"related_products"|"custom",
+--     "enabled": true,
+--     "order": 0,
+--     "config":  { ... type-specific layout/style options ... },
+--     "content": { ... type-specific content (title, body, items) ... },
+--     "translations": { "en": { ...content overrides... }, "fr": {...}, ... }
+--   }
+--
+-- The application layer owns validation (see product-sections module);
+-- the DB only enforces shape (jsonb) and provides safe RPCs.
+-- ========================================================================
+
+-- Per-product columns. Defaults preserve backward compatibility:
+--   • use_default_sections=true → product uses global defaults
+--   • sections_config=null      → no overrides
+ALTER TABLE products
+  ADD COLUMN IF NOT EXISTS use_default_sections boolean NOT NULL DEFAULT true;
+ALTER TABLE products
+  ADD COLUMN IF NOT EXISTS sections_config jsonb DEFAULT NULL;
+
+-- Singleton table holding the global default sections.
+CREATE TABLE IF NOT EXISTS product_section_defaults (
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  sections jsonb NOT NULL DEFAULT '[]'::jsonb,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Seed the singleton row if missing.
+INSERT INTO product_section_defaults (sections)
+SELECT '[]'::jsonb
+WHERE NOT EXISTS (SELECT 1 FROM product_section_defaults);
+
+ALTER TABLE product_section_defaults ENABLE ROW LEVEL SECURITY;
+
+-- Public can read the singleton; admins can mutate.
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'product_section_defaults' AND policyname = 'Section defaults are public') THEN
+    EXECUTE 'CREATE POLICY "Section defaults are public" ON product_section_defaults FOR SELECT USING (true)';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'product_section_defaults' AND policyname = 'Admins manage section defaults') THEN
+    EXECUTE 'CREATE POLICY "Admins manage section defaults" ON product_section_defaults FOR ALL USING (EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = ''admin''))';
+  END IF;
+END $$;
+
+-- Atomic upsert: replace the singleton row's sections array.
+CREATE OR REPLACE FUNCTION replace_product_section_defaults(p_sections jsonb)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF p_sections IS NULL OR jsonb_typeof(p_sections) <> 'array' THEN
+    RAISE EXCEPTION 'p_sections must be a JSON array';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM product_section_defaults) THEN
+    UPDATE product_section_defaults
+       SET sections = p_sections,
+           updated_at = timezone('utc'::text, now());
+  ELSE
+    INSERT INTO product_section_defaults (sections) VALUES (p_sections);
   END IF;
 END;
 $$;

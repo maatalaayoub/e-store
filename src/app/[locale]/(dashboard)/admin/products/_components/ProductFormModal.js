@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import { Check, ChevronDown, X, Loader2, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import ImageManager from "./ImageManager";
+import SectionsBuilder from "@/components/admin/product-sections/SectionsBuilder";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { RTL_LOCALES } from "@/config/constants";
 
@@ -30,6 +31,8 @@ const initialForm = {
   is_featured: false,
   colors: [], // [{ name, hex }]
   sizes: [],  // ["S", "M", ...]
+  use_default_sections: true,
+  sections_config: [],
 };
 
 function formReducer(state, action) {
@@ -89,6 +92,8 @@ function productToForm(p) {
     is_featured: p.is_featured ?? false,
     colors: Array.isArray(p.colors) ? p.colors : [],
     sizes: Array.isArray(p.sizes) ? p.sizes : [],
+    use_default_sections: p.use_default_sections !== false,
+    sections_config: Array.isArray(p.sections_config) ? p.sections_config : [],
   };
 }
 
@@ -141,6 +146,30 @@ export default function ProductFormModal({
   const STATUS_OPTIONS = ["active", "draft", "archived"];
 
   const isEdit = Boolean(product?.id);
+  const [loadingDefaults, setLoadingDefaults] = useState(false);
+
+  /** Toggle "Use default layout" — seeds sections_config from global defaults when switching to custom. */
+  async function handleToggleDefaultSections(checked) {
+    if (!checked && form.sections_config.length === 0) {
+      // Unchecking with no custom sections yet → fetch global defaults as a starting point,
+      // but mark every section as disabled so the user opts-in to each one.
+      setLoadingDefaults(true);
+      try {
+        const res = await fetch("/api/v1/admin/product-sections");
+        const json = await res.json();
+        const defaults = Array.isArray(json?.data) && json.data.length > 0 ? json.data : null;
+        if (defaults) {
+          const allDisabled = defaults.map((s) => ({ ...s, enabled: false }));
+          dispatch({ type: "set", field: "sections_config", value: allDisabled });
+        }
+      } catch {
+        // silently ignore — user can still use the empty builder
+      } finally {
+        setLoadingDefaults(false);
+      }
+    }
+    dispatch({ type: "set", field: "use_default_sections", value: checked });
+  }
 
   // Sync form when product changes + drive animation
   useEffect(() => {
@@ -330,6 +359,12 @@ export default function ProductFormModal({
           const valid = form.sizes.map((s) => s.trim()).filter(Boolean);
           return valid.length > 0 ? valid : null;
         })(),
+        // Dynamic Product Sections — server sanitizes the array further.
+        use_default_sections: form.use_default_sections !== false,
+        sections_config:
+          form.use_default_sections === false && Array.isArray(form.sections_config)
+            ? form.sections_config
+            : null,
       };
 
       // 1. Create or update product
@@ -735,6 +770,22 @@ export default function ProductFormModal({
             </div>
           </section>
 
+          {/* ── Images ── */}
+          <section className="space-y-4">
+            <h3 className="text-sm font-semibold text-zinc-700 border-b border-zinc-100 pb-2">
+              {t.section_images ?? "Images"}
+            </h3>
+            <ImageManager
+              existingImages={existingImages}
+              pendingImages={pendingImages}
+              onAddPending={handleAddPending}
+              onRemovePending={handleRemovePending}
+              onSetPendingMain={handleSetPendingMain}
+              onRemoveExisting={handleRemoveExisting}
+              onSetExistingMain={handleSetExistingMain}
+            />
+          </section>
+
           {/* ── Variants (Colors & Sizes) ── */}
           <section className="space-y-4">
             <h3 className="text-sm font-semibold text-zinc-700 border-b border-zinc-100 pb-2">
@@ -839,20 +890,38 @@ export default function ProductFormModal({
             </div>
           </section>
 
-          {/* ── Images ── */}
+          {/* ── Page Sections ── */}
           <section className="space-y-4">
             <h3 className="text-sm font-semibold text-zinc-700 border-b border-zinc-100 pb-2">
-              {t.section_images ?? "Images"}
+              {t.section_page_sections ?? "Product Page Sections"}
             </h3>
-            <ImageManager
-              existingImages={existingImages}
-              pendingImages={pendingImages}
-              onAddPending={handleAddPending}
-              onRemovePending={handleRemovePending}
-              onSetPendingMain={handleSetPendingMain}
-              onRemoveExisting={handleRemoveExisting}
-              onSetExistingMain={handleSetExistingMain}
-            />
+            <label className="flex items-center justify-between gap-3 cursor-pointer rounded-lg border border-zinc-200 px-3 py-2.5">
+              <div>
+                <p className="text-sm font-medium text-zinc-900">
+                  {t.use_default_layout ?? "Use default product layout"}
+                </p>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  {t.use_default_layout_hint ?? "Inherit the global sections defined in Store Settings."}
+                </p>
+              </div>
+              {loadingDefaults ? (
+                <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
+              ) : (
+                <input
+                  type="checkbox"
+                  checked={form.use_default_sections !== false}
+                  onChange={(e) => handleToggleDefaultSections(e.target.checked)}
+                  className="h-4 w-4 rounded accent-blue-600"
+                />
+              )}
+            </label>
+            {form.use_default_sections === false && (
+              <SectionsBuilder
+                value={form.sections_config}
+                onChange={(next) => dispatch({ type: "set", field: "sections_config", value: next })}
+                emptyText={t.sections_empty ?? "Add sections to customize this product's page."}
+              />
+            )}
           </section>
         </form>
 

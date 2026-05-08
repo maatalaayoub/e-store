@@ -1,5 +1,6 @@
 import { productRepository } from './product.repository';
 import { resolveProductTranslation } from '@/lib/product-locale';
+import { sanitizeSections } from '@/modules/product-sections/sanitize';
 
 /** Compute derived fields so every layer works with a consistent shape. */
 export function normalizeProduct(raw, locale) {
@@ -34,6 +35,8 @@ export function normalizeProduct(raw, locale) {
     effective_price,
     badge,
     category: raw.categories?.name ?? null,
+    use_default_sections: raw.use_default_sections !== false,
+    sections_config: Array.isArray(raw.sections_config) ? raw.sections_config : null,
   };
 
   if (locale) product = resolveProductTranslation(product, locale);
@@ -55,13 +58,15 @@ export class ProductService {
   }
 
   async createProduct(data) {
-    const raw = await productRepository.create(data);
+    const payload = sanitizeProductWritePayload(data);
+    const raw = await productRepository.create(payload);
     return normalizeProduct(raw);
   }
 
   async updateProduct(id, data) {
     if (!id) throw new Error('Product ID required');
-    const raw = await productRepository.update(id, data);
+    const payload = sanitizeProductWritePayload(data);
+    const raw = await productRepository.update(id, payload);
     return normalizeProduct(raw);
   }
 
@@ -81,6 +86,30 @@ export class ProductService {
   async deleteImage(productId, imageId) {
     return productRepository.deleteImage(productId, imageId);
   }
+}
+
+/**
+ * Server-side cleanup applied right before INSERT/UPDATE.
+ *
+ * Sections that arrive from the admin builder are sanitized via the
+ * dedicated module so we never persist unsafe HTML / dangerous URLs.
+ * `use_default_sections=true` always implies `sections_config=null` so
+ * the two columns can never disagree on which scope wins.
+ */
+function sanitizeProductWritePayload(data) {
+  const payload = { ...data };
+
+  if (Object.prototype.hasOwnProperty.call(payload, 'sections_config')) {
+    payload.sections_config = Array.isArray(payload.sections_config)
+      ? sanitizeSections(payload.sections_config)
+      : null;
+  }
+
+  if (payload.use_default_sections === true) {
+    payload.sections_config = null;
+  }
+
+  return payload;
 }
 
 export const productService = new ProductService();

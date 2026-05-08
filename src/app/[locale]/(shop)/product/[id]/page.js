@@ -6,6 +6,9 @@ import ProductGallery from "./_components/ProductGallery";
 import ProductPurchasePanel from "./_components/ProductPurchasePanel";
 import ProductPageHeader from "./_components/ProductPageHeader";
 import ProductPrice from "./_components/ProductPrice";
+import ProductSections from "@/components/shop/product-sections/ProductSections";
+import { productSectionService } from "@/modules/product-sections/service";
+import { getSectionComponent } from "@/components/shop/product-sections/registry";
 
 export default async function ProductDetailsPage({ params }) {
   const { locale, id } = await params;
@@ -29,6 +32,13 @@ export default async function ProductDetailsPage({ params }) {
   const soldCount = 0;
   const rating = 0;
   const reviewCount = 0;
+
+  // Resolve effective sections to detect inline checkout
+  const globalDefaults = await productSectionService.getGlobalDefaults();
+  const resolvedSections = productSectionService.resolveForProduct(product, globalDefaults, locale);
+  const checkoutSection = resolvedSections.find((s) => s.type === "checkout") ?? null;
+  const hasCheckoutSection = !!checkoutSection;
+  const CheckoutCmp = checkoutSection ? getSectionComponent("checkout") : null;
 
   return (
     <div className="min-h-screen bg-white">
@@ -84,7 +94,7 @@ export default async function ProductDetailsPage({ params }) {
             {product.description && (
               <div className="mt-6">
                 <h3 className="font-semibold text-zinc-900 mb-2">{dict?.product?.description ?? "Description"}:</h3>
-                <p className="text-sm text-zinc-600 leading-relaxed whitespace-pre-line">
+                <p className="text-sm text-zinc-600 leading-relaxed whitespace-pre-line line-clamp-3">
                   {product.description}
                 </p>
               </div>
@@ -97,15 +107,25 @@ export default async function ProductDetailsPage({ params }) {
               hasColors={hasColors}
               hasSizes={hasSizes}
               dict={dict}
+              hideCheckoutNow={hasCheckoutSection}
             />
 
-            <div className="mt-6">
-              <a href="#" className="text-sm font-medium text-zinc-900 underline underline-offset-4 decoration-zinc-300 hover:decoration-zinc-700">
-                {dict?.product?.delivery ?? "Delivery T&C"}
-              </a>
-            </div>
+            {/* Inline checkout section — rendered in the product info column */}
+            {CheckoutCmp && checkoutSection && (
+              <div className="mt-6">
+                <CheckoutCmp section={checkoutSection} product={product} locale={locale} dict={dict} compact={true} />
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Dynamic, admin-configurable sections (description / specs / FAQ / etc.) */}
+        <ProductSections
+          product={product}
+          locale={locale}
+          dict={dict}
+          excludeTypes={hasCheckoutSection ? ["checkout"] : []}
+        />
       </main>
     </div>
   );

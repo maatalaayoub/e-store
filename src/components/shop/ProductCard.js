@@ -42,7 +42,7 @@ export default function ProductCard({ product: rawProduct, onAdded }) {
 
   return (
     <article className="group flex flex-col h-full">
-      <Link href={`/${locale}/product/${product.id}`} className="relative aspect-square w-full overflow-hidden bg-[#ebebeb] block">
+      <Link href={`/${locale}/product/${product.id}`} className="relative aspect-square w-full overflow-hidden bg-[#ebebeb] block rounded-[5px]">
         {imgSrc ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -93,7 +93,7 @@ export default function ProductCard({ product: rawProduct, onAdded }) {
         <div className="mt-auto pt-4">
           <button
             onClick={handleAdd}
-            className="w-full border border-zinc-900 py-3 sm:py-3.5 text-[10px] sm:text-xs font-bold uppercase tracking-[0.1em] text-zinc-900 transition-all duration-300 hover:bg-zinc-900 hover:text-white active:scale-[0.98]"
+            className="w-full border border-zinc-900 rounded-[5px] py-3 sm:py-3.5 text-[10px] sm:text-xs font-bold uppercase tracking-[0.1em] text-zinc-900 transition-all duration-300 hover:bg-zinc-900 hover:text-white active:scale-[0.98]"
           >
             {tHome.buy_now}
           </button>

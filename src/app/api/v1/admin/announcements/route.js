@@ -6,7 +6,7 @@ import { getAdminUser } from '@/middlewares/authGuard';
 const ALLOWED_TYPES = ['promotion', 'shipping', 'limited', 'social', 'notification', 'marquee'];
 const ALLOWED_POSITIONS = ['top', 'bottom'];
 const ALLOWED_BEHAVIORS = ['static', 'sticky'];
-const ALLOWED_SCOPES = ['all', 'home'];
+const ALLOWED_SCOPES = ['all', 'home', 'product', 'cart', 'checkout', 'favorites', 'account', 'orders', 'order-confirmed', 'track-order', 'invoice', 'login', 'signup'];
 const ALLOWED_PLATFORMS = ['whatsapp', 'facebook', 'instagram', 'tiktok'];
 const ALLOWED_MARQUEE_DIRECTIONS = ['left', 'right'];
 const ALLOWED_MARQUEE_SCROLL_MODES = ['together', 'individual'];
