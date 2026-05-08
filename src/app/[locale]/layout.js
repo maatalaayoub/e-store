@@ -35,7 +35,9 @@ export default async function LocaleLayout({ children, params }) {
     <LocaleProvider locale={locale} dictionary={dictionary}>
       <CurrencyProvider>
         <AnnouncementBar />
-        {children}
+        <div style={{ paddingTop: 'var(--bar-height, 0px)' }}>
+          {children}
+        </div>
         <Toaster position="bottom-center" richColors />
       </CurrencyProvider>
     </LocaleProvider>

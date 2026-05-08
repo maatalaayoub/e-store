@@ -149,6 +149,9 @@ function sanitizeBaseConfig(raw, defaults) {
     text_color: safeHex(cfg.text_color),
     padding: pickEnum(cfg.padding, ['none', 'sm', 'md', 'lg'], defaults.padding ?? 'md'),
     show_title: safeBool(cfg.show_title, defaults.show_title ?? true),
+    title_color: safeHex(cfg.title_color ?? cfg.text_color), // backward-compat: accept old text_color too
+    border_color: safeHex(cfg.border_color),
+    border_width: safeInt(cfg.border_width, { min: 0, max: 20, fallback: 0 }),
   };
 }
 
@@ -325,6 +328,13 @@ const TYPE_HANDLERS = {
         show_whatsapp: safeBool(raw.config?.show_whatsapp, base.config.show_whatsapp),
         show_summary: safeBool(raw.config?.show_summary, base.config.show_summary),
         whatsapp_countries: waCountries,
+        label_color: safeHex(raw.config?.label_color),
+        input_text_color: safeHex(raw.config?.input_text_color),
+        placeholder_color: safeHex(raw.config?.placeholder_color),
+        order_btn_bg: safeHex(raw.config?.order_btn_bg),
+        order_btn_text_color: safeHex(raw.config?.order_btn_text_color),
+        whatsapp_btn_bg: safeHex(raw.config?.whatsapp_btn_bg),
+        whatsapp_btn_text_color: safeHex(raw.config?.whatsapp_btn_text_color),
       },
       content: {
         title: safeStr(raw.content?.title, 200) ?? base.content.title,

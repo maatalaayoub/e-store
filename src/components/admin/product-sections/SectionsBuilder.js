@@ -40,6 +40,7 @@ import {
   SECTION_REGISTRY,
   createSectionDescriptor,
   getBuiltInDefaults,
+  getRegistryEntry,
 } from "@/modules/product-sections/registry";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
@@ -63,14 +64,18 @@ function TypeIcon({ name, className }) {
  * @param {"global"|"product"} [props.context]      — affects delete dialog wording
  * @param {(next: Array) => Promise<void>} [props.onDelete]  — if provided, called after delete confirmed; should persist to server
  */
-export default function SectionsBuilder({ value, onChange, emptyText, context = "product", onDelete }) {
+export default function SectionsBuilder({ value, onChange, emptyText, context = "product", onDelete, onSave }) {
   const sections = Array.isArray(value) ? value : [];
   const [expandedId, setExpandedId] = useState(null);
   const [addOpen, setAddOpen] = useState(false);
   const [dragId, setDragId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);   // section to delete
   const [deleting, setDeleting] = useState(false);          // loading state for delete dialog
-  const [resetConfirm, setResetConfirm] = useState(false);  // reset dialog open
+  const [resetConfirm, setResetConfirm] = useState(false);  // reset all dialog open
+  const [resetSectionTarget, setResetSectionTarget] = useState(null); // per-section reset
+  const [resetFlashId, setResetFlashId] = useState(null);             // flash after reset
+  const [resetSectionSaving, setResetSectionSaving] = useState(false);
+  const [resetSavingId, setResetSavingId] = useState(null);           // which row icon is spinning
 
   const dict = useDictionary();
   const t = dict?.admin?.sections_builder ?? {};
@@ -123,6 +128,38 @@ export default function SectionsBuilder({ value, onChange, emptyText, context = 
   function confirmReset() {
     onChange(getBuiltInDefaults());
     setResetConfirm(false);
+  }
+  async function confirmResetSection() {
+    if (!resetSectionTarget) return;
+    const entry = getRegistryEntry(resetSectionTarget.type);
+    if (!entry) { setResetSectionTarget(null); return; }
+    const { config, content } = entry.defaults();
+    const id = resetSectionTarget.id;
+    const next = sections.map((s) =>
+      s.id === id ? { ...s, config, content, translations: null } : s
+    );
+    // Close dialog, start spinner on the row icon (all in one batch)
+    setResetSectionTarget(null);
+    setResetSavingId(id);
+    onChange(next);
+    if (onSave) {
+      setResetSectionSaving(true);
+      try {
+        await onSave(next);
+      } catch {
+        // onSave handles its own error toasts
+      } finally {
+        setResetSectionSaving(false);
+        setResetSavingId(null);
+        // Flash green as success indicator after the save
+        setResetFlashId(id);
+        setTimeout(() => setResetFlashId(null), 1000);
+      }
+    } else {
+      setResetSavingId(null);
+      setResetFlashId(id);
+      setTimeout(() => setResetFlashId(null), 1000);
+    }
   }
 
   // ── HTML5 drag handlers ────────────────────────────────────────────────────
@@ -199,6 +236,8 @@ export default function SectionsBuilder({ value, onChange, emptyText, context = 
             const isExpanded = expandedId === section.id;
             const isDragging = dragId === section.id;
             const isEnabled = section.enabled !== false;
+            const isFlashing = resetFlashId === section.id;
+            const isResetting = resetSavingId === section.id;
             // context="global"  → draggable row, no enable checkbox, no arrows, no delete
             // context="product" → draggable row, enable checkbox, arrows, no delete
             const isGlobal = context === "global";
@@ -210,7 +249,13 @@ export default function SectionsBuilder({ value, onChange, emptyText, context = 
                 onDragOver={!isGlobal ? onDragOver : undefined}
                 onDrop={!isGlobal ? onDrop(section.id) : undefined}
                 onDragEnd={!isGlobal ? () => setDragId(null) : undefined}
-                className={`rounded-xl border bg-white transition-all ${isDragging ? "opacity-40" : "opacity-100"} ${isExpanded ? "border-blue-200 shadow-sm" : "border-zinc-100"}`}
+                className={`rounded-xl border transition-all duration-700 ${isDragging ? "opacity-40" : "opacity-100"} ${
+                  isFlashing
+                    ? "bg-green-50 border-green-300 shadow-sm shadow-green-100"
+                    : isExpanded
+                      ? "bg-white border-blue-200 shadow-sm"
+                      : "bg-white border-zinc-100"
+                }`}
               >
                 <div className="flex items-center gap-2 p-3">
                   {/* Drag handle — product context only */}
@@ -279,6 +324,17 @@ export default function SectionsBuilder({ value, onChange, emptyText, context = 
                     </button>
                   )}
 
+                  {/* Reset section to default */}
+                  <button
+                    type="button"
+                    title="Reset section to default"
+                    disabled={isResetting}
+                    onClick={(e) => { e.stopPropagation(); setResetSectionTarget(section); }}
+                    className="rounded-md p-1.5 text-zinc-400 hover:bg-amber-50 hover:text-amber-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <RotateCcw className={`h-4 w-4 ${isResetting ? 'animate-spin' : ''}`} />
+                  </button>
+
                   {/* Expand toggle */}
                   <button
                     type="button"
@@ -324,6 +380,17 @@ export default function SectionsBuilder({ value, onChange, emptyText, context = 
         cancelText={t.cancel ?? "Cancel"}
         onConfirm={confirmReset}
         onCancel={() => setResetConfirm(false)}
+      />
+
+      {/* Per-section reset confirmation */}
+      <ConfirmationDialog
+        isOpen={resetSectionTarget !== null}
+        title="Reset section to default?"
+        description={`This will restore all settings and content of the "${SECTION_REGISTRY[resetSectionTarget?.type]?.label ?? resetSectionTarget?.type}" section back to its built-in defaults. Your customizations will be lost.`}
+        confirmText="Reset section"
+        cancelText={t.cancel ?? "Cancel"}
+        onConfirm={confirmResetSection}
+        onCancel={() => setResetSectionTarget(null)}
       />
     </div>
   );

@@ -38,7 +38,9 @@ const baseConfig = () => ({
   width: 'container',         // 'container' | 'wide' | 'full'
   background: 'transparent',  // 'transparent' | 'muted' | 'accent' | 'custom'
   background_color: null,     // hex (only when background === 'custom')
-  text_color: null,
+  title_color: null,          // hex or null — section heading color
+  border_color: null,         // hex or null (null = no border)
+  border_width: 0,            // px (0 = no border)
   padding: 'md',              // 'none' | 'sm' | 'md' | 'lg'
   show_title: true,
 });
@@ -203,6 +205,14 @@ export const SECTION_REGISTRY = Object.freeze({
         // Otherwise an array like ['Morocco'] restricts it to listed countries.
         whatsapp_countries: ['Morocco'],
         show_summary: true,
+        // Granular text color overrides (null = inherit/default)
+        label_color: null,
+        input_text_color: null,
+        placeholder_color: null,
+        order_btn_bg: null,
+        order_btn_text_color: null,
+        whatsapp_btn_bg: null,
+        whatsapp_btn_text_color: null,
       },
       content: {
         title: 'Order this product',

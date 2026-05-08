@@ -9,9 +9,11 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@heroui/react": "^3.0.4",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.104.1",
     "country-state-city": "^3.2.1",
+    "framer-motion": "^12.38.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^1.11.0",

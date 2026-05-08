@@ -27,14 +27,20 @@ const BACKGROUND_CLASS = {
   accent: 'bg-blue-50',
 };
 
-function sectionWrapperStyle(section) {
+export function sectionWrapperStyle(section) {
   const cfg = section.config ?? {};
   const padding = PADDING_CLASS[cfg.padding] ?? PADDING_CLASS.md;
   const width = WIDTH_CLASS[cfg.width] ?? WIDTH_CLASS.container;
   const bg = cfg.background === 'custom' ? '' : (BACKGROUND_CLASS[cfg.background] ?? '');
   const inlineStyle = {};
   if (cfg.background === 'custom' && cfg.background_color) inlineStyle.backgroundColor = cfg.background_color;
-  if (cfg.text_color) inlineStyle.color = cfg.text_color;
+  if (cfg.title_color) inlineStyle['--section-title-color'] = cfg.title_color;
+  const bw = Number(cfg.border_width) || 0;
+  if (bw > 0 && cfg.border_color) {
+    inlineStyle.border = `${bw}px solid ${cfg.border_color}`;
+    inlineStyle.borderRadius = '0.5rem';
+    inlineStyle.overflow = 'hidden';
+  }
   return { wrapperClass: `${bg} ${padding}`.trim(), innerClass: width, style: inlineStyle };
 }
 

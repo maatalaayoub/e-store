@@ -99,10 +99,45 @@ export default function InlineCheckoutSection({ section, product, locale, dict, 
     ? product.images[0].url
     : "/placeholder-view.svg";
 
+  const hasBorder = Number(cfg.border_width) > 0 && cfg.border_color;
+  const hasBackground = cfg.background && cfg.background !== 'transparent';
+
+  // Build full inline style: admin background, border, + granular color CSS vars
+  const BG_CLASS = { transparent: '', muted: 'bg-zinc-50', accent: 'bg-blue-50' };
+  const bgClass = cfg.background === 'custom' ? '' : (BG_CLASS[cfg.background] ?? '');
+
+  const outerStyle = {};
+  if (cfg.background === 'custom' && cfg.background_color) outerStyle.backgroundColor = cfg.background_color;
+  if (hasBorder) {
+    outerStyle.border = `${Number(cfg.border_width)}px solid ${cfg.border_color}`;
+    outerStyle.borderRadius = '0.75rem';
+    outerStyle.overflow = 'hidden';
+  }
+  if (cfg.label_color)              outerStyle['--co-label']        = cfg.label_color;
+  if (cfg.input_text_color)         outerStyle['--co-input']        = cfg.input_text_color;
+  if (cfg.placeholder_color)        outerStyle['--co-placeholder']  = cfg.placeholder_color;
+
+  // Build per-button inline style objects (most reliable — overrides Tailwind classes)
+  const orderBtnStyle = {};
+  if (cfg.order_btn_bg)            { orderBtnStyle.backgroundColor = cfg.order_btn_bg; orderBtnStyle.borderColor = cfg.order_btn_bg; }
+  if (cfg.order_btn_text_color)      orderBtnStyle.color = cfg.order_btn_text_color;
+
+  const waBtnStyle = {};
+  if (cfg.whatsapp_btn_bg)           waBtnStyle.backgroundColor = cfg.whatsapp_btn_bg;
+  if (cfg.whatsapp_btn_text_color)   waBtnStyle.color = cfg.whatsapp_btn_text_color;
+
+  const defaultClass = !hasBorder && !hasBackground ? 'rounded-2xl border border-zinc-200 bg-white' : '';
+
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-7">
+    <div
+      className={`checkout-section p-5 sm:p-7 ${bgClass} ${defaultClass}`.trim()}
+      style={Object.keys(outerStyle).length ? outerStyle : undefined}
+    >
       {(cfg.show_title !== false && content.title) && (
-        <h2 className="text-lg sm:text-xl font-semibold text-zinc-900">
+        <h2
+          className="text-lg sm:text-xl font-semibold text-zinc-900"
+          style={cfg.title_color ? { color: cfg.title_color } : undefined}
+        >
           {content.title}
         </h2>
       )}
@@ -189,6 +224,8 @@ export default function InlineCheckoutSection({ section, product, locale, dict, 
               whatsAppCountriesOnly={whatsappCountries}
               onPlaceOrder={checkout.handlePlaceOrder}
               onOrderWhatsApp={checkout.handleOrderWhatsApp}
+              orderBtnStyle={Object.keys(orderBtnStyle).length ? orderBtnStyle : undefined}
+              waBtnStyle={Object.keys(waBtnStyle).length ? waBtnStyle : undefined}
             />
           </div>
         </div>

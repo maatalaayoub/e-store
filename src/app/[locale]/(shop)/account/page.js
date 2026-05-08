@@ -178,7 +178,7 @@ export default function AccountSettingsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* ── Top bar ── */}
-      <header className="bg-white border-b border-zinc-100 sticky top-0 z-10">
+      <header style={{ top: 'var(--bar-height, 0px)' }} className="bg-white border-b border-zinc-100 sticky z-10">
         <div className="mx-auto max-w-2xl px-4 sm:px-6 h-14 flex items-center gap-3">
           <button
             onClick={() => router.back()}

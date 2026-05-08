@@ -125,6 +125,54 @@ function CommonConfigBlock({ section, onChange }) {
           ]}
         />
       </Field>
+
+      {/* ── Text color ── */}
+      <Field label="Section title color">
+        <div className="flex items-center gap-2">
+          <input
+            type="color"
+            className="h-9 w-12 rounded-lg border border-zinc-200 cursor-pointer"
+            value={cfg.title_color ?? "#111111"}
+            onChange={(e) => set("title_color", e.target.value)}
+          />
+          <button
+            type="button"
+            onClick={() => set("title_color", null)}
+            className="text-xs text-zinc-400 hover:text-zinc-700 underline"
+          >
+            Reset
+          </button>
+          {cfg.title_color && (
+            <span className="text-xs font-mono text-zinc-500">{cfg.title_color}</span>
+          )}
+        </div>
+      </Field>
+
+      {/* ── Border ── */}
+      <Field label="Border width (px)">
+        <input
+          type="number"
+          min={0}
+          max={20}
+          className={inputClass}
+          value={cfg.border_width ?? 0}
+          onChange={(e) => set("border_width", Math.max(0, Math.min(20, Number.parseInt(e.target.value, 10) || 0)))}
+        />
+      </Field>
+      <Field label="Border color">
+        <div className="flex items-center gap-2">
+          <input
+            type="color"
+            className="h-9 w-12 rounded-lg border border-zinc-200 cursor-pointer"
+            value={cfg.border_color ?? "#e4e4e7"}
+            onChange={(e) => set("border_color", e.target.value)}
+          />
+          {cfg.border_color && (
+            <span className="text-xs font-mono text-zinc-500">{cfg.border_color}</span>
+          )}
+        </div>
+      </Field>
+
       <div className="col-span-2">
         <Toggle label="Show section title" value={cfg.show_title !== false} onChange={(v) => set("show_title", v)} />
       </div>
@@ -642,6 +690,78 @@ function CheckoutEditor({ section, onChange, get, setContent, setConfig, isRTL }
           )}
         </Field>
       )}
+
+      {/* ── Granular text color overrides ── */}
+      <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 space-y-3">
+        <p className="text-xs font-semibold text-zinc-600 uppercase tracking-wide">Text colors</p>
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { key: "label_color",       label: "Field labels" },
+            { key: "input_text_color",  label: "Input text" },
+            { key: "placeholder_color", label: "Placeholder" },
+          ].map(({ key, label }) => (
+            <Field key={key} label={label}>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  className="h-9 w-10 rounded-lg border border-zinc-200 cursor-pointer"
+                  value={cfg[key] ?? "#111111"}
+                  onChange={(e) => setConfig(key, e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setConfig(key, null)}
+                  className="text-xs text-zinc-400 hover:text-zinc-700 underline"
+                >
+                  Reset
+                </button>
+                {cfg[key] && (
+                  <span className="text-xs font-mono text-zinc-500">{cfg[key]}</span>
+                )}
+              </div>
+            </Field>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Button colors (bg + text per button) ── */}
+      <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 space-y-4">
+        <p className="text-xs font-semibold text-zinc-600 uppercase tracking-wide">Button colors</p>
+        {[
+          { bgKey: "order_btn_bg",    textKey: "order_btn_text_color",    label: "Order button",    bgDefault: "#18181b", textDefault: "#ffffff" },
+          { bgKey: "whatsapp_btn_bg", textKey: "whatsapp_btn_text_color", label: "WhatsApp button", bgDefault: "#25D366", textDefault: "#ffffff" },
+        ].map(({ bgKey, textKey, label, bgDefault, textDefault }) => (
+          <div key={bgKey}>
+            <p className="text-xs font-medium text-zinc-700 mb-2">{label}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Background">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    className="h-9 w-10 rounded-lg border border-zinc-200 cursor-pointer"
+                    value={cfg[bgKey] ?? bgDefault}
+                    onChange={(e) => setConfig(bgKey, e.target.value)}
+                  />
+                  <button type="button" onClick={() => setConfig(bgKey, null)} className="text-xs text-zinc-400 hover:text-zinc-700 underline">Reset</button>
+                  {cfg[bgKey] && <span className="text-xs font-mono text-zinc-500">{cfg[bgKey]}</span>}
+                </div>
+              </Field>
+              <Field label="Text color">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    className="h-9 w-10 rounded-lg border border-zinc-200 cursor-pointer"
+                    value={cfg[textKey] ?? textDefault}
+                    onChange={(e) => setConfig(textKey, e.target.value)}
+                  />
+                  <button type="button" onClick={() => setConfig(textKey, null)} className="text-xs text-zinc-400 hover:text-zinc-700 underline">Reset</button>
+                  {cfg[textKey] && <span className="text-xs font-mono text-zinc-500">{cfg[textKey]}</span>}
+                </div>
+              </Field>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

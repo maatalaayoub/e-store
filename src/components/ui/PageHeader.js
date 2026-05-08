@@ -61,7 +61,8 @@ export default function PageHeader({ title, showCart = false }) {
         <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
       )}
       <header
-        className={`fixed top-0 inset-x-0 z-50 bg-white border-b border-zinc-100 transition-transform duration-300 ${
+        style={{ top: 'var(--bar-height, 0px)' }}
+        className={`fixed inset-x-0 z-50 bg-white border-b border-zinc-100 transition-transform duration-300 ${
           visible ? "translate-y-0" : "-translate-y-full"
         }`}
       >

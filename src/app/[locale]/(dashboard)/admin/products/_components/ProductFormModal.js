@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import { Check, ChevronDown, X, Loader2, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 import ImageManager from "./ImageManager";
 import SectionsBuilder from "@/components/admin/product-sections/SectionsBuilder";
 import { useDictionary } from "@/components/providers/LocaleProvider";
@@ -147,6 +148,22 @@ export default function ProductFormModal({
 
   const isEdit = Boolean(product?.id);
   const [loadingDefaults, setLoadingDefaults] = useState(false);
+
+  /**
+   * Auto-save sections_config to the server when editing an existing product.
+   * Only called by SectionsBuilder's onSave / onDelete — skipped for new products.
+   */
+  async function handleSaveSections(next) {
+    if (!isEdit || !product?.id) return; // new product — save happens on form submit
+    const res = await fetch(`/api/v1/products/${product.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sections_config: next, use_default_sections: false }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || "Failed to save sections");
+    toast.success(t.sections_saved ?? "Sections saved");
+  }
 
   /** Toggle "Use default layout" — seeds sections_config from global defaults when switching to custom. */
   async function handleToggleDefaultSections(checked) {
@@ -919,6 +936,8 @@ export default function ProductFormModal({
               <SectionsBuilder
                 value={form.sections_config}
                 onChange={(next) => dispatch({ type: "set", field: "sections_config", value: next })}
+                onSave={handleSaveSections}
+                onDelete={handleSaveSections}
                 emptyText={t.sections_empty ?? "Add sections to customize this product's page."}
               />
             )}

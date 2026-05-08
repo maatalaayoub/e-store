@@ -2153,6 +2153,7 @@ function ProductSectionsSection() {
           value={sections}
           onChange={setSections}
           onDelete={handleDelete}
+          onSave={handleDelete}
           emptyText={t.empty ?? "No sections yet."}
           context="global"
         />

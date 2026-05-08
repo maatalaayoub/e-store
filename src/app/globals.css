@@ -31,6 +31,28 @@ body {
   font-family: var(--font-cairo), Arial, sans-serif;
 }
 
+/* ───────────────────────── Product section / checkout color CSS vars ───────────────────────── */
+/* Section title color — applies to the section heading rendered by the section component */
+[style*="--section-title-color"] [data-section-title] {
+  color: var(--section-title-color);
+}
+
+/* Checkout section granular color overrides via CSS custom properties */
+.checkout-section label,
+.checkout-section [data-role="field-label"] {
+  color: var(--co-label, inherit);
+}
+.checkout-section input,
+.checkout-section select,
+.checkout-section textarea {
+  color: var(--co-input, inherit);
+}
+.checkout-section input::placeholder,
+.checkout-section textarea::placeholder {
+  color: var(--co-placeholder, inherit);
+  opacity: 1;
+}
+
 /* ───────────────────────── Hero animations ───────────────────────── */
 @keyframes float-slow {
   0%, 100% { transform: translateY(0) rotate(var(--tw-rotate, 0deg)); }

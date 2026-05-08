@@ -47,7 +47,7 @@ export default function CheckoutClient({ locale, dict }) {
   if (!checkout.hydrated) return null;
 
   return (
-    <div className="min-h-screen bg-white" style={{ paddingTop: 'var(--bar-height, 0px)' }}>
+    <div className="min-h-screen bg-white">
       {/* ── Top bar ── */}
       <header className="bg-white border-b border-zinc-100">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 h-14 flex items-center gap-3">
