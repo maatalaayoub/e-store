@@ -31,6 +31,26 @@ body {
   font-family: var(--font-cairo), Arial, sans-serif;
 }
 
+/* ───────────────────────── Product card button colour tokens ───────────────────────── */
+/* Three vars set as inline style on the <article>:
+   --pcard-filled-bg   : filled/Shop-Now button background
+   --pcard-filled-text : filled button text
+   --pcard-outline-color : outline/Add-to-Cart border, text, and icon colour             */
+.pcard-btn-filled {
+  background-color: var(--pcard-filled-bg, #18181b);
+  color: var(--pcard-filled-text, #ffffff);
+}
+.pcard-btn-filled:hover { opacity: 0.82; }
+
+.pcard-btn-outline {
+  border-color: var(--pcard-outline-color, #18181b);
+  color: var(--pcard-outline-color, #18181b);
+}
+.pcard-btn-outline:hover {
+  background-color: var(--pcard-outline-color, #18181b);
+  color: var(--pcard-filled-text, #ffffff);
+}
+
 /* ───────────────────────── Product section / checkout color CSS vars ───────────────────────── */
 /* Section title color — applies to the section heading rendered by the section component */
 [style*="--section-title-color"] [data-section-title] {
