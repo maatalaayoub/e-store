@@ -14,7 +14,7 @@
  * the rest of the codebase, which avoids extra runtime weight.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Plus,
   Trash2,
@@ -42,7 +42,8 @@ import {
   getBuiltInDefaults,
   getRegistryEntry,
 } from "@/modules/product-sections/registry";
-import { useDictionary } from "@/components/providers/LocaleProvider";
+import { useDictionary, useLocale } from "@/components/providers/LocaleProvider";
+import { useOnClickOutside } from "@/hooks/useOnClickOutside";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
 import SectionEditor from "./SectionEditor";
 
@@ -78,7 +79,13 @@ export default function SectionsBuilder({ value, onChange, emptyText, context = 
   const [resetSavingId, setResetSavingId] = useState(null);           // which row icon is spinning
 
   const dict = useDictionary();
+  const { dir } = useLocale();
+  const isRtl = dir === 'rtl';
   const t = dict?.admin?.sections_builder ?? {};
+  const tReg = dict?.admin?.sections_registry ?? {};
+
+  const addMenuRef = useRef(null);
+  useOnClickOutside(addMenuRef, () => setAddOpen(false), addOpen);
 
   const types = useMemo(
     () =>
@@ -193,7 +200,7 @@ export default function SectionsBuilder({ value, onChange, emptyText, context = 
       <div className="flex flex-wrap items-center gap-2 justify-between">
         <p className="text-sm text-zinc-500">{sectionCount}</p>
         <div className="flex items-center gap-2">
-          <div className="relative">
+          <div className="relative" ref={addMenuRef}>
             <button
               type="button"
               onClick={() => setAddOpen((v) => !v)}
@@ -203,7 +210,7 @@ export default function SectionsBuilder({ value, onChange, emptyText, context = 
               <ChevronDown className={`h-3 w-3 transition-transform ${addOpen ? "rotate-180" : ""}`} />
             </button>
             {addOpen && (
-              <div className="absolute right-0 mt-1 z-30 w-72 max-h-80 overflow-y-auto rounded-xl border border-zinc-100 bg-white shadow-xl py-1.5">
+              <div className={`absolute mt-1 z-30 w-72 max-h-80 overflow-y-auto rounded-xl border border-zinc-100 bg-white shadow-xl py-1.5 ${isRtl ? 'left-0' : 'right-0'}`}>
                 {types.map(([type, entry]) => (
                   <button
                     key={type}
@@ -213,8 +220,8 @@ export default function SectionsBuilder({ value, onChange, emptyText, context = 
                   >
                     <TypeIcon name={entry.icon} className="h-4 w-4 text-zinc-400 mt-0.5 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-zinc-900">{entry.label}</p>
-                      <p className="text-xs text-zinc-500 truncate">{entry.description}</p>
+                    <p className="text-sm font-medium text-zinc-900">{tReg[type]?.label ?? entry.label}</p>
+                    <p className="text-xs text-zinc-500 truncate">{tReg[type]?.desc ?? entry.description}</p>
                     </div>
                   </button>
                 ))}
@@ -288,8 +295,8 @@ export default function SectionsBuilder({ value, onChange, emptyText, context = 
                     className="flex-1 min-w-0 text-start"
                   >
                     <p className={`text-sm font-medium truncate ${isEnabled ? "text-zinc-900" : "text-zinc-400 line-through"}`}>
-                      {entry?.label ?? section.type}
-                      {section.content?.title
+                      {tReg[section.type]?.label ?? entry?.label ?? section.type}
+                      {section.content?.title && section.content.title !== entry?.label
                         ? <span className="ms-2 font-normal text-zinc-400">— {section.content.title}</span>
                         : null}
                     </p>
@@ -386,7 +393,7 @@ export default function SectionsBuilder({ value, onChange, emptyText, context = 
       <ConfirmationDialog
         isOpen={resetSectionTarget !== null}
         title="Reset section to default?"
-        description={`This will restore all settings and content of the "${SECTION_REGISTRY[resetSectionTarget?.type]?.label ?? resetSectionTarget?.type}" section back to its built-in defaults. Your customizations will be lost.`}
+        description={`This will restore all settings and content of the "${tReg[resetSectionTarget?.type]?.label ?? SECTION_REGISTRY[resetSectionTarget?.type]?.label ?? resetSectionTarget?.type}" section back to its built-in defaults. Your customizations will be lost.`}
         confirmText="Reset section"
         cancelText={t.cancel ?? "Cancel"}
         onConfirm={confirmResetSection}

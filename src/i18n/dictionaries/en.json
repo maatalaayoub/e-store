@@ -161,6 +161,22 @@
       "enable": "Enable section",
       "disable": "Disable section"
     },
+    "sections_registry": {
+      "description":      { "label": "Product Description",  "desc": "Long-form description rendered from the product field." },
+      "gallery":          { "label": "Additional Gallery",    "desc": "Extra image grid below the main gallery." },
+      "shipping":         { "label": "Shipping & Delivery",   "desc": "Delivery, returns and warranty information." },
+      "reviews":          { "label": "Customer Reviews",      "desc": "Verified customer reviews list." },
+      "ratings":          { "label": "Rating Summary",        "desc": "Aggregate star ratings and distribution chart." },
+      "specifications":   { "label": "Specifications",        "desc": "Key/value spec table." },
+      "faq":              { "label": "FAQ / Accordion",        "desc": "Collapsible question/answer list." },
+      "rich_text":        { "label": "Rich Text Block",        "desc": "Formatted text content." },
+      "image_text":       { "label": "Image + Text",           "desc": "Side-by-side image and rich text block." },
+      "video":            { "label": "Video Section",          "desc": "Embedded YouTube / Vimeo / direct video." },
+      "banner":           { "label": "Banner / Promo",         "desc": "Full-width promotional banner with CTA." },
+      "related_products": { "label": "Related Products",       "desc": "Grid of related/similar products." },
+      "checkout":         { "label": "Inline Checkout",        "desc": "On-page order form so customers can buy without leaving the product page." },
+      "custom":           { "label": "Custom Section",         "desc": "Fully custom block with title, body, image and CTA." }
+    },
     "nav": {
       "dashboard": "Dashboard",
       "products": "Products",

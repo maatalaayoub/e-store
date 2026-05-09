@@ -145,6 +145,38 @@
     }
   },
   "admin": {
+    "sections_builder": {
+      "add_section": "Ajouter une section",
+      "reset_to_defaults": "Réinitialiser",
+      "reset_confirm_title": "Réinitialiser la mise en page ?",
+      "reset_confirm_desc": "Cela remplacera toutes les sections actuelles par les valeurs par défaut intégrées.",
+      "reset_confirm_btn": "Réinitialiser",
+      "section_count_one": "1 section",
+      "section_count_many": "{n} sections",
+      "delete_title": "Supprimer la section ?",
+      "delete_desc_global": "Cette section sera supprimée de la mise en page par défaut. Tous les produits utilisant la mise en page par défaut ne l’afficheront plus.",
+      "delete_desc_product": "Cette section sera supprimée de la page de ce produit.",
+      "delete_confirm": "Supprimer",
+      "cancel": "Annuler",
+      "enable": "Activer la section",
+      "disable": "Désactiver la section"
+    },
+    "sections_registry": {
+      "description":      { "label": "Description du produit",  "desc": "Description détaillée extraite du champ produit." },
+      "gallery":          { "label": "Galerie supplémentaire",   "desc": "Grille d’images supplémentaires sous la galerie principale." },
+      "shipping":         { "label": "Livraison & Retours",      "desc": "Informations de livraison, retours et garantie." },
+      "reviews":          { "label": "Avis clients",             "desc": "Liste d’avis clients vérifiés." },
+      "ratings":          { "label": "Résumé des notes",         "desc": "Notes globales et graphique de distribution." },
+      "specifications":   { "label": "Caractéristiques",         "desc": "Tableau de caractéristiques clé/valeur." },
+      "faq":              { "label": "FAQ / Accordéon",          "desc": "Liste de questions-réponses réductibles." },
+      "rich_text":        { "label": "Bloc de texte enrichi",    "desc": "Contenu textuel formaté." },
+      "image_text":       { "label": "Image + Texte",            "desc": "Image et texte côte à côte." },
+      "video":            { "label": "Section vidéo",            "desc": "Vidéo intégrée YouTube / Vimeo / directe." },
+      "banner":           { "label": "Bannière / Promo",         "desc": "Bannière promotionnelle pleine largeur avec CTA." },
+      "related_products": { "label": "Produits associés",        "desc": "Grille de produits similaires." },
+      "checkout":         { "label": "Commande intégrée",        "desc": "Formulaire de commande intégré à la page produit." },
+      "custom":           { "label": "Section personnalisée",    "desc": "Bloc entièrement personnalisé avec titre, corps, image et CTA." }
+    },
     "nav": {
       "dashboard": "Tableau de bord",
       "products": "Produits",
@@ -240,7 +272,11 @@
         "color_name_placeholder": "Nom de couleur (ex. Brun royal)",
         "sizes_label": "Tailles",
         "add_size": "+ Ajouter une taille",
-        "size_placeholder": "Taille (ex. M, 42, XL)"
+        "size_placeholder": "Taille (ex. M, 42, XL)",
+        "section_page_sections": "Sections de la page produit",
+        "use_default_layout": "Utiliser la mise en page par défaut",
+        "use_default_layout_hint": "Hériter des sections globales définies dans les paramètres de la boutique.",
+        "sections_empty": "Ajoutez des sections pour personnaliser la page de ce produit."
       }
     },
     "orders": {
@@ -275,11 +311,18 @@
         "general": "Général",
         "hero": "Hero",
         "announcements": "Annonces",
+        "product_sections": "Sections produit",
         "payments": "Paiements",
         "shipping": "Livraison",
         "notifications": "Notifications",
         "integrations": "Intégrations",
         "localization": "Localisation"
+      },
+      "product_sections": {
+        "title": "Sections de la page produit",
+        "desc": "Définissez la mise en page par défaut utilisée par chaque page produit. Les personnalisations par produit sont sur le produit lui-même.",
+        "empty": "Aucune section. Cliquez sur « Ajouter une section » pour commencer.",
+        "saved": "Sections produit enregistrées"
       },
       "general": {
         "title": "Général",
