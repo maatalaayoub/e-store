@@ -305,25 +305,31 @@ function StorefrontSection() {
 
   return (
     <>
-      <div className="mb-5 flex flex-wrap gap-1 rounded-lg bg-zinc-100 p-1">
-        <button
-          type="button"
-          onClick={() => setTab('hero')}
-          className={`flex-1 min-w-[140px] rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-            tab === 'hero' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-600 hover:text-zinc-900'
-          }`}
-        >
-          {tabs.hero ?? 'Hero Carousel'}
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab('display')}
-          className={`flex-1 min-w-[140px] rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-            tab === 'display' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-600 hover:text-zinc-900'
-          }`}
-        >
-          {tabs.display ?? 'Button Display'}
-        </button>
+      <div className="mb-6 border-b border-zinc-200">
+        <nav className="-mb-px flex space-x-8" aria-label="Storefront Tabs">
+          <button
+            type="button"
+            onClick={() => setTab('hero')}
+            className={`whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium transition-colors ${
+              tab === 'hero'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-800'
+            }`}
+          >
+            {tabs.hero ?? 'Hero Carousel'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('display')}
+            className={`whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium transition-colors ${
+              tab === 'display'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-800'
+            }`}
+          >
+            {tabs.display ?? 'Button Display'}
+          </button>
+        </nav>
       </div>
 
       {tab === 'hero' && <HeroSection />}
@@ -443,23 +449,26 @@ function DisplaySection() {
         description={tD.desc ?? 'Pick a button layout and tune its colours. The preview updates live.'}
       />
 
-      {/* 1. Compact pill selector */}
-      <div className="inline-flex flex-wrap gap-1 rounded-lg bg-zinc-100 p-1 mb-5">
-        {BUTTON_STYLE_OPTIONS.map((opt) => {
-          const selected = buttonStyle === opt.value;
-          return (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => setButtonStyle(opt.value)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                selected ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-600 hover:text-zinc-900'
-              }`}
-            >
-              {tBS[opt.value]?.label ?? opt.label}
-            </button>
-          );
-        })}
+      <div className="mb-6 border-b border-zinc-100">
+        <nav className="-mb-px flex flex-wrap gap-x-6 gap-y-2 pb-0.5" aria-label="Button Styles">
+          {BUTTON_STYLE_OPTIONS.map((opt) => {
+            const selected = buttonStyle === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setButtonStyle(opt.value)}
+                className={`whitespace-nowrap border-b-2 py-2 px-1 text-sm font-medium transition-colors ${
+                  selected
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-800'
+                }`}
+              >
+                {tBS[opt.value]?.label ?? opt.label}
+              </button>
+            );
+          })}
+        </nav>
       </div>
 
       {/* 2. Workshop panel — preview LEFT, controls RIGHT */}
@@ -543,7 +552,7 @@ function DisplaySection() {
       </div>
 
       {/* 3. Save bar */}
-      <div className="mt-5 flex items-center justify-between gap-3">
+      <div className="mt-6 flex items-center justify-between sm:justify-end sm:gap-6 border-t border-zinc-100 pt-5">
         <button
           type="button"
           onClick={() => {
@@ -557,16 +566,18 @@ function DisplaySection() {
           }}
           className="text-sm font-medium text-zinc-500 hover:text-zinc-900"
         >
-          {tD.reset ?? 'Reset'}
+          <span className="hidden sm:inline">{tD.reset ?? 'Reset to defaults'}</span>
+          <span className="sm:hidden">{tD.reset_short ?? 'Reset'}</span>
         </button>
         <button
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+          className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
         >
           <Save className="h-4 w-4" />
-          {saving ? (tD.saving ?? 'Saving…') : (tD.save ?? 'Save')}
+          <span className="hidden sm:inline">{saving ? (tD.saving ?? 'Saving…') : (tD.save ?? 'Save Display Settings')}</span>
+          <span className="sm:hidden">{saving ? '...' : (tD.save_short ?? 'Save')}</span>
         </button>
       </div>
     </div>
