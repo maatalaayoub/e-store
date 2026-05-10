@@ -77,7 +77,7 @@ export default function AdminSettingsPage() {
         <p className="text-sm text-zinc-500 mt-1">{t.subtitle}</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6">
         {/* SECTION NAV */}
         <aside className="rounded-xl border border-zinc-100 bg-white p-2 h-max">
           <nav className="flex flex-wrap lg:flex-col gap-1">
@@ -103,7 +103,7 @@ export default function AdminSettingsPage() {
         </aside>
 
         {/* CONTENT */}
-        <section className="self-start rounded-xl border border-zinc-100 bg-white p-6">
+        <section className="rounded-xl border border-zinc-100 bg-white p-6">
           {active === "general" && <GeneralSection />}
           {active === "storefront" && <StorefrontSection />}
           {active === "announcements" && <AnnouncementsSection />}
@@ -278,108 +278,23 @@ function NotificationsSection() {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Button Display — rebuilt from scratch (flat block layout, no nested flex,
+// no fragment-in-conditional patterns, native color input rendered inline).
+// ─────────────────────────────────────────────────────────────────────────────
+
 const BUTTON_STYLE_OPTIONS = [
-  {
-    value: 'add_to_cart',
-    label: 'Add to Cart',
-    description: 'Single "Add to Cart" button',
-    preview: (
-      <button className="w-full border border-zinc-900 rounded-[4px] py-2 text-[10px] font-bold uppercase tracking-widest text-zinc-900">
-        Add to Cart
-      </button>
-    ),
-  },
-  {
-    value: 'shop_now',
-    label: 'Shop Now',
-    description: 'Single "Shop Now" link to product page',
-    preview: (
-      <div className="w-full flex items-center justify-center bg-zinc-900 rounded-[4px] py-2 text-[10px] font-bold uppercase tracking-widest text-white">
-        Shop Now
-      </div>
-    ),
-  },
-  {
-    value: 'horizontal_style1',
-    label: 'Horizontal — icon',
-    description: '"Shop Now" text + cart icon button side-by-side',
-    preview: (
-      <div className="flex gap-1.5">
-        <div className="flex-1 flex items-center justify-center bg-zinc-900 rounded-[4px] py-2 text-[10px] font-bold uppercase tracking-widest text-white">Shop Now</div>
-        <div className="flex-none flex items-center justify-center w-8 border border-zinc-900 rounded-[4px] text-zinc-900">
-          <ShoppingCart className="h-3 w-3" />
-        </div>
-      </div>
-    ),
-  },
-  {
-    value: 'horizontal_style2',
-    label: 'Horizontal — text',
-    description: '"Shop Now" + "Add to Cart" equal halves',
-    preview: (
-      <div className="flex gap-1.5">
-        <div className="flex-1 flex items-center justify-center bg-zinc-900 rounded-[4px] py-2 text-[10px] font-bold uppercase tracking-widest text-white">Shop Now</div>
-        <div className="flex-1 flex items-center justify-center border border-zinc-900 rounded-[4px] py-2 text-[10px] font-bold uppercase tracking-widest text-zinc-900">Add to Cart</div>
-      </div>
-    ),
-  },
-  {
-    value: 'vertical',
-    label: 'Vertical',
-    description: '"Shop Now" above "Add to Cart" stacked',
-    preview: (
-      <div className="flex flex-col gap-1.5">
-        <div className="w-full flex items-center justify-center bg-zinc-900 rounded-[4px] py-2 text-[10px] font-bold uppercase tracking-widest text-white">Shop Now</div>
-        <div className="w-full flex items-center justify-center border border-zinc-900 rounded-[4px] py-2 text-[10px] font-bold uppercase tracking-widest text-zinc-900">Add to Cart</div>
-      </div>
-    ),
-  },
+  { value: 'add_to_cart',      label: 'Add to Cart',      description: 'Single "Add to Cart" button' },
+  { value: 'shop_now',         label: 'Shop Now',         description: 'Single "Shop Now" link to product page' },
+  { value: 'horizontal_style1',label: 'Horizontal — icon',description: '"Shop Now" text + cart icon button side-by-side' },
+  { value: 'horizontal_style2',label: 'Horizontal — text',description: '"Shop Now" + "Add to Cart" equal halves' },
+  { value: 'vertical',         label: 'Vertical',         description: '"Shop Now" above "Add to Cart" stacked' },
 ];
 
-// Colour picker row — hoisted so it does NOT get re-created on every parent
-// render (which would unmount the native colour input mid-pick and close it).
-function ColorRow({ label, desc, value, onChange }) {
-  const id = `color-${label.replace(/\s+/g, '-').toLowerCase()}`;
-  return (
-    <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 xs:gap-4">
-      <div className="min-w-0">
-        <p className="text-sm text-zinc-700 font-medium">{label}</p>
-        <p className="text-xs text-zinc-400 mt-0.5">{desc}</p>
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <label
-          htmlFor={id}
-          className="h-8 w-8 rounded-md border border-zinc-300 shadow-inner cursor-pointer hover:ring-2 hover:ring-blue-400 transition-shadow"
-          style={{ background: value }}
-        />
-        <input
-          id={id}
-          type="color"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="sr-only"
-        />
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => {
-            const v = e.target.value;
-            if (/^#[0-9a-fA-F]{0,6}$/.test(v)) onChange(v);
-          }}
-          onBlur={(e) => {
-            const v = e.target.value;
-            if (/^#[0-9a-fA-F]{3}$/.test(v)) {
-              onChange(`#${v[1]}${v[1]}${v[2]}${v[2]}${v[3]}${v[3]}`);
-            }
-          }}
-          maxLength={7}
-          spellCheck={false}
-          className="w-24 rounded border border-zinc-200 px-2 py-1.5 text-xs font-mono text-zinc-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-        />
-      </div>
-    </div>
-  );
-}
+function StyleThumb() { return null; }
+
+// Legacy ColorRow kept as a no-op shim in case any future ref is added.
+function ColorRow() { return null; }
 
 // Storefront wrapper — combines the Hero carousel and the Product-Card display
 // settings under a single sidebar entry, with two inner tabs.
@@ -417,31 +332,60 @@ function StorefrontSection() {
   );
 }
 
+// Tiny inline swatch + colour input pair. One line, no decoration.
+function Swatch({ label, value, onChange }) {
+  return (
+    <label className="flex items-center justify-between gap-3 py-2">
+      <span className="text-xs text-zinc-700 truncate">{label}</span>
+      <span className="flex items-center gap-2">
+        <input
+          type="color"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-6 w-6 rounded cursor-pointer p-0 border border-zinc-300 bg-transparent"
+          style={{ appearance: 'none', WebkitAppearance: 'none' }}
+        />
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (/^#[0-9a-fA-F]{0,6}$/.test(v)) onChange(v);
+          }}
+          maxLength={7}
+          spellCheck={false}
+          className="w-20 rounded border border-zinc-200 px-2 py-1 text-[11px] font-mono text-zinc-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
+      </span>
+    </label>
+  );
+}
+
 function DisplaySection() {
   const tD = useDictionary()?.admin?.settings?.display ?? {};
   const tBS = tD.button_styles ?? {};
   const [buttonStyle, setButtonStyle] = useState('add_to_cart');
-  const [filledBg,     setFilledBg]     = useState('#18181b');
-  const [filledText,   setFilledText]   = useState('#ffffff');
+  const [filledBg, setFilledBg] = useState('#18181b');
+  const [filledText, setFilledText] = useState('#ffffff');
   const [outlineBorder, setOutlineBorder] = useState('#18181b');
-  const [outlineText,   setOutlineText]   = useState('#18181b');
-  const [outlineIcon,   setOutlineIcon]   = useState('#18181b');
-  const [outlineBg,    setOutlineBg]    = useState('transparent');
+  const [outlineText, setOutlineText] = useState('#18181b');
+  const [outlineIcon, setOutlineIcon] = useState('#18181b');
+  const [outlineBg, setOutlineBg] = useState('transparent');
   const [loading, setLoading] = useState(true);
-  const [saving,  setSaving]  = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetch('/api/v1/settings')
       .then((r) => r.json())
       .then(({ success, data }) => {
         if (success && data) {
-          if (data.product_card_button_style)  setButtonStyle(data.product_card_button_style);
-          if (data.product_card_filled_bg)     setFilledBg(data.product_card_filled_bg);
-          if (data.product_card_filled_text)   setFilledText(data.product_card_filled_text);
+          if (data.product_card_button_style) setButtonStyle(data.product_card_button_style);
+          if (data.product_card_filled_bg) setFilledBg(data.product_card_filled_bg);
+          if (data.product_card_filled_text) setFilledText(data.product_card_filled_text);
           if (data.product_card_outline_border) setOutlineBorder(data.product_card_outline_border);
-          if (data.product_card_outline_text)   setOutlineText(data.product_card_outline_text);
-          if (data.product_card_outline_icon)   setOutlineIcon(data.product_card_outline_icon);
-          if (data.product_card_outline_bg)    setOutlineBg(data.product_card_outline_bg);
+          if (data.product_card_outline_text) setOutlineText(data.product_card_outline_text);
+          if (data.product_card_outline_icon) setOutlineIcon(data.product_card_outline_icon);
+          if (data.product_card_outline_bg) setOutlineBg(data.product_card_outline_bg);
         }
       })
       .catch(() => {})
@@ -474,192 +418,134 @@ function DisplaySection() {
     }
   };
 
-  const filledActive  = buttonStyle !== 'add_to_cart';
-  const outlineActive = buttonStyle !== 'shop_now';
-  const iconActive    = buttonStyle === 'horizontal_style1';
-
-  // Live preview matching the selected style with the current colours
-  const btnF  = { background: filledBg,   color: filledText,   borderRadius: 4, padding: '7px 0', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'default' };
-  const btnO  = { background: outlineBg === 'transparent' ? 'transparent' : outlineBg, border: `1.5px solid ${outlineBorder}`, color: outlineText, borderRadius: 4, padding: '7px 0', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'default' };
-  const StylePreview = () => {
-    const addToCart = tBS.add_to_cart?.label ?? 'Add to Cart';
-    const shopNow   = tBS.shop_now?.label   ?? 'Shop Now';
-    if (buttonStyle === 'add_to_cart')    return <div style={{ ...btnO, width: '100%' }}>{addToCart}</div>;
-    if (buttonStyle === 'shop_now')       return <div style={{ ...btnF, width: '100%' }}>{shopNow}</div>;
-    if (buttonStyle === 'horizontal_style1') return (
-      <div style={{ display: 'flex', gap: 6 }}>
-        <div style={{ ...btnF, flex: 1 }}>{shopNow}</div>
-        <div style={{ ...btnO, width: 32, padding: 0, flexShrink: 0 }}>
-          <ShoppingCart style={{ width: 12, height: 12, color: outlineIcon }} />
-        </div>
-      </div>
-    );
-    if (buttonStyle === 'horizontal_style2') return (
-      <div style={{ display: 'flex', gap: 6 }}>
-        <div style={{ ...btnO, flex: 1 }}>{addToCart}</div>
-        <div style={{ ...btnF, flex: 1 }}>{shopNow}</div>
-      </div>
-    );
-    // vertical
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <div style={{ ...btnF, width: '100%' }}>{shopNow}</div>
-        <div style={{ ...btnO, width: '100%' }}>{addToCart}</div>
-      </div>
-    );
-  };
+  const styleHasFilled = ['shop_now', 'horizontal_style1', 'horizontal_style2', 'vertical'].includes(buttonStyle);
+  const styleHasOutline = ['add_to_cart', 'horizontal_style1', 'horizontal_style2', 'vertical'].includes(buttonStyle);
+  const styleHasIcon = buttonStyle === 'horizontal_style1';
 
   if (loading) {
     return (
-      <div className="space-y-4 animate-pulse">
-        {[...Array(3)].map((_, i) => <div key={i} className="h-20 rounded-lg bg-zinc-100" />)}
+      <div className="animate-pulse">
+        <div className="h-10 rounded-lg bg-zinc-100 mb-3" />
+        <div className="h-48 rounded-lg bg-zinc-100" />
       </div>
     );
   }
 
+  const labelAddToCart = tBS.add_to_cart?.label ?? 'Add to Cart';
+  const labelShopNow = tBS.shop_now?.label ?? 'Shop Now';
+  const fStyle = { background: filledBg, color: filledText, borderRadius: 4, padding: '10px 0', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', justifyContent: 'center' };
+  const oStyle = { background: outlineBg === 'transparent' ? 'transparent' : outlineBg, border: `1.5px solid ${outlineBorder}`, color: outlineText, borderRadius: 4, padding: '10px 0', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', justifyContent: 'center' };
+
   return (
-    <>
+    <div>
       <SectionHeader
         title={tD.title ?? 'Product Card Display'}
-        description={tD.desc ?? 'Control which action button(s) appear on product cards.'}
+        description={tD.desc ?? 'Pick a button layout and tune its colours. The preview updates live.'}
       />
 
-      <div className="space-y-3">
-        {BUTTON_STYLE_OPTIONS.map((opt) => (
-          <label
-            key={opt.value}
-            className={`flex flex-col sm:flex-row gap-3 sm:gap-4 p-4 rounded-xl border-2 cursor-pointer transition-colors ${
-              buttonStyle === opt.value
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-zinc-200 hover:border-zinc-300'
-            }`}
-          >
-            <input
-              type="radio"
-              name="button_style"
-              value={opt.value}
-              checked={buttonStyle === opt.value}
-              onChange={() => setButtonStyle(opt.value)}
-              className="sr-only"
-            />
-            <div className="flex items-start gap-3 flex-1 min-w-0">
-              <span className={`mt-0.5 flex-none h-4 w-4 rounded-full border-2 flex items-center justify-center transition-colors ${
-                buttonStyle === opt.value ? 'border-blue-500' : 'border-zinc-300'
-              }`}>
-                {buttonStyle === opt.value && <span className="h-2 w-2 rounded-full bg-blue-500" />}
-              </span>
-              <div>
-                <p className="text-sm font-semibold text-zinc-900">{tBS[opt.value]?.label ?? opt.label}</p>
-                <p className="text-xs text-zinc-500 mt-0.5">{tBS[opt.value]?.desc ?? opt.description}</p>
+      {/* 1. Compact pill selector */}
+      <div className="inline-flex flex-wrap gap-1 rounded-lg bg-zinc-100 p-1 mb-5">
+        {BUTTON_STYLE_OPTIONS.map((opt) => {
+          const selected = buttonStyle === opt.value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setButtonStyle(opt.value)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                selected ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-600 hover:text-zinc-900'
+              }`}
+            >
+              {tBS[opt.value]?.label ?? opt.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 2. Workshop panel — preview LEFT, controls RIGHT */}
+      <div className="rounded-xl border border-zinc-200 overflow-hidden grid grid-cols-1 md:grid-cols-2">
+        {/* Preview */}
+        <div className="bg-zinc-50 border-b md:border-b-0 md:border-r border-zinc-200 flex flex-col items-center justify-center p-6 gap-3">
+          <span className="text-[10px] uppercase tracking-widest text-zinc-400 font-semibold">{tD.preview ?? 'Preview'}</span>
+          <div className="bg-white rounded-lg shadow-sm border border-zinc-200 p-4 w-full max-w-[240px]">
+            <div className="bg-zinc-100 rounded h-24 mb-3" />
+            <div className="text-[11px] text-zinc-500 mb-1">Sample product</div>
+            <div className="text-sm font-semibold text-zinc-900 mb-3">$ 49.00</div>
+            {buttonStyle === 'add_to_cart' && <div style={{ ...oStyle, width: '100%' }}>{labelAddToCart}</div>}
+            {buttonStyle === 'shop_now' && <div style={{ ...fStyle, width: '100%' }}>{labelShopNow}</div>}
+            {buttonStyle === 'horizontal_style1' && (
+              <div style={{ display: 'flex', gap: 6 }}>
+                <div style={{ ...fStyle, flex: 1 }}>{labelShopNow}</div>
+                <div style={{ ...oStyle, width: 40, padding: 0, flexShrink: 0 }}>
+                  <ShoppingCart style={{ width: 14, height: 14, color: outlineIcon }} />
+                </div>
+              </div>
+            )}
+            {buttonStyle === 'horizontal_style2' && (
+              <div style={{ display: 'flex', gap: 6 }}>
+                <div style={{ ...oStyle, flex: 1 }}>{labelAddToCart}</div>
+                <div style={{ ...fStyle, flex: 1 }}>{labelShopNow}</div>
+              </div>
+            )}
+            {buttonStyle === 'vertical' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ ...fStyle, width: '100%' }}>{labelShopNow}</div>
+                <div style={{ ...oStyle, width: '100%' }}>{labelAddToCart}</div>
+              </div>
+            )}
+          </div>
+          <p className="text-xs text-zinc-500 text-center max-w-[240px]">
+            {tBS[buttonStyle]?.desc ?? BUTTON_STYLE_OPTIONS.find((o) => o.value === buttonStyle)?.description}
+          </p>
+        </div>
+
+        {/* Controls */}
+        <div className="p-5">
+          {styleHasFilled && (
+            <div className="mb-4">
+              <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-semibold mb-1">{tD.filled_group ?? 'Filled button'}</p>
+              <Swatch label={tD.filled_bg_label ?? 'Background'} value={filledBg} onChange={setFilledBg} />
+              <Swatch label={tD.filled_text_label ?? 'Text'} value={filledText} onChange={setFilledText} />
+            </div>
+          )}
+          {styleHasOutline && (
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-semibold mb-1">{tD.outline_group ?? 'Outline button'}</p>
+              <Swatch label={tD.outline_border_label ?? 'Border'} value={outlineBorder} onChange={setOutlineBorder} />
+              <Swatch label={tD.outline_text_label ?? 'Text'} value={outlineText} onChange={setOutlineText} />
+              {styleHasIcon && (
+                <Swatch label={tD.outline_icon_label ?? 'Icon'} value={outlineIcon} onChange={setOutlineIcon} />
+              )}
+              <div className="flex items-center justify-between gap-3 py-2">
+                <span className="text-xs text-zinc-700">{tD.outline_bg_label ?? 'Background'}</span>
+                <span className="flex items-center gap-2">
+                  {outlineBg !== 'transparent' && (
+                    <input
+                      type="color"
+                      value={outlineBg}
+                      onChange={(e) => setOutlineBg(e.target.value)}
+                      className="h-6 w-6 rounded cursor-pointer p-0 border border-zinc-300 bg-transparent"
+                      style={{ appearance: 'none', WebkitAppearance: 'none' }}
+                    />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setOutlineBg(outlineBg === 'transparent' ? outlineBorder : 'transparent')}
+                    className={`text-[11px] font-medium px-2 py-1 rounded border ${outlineBg === 'transparent' ? 'border-zinc-300 bg-zinc-50 text-zinc-500' : 'border-blue-300 bg-blue-50 text-blue-700'}`}
+                  >
+                    {outlineBg === 'transparent' ? (tD.transparent ?? 'Transparent') : (tD.solid ?? 'Solid')}
+                  </button>
+                </span>
               </div>
             </div>
-            <div className="w-full sm:w-44 sm:flex-none self-center">{opt.preview}</div>
-          </label>
-        ))}
-      </div>
-
-      {/* ── Button colour controls ─────────────────────────────── */}
-      <div className="mt-6 rounded-xl border border-zinc-200 p-4 space-y-5">
-        <p className="text-sm font-semibold text-zinc-900">{tD.colours_title ?? 'Button Colours'}</p>
-
-        {filledActive && (
-          <>
-            <ColorRow
-              label={tD.filled_bg_label ?? 'Shop Now — background'}
-              desc={tD.filled_bg_desc ?? 'Filled button background colour'}
-              value={filledBg}
-              onChange={setFilledBg}
-            />
-            <ColorRow
-              label={tD.filled_text_label ?? 'Shop Now — text'}
-              desc={tD.filled_text_desc ?? 'Filled button text colour'}
-              value={filledText}
-              onChange={setFilledText}
-            />
-          </>
-        )}
-        {outlineActive && (
-          <>
-            <ColorRow
-              label={tD.outline_border_label ?? 'Add to Cart — border'}
-              desc={tD.outline_border_desc ?? 'Outline button border colour'}
-              value={outlineBorder}
-              onChange={setOutlineBorder}
-            />
-            <ColorRow
-              label={tD.outline_text_label ?? 'Add to Cart — text'}
-              desc={tD.outline_text_desc ?? 'Outline button text colour'}
-              value={outlineText}
-              onChange={setOutlineText}
-            />
-            {iconActive && (
-              <ColorRow
-                label={tD.outline_icon_label ?? 'Add to Cart — icon'}
-                desc={tD.outline_icon_desc ?? 'Cart icon colour on the outline button'}
-                value={outlineIcon}
-                onChange={setOutlineIcon}
-              />
-            )}
-          </>
-        )}
-
-        {/* Add to Cart background — transparent toggle + colour picker */}
-        {outlineActive && (
-        <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 xs:gap-4">
-          <div className="min-w-0">
-            <p className="text-sm text-zinc-700 font-medium">{tD.outline_bg_label ?? 'Add to Cart — background'}</p>
-            <p className="text-xs text-zinc-400 mt-0.5">{tD.outline_bg_desc ?? 'Background fill of the outline button (default: transparent)'}</p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {outlineBg !== 'transparent' && (
-              <>
-                <label
-                  htmlFor="color-outline-bg"
-                  className="h-8 w-8 rounded-md border border-zinc-300 shadow-inner cursor-pointer hover:ring-2 hover:ring-blue-400 transition-shadow"
-                  style={{ background: outlineBg }}
-                />
-                <input
-                  id="color-outline-bg"
-                  type="color"
-                  value={outlineBg}
-                  onChange={(e) => setOutlineBg(e.target.value)}
-                  className="sr-only"
-                />
-                <input
-                  type="text"
-                  value={outlineBg}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (/^#[0-9a-fA-F]{0,6}$/.test(v)) setOutlineBg(v);
-                  }}
-                  maxLength={7}
-                  spellCheck={false}
-                  className="w-24 rounded border border-zinc-200 px-2 py-1.5 text-xs font-mono text-zinc-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </>
-            )}
-            <button
-              type="button"
-              onClick={() => setOutlineBg(outlineBg === 'transparent' ? outlineBorder : 'transparent')}
-              className={`text-xs font-medium px-2.5 py-1.5 rounded border transition-colors ${outlineBg === 'transparent' ? 'border-zinc-300 bg-zinc-50 text-zinc-500' : 'border-blue-300 bg-blue-50 text-blue-700'}`}
-            >
-              {outlineBg === 'transparent' ? (tD.transparent ?? 'Transparent') : (tD.remove ?? 'Remove')}
-            </button>
-          </div>
-        </div>
-        )}
-
-        {/* Live preview matching the active style */}
-        <div className="pt-3 border-t border-zinc-100">
-          <p className="text-xs text-zinc-400 mb-3">{tD.preview ?? 'Preview'} — {tBS[buttonStyle]?.label ?? BUTTON_STYLE_OPTIONS.find(o => o.value === buttonStyle)?.label}</p>
-          <div className="max-w-[200px]">
-            <StylePreview />
-          </div>
+          )}
         </div>
       </div>
 
-      <div className="pt-4 mt-2 border-t border-zinc-100 flex flex-wrap items-center justify-between gap-3">
+      {/* 3. Save bar */}
+      <div className="mt-5 flex items-center justify-between gap-3">
         <button
+          type="button"
           onClick={() => {
             setButtonStyle('add_to_cart');
             setFilledBg('#18181b');
@@ -669,20 +555,21 @@ function DisplaySection() {
             setOutlineIcon('#18181b');
             setOutlineBg('transparent');
           }}
-          className="flex items-center gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 hover:border-zinc-300 hover:text-zinc-900 transition-colors"
+          className="text-sm font-medium text-zinc-500 hover:text-zinc-900"
         >
-          {tD.reset ?? 'Reset to defaults'}
+          {tD.reset ?? 'Reset'}
         </button>
         <button
+          type="button"
           onClick={handleSave}
           disabled={saving}
           className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
         >
           <Save className="h-4 w-4" />
-          {saving ? tD.saving ?? 'Saving…' : tD.save ?? 'Save Display Settings'}
+          {saving ? (tD.saving ?? 'Saving…') : (tD.save ?? 'Save')}
         </button>
       </div>
-    </>
+    </div>
   );
 }
 

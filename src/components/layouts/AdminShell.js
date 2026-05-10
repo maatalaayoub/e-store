@@ -156,7 +156,7 @@ export default function AdminShell({ children }) {
           </div>
         </header>
 
-        <div data-scroll-main className="flex-1 min-h-0 overflow-y-auto scrollbar-hide p-4 sm:p-6 md:p-8" style={{ paddingBottom: "6rem" }}>
+        <div data-scroll-main className="flex-1 min-h-0 overflow-y-auto scrollbar-hide p-4 sm:p-6 md:p-8">
           {children}
         </div>
       </main>
