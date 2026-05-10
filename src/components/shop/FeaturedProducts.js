@@ -8,8 +8,15 @@ import { fetchFeaturedProducts } from "@/services/productsService";
 import { FeaturedProductsSkeleton } from "@/components/skeletons";
 import ProductCard from "./ProductCard";
 
-// Module-level cache: persists across client-side navigations, cleared on hard refresh
+// Module-level cache for products only (keyed by locale)
 const _cache = new Map();
+
+function fetchDisplaySettings() {
+  return fetch("/api/v1/display-settings")
+    .then((r) => r.json())
+    .then((json) => (json.success ? json.data : {}))
+    .catch(() => ({}));
+}
 
 export default function FeaturedProducts({ onItemAdded }) {
   const params = useParams();
@@ -17,20 +24,36 @@ export default function FeaturedProducts({ onItemAdded }) {
   const dict = useDictionary();
   const tHome = dict?.home ?? {};
   const [products, setProducts] = useState(() => _cache.get(locale) ?? null);
+  const [buttonStyle, setButtonStyle] = useState(null);
+  const [filledBg, setFilledBg] = useState(null);
+  const [filledText, setFilledText] = useState(null);
+  const [outlineBorder, setOutlineBorder] = useState(null);
+  const [outlineText,   setOutlineText]   = useState(null);
+  const [outlineIcon,   setOutlineIcon]   = useState(null);
+  const [outlineBg, setOutlineBg] = useState(null);
 
   useEffect(() => {
     let mounted = true;
     const controller = new AbortController();
-    fetchFeaturedProducts({ signal: controller.signal, locale })
-      .then((data) => {
-        _cache.set(locale, data);
-        if (mounted) setProducts(data);
-      })
-      .catch(() => {});
-    return () => {
-      mounted = false;
-      controller.abort();
-    };
+
+    Promise.all([
+      fetchFeaturedProducts({ signal: controller.signal, locale }),
+      fetchDisplaySettings(),
+    ]).then(([data, ds]) => {
+      _cache.set(locale, data);
+      if (mounted) {
+        setProducts(data);
+        setButtonStyle(ds?.product_card_button_style ?? null);
+        setFilledBg(ds?.product_card_filled_bg ?? null);
+        setFilledText(ds?.product_card_filled_text ?? null);
+        setOutlineBorder(ds?.product_card_outline_border ?? null);
+        setOutlineText(ds?.product_card_outline_text ?? null);
+        setOutlineIcon(ds?.product_card_outline_icon ?? null);
+        setOutlineBg(ds?.product_card_outline_bg ?? null);
+      }
+    }).catch(() => {});
+
+    return () => { mounted = false; controller.abort(); };
   }, [locale]);
 
   if (!products) return <FeaturedProductsSkeleton />;
@@ -65,6 +88,13 @@ export default function FeaturedProducts({ onItemAdded }) {
               key={product.id}
               product={product}
               onAdded={onItemAdded}
+              buttonStyle={buttonStyle}
+              filledBg={filledBg}
+              filledText={filledText}
+              outlineBorder={outlineBorder}
+              outlineText={outlineText}
+              outlineIcon={outlineIcon}
+              outlineBg={outlineBg}
             />
           ))}
         </div>

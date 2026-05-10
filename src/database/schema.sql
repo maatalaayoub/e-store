@@ -532,7 +532,38 @@ END;
 $$;
 
 -- ========================================================================
--- DYNAMIC PRODUCT SECTIONS  (Product Page Builder)
+-- STORE SETTINGS  (key/value store for global admin-controlled settings)
+-- ========================================================================
+-- Stores arbitrary admin settings such as:
+--   • product_card_button_style — controls the action button(s) on product cards
+--   • telegram_bot_token / telegram_chat_id — Telegram notification integration
+--   • whatsapp_number / whatsapp_business_name — WhatsApp Business integration
+-- ========================================================================
+CREATE TABLE IF NOT EXISTS store_settings (
+  key        text PRIMARY KEY,
+  value      text,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE store_settings ENABLE ROW LEVEL SECURITY;
+
+-- Public can read non-sensitive display settings; admins can mutate all.
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'store_settings' AND policyname = 'Public reads display settings') THEN
+    EXECUTE $p$CREATE POLICY "Public reads display settings" ON store_settings
+      FOR SELECT USING (key = 'product_card_button_style')$p$;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'store_settings' AND policyname = 'Admins manage settings') THEN
+    EXECUTE $p$CREATE POLICY "Admins manage settings" ON store_settings
+      FOR ALL USING (EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'))$p$;
+  END IF;
+END $$;
+
+-- Seed the default button style (safe no-op if already set).
+INSERT INTO store_settings (key, value)
+VALUES ('product_card_button_style', 'add_to_cart')
+ON CONFLICT (key) DO NOTHING;
+
 -- ========================================================================
 -- Two scopes:
 --   1. GLOBAL DEFAULTS  → singleton row in `product_section_defaults`

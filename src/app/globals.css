@@ -10,6 +10,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
   --font-arabic: var(--font-cairo);
+  --breakpoint-xs: 30rem;
 }
 
 body {
@@ -32,10 +33,13 @@ body {
 }
 
 /* ───────────────────────── Product card button colour tokens ───────────────────────── */
-/* Three vars set as inline style on the <article>:
-   --pcard-filled-bg   : filled/Shop-Now button background
-   --pcard-filled-text : filled button text
-   --pcard-outline-color : outline/Add-to-Cart border, text, and icon colour             */
+/* Five vars set as inline style on the <article>:
+   --pcard-filled-bg     : filled/Shop-Now button background
+   --pcard-filled-text   : filled button text
+   --pcard-outline-border: outline/Add-to-Cart border colour
+   --pcard-outline-text  : outline/Add-to-Cart text colour
+   --pcard-outline-icon  : outline/Add-to-Cart cart icon colour
+   --pcard-outline-bg    : outline/Add-to-Cart background colour */
 .pcard-btn-filled {
   background-color: var(--pcard-filled-bg, #18181b);
   color: var(--pcard-filled-text, #ffffff);
@@ -43,11 +47,18 @@ body {
 .pcard-btn-filled:hover { opacity: 0.82; }
 
 .pcard-btn-outline {
-  border-color: var(--pcard-outline-color, #18181b);
-  color: var(--pcard-outline-color, #18181b);
+  background-color: var(--pcard-outline-bg, transparent);
+  border-color: var(--pcard-outline-border, #18181b);
+  color: var(--pcard-outline-text, #18181b);
+}
+.pcard-btn-outline svg {
+  color: var(--pcard-outline-icon, #18181b);
 }
 .pcard-btn-outline:hover {
-  background-color: var(--pcard-outline-color, #18181b);
+  background-color: var(--pcard-outline-border, #18181b);
+  color: var(--pcard-filled-text, #ffffff);
+}
+.pcard-btn-outline:hover svg {
   color: var(--pcard-filled-text, #ffffff);
 }
 

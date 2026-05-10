@@ -183,7 +183,7 @@ export const SECTION_REGISTRY = Object.freeze({
     description: 'Grid of related/similar products.',
     icon: 'PackageOpen',
     defaults: () => ({
-      config: { ...baseConfig(), layout: 'wide', width: 'wide', columns: 4, source: 'category' },
+      config: { ...baseConfig(), layout: 'wide', width: 'wide', columns: 4, source: 'category', button_style: 'add_to_cart' },
       content: { title: 'You may also like', limit: 8 },
     }),
     translatableFields: ['title'],

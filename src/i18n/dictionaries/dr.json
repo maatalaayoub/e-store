@@ -86,6 +86,7 @@
     "wishlist": "زيد للمفضلة",
     "quick_add": "زيد بسرعة",
     "buy_now": "زيد للقفة",
+    "shop_now": "شوف المنتج",
     "badge_new": "جديد",
     "badge_hot": "كيدور بزّاف"
   },
@@ -309,7 +310,7 @@
       "save": "حفظ التغييرات",
       "sections": {
         "general": "عام",
-        "hero": "الواجهة الرئيسية",
+        "storefront": "الواجهة",
         "announcements": "الإعلانات",
         "product_sections": "أقسام المنتج",
         "payments": "المدفوعات",
@@ -317,6 +318,42 @@
         "notifications": "الإشعارات",
         "integrations": "التكاملات",
         "localization": "التعريب"
+      },
+      "storefront_tabs": {
+        "hero": "شريط الواجهة",
+        "display": "عرض البوطونات"
+      },
+      "display": {
+        "title": "عرض كارطة المنتج",
+        "desc": "تحكم ف الزر/الأزرار ديال الإجراء على كارطات المنتج — الصفحة الرئيسية والمتجر وأقسام المنتجات.",
+        "colours_title": "ألوان الأزرار",
+        "filled_bg_label": "شوف المنتج — الخلفية",
+        "filled_bg_desc": "لون الخلفية ديال الأزرار المملوءة",
+        "filled_text_label": "شوف المنتج — النص",
+        "filled_text_desc": "لون النص ديال الأزرار المملوءة",
+        "outline_border_label": "زيد للسلة — الحدود",
+        "outline_border_desc": "لون الحدود ديال زر الإطار",
+        "outline_text_label": "زيد للسلة — النص",
+        "outline_text_desc": "لون النص ديال زر الإطار",
+        "outline_icon_label": "زيد للسلة — الأيقونة",
+        "outline_icon_desc": "لون أيقونة السلة على زر الإطار",
+        "outline_bg_label": "زيد للسلة — الخلفية",
+        "outline_bg_desc": "خلفية زر الإطار (افتراضي: شفاف)",
+        "transparent": "شفاف",
+        "custom": "مخصص",
+        "preview": "معاينة",
+        "saved": "تم حفظ إعدادات العرض",
+        "save": "حفظ إعدادات العرض",
+        "saving": "كيتحفظ…",
+        "reset": "رجع للافتراضي",
+        "not_used_hint": "ماكايتخدمش ف النمط ديال دابا",
+        "button_styles": {
+          "add_to_cart":       { "label": "زيد للسلة",     "desc": "زر «زيد للسلة» وحيد" },
+          "shop_now":          { "label": "شوف المنتج",    "desc": "رابط «شوف المنتج» وحيد لصفحة المنتج" },
+          "horizontal_style1": { "label": "أفقي — أيقونة", "desc": "«شوف المنتج» + زر أيقونة السلة جنب بجنب" },
+          "horizontal_style2": { "label": "أفقي — نص",     "desc": "«شوف المنتج» + «زيد للسلة» نصفين متساويين" },
+          "vertical":          { "label": "عمودي",          "desc": "«شوف المنتج» فوق «زيد للسلة» متراصَّين" }
+        }
       },
       "product_sections": {
         "title": "أقسام صفحة المنتج",

@@ -313,6 +313,30 @@ export async function RelatedProductsSection({ section, product, locale }) {
   const cols = section.config?.columns ?? 4;
   const source = section.config?.source ?? 'category';
 
+  // Read global button colours from store settings
+  let filledBg = '#18181b';
+  let filledText = '#ffffff';
+  let outlineBorder = '#18181b';
+  let outlineText = '#18181b';
+  let outlineIcon = '#18181b';
+  let outlineBg = 'transparent';
+  try {
+    const { createServiceClient } = await import('@/lib/supabase/service');
+    const supabase = createServiceClient();
+    const { data } = await supabase
+      .from('store_settings')
+      .select('key, value')
+      .in('key', ['product_card_filled_bg', 'product_card_filled_text', 'product_card_outline_border', 'product_card_outline_text', 'product_card_outline_icon', 'product_card_outline_bg']);
+    for (const row of data ?? []) {
+      if (row.key === 'product_card_filled_bg'      && row.value) filledBg     = row.value;
+      if (row.key === 'product_card_filled_text'    && row.value) filledText   = row.value;
+      if (row.key === 'product_card_outline_border' && row.value) outlineBorder = row.value;
+      if (row.key === 'product_card_outline_text'   && row.value) outlineText   = row.value;
+      if (row.key === 'product_card_outline_icon'   && row.value) outlineIcon   = row.value;
+      if (row.key === 'product_card_outline_bg'     && row.value) outlineBg    = row.value;
+    }
+  } catch { /* use defaults */ }
+
   let pool = [];
   try {
     if (source === 'featured') {
@@ -338,7 +362,7 @@ export async function RelatedProductsSection({ section, product, locale }) {
         style={{ gridTemplateColumns: `repeat(${Math.min(Math.max(cols, 2), 6)}, minmax(0, 1fr))` }}
       >
         {items.map((p) => (
-          <ProductCard key={p.id} product={p} locale={locale} />
+          <ProductCard key={p.id} product={p} locale={locale} buttonStyle={section.config?.button_style} filledBg={filledBg} filledText={filledText} outlineBorder={outlineBorder} outlineText={outlineText} outlineIcon={outlineIcon} outlineBg={outlineBg} />
         ))}
       </div>
     </div>

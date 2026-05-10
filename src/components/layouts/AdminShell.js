@@ -52,7 +52,7 @@ export default function AdminShell({ children }) {
   };
 
   return (
-    <div className="flex h-screen bg-white overflow-hidden">
+    <div className="fixed inset-0 flex bg-white overflow-hidden">
       {/* MOBILE SIDEBAR OVERLAY */}
       {isSidebarOpen && (
         <div
@@ -123,7 +123,7 @@ export default function AdminShell({ children }) {
       </aside>
 
       {/* MAIN COLUMN */}
-      <main className="flex-1 flex flex-col w-0 min-w-0 bg-white">
+      <main className="flex-1 min-h-0 overflow-hidden flex flex-col w-0 min-w-0 bg-white">
         {/* HEADER */}
         <header className="sticky top-0 z-50 border-b border-zinc-100 bg-white px-4 sm:px-6 md:px-8">
           {/* Main row */}
@@ -156,7 +156,7 @@ export default function AdminShell({ children }) {
           </div>
         </header>
 
-        <div data-scroll-main className="flex-1 overflow-y-auto scrollbar-hide p-4 sm:p-6 md:p-8" style={{ paddingBottom: "6rem" }}>
+        <div data-scroll-main className="flex-1 min-h-0 overflow-y-auto scrollbar-hide p-4 sm:p-6 md:p-8" style={{ paddingBottom: "6rem" }}>
           {children}
         </div>
       </main>

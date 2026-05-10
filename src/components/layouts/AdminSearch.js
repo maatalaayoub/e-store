@@ -80,7 +80,7 @@ function buildIndex({ dict, locale, t }) {
 
     // Settings sub-sections (deep-linked via ?tab=)
     { id: "set-general",        group: groupSettings, icon: Store,       label: sec.general        ?? "General",        description: settingsTitle, href: wl("/admin/settings?tab=general"),        keywords: ["general", "store", "info"] },
-    { id: "set-hero",           group: groupSettings, icon: Layers,      label: sec.hero           ?? "Hero",           description: settingsTitle, href: wl("/admin/settings?tab=hero"),           keywords: ["hero", "banner", "carousel", "slides"] },
+    { id: "set-storefront",     group: groupSettings, icon: Layers,      label: sec.storefront     ?? "Storefront",     description: settingsTitle, href: wl("/admin/settings?tab=storefront"),     keywords: ["storefront", "hero", "banner", "carousel", "slides", "display", "buttons", "product cards"] },
     { id: "set-announcements",  group: groupSettings, icon: Megaphone,   label: sec.announcements  ?? "Announcements",  description: settingsTitle, href: wl("/admin/settings?tab=announcements"),  keywords: ["announcements", "marquee", "promo", "banner", ann.title] },
     { id: "set-payments",       group: groupSettings, icon: CreditCard,  label: sec.payments       ?? "Payments",       description: settingsTitle, href: wl("/admin/settings?tab=payments"),       keywords: ["payments", "stripe", "checkout"] },
     { id: "set-shipping",       group: groupSettings, icon: Truck,       label: sec.shipping       ?? "Shipping",       description: settingsTitle, href: wl("/admin/settings?tab=shipping"),       keywords: ["shipping", "delivery", "rates"] },

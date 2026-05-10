@@ -86,6 +86,7 @@
     "wishlist": "Ajouter aux favoris",
     "quick_add": "Ajout rapide",
     "buy_now": "Ajouter au panier",
+    "shop_now": "Voir le produit",
     "badge_new": "Nouveau",
     "badge_hot": "Top"
   },
@@ -309,7 +310,7 @@
       "save": "Enregistrer",
       "sections": {
         "general": "Général",
-        "hero": "Hero",
+        "storefront": "Vitrine",
         "announcements": "Annonces",
         "product_sections": "Sections produit",
         "payments": "Paiements",
@@ -317,6 +318,42 @@
         "notifications": "Notifications",
         "integrations": "Intégrations",
         "localization": "Localisation"
+      },
+      "storefront_tabs": {
+        "hero": "Carrousel héros",
+        "display": "Affichage des boutons"
+      },
+      "display": {
+        "title": "Affichage des cartes produit",
+        "desc": "Contr\u00f4lez le(s) bouton(s) d'action sur les cartes produit \u2014 page d'accueil, boutique et sections produits associ\u00e9s.",
+        "colours_title": "Couleurs des boutons",
+        "filled_bg_label": "Voir le produit \u2014 arri\u00e8re-plan",
+        "filled_bg_desc": "Couleur de fond des boutons pleins",
+        "filled_text_label": "Voir le produit \u2014 texte",
+        "filled_text_desc": "Couleur du texte des boutons pleins",
+        "outline_border_label": "Ajouter au panier \u2014 bordure",
+        "outline_border_desc": "Couleur de bordure du bouton contour",
+        "outline_text_label": "Ajouter au panier \u2014 texte",
+        "outline_text_desc": "Couleur du texte du bouton contour",
+        "outline_icon_label": "Ajouter au panier \u2014 ic\u00f4ne",
+        "outline_icon_desc": "Couleur de l\u2019ic\u00f4ne panier sur le bouton contour",
+        "outline_bg_label": "Ajouter au panier \u2014 arri\u00e8re-plan",
+        "outline_bg_desc": "Fond du bouton contour (d\u00e9faut\u00a0: transparent)",
+        "transparent": "Transparent",
+        "custom": "Personnalis\u00e9",
+        "preview": "Aper\u00e7u",
+        "saved": "Param\u00e8tres d'affichage enregistr\u00e9s",
+        "save": "Enregistrer l'affichage",
+        "saving": "Enregistrement\u2026",
+        "reset": "R\u00e9initialiser par d\u00e9faut",
+        "not_used_hint": "non utilis\u00e9 par le style actuel",
+        "button_styles": {
+          "add_to_cart":       { "label": "Ajouter au panier",  "desc": "Bouton unique \u00abAjouter au panier\u00bb" },
+          "shop_now":          { "label": "Voir le produit",    "desc": "Lien unique \u00abVoir le produit\u00bb vers la page produit" },
+          "horizontal_style1": { "label": "Horizontal \u2014 ic\u00f4ne", "desc": "\u00abVoir le produit\u00bb + bouton ic\u00f4ne panier c\u00f4te \u00e0 c\u00f4te" },
+          "horizontal_style2": { "label": "Horizontal \u2014 texte", "desc": "\u00abVoir le produit\u00bb + \u00abAjouter au panier\u00bb en deux moiti\u00e9s" },
+          "vertical":          { "label": "Vertical",           "desc": "\u00abVoir le produit\u00bb au-dessus de \u00abAjouter au panier\u00bb empil\u00e9s" }
+        }
       },
       "product_sections": {
         "title": "Sections de la page produit",

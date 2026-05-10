@@ -7,6 +7,13 @@ const ALLOWED_KEYS = [
   'telegram_chat_id',
   'whatsapp_number',
   'whatsapp_business_name',
+  'product_card_button_style',
+  'product_card_filled_bg',
+  'product_card_filled_text',
+  'product_card_outline_border',
+  'product_card_outline_text',
+  'product_card_outline_icon',
+  'product_card_outline_bg',
 ];
 
 /**

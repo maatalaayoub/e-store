@@ -86,6 +86,7 @@
     "wishlist": "Add to wishlist",
     "quick_add": "Quick add",
     "buy_now": "Add to Cart",
+    "shop_now": "Shop Now",
     "badge_new": "New",
     "badge_hot": "Hot"
   },
@@ -307,7 +308,7 @@
       "save": "Save changes",
       "sections": {
         "general": "General",
-        "hero": "Hero",
+        "storefront": "Storefront",
         "announcements": "Announcements",
         "product_sections": "Product Sections",
         "payments": "Payments",
@@ -315,6 +316,42 @@
         "notifications": "Notifications",
         "integrations": "Integrations",
         "localization": "Localization"
+      },
+      "storefront_tabs": {
+        "hero": "Hero Carousel",
+        "display": "Button Display"
+      },
+      "display": {
+        "title": "Product Card Display",
+        "desc": "Control which action button(s) appear on product cards across the shop \u2014 homepage featured products, shop page, and related products sections.",
+        "colours_title": "Button Colours",
+        "filled_bg_label": "Shop Now \u2014 background",
+        "filled_bg_desc": "Filled button background colour",
+        "filled_text_label": "Shop Now \u2014 text",
+        "filled_text_desc": "Filled button text colour",
+        "outline_border_label": "Add to Cart — border",
+        "outline_border_desc": "Outline button border colour",
+        "outline_text_label": "Add to Cart — text",
+        "outline_text_desc": "Outline button text colour",
+        "outline_icon_label": "Add to Cart — icon",
+        "outline_icon_desc": "Cart icon colour on the outline button",
+        "outline_bg_label": "Add to Cart \u2014 background",
+        "outline_bg_desc": "Background fill of the outline button (default: transparent)",
+        "transparent": "Transparent",
+        "custom": "Custom",
+        "preview": "Preview",
+        "saved": "Display settings saved",
+        "save": "Save Display Settings",
+        "saving": "Saving\u2026",
+        "reset": "Reset to defaults",
+        "not_used_hint": "not used by current style",
+        "button_styles": {
+          "add_to_cart":       { "label": "Add to Cart",       "desc": "Single \"Add to Cart\" button" },
+          "shop_now":          { "label": "Shop Now",          "desc": "Single \"Shop Now\" link to product page" },
+          "horizontal_style1": { "label": "Horizontal \u2014 icon", "desc": "\"Shop Now\" text + cart icon button side-by-side" },
+          "horizontal_style2": { "label": "Horizontal \u2014 text", "desc": "\"Shop Now\" + \"Add to Cart\" equal halves" },
+          "vertical":          { "label": "Vertical",          "desc": "\"Shop Now\" above \"Add to Cart\" stacked" }
+        }
       },
       "product_sections": {
         "title": "Product Page Sections",

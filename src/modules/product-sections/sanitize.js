@@ -292,6 +292,11 @@ const TYPE_HANDLERS = {
       ...base.config,
       columns: safeInt(raw.config?.columns, { min: 2, max: 6, fallback: 4 }),
       source: pickEnum(raw.config?.source, ['category', 'featured', 'latest'], 'category'),
+      button_style: pickEnum(
+        raw.config?.button_style,
+        ['add_to_cart', 'shop_now', 'horizontal_style1', 'horizontal_style2', 'vertical'],
+        'add_to_cart',
+      ),
     },
     content: {
       title: safeStr(raw.content?.title, 200) ?? base.content.title,

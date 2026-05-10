@@ -86,6 +86,7 @@
     "wishlist": "إضافة إلى المفضلة",
     "quick_add": "إضافة سريعة",
     "buy_now": "أضف إلى السلة",
+    "shop_now": "تسوق الآن",
     "badge_new": "جديد",
     "badge_hot": "الأكثر طلباً"
   },
@@ -309,7 +310,7 @@
       "save": "حفظ التغييرات",
       "sections": {
         "general": "عام",
-        "hero": "الواجهة الرئيسية",
+        "storefront": "الواجهة الرئيسية",
         "announcements": "الإعلانات",
         "product_sections": "أقسام المنتج",
         "payments": "المدفوعات",
@@ -317,6 +318,42 @@
         "notifications": "الإشعارات",
         "integrations": "التكاملات",
         "localization": "التوطين"
+      },
+      "storefront_tabs": {
+        "hero": "شريط الواجهة",
+        "display": "عرض الأزرار"
+      },
+      "display": {
+        "title": "عرض بطاقة المنتج",
+        "desc": "تحكم في زر/أزرار الإجراء على بطاقات المنتج — الصفحة الرئيسية والمتجر وأقسام المنتجات ذات الصلة.",
+        "colours_title": "ألوان الأزرار",
+        "filled_bg_label": "تسوق الآن — الخلفية",
+        "filled_bg_desc": "لون خلفية الأزرار المملوءة",
+        "filled_text_label": "تسوق الآن — النص",
+        "filled_text_desc": "لون نص الأزرار المملوءة",
+        "outline_border_label": "أضف إلى السلة — الحدود",
+        "outline_border_desc": "لون حدود زر الإطار",
+        "outline_text_label": "أضف إلى السلة — النص",
+        "outline_text_desc": "لون نص زر الإطار",
+        "outline_icon_label": "أضف إلى السلة — الأيقونة",
+        "outline_icon_desc": "لون أيقونة السلة على زر الإطار",
+        "outline_bg_label": "أضف إلى السلة — الخلفية",
+        "outline_bg_desc": "خلفية زر الإطار (افتراضي: شفاف)",
+        "transparent": "شفاف",
+        "custom": "مخصص",
+        "preview": "معاينة",
+        "saved": "تم حفظ إعدادات العرض",
+        "save": "حفظ إعدادات العرض",
+        "saving": "جارٍ الحفظ…",
+        "reset": "إعادة الضبط الافتراضي",
+        "not_used_hint": "غير مستخدم في النمط الحالي",
+        "button_styles": {
+          "add_to_cart":       { "label": "أضف إلى السلة",       "desc": "زر «أضف إلى السلة» منفرد" },
+          "shop_now":          { "label": "تسوق الآن",            "desc": "رابط «تسوق الآن» منفرد إلى صفحة المنتج" },
+          "horizontal_style1": { "label": "أفقي — أيقونة",       "desc": "«تسوق الآن» + زر أيقونة السلة جنبًا إلى جنب" },
+          "horizontal_style2": { "label": "أفقي — نص",            "desc": "«تسوق الآن» + «أضف إلى السلة» نصفين متساويين" },
+          "vertical":          { "label": "عمودي",                "desc": "«تسوق الآن» فوق «أضف إلى السلة» متراصَّين" }
+        }
       },
       "product_sections": {
         "title": "أقسام صفحة المنتج",

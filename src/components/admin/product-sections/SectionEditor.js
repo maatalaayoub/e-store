@@ -505,6 +505,19 @@ export default function SectionEditor({ section, onChange }) {
               ]}
             />
           </Field>
+          <Field label="Button style" hint="Controls which action button(s) appear on each product card.">
+            <Select
+              value={section.config?.button_style ?? "add_to_cart"}
+              onChange={(v) => setConfig("button_style", v)}
+              options={[
+                { value: "add_to_cart",       label: "Add to Cart (single button)" },
+                { value: "shop_now",           label: "Shop Now (single link)" },
+                { value: "horizontal_style1",  label: "Horizontal — Shop Now + cart icon" },
+                { value: "horizontal_style2",  label: "Horizontal — Shop Now + Add to Cart" },
+                { value: "vertical",           label: "Vertical — Shop Now above Add to Cart" },
+              ]}
+            />
+          </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Columns">
               <input
