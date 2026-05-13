@@ -16,6 +16,13 @@ const ALLOWED_KEYS = [
   'product_card_outline_bg',
   'product_card_button_font_size',
   'product_card_layout',
+  'carousel_items_mobile',
+  'carousel_items_tablet',
+  'carousel_items_desktop',
+  'carousel_products_per_row',
+  'carousel_autoplay',
+  'carousel_interval',
+  'carousel_speed',
 ];
 
 /**

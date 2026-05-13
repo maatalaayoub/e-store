@@ -310,9 +310,10 @@ function StorefrontSection() {
     <>
       <div className="mb-6 rounded-xl border border-zinc-200 bg-zinc-50 p-1 flex gap-1" role="tablist" aria-label="Storefront Tabs">
         {[
-          { key: 'hero',    label: tabs.hero    ?? 'Hero Carousel' },
-          { key: 'display', label: tabs.display ?? 'Button Display' },
-          { key: 'layout',  label: tabs.layout  ?? 'Card Layout' },
+          { key: 'hero',    label: tabs.hero     ?? 'Hero Carousel' },
+          { key: 'display', label: tabs.display  ?? 'Button Display' },
+          { key: 'layout',  label: tabs.layout   ?? 'Card Layout' },
+          { key: 'carousel',label: tabs.carousel ?? 'Carousel' },
         ].map(({ key, label }) => (
           <button
             key={key}
@@ -334,6 +335,7 @@ function StorefrontSection() {
       {tab === 'hero' && <HeroSection />}
       {tab === 'display' && <DisplaySection />}
       {tab === 'layout' && <LayoutSection />}
+      {tab === 'carousel' && <CarouselSection />}
     </>
   );
 }
@@ -507,6 +509,225 @@ function LayoutMiniPreview({ value }) {
     default:
       return null;
   }
+}
+
+// ── Carousel Section ──────────────────────────────────────────────────────────
+function CarouselSection() {
+  const [itemsMobile,  setItemsMobile]  = useState(2);
+  const [itemsTablet,  setItemsTablet]  = useState(3);
+  const [itemsDesktop, setItemsDesktop] = useState(4);
+  const [productsPerRow, setProductsPerRow] = useState(8);
+  const [autoplay,     setAutoplay]     = useState(true);
+  const [interval,     setCarouselInterval] = useState(3000);
+  const [speed,        setSpeed]        = useState(500);
+  const [loading, setLoading] = useState(true);
+  const [saving,  setSaving]  = useState(false);
+
+  useEffect(() => {
+    fetch('/api/v1/settings')
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success && json.data) {
+          const d = json.data;
+          if (d.carousel_items_mobile)  setItemsMobile(parseInt(d.carousel_items_mobile)  || 2);
+          if (d.carousel_items_tablet)  setItemsTablet(parseInt(d.carousel_items_tablet)  || 3);
+          if (d.carousel_items_desktop) setItemsDesktop(parseInt(d.carousel_items_desktop) || 4);
+          if (d.carousel_products_per_row) setProductsPerRow(parseInt(d.carousel_products_per_row) || 8);
+          if (d.carousel_autoplay !== undefined) setAutoplay(d.carousel_autoplay !== 'false');
+          if (d.carousel_interval) setCarouselInterval(parseInt(d.carousel_interval) || 3000);
+          if (d.carousel_speed)    setSpeed(parseInt(d.carousel_speed) || 500);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await fetch('/api/v1/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          carousel_items_mobile:  String(itemsMobile),
+          carousel_items_tablet:  String(itemsTablet),
+          carousel_items_desktop: String(itemsDesktop),
+          carousel_products_per_row: String(productsPerRow),
+          carousel_autoplay:      String(autoplay),
+          carousel_interval:      String(interval),
+          carousel_speed:         String(speed),
+        }),
+      });
+      toast.success('Carousel settings saved');
+    } catch {
+      toast.error('Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const reset = () => {
+    setItemsMobile(2);
+    setItemsTablet(3);
+    setItemsDesktop(4);
+    setProductsPerRow(8);
+    setAutoplay(true);
+    setCarouselInterval(3000);
+    setSpeed(500);
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-4 animate-pulse">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-12 rounded-lg bg-zinc-100" />
+        ))}
+      </div>
+    );
+  }
+
+  const NumStepper = ({ label, hint, value, onChange, min = 1, max = 6 }) => (
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-zinc-200 bg-white px-4 py-3.5">
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-zinc-900">{label}</p>
+        {hint && <p className="mt-0.5 text-xs text-zinc-500">{hint}</p>}
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          type="button"
+          onClick={() => onChange(Math.max(min, value - 1))}
+          disabled={value <= min}
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-zinc-600 hover:bg-zinc-100 disabled:opacity-40 transition-colors text-lg font-medium leading-none"
+        >−</button>
+        <span className="w-5 text-center text-sm font-semibold text-zinc-900 tabular-nums">{value}</span>
+        <button
+          type="button"
+          onClick={() => onChange(Math.min(max, value + 1))}
+          disabled={value >= max}
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-zinc-600 hover:bg-zinc-100 disabled:opacity-40 transition-colors text-lg font-medium leading-none"
+        >+</button>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <SectionHeader
+        title="Product Carousel"
+        description="Control how the featured products carousel behaves on your storefront."
+      />
+      <div className="space-y-3">
+
+        {/* Products per row */}
+        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Row chunking</p>
+        <NumStepper
+          label="Products per row"
+          hint="Total products assigned to each row before chunking into a new row"
+          value={productsPerRow}
+          onChange={setProductsPerRow}
+          min={1} max={24}
+        />
+
+        {/* Items per row */}
+        <p className="pt-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">Visible cards per row</p>
+        <NumStepper
+          label="Mobile"
+          hint="Screens narrower than 640 px"
+          value={itemsMobile}
+          onChange={setItemsMobile}
+          min={1} max={4}
+        />
+        <NumStepper
+          label="Tablet"
+          hint="640 px – 1023 px"
+          value={itemsTablet}
+          onChange={setItemsTablet}
+          min={1} max={5}
+        />
+        <NumStepper
+          label="Desktop"
+          hint="1024 px and wider"
+          value={itemsDesktop}
+          onChange={setItemsDesktop}
+          min={1} max={6}
+        />
+
+        {/* Autoplay toggle */}
+        <div className="mt-2 flex items-center justify-between gap-4 rounded-xl border border-zinc-200 bg-white px-4 py-3.5">
+          <div>
+            <p className="text-sm font-medium text-zinc-900">Autoplay</p>
+            <p className="mt-0.5 text-xs text-zinc-500">Automatically advance slides</p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={autoplay}
+            onClick={() => setAutoplay(!autoplay)}
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${autoplay ? 'bg-blue-600' : 'bg-zinc-200'}`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 ${autoplay ? 'translate-x-5' : 'translate-x-0'}`}
+            />
+          </button>
+        </div>
+
+        {/* Interval slider */}
+        <div className={`rounded-xl border border-zinc-200 bg-white px-4 py-3.5 transition-opacity ${!autoplay ? 'opacity-40 pointer-events-none' : ''}`}>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-medium text-zinc-900">Autoplay interval</p>
+            <span className="text-xs font-semibold text-zinc-700 tabular-nums bg-zinc-100 px-2 py-0.5 rounded-md">{(interval / 1000).toFixed(1)}s</span>
+          </div>
+          <input
+            type="range"
+            min={1000} max={8000} step={500}
+            value={interval}
+            onChange={(e) => setCarouselInterval(Number(e.target.value))}
+            className="w-full h-1.5 rounded-full accent-blue-600"
+          />
+          <div className="flex justify-between mt-1 text-[10px] text-zinc-400 font-medium">
+            <span>1 s</span><span>8 s</span>
+          </div>
+        </div>
+
+        {/* Speed slider */}
+        <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3.5">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-medium text-zinc-900">Transition speed</p>
+            <span className="text-xs font-semibold text-zinc-700 tabular-nums bg-zinc-100 px-2 py-0.5 rounded-md">{speed} ms</span>
+          </div>
+          <input
+            type="range"
+            min={100} max={1200} step={50}
+            value={speed}
+            onChange={(e) => setSpeed(Number(e.target.value))}
+            className="w-full h-1.5 rounded-full accent-blue-600"
+          />
+          <div className="flex justify-between mt-1 text-[10px] text-zinc-400 font-medium">
+            <span>100 ms</span><span>1200 ms</span>
+          </div>
+        </div>
+
+        {/* Save / Reset bar */}
+        <div className="flex items-center justify-end gap-3 pt-2">
+          <button
+            type="button"
+            onClick={reset}
+            className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
+          >
+            Reset
+          </button>
+          <button
+            type="button"
+            onClick={save}
+            disabled={saving}
+            className="rounded-lg bg-zinc-900 px-5 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:opacity-60 transition-colors"
+          >
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+      </div>
+    </>
+  );
 }
 
 function LayoutSection() {

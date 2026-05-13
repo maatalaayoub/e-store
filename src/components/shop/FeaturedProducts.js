@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { fetchFeaturedProducts } from "@/services/productsService";
 import { FeaturedProductsSkeleton } from "@/components/skeletons";
-import ProductCard from "./ProductCard";
+import ProductCarousel from "./ProductCarousel";
 
 // Module-level cache for products only (keyed by locale)
 const _cache = new Map();
@@ -33,6 +33,13 @@ export default function FeaturedProducts({ onItemAdded }) {
   const [outlineBg, setOutlineBg] = useState(null);
   const [buttonFontSize, setButtonFontSize] = useState(10);
   const [layout, setLayout] = useState(null);
+  const [itemsMobile,  setItemsMobile]  = useState(2);
+  const [itemsTablet,  setItemsTablet]  = useState(3);
+  const [itemsDesktop, setItemsDesktop] = useState(4);
+  const [productsPerRow,   setProductsPerRow]   = useState(8);
+  const [autoplay,         setAutoplay]         = useState(true);
+  const [carouselInterval, setCarouselInterval] = useState(3000);
+  const [speed,            setSpeed]            = useState(500);
 
   useEffect(() => {
     let mounted = true;
@@ -54,6 +61,13 @@ export default function FeaturedProducts({ onItemAdded }) {
         setOutlineBg(ds?.product_card_outline_bg ?? null);
         setButtonFontSize(parseInt(ds?.product_card_button_font_size) || 10);
         setLayout(ds?.product_card_layout ?? null);
+        setItemsMobile(parseInt(ds?.carousel_items_mobile)  || 2);
+        setItemsTablet(parseInt(ds?.carousel_items_tablet)  || 3);
+        setItemsDesktop(parseInt(ds?.carousel_items_desktop) || 4);
+        setProductsPerRow(parseInt(ds?.carousel_products_per_row) || 8);
+        setAutoplay(ds?.carousel_autoplay !== 'false');
+        setCarouselInterval(parseInt(ds?.carousel_interval) || 3000);
+        setSpeed(parseInt(ds?.carousel_speed) || 500);
       }
     }).catch(() => {});
 
@@ -86,24 +100,26 @@ export default function FeaturedProducts({ onItemAdded }) {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-4 gap-y-12 lg:grid-cols-4 xl:gap-x-6">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onAdded={onItemAdded}
-              buttonStyle={buttonStyle}
-              filledBg={filledBg}
-              filledText={filledText}
-              outlineBorder={outlineBorder}
-              outlineText={outlineText}
-              outlineIcon={outlineIcon}
-              outlineBg={outlineBg}
-              buttonFontSize={buttonFontSize}
-              layout={layout}
-            />
-          ))}
-        </div>
+        <ProductCarousel
+          products={products}
+          onItemAdded={onItemAdded}
+          buttonStyle={buttonStyle}
+          filledBg={filledBg}
+          filledText={filledText}
+          outlineBorder={outlineBorder}
+          outlineText={outlineText}
+          outlineIcon={outlineIcon}
+          outlineBg={outlineBg}
+          buttonFontSize={buttonFontSize}
+          layout={layout}
+          itemsMobile={itemsMobile}
+          itemsTablet={itemsTablet}
+          itemsDesktop={itemsDesktop}
+          productsPerRow={productsPerRow}
+          autoplay={autoplay}
+          interval={carouselInterval}
+          speed={speed}
+        />
       </div>
     </section>
   );
