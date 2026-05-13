@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/service';
 
-const PUBLIC_KEYS = ['product_card_button_style', 'product_card_filled_bg', 'product_card_filled_text', 'product_card_outline_border', 'product_card_outline_text', 'product_card_outline_icon', 'product_card_outline_bg'];
-const DEFAULTS = { product_card_button_style: 'add_to_cart', product_card_filled_bg: '#18181b', product_card_filled_text: '#ffffff', product_card_outline_border: '#18181b', product_card_outline_text: '#18181b', product_card_outline_icon: '#18181b', product_card_outline_bg: 'transparent' };
+const PUBLIC_KEYS = ['product_card_button_style', 'product_card_filled_bg', 'product_card_filled_text', 'product_card_outline_border', 'product_card_outline_text', 'product_card_outline_icon', 'product_card_outline_bg', 'product_card_button_font_size', 'product_card_layout'];
+const DEFAULTS = { product_card_button_style: 'add_to_cart', product_card_filled_bg: '#18181b', product_card_filled_text: '#ffffff', product_card_outline_border: '#18181b', product_card_outline_text: '#18181b', product_card_outline_icon: '#18181b', product_card_outline_bg: 'transparent', product_card_button_font_size: '10', product_card_layout: 'overlay' };
 
 /**
  * GET /api/v1/display-settings

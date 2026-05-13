@@ -43,6 +43,7 @@ body {
 .pcard-btn-filled {
   background-color: var(--pcard-filled-bg, #18181b);
   color: var(--pcard-filled-text, #ffffff);
+  font-size: var(--pcard-btn-font-size, 10px);
 }
 .pcard-btn-filled:hover { opacity: 0.82; }
 
@@ -50,6 +51,7 @@ body {
   background-color: var(--pcard-outline-bg, transparent);
   border-color: var(--pcard-outline-border, #18181b);
   color: var(--pcard-outline-text, #18181b);
+  font-size: var(--pcard-btn-font-size, 10px);
 }
 .pcard-btn-outline svg {
   color: var(--pcard-outline-icon, #18181b);

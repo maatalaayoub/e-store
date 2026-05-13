@@ -31,6 +31,8 @@ export default function FeaturedProducts({ onItemAdded }) {
   const [outlineText,   setOutlineText]   = useState(null);
   const [outlineIcon,   setOutlineIcon]   = useState(null);
   const [outlineBg, setOutlineBg] = useState(null);
+  const [buttonFontSize, setButtonFontSize] = useState(10);
+  const [layout, setLayout] = useState(null);
 
   useEffect(() => {
     let mounted = true;
@@ -50,6 +52,8 @@ export default function FeaturedProducts({ onItemAdded }) {
         setOutlineText(ds?.product_card_outline_text ?? null);
         setOutlineIcon(ds?.product_card_outline_icon ?? null);
         setOutlineBg(ds?.product_card_outline_bg ?? null);
+        setButtonFontSize(parseInt(ds?.product_card_button_font_size) || 10);
+        setLayout(ds?.product_card_layout ?? null);
       }
     }).catch(() => {});
 
@@ -95,6 +99,8 @@ export default function FeaturedProducts({ onItemAdded }) {
               outlineText={outlineText}
               outlineIcon={outlineIcon}
               outlineBg={outlineBg}
+              buttonFontSize={buttonFontSize}
+              layout={layout}
             />
           ))}
         </div>

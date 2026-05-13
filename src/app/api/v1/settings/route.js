@@ -14,6 +14,8 @@ const ALLOWED_KEYS = [
   'product_card_outline_text',
   'product_card_outline_icon',
   'product_card_outline_bg',
+  'product_card_button_font_size',
+  'product_card_layout',
 ];
 
 /**

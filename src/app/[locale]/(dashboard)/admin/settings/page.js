@@ -35,6 +35,9 @@ import { AdminSettingsSkeleton } from "@/components/skeletons";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
 import SectionsBuilder from "@/components/admin/product-sections/SectionsBuilder";
 import { Blocks } from "lucide-react";
+import { getMainImage } from "@/lib/product-image";
+import ProductCard from "@/components/shop/ProductCard";
+import { CARD_LAYOUTS } from "@/components/shop/ProductCard";
 
 const SECTION_DEFS = [
   { id: "general", icon: Store },
@@ -305,35 +308,32 @@ function StorefrontSection() {
 
   return (
     <>
-      <div className="mb-6 border-b border-zinc-200">
-        <nav className="-mb-px flex space-x-8" aria-label="Storefront Tabs">
+      <div className="mb-6 rounded-xl border border-zinc-200 bg-zinc-50 p-1 flex gap-1" role="tablist" aria-label="Storefront Tabs">
+        {[
+          { key: 'hero',    label: tabs.hero    ?? 'Hero Carousel' },
+          { key: 'display', label: tabs.display ?? 'Button Display' },
+          { key: 'layout',  label: tabs.layout  ?? 'Card Layout' },
+        ].map(({ key, label }) => (
           <button
+            key={key}
             type="button"
-            onClick={() => setTab('hero')}
-            className={`whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium transition-colors ${
-              tab === 'hero'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-800'
+            role="tab"
+            aria-selected={tab === key}
+            onClick={() => setTab(key)}
+            className={`flex-1 min-w-0 truncate rounded-lg py-2 px-2 sm:px-4 text-xs sm:text-sm font-medium transition-all duration-200 ${
+              tab === key
+                ? 'bg-white text-blue-600 shadow-sm border border-zinc-200'
+                : 'text-zinc-500 hover:text-zinc-800'
             }`}
           >
-            {tabs.hero ?? 'Hero Carousel'}
+            {label}
           </button>
-          <button
-            type="button"
-            onClick={() => setTab('display')}
-            className={`whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium transition-colors ${
-              tab === 'display'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-800'
-            }`}
-          >
-            {tabs.display ?? 'Button Display'}
-          </button>
-        </nav>
+        ))}
       </div>
 
       {tab === 'hero' && <HeroSection />}
       {tab === 'display' && <DisplaySection />}
+      {tab === 'layout' && <LayoutSection />}
     </>
   );
 }
@@ -367,6 +367,317 @@ function Swatch({ label, value, onChange }) {
   );
 }
 
+// ── Card Layout presets ─────────────────────────────────────────────────────
+const LAYOUT_PRESETS = [
+  {
+    value: 'overlay',
+    label: 'Overlay',
+    description: 'Title and price overlaid on the image with a soft gradient.',
+  },
+  {
+    value: 'classic',
+    label: 'Classic',
+    description: 'Edge-to-edge image, centered title and price below.',
+  },
+  {
+    value: 'minimal',
+    label: 'Minimal',
+    description: 'Edge-to-edge image, left-aligned info with refined typography.',
+  },
+  {
+    value: 'bordered',
+    label: 'Bordered',
+    description: 'Bordered card with internal padding — premium boutique feel.',
+  },
+  {
+    value: 'shadow',
+    label: 'Soft Shadow',
+    description: 'Floating card with a subtle shadow that lifts on hover.',
+  },
+  {
+    value: 'showcase',
+    label: 'Showcase',
+    description: 'Premium boutique — favorite heart, image dots, and circular arrow CTA.',
+  },
+  {
+    value: 'boutique',
+    label: 'Boutique',
+    description: 'Bordered card with brand line, title, price, and full-width pill Buy Now button.',
+  },
+];
+
+// Tiny CSS-only mini preview for each layout — used inside preset picker tiles
+function LayoutMiniPreview({ value }) {
+  const wrapBase = "flex flex-col w-full h-full bg-white";
+  switch (value) {
+    case 'overlay':
+      return (
+        <div className={`${wrapBase} rounded`}>
+          <div className="relative flex-1 bg-gradient-to-br from-zinc-200 to-zinc-300 rounded-t">
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-1.5 space-y-1">
+              <div className="h-1 w-2/3 bg-white/90 rounded-sm" />
+              <div className="h-1 w-1/3 bg-white/70 rounded-sm" />
+            </div>
+          </div>
+          <div className="h-2.5 bg-zinc-900 m-0 rounded-b" />
+        </div>
+      );
+    case 'classic':
+      return (
+        <div className={wrapBase}>
+          <div className="flex-1 bg-gradient-to-br from-zinc-200 to-zinc-300" />
+          <div className="py-1 flex flex-col items-center gap-0.5">
+            <div className="h-1 w-1/2 bg-zinc-700 rounded-sm" />
+            <div className="h-1 w-1/4 bg-zinc-400 rounded-sm" />
+          </div>
+          <div className="h-2.5 bg-zinc-900" />
+        </div>
+      );
+    case 'minimal':
+      return (
+        <div className={wrapBase}>
+          <div className="flex-1 bg-gradient-to-br from-zinc-200 to-zinc-300" />
+          <div className="py-1 px-1 flex flex-col items-start gap-0.5">
+            <div className="h-1 w-2/3 bg-zinc-700 rounded-sm" />
+            <div className="h-1 w-1/3 bg-zinc-400 rounded-sm" />
+          </div>
+          <div className="h-2.5 bg-zinc-900" />
+        </div>
+      );
+    case 'bordered':
+      return (
+        <div className={`${wrapBase} border border-zinc-300 rounded p-1`}>
+          <div className="flex-1 bg-gradient-to-br from-zinc-200 to-zinc-300 rounded-sm" />
+          <div className="py-1 flex flex-col items-center gap-0.5">
+            <div className="h-1 w-1/2 bg-zinc-700 rounded-sm" />
+            <div className="h-1 w-1/4 bg-zinc-400 rounded-sm" />
+          </div>
+          <div className="h-2.5 bg-zinc-900 rounded-sm" />
+        </div>
+      );
+    case 'shadow':
+      return (
+        <div className={`${wrapBase} rounded shadow-md p-1`}>
+          <div className="flex-1 bg-gradient-to-br from-zinc-200 to-zinc-300 rounded-sm" />
+          <div className="py-1 flex flex-col items-center gap-0.5">
+            <div className="h-1 w-1/2 bg-zinc-700 rounded-sm" />
+            <div className="h-1 w-1/4 bg-zinc-400 rounded-sm" />
+          </div>
+          <div className="h-2.5 bg-zinc-900 rounded-sm" />
+        </div>
+      );
+    case 'showcase':
+      return (
+        <div className="flex flex-col w-full h-full bg-zinc-100 rounded-lg p-1">
+          <div className="relative flex-1 bg-gradient-to-br from-zinc-200 to-zinc-300 rounded-md">
+            <div className="absolute right-1 top-1 h-2 w-2 rounded-full bg-white/90" />
+            <div className="absolute inset-x-0 bottom-1 flex items-center justify-center gap-0.5">
+              <span className="h-[3px] w-[3px] rounded-full bg-white" />
+              <span className="h-[3px] w-[3px] rounded-full bg-white/50" />
+              <span className="h-[3px] w-[3px] rounded-full bg-white/50" />
+            </div>
+          </div>
+          <div className="py-1 px-1 flex items-center justify-between gap-1">
+            <div className="flex flex-col gap-0.5 flex-1">
+              <div className="h-1 w-2/3 bg-zinc-700 rounded-sm" />
+              <div className="h-1 w-1/3 bg-zinc-900 rounded-sm" />
+            </div>
+            <div className="h-2.5 w-2.5 rounded-full bg-zinc-900" />
+          </div>
+        </div>
+      );
+    case 'boutique':
+      return (
+        <div className="flex flex-col w-full h-full bg-white rounded-lg border border-zinc-300 p-1">
+          <div className="relative flex-1 bg-zinc-100 rounded-md">
+            <div className="absolute left-1 top-1 h-1.5 w-4 rounded-full bg-white" />
+            <div className="absolute right-1 top-1 h-2 w-2 rounded-full bg-white" />
+            <div className="absolute inset-x-0 bottom-1 flex items-center justify-center gap-0.5">
+              <span className="h-[3px] w-[3px] rounded-full bg-emerald-600" />
+              <span className="h-[3px] w-[3px] rounded-full bg-zinc-300" />
+            </div>
+          </div>
+          <div className="py-0.5 px-1 flex flex-col gap-[2px]">
+            <div className="h-1 w-1/3 bg-emerald-600 rounded-sm" />
+            <div className="h-1 w-2/3 bg-zinc-700 rounded-sm" />
+          </div>
+          <div className="h-3 mx-1 mb-0.5 bg-zinc-900 rounded-full" />
+        </div>
+      );
+    default:
+      return null;
+  }
+}
+
+function LayoutSection() {
+  const tL = useDictionary()?.admin?.settings?.layout ?? {};
+  const [layout, setLayout] = useState('overlay');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [previewProduct, setPreviewProduct] = useState(null);
+  // Display settings (read-only here; we just need them to render an accurate preview)
+  const [displaySettings, setDisplaySettings] = useState({
+    product_card_button_style: 'add_to_cart',
+    product_card_filled_bg: '#18181b',
+    product_card_filled_text: '#ffffff',
+    product_card_outline_border: '#18181b',
+    product_card_outline_text: '#18181b',
+    product_card_outline_icon: '#18181b',
+    product_card_outline_bg: 'transparent',
+    product_card_button_font_size: '10',
+  });
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/v1/settings').then((r) => r.json()),
+      fetch('/api/v1/products?limit=1&status=active').then((r) => r.json()),
+    ])
+      .then(([settings, products]) => {
+        if (settings.success && settings.data) {
+          if (settings.data.product_card_layout) setLayout(settings.data.product_card_layout);
+          setDisplaySettings((s) => ({ ...s, ...settings.data }));
+        }
+        if (products.success && products.data?.length) {
+          setPreviewProduct(products.data[0]);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/v1/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_card_layout: layout }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error ?? 'Save failed');
+      toast.success(tL.saved ?? 'Card layout saved');
+    } catch (err) {
+      toast.error(err.message ?? 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="animate-pulse">
+        <div className="h-10 rounded-lg bg-zinc-100 mb-3" />
+        <div className="h-48 rounded-lg bg-zinc-100" />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <SectionHeader
+        title={tL.title ?? 'Product Card Layout'}
+        description={tL.desc ?? 'Choose a ready-made card layout for your storefront. Pair it with the colours and button styles from the previous tab.'}
+      />
+
+      {/* Preset picker — horizontal scroll so all tiles stay readable at any viewport */}
+      <div
+        className="mb-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-7 gap-3"
+        role="radiogroup"
+        aria-label="Card layout"
+      >
+        {LAYOUT_PRESETS.map((preset) => {
+          const selected = layout === preset.value;
+          return (
+            <button
+              key={preset.value}
+              type="button"
+              onClick={() => setLayout(preset.value)}
+              className={`group/preset text-left rounded-xl border-2 transition-all overflow-hidden ${
+                selected
+                  ? 'border-blue-600 ring-2 ring-blue-200 bg-blue-50/40'
+                  : 'border-zinc-200 hover:border-zinc-300 bg-white'
+              }`}
+            >
+              <div className="aspect-[3/4] bg-zinc-50 p-2.5 border-b border-zinc-100">
+                <LayoutMiniPreview value={preset.value} />
+              </div>
+              <div className="p-3">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border-2 ${
+                      selected ? 'border-blue-600' : 'border-zinc-300'
+                    }`}
+                  >
+                    {selected && <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />}
+                  </span>
+                  <span className={`text-sm font-semibold leading-tight ${selected ? 'text-blue-700' : 'text-zinc-900'}`}>
+                    {tL.presets?.[preset.value]?.label ?? preset.label}
+                  </span>
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-zinc-500 line-clamp-3">
+                  {tL.presets?.[preset.value]?.description ?? preset.description}
+                </p>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Live preview */}
+      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-6 sm:p-8">
+        <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-semibold mb-4 text-center">
+          {tL.preview ?? 'Live preview'}
+        </p>
+        <div className="mx-auto w-full max-w-[260px] pointer-events-none select-none bg-white">
+          {previewProduct ? (
+            <ProductCard
+              product={{ ...previewProduct, main_image: getMainImage(previewProduct) }}
+              layout={layout}
+              buttonStyle={displaySettings.product_card_button_style}
+              filledBg={displaySettings.product_card_filled_bg}
+              filledText={displaySettings.product_card_filled_text}
+              outlineBorder={displaySettings.product_card_outline_border}
+              outlineText={displaySettings.product_card_outline_text}
+              outlineIcon={displaySettings.product_card_outline_icon}
+              outlineBg={displaySettings.product_card_outline_bg}
+              buttonFontSize={parseInt(displaySettings.product_card_button_font_size) || 10}
+            />
+          ) : (
+            <div className="animate-pulse">
+              <div className="aspect-square w-full rounded-[5px] bg-zinc-100 mb-4" />
+              <div className="h-3 w-3/4 mx-auto bg-zinc-100 rounded mb-2" />
+              <div className="h-3 w-1/2 mx-auto bg-zinc-100 rounded mb-4" />
+              <div className="h-9 w-full bg-zinc-100 rounded-[5px]" />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Save bar */}
+      <div className="mt-6 flex items-center justify-between sm:justify-end sm:gap-6 border-t border-zinc-100 pt-5">
+        <button
+          type="button"
+          onClick={() => setLayout('overlay')}
+          className="text-sm font-medium text-zinc-500 hover:text-zinc-900"
+        >
+          <span className="hidden sm:inline">{tL.reset ?? 'Reset to defaults'}</span>
+          <span className="sm:hidden">{tL.reset_short ?? 'Reset'}</span>
+        </button>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+        >
+          <Save className="h-4 w-4" />
+          <span className="hidden sm:inline">{saving ? (tL.saving ?? 'Saving…') : (tL.save ?? 'Save Layout')}</span>
+          <span className="sm:hidden">{saving ? '...' : (tL.save_short ?? 'Save')}</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function DisplaySection() {
   const tD = useDictionary()?.admin?.settings?.display ?? {};
   const tBS = tD.button_styles ?? {};
@@ -377,21 +688,30 @@ function DisplaySection() {
   const [outlineText, setOutlineText] = useState('#18181b');
   const [outlineIcon, setOutlineIcon] = useState('#18181b');
   const [outlineBg, setOutlineBg] = useState('transparent');
+  const [buttonFontSize, setButtonFontSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [previewProduct, setPreviewProduct] = useState(null);
 
   useEffect(() => {
-    fetch('/api/v1/settings')
-      .then((r) => r.json())
-      .then(({ success, data }) => {
-        if (success && data) {
-          if (data.product_card_button_style) setButtonStyle(data.product_card_button_style);
-          if (data.product_card_filled_bg) setFilledBg(data.product_card_filled_bg);
-          if (data.product_card_filled_text) setFilledText(data.product_card_filled_text);
-          if (data.product_card_outline_border) setOutlineBorder(data.product_card_outline_border);
-          if (data.product_card_outline_text) setOutlineText(data.product_card_outline_text);
-          if (data.product_card_outline_icon) setOutlineIcon(data.product_card_outline_icon);
-          if (data.product_card_outline_bg) setOutlineBg(data.product_card_outline_bg);
+    Promise.all([
+      fetch('/api/v1/settings').then((r) => r.json()),
+      fetch('/api/v1/products?limit=1&status=active').then((r) => r.json()),
+    ])
+      .then(([settings, products]) => {
+        if (settings.success && settings.data) {
+          const d = settings.data;
+          if (d.product_card_button_style) setButtonStyle(d.product_card_button_style);
+          if (d.product_card_filled_bg) setFilledBg(d.product_card_filled_bg);
+          if (d.product_card_filled_text) setFilledText(d.product_card_filled_text);
+          if (d.product_card_outline_border) setOutlineBorder(d.product_card_outline_border);
+          if (d.product_card_outline_text) setOutlineText(d.product_card_outline_text);
+          if (d.product_card_outline_icon) setOutlineIcon(d.product_card_outline_icon);
+          if (d.product_card_outline_bg) setOutlineBg(d.product_card_outline_bg);
+          if (d.product_card_button_font_size) setButtonFontSize(parseInt(d.product_card_button_font_size) || 10);
+        }
+        if (products.success && products.data?.length) {
+          setPreviewProduct(products.data[0]);
         }
       })
       .catch(() => {})
@@ -412,6 +732,7 @@ function DisplaySection() {
           product_card_outline_text:   outlineText,
           product_card_outline_icon:   outlineIcon,
           product_card_outline_bg:    outlineBg,
+          product_card_button_font_size: String(buttonFontSize),
         }),
       });
       const json = await res.json();
@@ -437,11 +758,6 @@ function DisplaySection() {
     );
   }
 
-  const labelAddToCart = tBS.add_to_cart?.label ?? 'Add to Cart';
-  const labelShopNow = tBS.shop_now?.label ?? 'Shop Now';
-  const fStyle = { background: filledBg, color: filledText, borderRadius: 4, padding: '10px 0', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', justifyContent: 'center' };
-  const oStyle = { background: outlineBg === 'transparent' ? 'transparent' : outlineBg, border: `1.5px solid ${outlineBorder}`, color: outlineText, borderRadius: 4, padding: '10px 0', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', justifyContent: 'center' };
-
   return (
     <div>
       <SectionHeader
@@ -449,26 +765,37 @@ function DisplaySection() {
         description={tD.desc ?? 'Pick a button layout and tune its colours. The preview updates live.'}
       />
 
-      <div className="mb-6 border-b border-zinc-100">
-        <nav className="-mb-px flex flex-wrap gap-x-6 gap-y-2 pb-0.5" aria-label="Button Styles">
-          {BUTTON_STYLE_OPTIONS.map((opt) => {
-            const selected = buttonStyle === opt.value;
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setButtonStyle(opt.value)}
-                className={`whitespace-nowrap border-b-2 py-2 px-1 text-sm font-medium transition-colors ${
-                  selected
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-800'
+      <div className="mb-6 flex flex-wrap gap-2.5" role="radiogroup" aria-label="Button Styles">
+        {BUTTON_STYLE_OPTIONS.map((opt) => {
+          const selected = buttonStyle === opt.value;
+          return (
+            <label
+              key={opt.value}
+              className={`flex items-center gap-2.5 cursor-pointer rounded-lg border px-3.5 py-2.5 text-sm font-medium transition-all select-none ${
+                selected
+                  ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-sm'
+                  : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-900'
+              }`}
+            >
+              <input
+                type="radio"
+                name="buttonStyle"
+                value={opt.value}
+                checked={selected}
+                onChange={() => setButtonStyle(opt.value)}
+                className="sr-only"
+              />
+              <span
+                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+                  selected ? 'border-blue-600' : 'border-zinc-300'
                 }`}
               >
-                {tBS[opt.value]?.label ?? opt.label}
-              </button>
-            );
-          })}
-        </nav>
+                {selected && <span className="h-2 w-2 rounded-full bg-blue-600" />}
+              </span>
+              {tBS[opt.value]?.label ?? opt.label}
+            </label>
+          );
+        })}
       </div>
 
       {/* 2. Workshop panel — preview LEFT, controls RIGHT */}
@@ -476,30 +803,28 @@ function DisplaySection() {
         {/* Preview */}
         <div className="bg-zinc-50 border-b md:border-b-0 md:border-r border-zinc-200 flex flex-col items-center justify-center p-6 gap-3">
           <span className="text-[10px] uppercase tracking-widest text-zinc-400 font-semibold">{tD.preview ?? 'Preview'}</span>
-          <div className="bg-white rounded-lg shadow-sm border border-zinc-200 p-4 w-full max-w-[240px]">
-            <div className="bg-zinc-100 rounded h-24 mb-3" />
-            <div className="text-[11px] text-zinc-500 mb-1">Sample product</div>
-            <div className="text-sm font-semibold text-zinc-900 mb-3">$ 49.00</div>
-            {buttonStyle === 'add_to_cart' && <div style={{ ...oStyle, width: '100%' }}>{labelAddToCart}</div>}
-            {buttonStyle === 'shop_now' && <div style={{ ...fStyle, width: '100%' }}>{labelShopNow}</div>}
-            {buttonStyle === 'horizontal_style1' && (
-              <div style={{ display: 'flex', gap: 6 }}>
-                <div style={{ ...fStyle, flex: 1 }}>{labelShopNow}</div>
-                <div style={{ ...oStyle, width: 40, padding: 0, flexShrink: 0 }}>
-                  <ShoppingCart style={{ width: 14, height: 14, color: outlineIcon }} />
-                </div>
-              </div>
-            )}
-            {buttonStyle === 'horizontal_style2' && (
-              <div style={{ display: 'flex', gap: 6 }}>
-                <div style={{ ...oStyle, flex: 1 }}>{labelAddToCart}</div>
-                <div style={{ ...fStyle, flex: 1 }}>{labelShopNow}</div>
-              </div>
-            )}
-            {buttonStyle === 'vertical' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ ...fStyle, width: '100%' }}>{labelShopNow}</div>
-                <div style={{ ...oStyle, width: '100%' }}>{labelAddToCart}</div>
+          <div className="w-full max-w-[240px] pointer-events-none select-none">
+            {previewProduct ? (
+              <ProductCard
+                product={{
+                  ...previewProduct,
+                  main_image: getMainImage(previewProduct),
+                }}
+                buttonStyle={buttonStyle}
+                filledBg={filledBg}
+                filledText={filledText}
+                outlineBorder={outlineBorder}
+                outlineText={outlineText}
+                outlineIcon={outlineIcon}
+                outlineBg={outlineBg}
+                buttonFontSize={buttonFontSize}
+              />
+            ) : (
+              <div className="animate-pulse">
+                <div className="aspect-square w-full rounded-[5px] bg-zinc-100 mb-4" />
+                <div className="h-3 w-3/4 mx-auto bg-zinc-100 rounded mb-2" />
+                <div className="h-3 w-1/2 mx-auto bg-zinc-100 rounded mb-4" />
+                <div className="h-9 w-full bg-zinc-100 rounded-[5px]" />
               </div>
             )}
           </div>
@@ -548,6 +873,28 @@ function DisplaySection() {
               </div>
             </div>
           )}
+
+          {/* Font size picker */}
+          <div className="mt-4 pt-4 border-t border-zinc-100">
+            <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-semibold mb-3">{tD.font_size_label ?? 'Button Text Size'}</p>
+            <div className="flex items-center gap-2">
+              {[{label:'XS',val:9},{label:'S',val:10},{label:'M',val:11},{label:'L',val:12},{label:'XL',val:13}].map(({label,val})=>(
+                <button
+                  key={val}
+                  type="button"
+                  onClick={()=>setButtonFontSize(val)}
+                  className={`flex-1 rounded-md border py-1.5 text-xs font-semibold transition-colors ${
+                    buttonFontSize===val
+                      ? 'border-blue-600 bg-blue-50 text-blue-700'
+                      : 'border-zinc-200 bg-white text-zinc-500 hover:border-zinc-300 hover:text-zinc-800'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1.5 text-[10px] text-zinc-400">{buttonFontSize}px</p>
+          </div>
         </div>
       </div>
 
@@ -563,6 +910,7 @@ function DisplaySection() {
             setOutlineText('#18181b');
             setOutlineIcon('#18181b');
             setOutlineBg('transparent');
+            setButtonFontSize(10);
           }}
           className="text-sm font-medium text-zinc-500 hover:text-zinc-900"
         >
