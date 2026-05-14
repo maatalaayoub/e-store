@@ -100,26 +100,28 @@ export default function FeaturedProducts({ onItemAdded }) {
           </Link>
         </div>
 
-        <ProductCarousel
-          products={products}
-          onItemAdded={onItemAdded}
-          buttonStyle={buttonStyle}
-          filledBg={filledBg}
-          filledText={filledText}
-          outlineBorder={outlineBorder}
-          outlineText={outlineText}
-          outlineIcon={outlineIcon}
-          outlineBg={outlineBg}
-          buttonFontSize={buttonFontSize}
-          layout={layout}
-          itemsMobile={itemsMobile}
-          itemsTablet={itemsTablet}
-          itemsDesktop={itemsDesktop}
-          productsPerRow={productsPerRow}
-          autoplay={autoplay}
-          interval={carouselInterval}
-          speed={speed}
-        />
+        <div className="-mx-4 overflow-x-clip sm:mx-0">
+          <ProductCarousel
+            products={products}
+            onItemAdded={onItemAdded}
+            buttonStyle={buttonStyle}
+            filledBg={filledBg}
+            filledText={filledText}
+            outlineBorder={outlineBorder}
+            outlineText={outlineText}
+            outlineIcon={outlineIcon}
+            outlineBg={outlineBg}
+            buttonFontSize={buttonFontSize}
+            layout={layout}
+            itemsMobile={itemsMobile}
+            itemsTablet={itemsTablet}
+            itemsDesktop={itemsDesktop}
+            productsPerRow={productsPerRow}
+            autoplay={autoplay}
+            interval={carouselInterval}
+            speed={speed}
+          />
+        </div>
       </div>
     </section>
   );

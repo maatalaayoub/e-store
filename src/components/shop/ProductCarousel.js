@@ -33,7 +33,16 @@ function RowCarousel({
   const isAnimRef      = useRef(false);
   const autoTimerRef   = useRef(null);
   const resumeTimerRef = useRef(null);
-  const dragRef        = useRef({ active: false, startX: 0, startPx: 0, moved: 0 });
+  const dragRef        = useRef({
+    active: false,
+    pointerId: -1,
+    startX: 0,
+    startY: 0,
+    startPx: 0,
+    moved: 0,
+    locked: false,
+    horizontal: false,
+  });
 
   const n          = products.length;
   const cloneCount = numVisible;
@@ -80,7 +89,10 @@ function RowCarousel({
     moveTo(rawIdxRef.current, true);
   }, [n, moveTo]);
 
-  const onTransitionEnd = useCallback(() => {
+  const onTransitionEnd = useCallback((e) => {
+    // Ignore transitionend bubbling from descendants (e.g. card hover effects).
+    if (e && e.target !== trackRef.current) return;
+    if (e && e.propertyName && e.propertyName !== "transform") return;
     isAnimRef.current = false;
     const raw = rawIdxRef.current;
     if (raw >= n) {
@@ -108,43 +120,100 @@ function RowCarousel({
     resumeTimerRef.current = setTimeout(startAutoplay, 1200);
   }, [stopAutoplay, startAutoplay]);
 
+  // ── pointer (mouse / touch / pen) drag with axis lock ──────────────────────
+  // Uses Pointer Events + setPointerCapture so the gesture is reliably tracked
+  // even when the finger leaves the track. `touch-action: pan-y` on the track
+  // tells the browser it owns vertical scrolling, while we own horizontal —
+  // which prevents the page from "stealing" the gesture mid-drag and lets us
+  // always snap the card back to its canonical position on release.
   const onPointerDown = useCallback(
     (e) => {
       if (n <= numVisible) return;
+      // Ignore secondary buttons for mouse.
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+
+      // ── Abort any in-flight CSS transition ─────────────────────────────────
+      // Read the live transform BEFORE killing the transition so the drag
+      // starts from the card's actual visual position (not where it was going).
+      // Then force isAnimRef to false — this is the root fix for the freeze bug
+      // where repeated fast swipes leave isAnimRef stuck at true permanently
+      // (setting transition:none stops the animation but never fires transitionend).
+      const track = trackRef.current;
+      let startPx = getOffsetPx(rawIdxRef.current);
+      if (track) {
+        try {
+          const tx = getComputedStyle(track).transform;
+          if (tx && tx !== "none") startPx = new DOMMatrixReadOnly(tx).m41;
+        } catch {}
+        track.style.transition = "none";
+        track.style.transform  = `translateX(${startPx}px)`;
+      }
+      isAnimRef.current = false; // always clear — never leave it stuck
+
       stopAutoplay();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
+
       dragRef.current = {
         active: true,
-        startX: clientX,
-        startPx: getOffsetPx(rawIdxRef.current),
+        pointerId: e.pointerId,
+        startX: e.clientX,
+        startY: e.clientY,
+        startPx,
         moved: 0,
+        locked: false,
+        horizontal: false,
       };
-      const track = trackRef.current;
-      if (track) track.style.transition = "none";
-      if (!e.touches) e.preventDefault();
     },
     [n, numVisible, stopAutoplay, getOffsetPx],
   );
 
   const onPointerMove = useCallback((e) => {
-    if (!dragRef.current.active) return;
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const delta = clientX - dragRef.current.startX;
-    dragRef.current.moved = delta;
+    const d = dragRef.current;
+    if (!d.active || e.pointerId !== d.pointerId) return;
+
+    const dx = e.clientX - d.startX;
+    const dy = e.clientY - d.startY;
+
+    // Axis lock: decide direction once movement exceeds a small threshold.
+    if (!d.locked) {
+      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+      d.locked = true;
+      d.horizontal = Math.abs(dx) > Math.abs(dy);
+    }
+    if (!d.horizontal) return; // vertical → let the page scroll naturally
+
+    d.moved = dx;
     const track = trackRef.current;
-    if (track) track.style.transform = `translateX(${dragRef.current.startPx + delta}px)`;
-    if (e.cancelable) e.preventDefault();
+    if (track) track.style.transform = `translateX(${d.startPx + dx}px)`;
   }, []);
 
-  const onPointerUp = useCallback(() => {
-    if (!dragRef.current.active) return;
-    dragRef.current.active = false;
-    const { moved } = dragRef.current;
-    if (moved < -40) slideNext();
-    else if (moved > 40) slidePrev();
-    else moveTo(rawIdxRef.current, true);
-    pauseAndResume();
-  }, [slideNext, slidePrev, moveTo, pauseAndResume]);
+  const finishDrag = useCallback(
+    (commit) => {
+      const d = dragRef.current;
+      if (!d.active) return;
+      d.active = false;
+      if (commit && d.horizontal) {
+        if (d.moved < -40) slideNext();
+        else if (d.moved > 40) slidePrev();
+        else moveTo(rawIdxRef.current, true);
+      } else {
+        // Cancelled or vertical scroll — snap to canonical position.
+        moveTo(rawIdxRef.current, true);
+      }
+      pauseAndResume();
+    },
+    [slideNext, slidePrev, moveTo, pauseAndResume],
+  );
+
+  const onPointerUp     = useCallback((e) => {
+    if (e.pointerId !== dragRef.current.pointerId) return;
+    finishDrag(true);
+  }, [finishDrag]);
+
+  const onPointerCancel = useCallback((e) => {
+    if (e.pointerId !== dragRef.current.pointerId) return;
+    finishDrag(false);
+  }, [finishDrag]);
 
   useLayoutEffect(() => {
     if (n === 0) return;
@@ -201,20 +270,18 @@ function RowCarousel({
   return (
     <div
       ref={containerRef}
-      className="relative overflow-hidden select-none"
+      className="relative overflow-x-clip select-none"
       onMouseEnter={stopAutoplay}
       onMouseLeave={startAutoplay}
     >
       <div
         ref={trackRef}
-        className="flex will-change-transform"
-        onMouseDown={onPointerDown}
-        onMouseMove={onPointerMove}
-        onMouseUp={onPointerUp}
-        onMouseLeave={onPointerUp}
-        onTouchStart={onPointerDown}
-        onTouchMove={onPointerMove}
-        onTouchEnd={onPointerUp}
+        className="flex will-change-transform touch-pan-y cursor-grab active:cursor-grabbing"
+        style={{ touchAction: "pan-y" }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
         draggable={false}
       >
         {allItems.map((product, i) => (

@@ -80,7 +80,7 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
   const cardLayout = layout ?? CARD_LAYOUTS.OVERLAY;
 
   const articleClass = {
-    [CARD_LAYOUTS.OVERLAY]:  "group flex flex-col h-full rounded-[5px] overflow-hidden",
+    [CARD_LAYOUTS.OVERLAY]:  "group flex flex-col h-full rounded-[5px] overflow-hidden pb-1",
     [CARD_LAYOUTS.CLASSIC]:  "group flex flex-col h-full",
     [CARD_LAYOUTS.MINIMAL]:  "group flex flex-col h-full",
     [CARD_LAYOUTS.BORDERED]: "group flex flex-col h-full rounded-[6px] border border-zinc-200 overflow-hidden p-3 sm:p-4 hover:border-zinc-400 transition-colors duration-300 bg-white",
