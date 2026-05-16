@@ -249,11 +249,11 @@ function RowCarousel({
   // Row has ≤ numVisible products → no sliding, render statically.
   if (n <= numVisible) {
     return (
-      <div ref={containerRef} className="flex">
+      <div ref={containerRef} className="flex items-stretch">
         {products.map((product) => (
           <div
             key={product.id}
-            className="shrink-0 px-2 sm:px-3"
+            className="shrink-0 px-2 sm:px-3 flex flex-col"
             style={{ width: `${100 / numVisible}%` }}
           >
             <ProductCard product={product} {...cardProps} />
@@ -287,11 +287,11 @@ function RowCarousel({
         {allItems.map((product, i) => (
           <div
             key={`${product.id}-${i}`}
-            className="shrink-0"
+            className="shrink-0 flex flex-col"
             style={{ width: "var(--row-item-w)" }}
             draggable={false}
           >
-            <div className="px-2 sm:px-3">
+            <div className="px-2 sm:px-3 flex-1 flex flex-col">
               <ProductCard product={product} {...cardProps} />
             </div>
           </div>

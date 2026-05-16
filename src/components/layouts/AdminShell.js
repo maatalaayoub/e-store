@@ -100,9 +100,10 @@ export default function AdminShell({ children }) {
                 onClick={() => setIsSidebarOpen(false)}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                   active
-                    ? "bg-blue-50 text-blue-600"
+                    ? "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
                     : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
                 }`}
+                style={active ? { backgroundColor: "#1447E620", color: "#1447E6" } : {}}
               >
                 <Icon className="h-5 w-5" />
                 {tNav[item.key] ?? item.key}

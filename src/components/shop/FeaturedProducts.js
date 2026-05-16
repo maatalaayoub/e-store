@@ -8,8 +8,9 @@ import { fetchFeaturedProducts } from "@/services/productsService";
 import { FeaturedProductsSkeleton } from "@/components/skeletons";
 import ProductCarousel from "./ProductCarousel";
 
-// Module-level cache for products only (keyed by locale)
+// Module-level caches — keyed by locale for products, singleton for settings
 const _cache = new Map();
+let _dsCache = null;
 
 function fetchDisplaySettings() {
   return fetch("/api/v1/display-settings")
@@ -24,22 +25,22 @@ export default function FeaturedProducts({ onItemAdded }) {
   const dict = useDictionary();
   const tHome = dict?.home ?? {};
   const [products, setProducts] = useState(() => _cache.get(locale) ?? null);
-  const [buttonStyle, setButtonStyle] = useState(null);
-  const [filledBg, setFilledBg] = useState(null);
-  const [filledText, setFilledText] = useState(null);
-  const [outlineBorder, setOutlineBorder] = useState(null);
-  const [outlineText,   setOutlineText]   = useState(null);
-  const [outlineIcon,   setOutlineIcon]   = useState(null);
-  const [outlineBg, setOutlineBg] = useState(null);
-  const [buttonFontSize, setButtonFontSize] = useState(10);
-  const [layout, setLayout] = useState(null);
-  const [itemsMobile,  setItemsMobile]  = useState(2);
-  const [itemsTablet,  setItemsTablet]  = useState(3);
-  const [itemsDesktop, setItemsDesktop] = useState(4);
-  const [productsPerRow,   setProductsPerRow]   = useState(8);
-  const [autoplay,         setAutoplay]         = useState(true);
-  const [carouselInterval, setCarouselInterval] = useState(3000);
-  const [speed,            setSpeed]            = useState(500);
+  const [buttonStyle, setButtonStyle] = useState(() => _dsCache?.product_card_button_style ?? null);
+  const [filledBg, setFilledBg] = useState(() => _dsCache?.product_card_filled_bg ?? null);
+  const [filledText, setFilledText] = useState(() => _dsCache?.product_card_filled_text ?? null);
+  const [outlineBorder, setOutlineBorder] = useState(() => _dsCache?.product_card_outline_border ?? null);
+  const [outlineText,   setOutlineText]   = useState(() => _dsCache?.product_card_outline_text ?? null);
+  const [outlineIcon,   setOutlineIcon]   = useState(() => _dsCache?.product_card_outline_icon ?? null);
+  const [outlineBg, setOutlineBg] = useState(() => _dsCache?.product_card_outline_bg ?? null);
+  const [buttonFontSize, setButtonFontSize] = useState(() => parseInt(_dsCache?.product_card_button_font_size) || 10);
+  const [layout, setLayout] = useState(() => _dsCache?.product_card_layout ?? null);
+  const [itemsMobile,  setItemsMobile]  = useState(() => parseInt(_dsCache?.carousel_items_mobile)  || 2);
+  const [itemsTablet,  setItemsTablet]  = useState(() => parseInt(_dsCache?.carousel_items_tablet)  || 3);
+  const [itemsDesktop, setItemsDesktop] = useState(() => parseInt(_dsCache?.carousel_items_desktop) || 4);
+  const [productsPerRow,   setProductsPerRow]   = useState(() => parseInt(_dsCache?.carousel_products_per_row) || 8);
+  const [autoplay,         setAutoplay]         = useState(() => _dsCache ? _dsCache.carousel_autoplay !== 'false' : true);
+  const [carouselInterval, setCarouselInterval] = useState(() => parseInt(_dsCache?.carousel_interval) || 3000);
+  const [speed,            setSpeed]            = useState(() => parseInt(_dsCache?.carousel_speed) || 500);
 
   useEffect(() => {
     let mounted = true;
@@ -50,6 +51,7 @@ export default function FeaturedProducts({ onItemAdded }) {
       fetchDisplaySettings(),
     ]).then(([data, ds]) => {
       _cache.set(locale, data);
+      _dsCache = ds;
       if (mounted) {
         setProducts(data);
         setButtonStyle(ds?.product_card_button_style ?? null);

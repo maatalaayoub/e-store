@@ -163,7 +163,7 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
   const InfoBlock = (
     <div className={`flex flex-col ${isMinimal ? 'text-start' : 'text-center'} pt-3 pb-3`}>
       <Link href={`/${locale}/product/${product.id}`}>
-        <h3 className={`line-clamp-2 text-zinc-900 leading-snug hover:text-blue-600 transition-colors ${isArabicName ? "text-sm sm:text-base font-semibold tracking-normal font-[family-name:var(--font-cairo)]" : isMinimal ? "text-xs sm:text-sm font-semibold uppercase tracking-[0.1em]" : "text-xs sm:text-sm font-bold uppercase tracking-[0.15em] sm:tracking-[0.18em]"}`}>
+        <h3 className={`line-clamp-2 min-h-[2.75em] text-zinc-900 leading-snug hover:text-blue-600 transition-colors ${isArabicName ? "text-sm sm:text-base font-semibold tracking-normal font-[family-name:var(--font-cairo)]" : isMinimal ? "text-xs sm:text-sm font-semibold uppercase tracking-[0.1em]" : "text-xs sm:text-sm font-bold uppercase tracking-[0.15em] sm:tracking-[0.18em]"}`}>
           {product.name}
         </h3>
       </Link>
@@ -343,7 +343,7 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
             </span>
           )}
           <Link href={`/${locale}/product/${product.id}`}>
-            <h3 className={`line-clamp-2 text-zinc-900 leading-snug hover:text-zinc-600 transition-colors ${isArabicName ? "text-base sm:text-lg font-bold font-[family-name:var(--font-cairo)]" : "text-[15px] sm:text-[17px] font-bold tracking-tight"}`}>
+            <h3 className={`line-clamp-2 min-h-[2.75em] text-zinc-900 leading-snug hover:text-zinc-600 transition-colors ${isArabicName ? "text-base sm:text-lg font-bold font-[family-name:var(--font-cairo)]" : "text-[15px] sm:text-[17px] font-bold tracking-tight"}`}>
               {product.name}
             </h3>
           </Link>
