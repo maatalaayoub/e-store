@@ -47,15 +47,20 @@ function RowCarousel({
   const n          = products.length;
   const cloneCount = numVisible;
 
+  const getContainerW = useCallback(
+    () => containerRef.current?.getBoundingClientRect().width ?? 0,
+    [],
+  );
+
   const getItemW = useCallback(
-    () => (containerRef.current?.offsetWidth ?? 0) / numVisible,
-    [numVisible],
+    () => getContainerW() / numVisible,
+    [getContainerW, numVisible],
   );
 
   const updateWidth = useCallback(() => {
     const el = containerRef.current;
-    if (el) el.style.setProperty("--row-item-w", `${el.offsetWidth / numVisible}px`);
-  }, [numVisible]);
+    if (el) el.style.setProperty("--row-item-w", `${getContainerW() / numVisible}px`);
+  }, [getContainerW, numVisible]);
 
   const getOffsetPx = useCallback(
     (idx) => -(cloneCount + idx) * getItemW(),
@@ -253,7 +258,7 @@ function RowCarousel({
         {products.map((product) => (
           <div
             key={product.id}
-            className="shrink-0 px-2 sm:px-3 flex flex-col"
+            className="flex h-full shrink-0 flex-col px-2 sm:px-3"
             style={{ width: `${100 / numVisible}%` }}
           >
             <ProductCard product={product} {...cardProps} />
@@ -276,7 +281,7 @@ function RowCarousel({
     >
       <div
         ref={trackRef}
-        className="flex will-change-transform touch-pan-y cursor-grab active:cursor-grabbing"
+        className="flex items-stretch will-change-transform touch-pan-y cursor-grab active:cursor-grabbing"
         style={{ touchAction: "pan-y" }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -287,11 +292,11 @@ function RowCarousel({
         {allItems.map((product, i) => (
           <div
             key={`${product.id}-${i}`}
-            className="shrink-0 flex flex-col"
+            className="flex h-full shrink-0 flex-col"
             style={{ width: "var(--row-item-w)" }}
             draggable={false}
           >
-            <div className="px-2 sm:px-3 flex-1 flex flex-col">
+            <div className="flex h-full flex-1 flex-col px-2 sm:px-3">
               <ProductCard product={product} {...cardProps} />
             </div>
           </div>
@@ -331,22 +336,23 @@ export default function ProductCarousel({
   speed           = 500,
 }) {
   const wrapperRef = useRef(null);
-  const [numVisible, setNumVisible] = useState(itemsDesktop);
+  const chunkSize = Math.max(1, productsPerRow | 0);
+  const [numVisible, setNumVisible] = useState(() => Math.max(1, Math.min(itemsDesktop | 0, chunkSize)));
 
   useLayoutEffect(() => {
     const update = () => {
       const w = wrapperRef.current?.offsetWidth ?? window.innerWidth;
-      setNumVisible(w < 640 ? itemsMobile : w < 1024 ? itemsTablet : itemsDesktop);
+      const responsiveVisible = w < 640 ? itemsMobile : w < 1024 ? itemsTablet : itemsDesktop;
+      setNumVisible(Math.max(1, Math.min(responsiveVisible | 0, chunkSize)));
     };
     update();
     const ro = new ResizeObserver(update);
     if (wrapperRef.current) ro.observe(wrapperRef.current);
     return () => ro.disconnect();
-  }, [itemsMobile, itemsTablet, itemsDesktop]);
+  }, [itemsMobile, itemsTablet, itemsDesktop, chunkSize]);
 
   if (products.length === 0) return null;
 
-  const chunkSize = Math.max(1, productsPerRow | 0);
   const rows = [];
   for (let i = 0; i < products.length && rows.length < MAX_ROWS; i += chunkSize) {
     rows.push(products.slice(i, i + chunkSize));

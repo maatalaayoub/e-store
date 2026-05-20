@@ -73,38 +73,35 @@ export async function POST(req) {
     const { error: itemsErr } = await db.from('order_items').insert(orderItems);
     if (itemsErr) throw itemsErr;
 
-    // Respond immediately — notification runs fully fire-and-forget
-    const response = NextResponse.json({ success: true, data: { id: order.id, order_number: order.order_number } }, { status: 201 });
+    // Send Telegram notification before responding so it always runs within
+    // the request lifecycle. Serverless runtimes freeze execution immediately
+    // after the response is returned, so a fire-and-forget IIFE is unreliable.
+    try {
+      const { data: products } = await db
+        .from('products')
+        .select('id, name')
+        .in('id', items.map((i) => i.id));
+      const productMap = Object.fromEntries((products ?? []).map((p) => [p.id, p.name]));
 
-    // Build + send Telegram notification (never blocks or breaks the order)
-    ;(async () => {
-      try {
-        const { data: products } = await db
-          .from('products')
-          .select('id, name')
-          .in('id', items.map((i) => i.id));
-        const productMap = Object.fromEntries((products ?? []).map((p) => [p.id, p.name]));
+      const message = buildOrderMessage({
+        id: String(order.order_number),
+        customerName: shipping.full_name || 'Guest',
+        phone: shipping.phone ?? '',
+        address: shipping.address ?? '',
+        city: shipping.city ?? '',
+        country: shipping.country ?? '',
+        items: items.map((item) => ({
+          name: productMap[item.id] ?? `Product #${item.id.slice(0, 6)}`,
+          qty: item.quantity,
+          price: `${item.unit_price_mad} MAD`,
+        })),
+        total: total_mad,
+        currency: currency_code ?? 'MAD',
+      });
+      await sendTelegramMessage(message);
+    } catch { /* notification errors must never surface */ }
 
-        const message = buildOrderMessage({
-          id: String(order.order_number),
-          customerName: shipping.full_name || 'Guest',
-          phone: shipping.phone ?? '',
-          address: shipping.address ?? '',
-          city: shipping.city ?? '',
-          country: shipping.country ?? '',
-          items: items.map((item) => ({
-            name: productMap[item.id] ?? `Product #${item.id.slice(0, 6)}`,
-            qty: item.quantity,
-            price: `${item.unit_price_mad} MAD`,
-          })),
-          total: total_mad,
-          currency: currency_code ?? 'MAD',
-        });
-        await sendTelegramMessage(message);
-      } catch { /* notification errors must never surface */ }
-    })();
-
-    return response;
+    return NextResponse.json({ success: true, data: { id: order.id, order_number: order.order_number } }, { status: 201 });
   } catch (err) {
     console.error('[POST /api/v1/orders]', err?.message ?? err);
     return NextResponse.json(

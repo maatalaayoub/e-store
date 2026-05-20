@@ -38,6 +38,7 @@ import { Blocks } from "lucide-react";
 import { getMainImage } from "@/lib/product-image";
 import ProductCard from "@/components/shop/ProductCard";
 import { CARD_LAYOUTS } from "@/components/shop/ProductCard";
+import { featuredProductsFallback } from "@/data/featuredProducts";
 
 const SECTION_DEFS = [
   { id: "general", icon: Store },
@@ -408,6 +409,34 @@ const LAYOUT_PRESETS = [
   },
 ];
 
+const PREVIEW_PRODUCT = {
+  ...featuredProductsFallback[0],
+  id: featuredProductsFallback[0]?.id ?? 'preview-product',
+  name: featuredProductsFallback[0]?.name ?? 'Premium Wireless Headphones',
+  price: 299,
+  effective_price: 299,
+  main_image: featuredProductsFallback[0]?.image ?? null,
+  image: featuredProductsFallback[0]?.image ?? null,
+  category_name: featuredProductsFallback[0]?.category ?? 'Accessories',
+};
+
+function normalizePreviewProduct(product) {
+  if (!product) return PREVIEW_PRODUCT;
+
+  const image = getMainImage(product) ?? product.main_image ?? product.image ?? PREVIEW_PRODUCT.main_image;
+  return {
+    ...PREVIEW_PRODUCT,
+    ...product,
+    id: product.id ?? PREVIEW_PRODUCT.id,
+    name: product.name ?? PREVIEW_PRODUCT.name,
+    price: product.price ?? product.effective_price ?? PREVIEW_PRODUCT.price,
+    effective_price: product.effective_price ?? product.price ?? PREVIEW_PRODUCT.effective_price,
+    main_image: image,
+    image,
+    category_name: product.category_name ?? product.category?.name ?? PREVIEW_PRODUCT.category_name,
+  };
+}
+
 // Tiny CSS-only mini preview for each layout — used inside preset picker tiles
 function LayoutMiniPreview({ value }) {
   const wrapBase = "flex flex-col w-full h-full bg-white";
@@ -735,7 +764,7 @@ function LayoutSection() {
   const [layout, setLayout] = useState('overlay');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [previewProduct, setPreviewProduct] = useState(null);
+  const [previewProduct, setPreviewProduct] = useState(PREVIEW_PRODUCT);
   // Display settings (read-only here; we just need them to render an accurate preview)
   const [displaySettings, setDisplaySettings] = useState({
     product_card_button_style: 'add_to_cart',
@@ -758,11 +787,9 @@ function LayoutSection() {
           if (settings.data.product_card_layout) setLayout(settings.data.product_card_layout);
           setDisplaySettings((s) => ({ ...s, ...settings.data }));
         }
-        if (products.success && products.data?.length) {
-          setPreviewProduct(products.data[0]);
-        }
+        setPreviewProduct(normalizePreviewProduct(products.success ? products.data?.[0] : null));
       })
-      .catch(() => {})
+      .catch(() => setPreviewProduct(PREVIEW_PRODUCT))
       .finally(() => setLoading(false));
   }, []);
 
@@ -852,7 +879,8 @@ function LayoutSection() {
         <div className="mx-auto w-full max-w-[260px] pointer-events-none select-none bg-white">
           {previewProduct ? (
             <ProductCard
-              product={{ ...previewProduct, main_image: getMainImage(previewProduct) }}
+              key={`layout-preview-${layout}`}
+              product={previewProduct}
               layout={layout}
               buttonStyle={displaySettings.product_card_button_style}
               filledBg={displaySettings.product_card_filled_bg}
@@ -912,7 +940,7 @@ function DisplaySection() {
   const [buttonFontSize, setButtonFontSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [previewProduct, setPreviewProduct] = useState(null);
+  const [previewProduct, setPreviewProduct] = useState(PREVIEW_PRODUCT);
 
   useEffect(() => {
     Promise.all([
@@ -931,11 +959,9 @@ function DisplaySection() {
           if (d.product_card_outline_bg) setOutlineBg(d.product_card_outline_bg);
           if (d.product_card_button_font_size) setButtonFontSize(parseInt(d.product_card_button_font_size) || 10);
         }
-        if (products.success && products.data?.length) {
-          setPreviewProduct(products.data[0]);
-        }
+        setPreviewProduct(normalizePreviewProduct(products.success ? products.data?.[0] : null));
       })
-      .catch(() => {})
+      .catch(() => setPreviewProduct(PREVIEW_PRODUCT))
       .finally(() => setLoading(false));
   }, []);
 
@@ -1027,10 +1053,8 @@ function DisplaySection() {
           <div className="w-full max-w-[240px] pointer-events-none select-none">
             {previewProduct ? (
               <ProductCard
-                product={{
-                  ...previewProduct,
-                  main_image: getMainImage(previewProduct),
-                }}
+                key={`button-preview-${buttonStyle}`}
+                product={previewProduct}
                 buttonStyle={buttonStyle}
                 filledBg={filledBg}
                 filledText={filledText}

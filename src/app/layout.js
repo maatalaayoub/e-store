@@ -10,9 +10,11 @@
  * those attributes on the client.
  */
 
+import { Suspense } from "react";
 import { Inter, Cairo } from "next/font/google";
 import "./globals.css";
 import AbortErrorSuppressor from "@/components/providers/AbortErrorSuppressor";
+import GlobalProgressBar from "@/components/providers/GlobalProgressBar";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -35,6 +37,9 @@ export default function RootLayout({ children }) {
     <html suppressHydrationWarning className={`${inter.variable} ${cairo.variable} h-full antialiased`}>
       <body suppressHydrationWarning className="min-h-full flex flex-col">
         <AbortErrorSuppressor />
+        <Suspense fallback={null}>
+          <GlobalProgressBar />
+        </Suspense>
         {children}
       </body>
     </html>

@@ -70,11 +70,14 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
   const style = buttonStyle ?? BUTTON_STYLES.ADD_TO_CART;
 
   // Shared button class fragments (colours driven by CSS custom properties set on <article>)
-  const btnBase    = "transition-all duration-300 active:scale-[0.98] font-bold uppercase tracking-[0.1em] rounded-[2px] py-3 sm:py-3.5";
+  const btnBase    = "flex h-full min-w-0 items-center justify-center px-2 text-center leading-none transition-all duration-300 active:scale-[0.98] font-bold uppercase tracking-[0.1em] rounded-[2px]";
   const btnOutline = `${btnBase} border pcard-btn-outline`;
   const btnFilled  = `${btnBase} pcard-btn-filled`;
   // Added-to-cart feedback state (always green — not colour-overridable)
   const btnAdded   = `${btnBase} border border-green-500 bg-green-500 text-white scale-[1.04]`;
+  const actionSlotClass = style === BUTTON_STYLES.VERTICAL
+    ? "mt-auto h-[104px] pt-1 sm:h-[112px]"
+    : "mt-auto h-12 pt-1 sm:h-[52px]";
 
   // ── Layout preset ──────────────────────────────────────────────
   const cardLayout = layout ?? CARD_LAYOUTS.OVERLAY;
@@ -104,7 +107,7 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
 
   // Buttons block — re-used across layouts
   const ButtonsBlock = (
-    <div>
+    <div className="h-full">
       {style === BUTTON_STYLES.ADD_TO_CART && (
         <button onClick={handleAdd} className={`w-full ${added ? btnAdded : btnOutline}`}>
           {added ? <Check className="h-4 w-4 mx-auto" /> : tHome.buy_now}
@@ -118,14 +121,14 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
       )}
 
       {style === BUTTON_STYLES.HORIZONTAL_1 && (
-        <div className="flex gap-2">
+        <div className="flex h-full gap-2">
           <Link href={`/${locale}/product/${product.id}`} className={`flex-1 flex items-center justify-center ${btnFilled}`}>
             {tHome.shop_now}
           </Link>
           <button
             onClick={handleAdd}
             aria-label={tHome.buy_now}
-            className={`flex-none flex items-center justify-center w-11 sm:w-12 rounded-[2px] transition-all duration-300 active:scale-[0.98] border ${
+            className={`flex-none flex h-full items-center justify-center w-11 sm:w-12 rounded-[2px] transition-all duration-300 active:scale-[0.98] border ${
               added ? "border-green-500 bg-green-500 text-white scale-[1.04]" : "pcard-btn-outline"
             }`}
           >
@@ -135,7 +138,7 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
       )}
 
       {style === BUTTON_STYLES.HORIZONTAL_2 && (
-        <div className="flex gap-2">
+        <div className="flex h-full gap-2">
           <Link href={`/${locale}/product/${product.id}`} className={`flex-1 flex items-center justify-center ${btnFilled}`}>
             {tHome.shop_now}
           </Link>
@@ -146,11 +149,11 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
       )}
 
       {style === BUTTON_STYLES.VERTICAL && (
-        <div className="flex flex-col gap-2">
-          <Link href={`/${locale}/product/${product.id}`} className={`w-full flex items-center justify-center ${btnFilled}`}>
+        <div className="flex h-full flex-col gap-2">
+          <Link href={`/${locale}/product/${product.id}`} className={`w-full flex-1 ${btnFilled} h-auto`}>
             {tHome.shop_now}
           </Link>
-          <button onClick={handleAdd} className={`w-full ${added ? btnAdded : btnOutline}`}>
+          <button onClick={handleAdd} className={`w-full flex-1 ${added ? btnAdded : btnOutline} h-auto`}>
             {added ? <Check className="h-4 w-4 mx-auto" /> : tHome.buy_now}
           </button>
         </div>
@@ -161,13 +164,13 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
   // Info block — text + price (rendered below image except in overlay layout)
   const isMinimal = cardLayout === CARD_LAYOUTS.MINIMAL;
   const InfoBlock = (
-    <div className={`flex flex-col ${isMinimal ? 'text-start' : 'text-center'} pt-3 pb-3`}>
+    <div className={`flex h-[104px] flex-col overflow-hidden ${isMinimal ? 'text-start' : 'text-center'} pt-3 pb-3 sm:h-[108px]`}>
       <Link href={`/${locale}/product/${product.id}`}>
-        <h3 className={`line-clamp-2 min-h-[2.75em] text-zinc-900 leading-snug hover:text-blue-600 transition-colors ${isArabicName ? "text-sm sm:text-base font-semibold tracking-normal font-[family-name:var(--font-cairo)]" : isMinimal ? "text-xs sm:text-sm font-semibold uppercase tracking-[0.1em]" : "text-xs sm:text-sm font-bold uppercase tracking-[0.15em] sm:tracking-[0.18em]"}`}>
+        <h3 className={`line-clamp-2 h-[2.75em] text-zinc-900 leading-snug hover:text-blue-600 transition-colors ${isArabicName ? "text-sm sm:text-base font-semibold tracking-normal font-[family-name:var(--font-cairo)]" : isMinimal ? "text-xs sm:text-sm font-semibold uppercase tracking-[0.1em]" : "text-xs sm:text-sm font-bold uppercase tracking-[0.15em] sm:tracking-[0.18em]"}`}>
           {product.name}
         </h3>
       </Link>
-      <div className={`mt-2 flex items-center gap-2 ${isMinimal ? 'justify-start' : 'justify-center'}`}>
+      <div className={`mt-2 flex min-h-6 items-center gap-2 ${isMinimal ? 'justify-start' : 'justify-center'}`}>
         {hasDiscount ? (
           <>
             <span className="text-sm sm:text-base font-semibold tracking-widest text-zinc-900 uppercase">
@@ -303,7 +306,7 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
       {showInfoBelow && InfoBlock}
 
       {isShowcase && (
-        <div className="flex items-end justify-between gap-3 px-2 sm:px-3 pt-3 pb-2">
+        <div className="flex h-[76px] items-end justify-between gap-3 overflow-hidden px-2 pt-3 pb-2 sm:px-3">
           <Link href={`/${locale}/product/${product.id}`} className="min-w-0 flex-1">
             <h3 className={`truncate text-zinc-900 leading-snug hover:text-zinc-600 transition-colors ${isArabicName ? "text-sm sm:text-base font-semibold font-[family-name:var(--font-cairo)]" : "text-[13px] sm:text-[15px] font-semibold tracking-tight"}`}>
               {product.name}
@@ -330,24 +333,27 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
       )}
 
       {!isShowcase && !isBoutique && (
-        <div className="mt-auto pt-1">
+        <div className={actionSlotClass}>
           {ButtonsBlock}
         </div>
       )}
 
       {isBoutique && (
-        <div className="flex flex-col px-1 pt-4 pb-1 gap-1">
+        <div className="flex h-[176px] flex-col overflow-hidden px-1 pt-4 pb-1 gap-1">
           {(product.category?.name || product.category_name) && (
             <span className="text-[13px] font-medium text-emerald-600">
               {product.category?.name ?? product.category_name}
             </span>
+          )}
+          {!(product.category?.name || product.category_name) && (
+            <span className="h-[20px]" aria-hidden="true" />
           )}
           <Link href={`/${locale}/product/${product.id}`}>
             <h3 className={`line-clamp-2 min-h-[2.75em] text-zinc-900 leading-snug hover:text-zinc-600 transition-colors ${isArabicName ? "text-base sm:text-lg font-bold font-[family-name:var(--font-cairo)]" : "text-[15px] sm:text-[17px] font-bold tracking-tight"}`}>
               {product.name}
             </h3>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex min-h-6 items-center gap-2">
             {hasDiscount ? (
               <>
                 <span className="text-[15px] sm:text-[17px] font-semibold text-zinc-900">{fmt(effectivePrice)}</span>
@@ -360,7 +366,7 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
           <button
             type="button"
             onClick={handleAdd}
-            className={`mt-3 w-full rounded-full py-3.5 text-sm font-medium transition-all duration-300 active:scale-[0.98] ${
+            className={`mt-auto w-full rounded-full py-3.5 text-sm font-medium transition-all duration-300 active:scale-[0.98] ${
               added
                 ? 'bg-green-500 text-white'
                 : 'bg-zinc-900 text-white hover:bg-zinc-800'
