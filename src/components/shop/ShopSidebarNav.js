@@ -31,6 +31,7 @@ export default function ShopSidebarNav({ isOpen, onClose }) {
   const router = useRouter();
   const locale = params?.locale || "en";
   const isRtl = isRtlLocale(locale);
+  const logoutIconDirectionClass = isRtl ? "" : "-scale-x-100";
   const dict = useDictionary();
   const tNav = dict?.nav ?? {};
   const supabase = createClient();
@@ -244,7 +245,7 @@ export default function ShopSidebarNav({ isOpen, onClose }) {
                   onClick={() => { handleLogout(); onClose(); }}
                   className="flex w-full items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium text-red-600 hover:bg-red-50 transition-colors"
                 >
-                  <LogOut className="h-5 w-5 shrink-0" strokeWidth={1.5} />
+                  <LogOut className={`h-5 w-5 shrink-0 ${logoutIconDirectionClass}`} strokeWidth={1.5} />
                   <span>{tNav.logout}</span>
                 </button>
               </div>

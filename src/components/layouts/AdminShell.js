@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import AdminSearch from "@/components/layouts/AdminSearch";
+import { isRtlLocale } from "@/config/constants";
 
 const NAV_ITEMS = [
   { href: "/admin", key: "dashboard", icon: LayoutDashboard, exact: true },
@@ -42,7 +43,8 @@ export default function AdminShell({ children }) {
   const { locale } = useParams();
   const dict = useDictionary();
   const tNav = dict?.admin?.nav ?? {};
-  const isRtl = locale === "ar" || locale === "dr";
+  const isRtl = isRtlLocale(locale);
+  const logoutIconDirectionClass = isRtl ? "" : "-scale-x-100";
 
   const withLocale = (href) => `/${locale}${href}`;
 
@@ -117,7 +119,7 @@ export default function AdminShell({ children }) {
             href={withLocale("/")}
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
           >
-            <LogOut className="h-5 w-5" />
+            <LogOut className={`h-5 w-5 ${logoutIconDirectionClass}`} />
             {tNav.exit}
           </Link>
         </div>
