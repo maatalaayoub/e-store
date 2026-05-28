@@ -14,7 +14,8 @@ export async function GET(req, { params }) {
     const product = await productService.getProductById(id, locale);
     if (!product) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
     return NextResponse.json({ success: true, data: product });
-  } catch {
+  } catch (error) {
+    console.error('[api/products/:id] GET failed:', error);
     return NextResponse.json({ success: false, error: 'Failed to fetch product' }, { status: 500 });
   }
 }

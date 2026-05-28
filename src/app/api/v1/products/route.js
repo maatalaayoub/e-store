@@ -26,7 +26,8 @@ export async function GET(req) {
     return NextResponse.json({ success: true, data: products }, {
       headers: adminUser ? undefined : { 'Cache-Control': 'public, max-age=60, stale-while-revalidate=600' },
     });
-  } catch {
+  } catch (error) {
+    console.error('[api/products] GET failed:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch products' },
       { status: 500 }

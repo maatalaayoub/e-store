@@ -29,30 +29,53 @@ const PRODUCT_LIST_SELECT = `
   product_images (id, url, is_main, display_order)
 `.trim();
 
+const PRODUCT_LIST_FALLBACK_SELECT = `
+  id,
+  name,
+  price,
+  status,
+  stock,
+  is_featured,
+  created_at,
+  categories (id, name, slug),
+  product_images (id, url, is_main, display_order)
+`.trim();
+
 export class ProductRepository {
   async findAll({ status, featured, limit, offset } = {}) {
     const supabase = await createClient();
-    let query = supabase
-      .from('products')
-      .select(PRODUCT_LIST_SELECT)
-      .order('is_featured', { ascending: false })
-      .order('created_at', { ascending: false });
+    const runQuery = async (select) => {
+      let query = supabase
+        .from('products')
+        .select(select)
+        .order('is_featured', { ascending: false })
+        .order('created_at', { ascending: false });
 
-    if (status && status !== 'all') query = query.eq('status', status);
-    if (featured === true) query = query.eq('is_featured', true);
+      if (status && status !== 'all') query = query.eq('status', status);
+      if (featured === true) query = query.eq('is_featured', true);
 
-    // Offset + limit translate to PostgREST `range(from, to)`; we apply
-    // `limit` directly when no offset is provided to keep older callers
-    // working.
-    if (offset != null && limit != null) {
-      query = query.range(offset, offset + limit - 1);
-    } else if (limit != null) {
-      query = query.limit(limit);
-    }
+      // Offset + limit translate to PostgREST `range(from, to)`; we apply
+      // `limit` directly when no offset is provided to keep older callers
+      // working.
+      if (offset != null && limit != null) {
+        query = query.range(offset, offset + limit - 1);
+      } else if (limit != null) {
+        query = query.limit(limit);
+      }
 
-    const { data, error } = await query;
-    if (error) throw error;
-    return data;
+      return query;
+    };
+
+    const { data, error } = await runQuery(PRODUCT_LIST_SELECT);
+    if (!error) return data;
+
+    const missingColumn = error.code === '42703' || /column .* does not exist/i.test(error.message ?? '');
+    if (!missingColumn) throw error;
+
+    console.warn('[products] falling back to legacy product select:', error.message);
+    const fallback = await runQuery(PRODUCT_LIST_FALLBACK_SELECT);
+    if (fallback.error) throw fallback.error;
+    return fallback.data;
   }
 
   async findById(id) {
