@@ -52,7 +52,12 @@ export async function proxy(request) {
 
   if (isInternal) return NextResponse.next();
 
-  // Refresh Supabase session so API routes receive a valid user.
+  // API routes handle their own Supabase auth — skip locale redirect AND
+  // skip the session-refresh network call so the Edge function never hangs.
+  if (pathname.startsWith('/api')) return NextResponse.next();
+
+  // Refresh Supabase session for page requests so Server Components receive
+  // a valid user cookie.
   let response = NextResponse.next({ request });
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -78,14 +83,9 @@ export async function proxy(request) {
     try {
       await supabase.auth.getUser();
     } catch (err) {
-      // A stale or malformed auth cookie must NEVER crash the proxy;
-      // continue serving the request as anonymous.
       console.warn('[proxy] supabase.auth.getUser failed:', err?.message ?? err);
     }
   }
-
-  // API routes — skip locale redirect but keep session-refreshed response.
-  if (pathname.startsWith('/api')) return response;
 
   // Already locale-prefixed — nothing to do.
   const hasLocalePrefix = locales.some(
