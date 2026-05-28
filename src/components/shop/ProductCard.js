@@ -37,12 +37,15 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
   const dict = useDictionary();
   const { locale } = useParams();
   const tHome = dict?.home ?? {};
+  const tProduct = dict?.product ?? {};
   const { addItem } = useCartStore();
   const { formatPrice } = useCurrency();
   const [added, setAdded] = useState(false);
   const { isFavorited, toggle: toggleFav } = useFavorite(rawProduct?.id);
 
   const product = resolveProductTranslation(rawProduct, locale);
+  const isOutOfStock = Number(product?.stock ?? 0) <= 0;
+  const outOfStockText = tHome.out_of_stock ?? tProduct.out_of_stock ?? "Out of stock";
   const shortDescription = product.short_description?.trim();
   const shouldShowShortDescription = showShortDescription === true && Boolean(shortDescription);
 
@@ -62,6 +65,7 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
   const [variantOpen, setVariantOpen] = useState(false);
 
   const commitAdd = ({ selectedColor = null, selectedSize = null } = {}) => {
+    if (isOutOfStock) return;
     addItem(product, { quantity: 1, selectedColor, selectedSize });
     onAdded?.();
     setAdded(true);
@@ -69,6 +73,7 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
   };
 
   const handleAdd = () => {
+    if (isOutOfStock) return;
     if (hasVariants) {
       setVariantOpen(true);
       return;
@@ -103,6 +108,7 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
   const btnFilled  = `${btnBase} pcard-btn-filled`;
   // Added-to-cart feedback state (always green — not colour-overridable)
   const btnAdded   = `${btnBase} border border-green-500 bg-green-500 text-white scale-[1.04]`;
+  const btnDisabled = `${btnBase} border border-zinc-200 bg-zinc-100 text-zinc-400 cursor-not-allowed`;
   const actionSlotClass = style === BUTTON_STYLES.VERTICAL
     ? "mt-auto h-[104px] pt-1 sm:h-[112px]"
     : "mt-auto h-12 pt-1 sm:h-[52px]";
@@ -150,8 +156,8 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
   const ButtonsBlock = (
     <div className="h-full">
       {style === BUTTON_STYLES.ADD_TO_CART && (
-        <button data-no-global-progress="true" onClick={handleAdd} className={`w-full ${added ? btnAdded : btnOutline}`}>
-          {added ? <Check className="h-4 w-4 mx-auto" /> : tHome.buy_now}
+        <button data-no-global-progress="true" onClick={handleAdd} disabled={isOutOfStock} className={`w-full ${isOutOfStock ? btnDisabled : added ? btnAdded : btnOutline}`}>
+          {isOutOfStock ? outOfStockText : added ? <Check className="h-4 w-4 mx-auto" /> : tHome.buy_now}
         </button>
       )}
 
@@ -169,12 +175,13 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
           <button
             data-no-global-progress="true"
             onClick={handleAdd}
-            aria-label={tHome.buy_now}
+            disabled={isOutOfStock}
+            aria-label={isOutOfStock ? outOfStockText : tHome.buy_now}
             className={`flex-none flex h-full items-center justify-center w-11 sm:w-12 rounded-[7px] transition-all duration-300 active:scale-[0.98] border ${
-              added ? "border-green-500 bg-green-500 text-white scale-[1.04]" : "pcard-btn-outline"
+              isOutOfStock ? "cursor-not-allowed border-zinc-200 bg-zinc-100 text-zinc-400" : added ? "border-green-500 bg-green-500 text-white scale-[1.04]" : "pcard-btn-outline"
             }`}
           >
-            {added ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
+            {added && !isOutOfStock ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
           </button>
         </div>
       )}
@@ -184,8 +191,8 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
           <Link href={`/${locale}/product/${product.id}`} className={`flex-1 flex items-center justify-center ${btnFilled}`}>
             {tHome.shop_now}
           </Link>
-          <button data-no-global-progress="true" onClick={handleAdd} className={`flex-1 ${added ? btnAdded : btnOutline}`}>
-            {added ? <Check className="h-4 w-4 mx-auto" /> : tHome.buy_now}
+          <button data-no-global-progress="true" onClick={handleAdd} disabled={isOutOfStock} className={`flex-1 ${isOutOfStock ? btnDisabled : added ? btnAdded : btnOutline}`}>
+            {isOutOfStock ? outOfStockText : added ? <Check className="h-4 w-4 mx-auto" /> : tHome.buy_now}
           </button>
         </div>
       )}
@@ -195,8 +202,8 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
           <Link href={`/${locale}/product/${product.id}`} className={`w-full flex-1 ${btnFilled} h-auto`}>
             {tHome.shop_now}
           </Link>
-          <button data-no-global-progress="true" onClick={handleAdd} className={`w-full flex-1 ${added ? btnAdded : btnOutline} h-auto`}>
-            {added ? <Check className="h-4 w-4 mx-auto" /> : tHome.buy_now}
+          <button data-no-global-progress="true" onClick={handleAdd} disabled={isOutOfStock} className={`w-full flex-1 ${isOutOfStock ? btnDisabled : added ? btnAdded : btnOutline} h-auto`}>
+            {isOutOfStock ? outOfStockText : added ? <Check className="h-4 w-4 mx-auto" /> : tHome.buy_now}
           </button>
         </div>
       )}
@@ -272,6 +279,14 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
           </span>
         )}
 
+        {isOutOfStock && (
+          <div className={`absolute inset-x-3 z-20 flex justify-center ${isFloating ? 'bottom-14' : 'bottom-4'}`}>
+            <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-red-600 [text-shadow:0_0_12px_rgba(255,255,255,1),0_0_6px_rgba(255,255,255,1),0_2px_8px_rgba(0,0,0,0.5)]">
+              {outOfStockText}
+            </span>
+          </div>
+        )}
+
         {/* Boutique: pill badge + favorite + dots */}
         {isBoutique && (
           <>
@@ -308,7 +323,7 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
             {hasDiscount && (
               <span
                 dir="ltr"
-                className="absolute left-2 top-2 z-10 flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-[#c8a85a] text-white text-[10px] sm:text-[11px] font-semibold tracking-tight shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
+                className="absolute left-3 top-3 z-10 rounded-[4px] bg-zinc-900 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-white"
               >
                 -{discountPercent}%
               </span>
@@ -321,10 +336,11 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
                 type="button"
                 data-no-global-progress="true"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleAdd(); }}
-                aria-label={tHome.buy_now ?? 'Add to cart'}
-                className="flex h-7 w-9 items-center justify-center rounded-full text-zinc-800 hover:bg-zinc-100 transition-colors"
+                disabled={isOutOfStock}
+                aria-label={isOutOfStock ? outOfStockText : (tHome.buy_now ?? 'Add to cart')}
+                className={`flex h-7 w-9 items-center justify-center rounded-full transition-colors ${isOutOfStock ? 'cursor-not-allowed text-zinc-300' : 'text-zinc-800 hover:bg-zinc-100'}`}
               >
-                {added ? <Check className="h-4 w-4 text-green-600" /> : <ShoppingCart className="h-4 w-4" strokeWidth={1.75} />}
+                {added && !isOutOfStock ? <Check className="h-4 w-4 text-green-600" /> : <ShoppingCart className="h-4 w-4" strokeWidth={1.75} />}
               </button>
               <button
                 type="button"
@@ -499,13 +515,16 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
             type="button"
             data-no-global-progress="true"
             onClick={handleAdd}
+            disabled={isOutOfStock}
             className={`mt-auto w-full rounded-[7px] py-3.5 text-sm font-medium transition-all duration-300 active:scale-[0.98] ${
-              added
+              isOutOfStock
+                ? 'cursor-not-allowed bg-zinc-100 text-zinc-400'
+                : added
                 ? 'bg-green-500 text-white'
                 : 'bg-zinc-900 text-white hover:bg-zinc-800'
             }`}
           >
-            {added ? <Check className="h-4 w-4 mx-auto" /> : (tHome.buy_now ?? 'Buy Now')}
+            {isOutOfStock ? outOfStockText : added ? <Check className="h-4 w-4 mx-auto" /> : (tHome.buy_now ?? 'Buy Now')}
           </button>
         </div>
       )}

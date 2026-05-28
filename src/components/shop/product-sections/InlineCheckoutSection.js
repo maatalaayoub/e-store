@@ -25,6 +25,7 @@ export default function InlineCheckoutSection({ section, product, locale, dict, 
   const router = useRouter();
   const { formatPrice, currency, rate } = useCurrency();
   const tCheckout = dict?.checkout ?? {};
+  const tProduct = dict?.product ?? {};
 
   const cfg = section?.config ?? {};
   const content = section?.content ?? {};
@@ -211,19 +212,24 @@ export default function InlineCheckoutSection({ section, product, locale, dict, 
           </div>
 
           <div className="mt-5">
+            {isOutOfStock && (
+              <p className="mb-3 rounded-lg bg-zinc-100 px-3 py-2 text-center text-sm font-semibold text-zinc-600">
+                {tProduct.out_of_stock ?? "Out of stock"}
+              </p>
+            )}
             <CheckoutActions
               dict={dict}
               placing={checkout.placing}
               errors={checkout.errors}
               form={checkout.form}
               requiredFields={requiredFields}
-              itemsCount={items.length}
+              itemsCount={isOutOfStock ? 0 : items.length}
               country={checkout.form.country}
               showPlaceOrder={showPlaceOrder}
               showWhatsApp={showWhatsApp}
               whatsAppCountriesOnly={whatsappCountries}
-              onPlaceOrder={checkout.handlePlaceOrder}
-              onOrderWhatsApp={checkout.handleOrderWhatsApp}
+              onPlaceOrder={isOutOfStock ? undefined : checkout.handlePlaceOrder}
+              onOrderWhatsApp={isOutOfStock ? undefined : checkout.handleOrderWhatsApp}
               orderBtnStyle={Object.keys(orderBtnStyle).length ? orderBtnStyle : undefined}
               waBtnStyle={Object.keys(waBtnStyle).length ? waBtnStyle : undefined}
             />

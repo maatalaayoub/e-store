@@ -35,12 +35,14 @@ export default function ProductPurchasePanel({
   const { formatPrice } = useCurrency();
 
   const handleAdd = () => {
+    if (isOutOfStock) return;
     addItem(product, { quantity: qty, selectedColor, selectedSize });
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
   };
 
   const handleCheckout = () => {
+    if (isOutOfStock) return;
     addItem(product, { quantity: qty, selectedColor, selectedSize });
     router.push(`/${locale}/checkout`);
   };
@@ -211,7 +213,7 @@ export default function ProductPurchasePanel({
             ) : (
               <>
                 <ShoppingCart className="h-4 w-4" />
-                {tProduct.add_to_cart ?? "Add To Cart"}
+                {isOutOfStock ? (tProduct.out_of_stock ?? "Out of stock") : (tProduct.add_to_cart ?? "Add To Cart")}
               </>
             )}
           </button>
@@ -222,7 +224,7 @@ export default function ProductPurchasePanel({
             disabled={isOutOfStock}
             className="w-full flex items-center justify-center rounded-[7px] border-2 border-zinc-900 px-6 h-13 text-base font-semibold text-zinc-900 hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {tProduct.checkout_now ?? "Checkout Now"}
+            {isOutOfStock ? (tProduct.out_of_stock ?? "Out of stock") : (tProduct.checkout_now ?? "Checkout Now")}
           </button>
         )}
       </div>
