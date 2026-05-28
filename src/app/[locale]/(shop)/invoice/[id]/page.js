@@ -7,6 +7,7 @@ import { Download, ArrowLeft, FileText } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { isRtlLocale } from "@/config/constants";
 import { downloadInvoicePdf } from "@/lib/invoice-pdf";
+import { toast } from "sonner";
 
 // Module-level cache keyed by order id: persists across client-side navigations
 const _cache = new Map();
@@ -43,7 +44,9 @@ export default function InvoicePage() {
       await downloadInvoicePdf(order);
     } catch (e) {
       console.error("[Invoice PDF]", e);
-      setError(e?.message ?? "Failed to generate PDF");
+      const msg = t.download_failed ?? "Failed to generate PDF";
+      toast.error(msg);
+      setError(e?.message ?? msg);
     } finally {
       setGenerating(false);
     }

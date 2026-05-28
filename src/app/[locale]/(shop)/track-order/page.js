@@ -16,6 +16,7 @@ import { isRtlLocale } from "@/config/constants";
 import { downloadInvoicePdf } from "@/lib/invoice-pdf";
 import PageHeader from "@/components/ui/PageHeader";
 import { TRACK_ORDER_STATUS_CONFIG as STATUS_CONFIG } from "@/lib/order-status";
+import { toast } from "sonner";
 
 export default function TrackOrderPage() {
   const { locale } = useParams();
@@ -59,6 +60,7 @@ export default function TrackOrderPage() {
       await downloadInvoicePdf(order);
     } catch (e) {
       console.error("[Download invoice]", e);
+      toast.error(dict?.invoice?.download_failed ?? "Failed to download invoice.");
     } finally {
       setDownloading(false);
     }

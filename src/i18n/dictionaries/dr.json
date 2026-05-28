@@ -686,6 +686,7 @@
     "status": "الحالة",
     "thank_you": "شكراً على الشراء!",
     "download": "حمّل PDF",
+    "download_failed": "ما تحملش الفاتورة. عاود جرب.",
     "generating": "كنصاوبو…",
     "back": "رجوع",
     "loading": "كنحملو الفاتورة…",

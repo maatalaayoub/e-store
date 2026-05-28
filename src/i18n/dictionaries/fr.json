@@ -685,8 +685,7 @@
     "total": "Total",
     "status": "Statut",
     "thank_you": "Merci pour votre achat !",
-    "download": "Télécharger le PDF",
-    "generating": "Génération…",
+    "download": "Télécharger le PDF",    "download_failed": "Impossible de télécharger la facture. Veuillez réessayer.",    "generating": "Génération…",
     "back": "Retour",
     "loading": "Chargement de la facture…",
     "go_home": "Aller à l'accueil"

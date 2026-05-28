@@ -5,8 +5,14 @@ import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 /**
  * GET /api/v1/favorites
  * Returns the current user's favorited products.
+ *
+ * Pagination: `?limit=50&offset=0` \u2014 limit is clamped to MAX_LIMIT to keep
+ * any single request bounded even if a user has hundreds of favorites.
  */
-export async function GET() {
+const FAVORITES_MAX_LIMIT = 100;
+const FAVORITES_DEFAULT_LIMIT = 50;
+
+export async function GET(req) {
   try {
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -14,6 +20,14 @@ export async function GET() {
     if (authError || !user) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
+
+    const url = new URL(req.url);
+    const rawLimit = Number(url.searchParams.get('limit'));
+    const rawOffset = Number(url.searchParams.get('offset'));
+    const limit = Number.isFinite(rawLimit) && rawLimit > 0
+      ? Math.min(FAVORITES_MAX_LIMIT, Math.floor(rawLimit))
+      : FAVORITES_DEFAULT_LIMIT;
+    const offset = Number.isFinite(rawOffset) && rawOffset > 0 ? Math.floor(rawOffset) : 0;
 
     // Only fetch the main image to avoid an N+1-style explosion when a user
     // has favorited many products with many images each. The product card
@@ -39,7 +53,8 @@ export async function GET() {
       `)
       .eq('user_id', user.id)
       .eq('products.product_images.is_main', true)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) throw error;
 

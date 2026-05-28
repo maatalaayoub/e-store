@@ -8,6 +8,7 @@ import { useDictionary } from "@/components/providers/LocaleProvider";
 import { isRtlLocale } from "@/config/constants";
 import { createClient } from "@/lib/supabase/client";
 import { downloadInvoiceById } from "@/lib/invoice-pdf";
+import { toast } from "sonner";
 
 export default function OrderConfirmedPage() {
   return (
@@ -53,6 +54,7 @@ function OrderConfirmedInner() {
       await downloadInvoiceById(orderId);
     } catch (e) {
       console.error("[Download invoice]", e);
+      toast.error(dict?.invoice?.download_failed ?? "Failed to download invoice.");
     } finally {
       setDownloading(false);
     }

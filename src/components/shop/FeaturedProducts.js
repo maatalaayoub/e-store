@@ -72,6 +72,7 @@ export default function FeaturedProducts({ onItemAdded }) {
   }, [locale]);
 
   if (!products) return <FeaturedProductsSkeleton />;
+  if (products.length === 0) return null;
 
   return (
     <section

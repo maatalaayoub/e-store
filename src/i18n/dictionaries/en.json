@@ -681,6 +681,7 @@
     "status": "Status",
     "thank_you": "Thank you for your purchase!",
     "download": "Download PDF",
+    "download_failed": "Failed to download invoice. Please try again.",
     "generating": "Generating…",
     "back": "Back",
     "loading": "Loading invoice…",

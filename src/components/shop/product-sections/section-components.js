@@ -324,6 +324,7 @@ export async function RelatedProductsSection({ section, product, locale }) {
   let layout = 'overlay';
   let showShortDescription = false;
   try {
+    // eslint-disable-next-line no-restricted-imports -- server component, runs only on the server
     const { createServiceClient } = await import('@/lib/supabase/service');
     const supabase = createServiceClient();
     const { data } = await supabase
