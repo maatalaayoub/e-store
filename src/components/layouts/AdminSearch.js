@@ -223,14 +223,10 @@ export default function AdminSearch({ locale, isRtl }) {
           aria-expanded={open}
           aria-autocomplete="list"
           aria-controls="admin-search-listbox"
-          className={`w-full sm:w-64 md:w-72 rounded-full border border-zinc-200 bg-zinc-50 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600 focus:bg-white transition-colors ${
-            isRtl ? "pr-10 pl-12" : "pl-10 pr-12"
-          }`}
+          className="w-full sm:w-64 md:w-72 rounded-full border border-zinc-200 bg-zinc-50 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600 focus:bg-white transition-colors ps-10 pe-12"
         />
         <kbd
-          className={`absolute hidden md:inline-flex items-center gap-1 rounded border border-zinc-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 select-none ${
-            isRtl ? "left-2.5" : "right-2.5"
-          }`}
+          className="absolute hidden md:inline-flex items-center gap-1 rounded border border-zinc-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 select-none end-2.5"
           aria-hidden="true"
         >
           {/Mac/i.test(typeof navigator !== "undefined" ? navigator.platform : "") ? "⌘K" : "Ctrl+K"}

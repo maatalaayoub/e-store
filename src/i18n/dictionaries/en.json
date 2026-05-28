@@ -649,7 +649,11 @@
     "order_whatsapp": "Order via WhatsApp",
     "cart_empty": "Your cart is empty",
     "failed": "Failed to place order. Please try again.",
-    "fill_required": "Please fill in the required fields: {fields}"
+    "fill_required": "Please fill in the required fields: {fields}",
+    "search_country": "Search country...",
+    "search_city": "Search city...",
+    "no_countries": "No countries available",
+    "select_country_first": "Select a country first"
   },
   "order_confirmed": {
     "title": "Order Received!",

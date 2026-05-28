@@ -3,7 +3,7 @@
 import "client-only";
 import { X, Minus, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { useCartStore } from "@/store/useCartStore";
 import { useDictionary } from "@/components/providers/LocaleProvider";
@@ -11,6 +11,7 @@ import { useCurrency } from "@/components/providers/CurrencyProvider";
 import { isRtlLocale } from "@/config/constants";
 import { CartSkeleton } from "@/components/skeletons";
 import { parsePrice } from "@/lib/price";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 export default function CartSidebar({ isOpen, onClose }) {
   const { items, removeItem, updateQuantity } = useCartStore();
@@ -23,6 +24,18 @@ export default function CartSidebar({ isOpen, onClose }) {
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => setHydrated(true), []);
   const { formatPrice } = useCurrency();
+
+  // a11y — trap focus inside the drawer and close on Escape while open.
+  const drawerRef = useRef(null);
+  useFocusTrap(drawerRef, isOpen);
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose?.();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [isOpen, onClose]);
 
   const subtotal = useMemo(
     () =>
@@ -50,6 +63,10 @@ export default function CartSidebar({ isOpen, onClose }) {
 
       {/* Drawer — right by default, left for RTL (Arabic) */}
       <div
+        ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t.title || "Your Cart"}
         className={`fixed top-0 z-[120] h-[100dvh] w-full sm:max-w-sm bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${
           isRtl ? "left-0" : "right-0"
         } ${
@@ -75,7 +92,7 @@ export default function CartSidebar({ isOpen, onClose }) {
           </div>
           <button
             onClick={onClose}
-            className="p-2 -mr-1 rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition-colors"
+            className="p-2 -me-1 rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 transition-colors"
             aria-label="Close cart"
           >
             <X className="h-5 w-5" />

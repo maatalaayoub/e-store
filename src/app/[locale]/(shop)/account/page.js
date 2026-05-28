@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, Loader2, Pencil } from "lucide-react";
-import { City } from "country-state-city";
 import { toast } from "sonner";
 import { useDictionary, useLocale } from "@/components/providers/LocaleProvider";
 import { isRtlLocale } from "@/config/constants";
@@ -78,16 +77,23 @@ export default function AccountSettingsPage() {
     country: "",
   });
 
-  /* ── Cities powered by country-state-city (free, offline) ── */
+  /* ── Cities powered by country-state-city (free, offline). The library
+     is ~200 KB sync, so we lazy-import it once the user picks a country. ── */
   const selectedIso = useMemo(
     () => findCountry(form.country)?.isoCode ?? null,
     [form.country]
   );
 
-  const cities = useMemo(() => {
-    if (!selectedIso) return [];
-    const names = (City.getCitiesOfCountry(selectedIso) ?? []).map((c) => c.name);
-    return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
+  const [cities, setCities] = useState([]);
+  useEffect(() => {
+    if (!selectedIso) { setCities([]); return; }
+    let cancelled = false;
+    import("country-state-city").then(({ City }) => {
+      if (cancelled) return;
+      const names = (City.getCitiesOfCountry(selectedIso) ?? []).map((c) => c.name);
+      setCities(Array.from(new Set(names)).sort((a, b) => a.localeCompare(b)));
+    }).catch(() => { if (!cancelled) setCities([]); });
+    return () => { cancelled = true; };
   }, [selectedIso]);
 
   /* ── Load profile + auto-detect country from IP via ISO country_code ── */

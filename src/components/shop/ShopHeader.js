@@ -97,7 +97,7 @@ export default function ShopHeader({ onOpenCart }) {
             }`}
           >
             <button
-              className={`p-2 -ml-2 rounded-full hover:scale-110 active:scale-95 transition-all duration-200 ${
+              className={`p-2 -ms-2 rounded-full hover:scale-110 active:scale-95 transition-all duration-200 ${
                 isLight
                   ? "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
                   : "text-white hover:bg-white/10"

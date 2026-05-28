@@ -3,12 +3,8 @@ import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { productService } from '@/modules/products/product.service';
 import { productUpdateSchema } from '@/modules/products/product.validation';
-
-async function isAdmin(supabase, user) {
-  if (!user) return false;
-  const { data } = await supabase.from('users').select('role').eq('id', user.id).single();
-  return data?.role === 'admin';
-}
+import { getAdminUser } from '@/middlewares/authGuard';
+import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 
 export async function GET(req, { params }) {
   try {
@@ -24,10 +20,14 @@ export async function GET(req, { params }) {
 }
 
 export async function PUT(req, { params }) {
+  const originRejection = assertSameOrigin(req);
+  if (originRejection) return originRejection;
+  const limited = await rateLimitOrReject(req, { bucket: 'products-put', limit: 20, windowMs: 60_000 });
+  if (limited) return limited;
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!await isAdmin(supabase, user)) {
+    const adminUser = await getAdminUser(supabase);
+    if (!adminUser) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -44,11 +44,15 @@ export async function PUT(req, { params }) {
   }
 }
 
-export async function DELETE(_req, { params }) {
+export async function DELETE(req, { params }) {
+  const originRejection = assertSameOrigin(req);
+  if (originRejection) return originRejection;
+  const limited = await rateLimitOrReject(req, { bucket: 'products-delete', limit: 10, windowMs: 60_000 });
+  if (limited) return limited;
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!await isAdmin(supabase, user)) {
+    const adminUser = await getAdminUser(supabase);
+    if (!adminUser) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -78,17 +82,24 @@ export async function DELETE(_req, { params }) {
       }
     }
 
-    // Nullify product_id on historical order_items (shipped/delivered/cancelled)
-    // so the FK constraint doesn't block the delete.
-    if (items && items.length > 0) {
-      await db
-        .from('order_items')
-        .update({ product_id: null })
-        .eq('product_id', id);
+    // Soft-delete first: archiving preserves the audit trail on historical
+    // order_items (which still reference this product via FK). If the
+    // archived status is rejected by the schema (legacy DBs without it),
+    // fall back to the previous nullify-and-delete behaviour.
+    try {
+      await productService.updateProduct(id, { status: 'archived' });
+      return NextResponse.json({ success: true, data: { archived: true } });
+    } catch {
+      // Legacy fallback — nullify product_id then hard-delete.
+      if (items && items.length > 0) {
+        await db
+          .from('order_items')
+          .update({ product_id: null })
+          .eq('product_id', id);
+      }
+      await productService.deleteProduct(id);
+      return NextResponse.json({ success: true, data: { archived: false } });
     }
-
-    await productService.deleteProduct(id);
-    return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ success: false, error: 'Failed to delete product' }, { status: 500 });
   }

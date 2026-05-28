@@ -109,8 +109,8 @@ export default function CheckoutFields({
           value={form.country}
           onChange={setCountry}
           placeholder={t.country_placeholder ?? "Select your country"}
-          disabledMsg="No countries available"
-          searchPlaceholder="Search country..."
+          disabledMsg={t.no_countries ?? "No countries available"}
+          searchPlaceholder={t.search_country ?? "Search country..."}
           isRtl={isRtl}
         />
         {errors.country && <p className="mt-1 text-xs text-red-500">{errors.country}</p>}
@@ -124,8 +124,8 @@ export default function CheckoutFields({
           value={form.city}
           onChange={setCity}
           placeholder={t.city_placeholder ?? "Select your city"}
-          disabledMsg="Select a country first"
-          searchPlaceholder="Search city..."
+          disabledMsg={t.select_country_first ?? "Select a country first"}
+          searchPlaceholder={t.search_city ?? "Search city..."}
           isRtl={isRtl}
         />
         {errors.city && <p className="mt-1 text-xs text-red-500">{errors.city}</p>}

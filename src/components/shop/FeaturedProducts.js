@@ -19,29 +19,37 @@ function fetchDisplaySettings() {
     .catch(() => ({}));
 }
 
+function deriveSettings(ds) {
+  return {
+    buttonStyle:           ds?.product_card_button_style ?? null,
+    filledBg:              ds?.product_card_filled_bg ?? null,
+    filledText:            ds?.product_card_filled_text ?? null,
+    outlineBorder:         ds?.product_card_outline_border ?? null,
+    outlineText:           ds?.product_card_outline_text ?? null,
+    outlineIcon:           ds?.product_card_outline_icon ?? null,
+    outlineBg:             ds?.product_card_outline_bg ?? null,
+    buttonFontSize:        parseInt(ds?.product_card_button_font_size) || 10,
+    layout:                ds?.product_card_layout ?? null,
+    showShortDescription:  ds?.product_card_show_short_description === 'true',
+    itemsMobile:           parseInt(ds?.carousel_items_mobile)  || 2,
+    itemsTablet:           parseInt(ds?.carousel_items_tablet)  || 3,
+    itemsDesktop:          parseInt(ds?.carousel_items_desktop) || 4,
+    productsPerRow:        parseInt(ds?.carousel_products_per_row) || 8,
+    autoplay:              ds ? ds.carousel_autoplay !== 'false' : true,
+    carouselInterval:      parseInt(ds?.carousel_interval) || 3000,
+    speed:                 parseInt(ds?.carousel_speed) || 500,
+  };
+}
+
 export default function FeaturedProducts({ onItemAdded }) {
   const params = useParams();
   const locale = params?.locale || "en";
   const dict = useDictionary();
   const tHome = dict?.home ?? {};
   const [products, setProducts] = useState(() => _cache.get(locale) ?? null);
-  const [buttonStyle, setButtonStyle] = useState(() => _dsCache?.product_card_button_style ?? null);
-  const [filledBg, setFilledBg] = useState(() => _dsCache?.product_card_filled_bg ?? null);
-  const [filledText, setFilledText] = useState(() => _dsCache?.product_card_filled_text ?? null);
-  const [outlineBorder, setOutlineBorder] = useState(() => _dsCache?.product_card_outline_border ?? null);
-  const [outlineText,   setOutlineText]   = useState(() => _dsCache?.product_card_outline_text ?? null);
-  const [outlineIcon,   setOutlineIcon]   = useState(() => _dsCache?.product_card_outline_icon ?? null);
-  const [outlineBg, setOutlineBg] = useState(() => _dsCache?.product_card_outline_bg ?? null);
-  const [buttonFontSize, setButtonFontSize] = useState(() => parseInt(_dsCache?.product_card_button_font_size) || 10);
-  const [layout, setLayout] = useState(() => _dsCache?.product_card_layout ?? null);
-  const [showShortDescription, setShowShortDescription] = useState(() => _dsCache?.product_card_show_short_description === 'true');
-  const [itemsMobile,  setItemsMobile]  = useState(() => parseInt(_dsCache?.carousel_items_mobile)  || 2);
-  const [itemsTablet,  setItemsTablet]  = useState(() => parseInt(_dsCache?.carousel_items_tablet)  || 3);
-  const [itemsDesktop, setItemsDesktop] = useState(() => parseInt(_dsCache?.carousel_items_desktop) || 4);
-  const [productsPerRow,   setProductsPerRow]   = useState(() => parseInt(_dsCache?.carousel_products_per_row) || 8);
-  const [autoplay,         setAutoplay]         = useState(() => _dsCache ? _dsCache.carousel_autoplay !== 'false' : true);
-  const [carouselInterval, setCarouselInterval] = useState(() => parseInt(_dsCache?.carousel_interval) || 3000);
-  const [speed,            setSpeed]            = useState(() => parseInt(_dsCache?.carousel_speed) || 500);
+  // Collapse 18 useState calls into a single settings object \u2014 re-renders
+  // only when the server response changes, not per individual field.
+  const [settings, setSettings] = useState(() => deriveSettings(_dsCache));
 
   useEffect(() => {
     let mounted = true;
@@ -56,26 +64,8 @@ export default function FeaturedProducts({ onItemAdded }) {
         _cache.set(locale, data);
       }
       _dsCache = ds;
-      {
-        setProducts(data);
-        setButtonStyle(ds?.product_card_button_style ?? null);
-        setFilledBg(ds?.product_card_filled_bg ?? null);
-        setFilledText(ds?.product_card_filled_text ?? null);
-        setOutlineBorder(ds?.product_card_outline_border ?? null);
-        setOutlineText(ds?.product_card_outline_text ?? null);
-        setOutlineIcon(ds?.product_card_outline_icon ?? null);
-        setOutlineBg(ds?.product_card_outline_bg ?? null);
-        setButtonFontSize(parseInt(ds?.product_card_button_font_size) || 10);
-        setLayout(ds?.product_card_layout ?? null);
-        setShowShortDescription(ds?.product_card_show_short_description === 'true');
-        setItemsMobile(parseInt(ds?.carousel_items_mobile)  || 2);
-        setItemsTablet(parseInt(ds?.carousel_items_tablet)  || 3);
-        setItemsDesktop(parseInt(ds?.carousel_items_desktop) || 4);
-        setProductsPerRow(parseInt(ds?.carousel_products_per_row) || 8);
-        setAutoplay(ds?.carousel_autoplay !== 'false');
-        setCarouselInterval(parseInt(ds?.carousel_interval) || 3000);
-        setSpeed(parseInt(ds?.carousel_speed) || 500);
-      }
+      setProducts(data);
+      setSettings(deriveSettings(ds));
     }).catch(() => {});
 
     return () => { mounted = false; controller.abort(); };
@@ -111,23 +101,23 @@ export default function FeaturedProducts({ onItemAdded }) {
           <ProductCarousel
             products={products}
             onItemAdded={onItemAdded}
-            buttonStyle={buttonStyle}
-            filledBg={filledBg}
-            filledText={filledText}
-            outlineBorder={outlineBorder}
-            outlineText={outlineText}
-            outlineIcon={outlineIcon}
-            outlineBg={outlineBg}
-            buttonFontSize={buttonFontSize}
-            layout={layout}
-            showShortDescription={showShortDescription}
-            itemsMobile={itemsMobile}
-            itemsTablet={itemsTablet}
-            itemsDesktop={itemsDesktop}
-            productsPerRow={productsPerRow}
-            autoplay={autoplay}
-            interval={carouselInterval}
-            speed={speed}
+            buttonStyle={settings.buttonStyle}
+            filledBg={settings.filledBg}
+            filledText={settings.filledText}
+            outlineBorder={settings.outlineBorder}
+            outlineText={settings.outlineText}
+            outlineIcon={settings.outlineIcon}
+            outlineBg={settings.outlineBg}
+            buttonFontSize={settings.buttonFontSize}
+            layout={settings.layout}
+            showShortDescription={settings.showShortDescription}
+            itemsMobile={settings.itemsMobile}
+            itemsTablet={settings.itemsTablet}
+            itemsDesktop={settings.itemsDesktop}
+            productsPerRow={settings.productsPerRow}
+            autoplay={settings.autoplay}
+            interval={settings.carouselInterval}
+            speed={settings.speed}
           />
         </div>
       </div>

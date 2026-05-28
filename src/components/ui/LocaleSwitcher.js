@@ -80,7 +80,7 @@ export default function LocaleSwitcher({ className = "", align = "right", direct
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="inline-flex h-9 items-center gap-2 bg-transparent pl-1.5 pr-2 transition"
+        className="inline-flex h-9 items-center gap-2 bg-transparent ps-1.5 pe-2 transition"
       >
         <FlagCircle src={currentInfo.icon} code={current} size={24} />
         <span className="text-xs font-semibold uppercase tracking-widest text-zinc-700">

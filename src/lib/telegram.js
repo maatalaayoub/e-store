@@ -1,10 +1,25 @@
 import { createServiceClient } from '@/lib/supabase/service';
 
 /**
+ * In-memory cache for Telegram credentials.
+ * Re-fetched at most every TELEGRAM_CONFIG_TTL_MS. Cleared by calling
+ * {@link invalidateTelegramConfig} after an admin updates settings.
+ */
+const TELEGRAM_CONFIG_TTL_MS = 5 * 60 * 1000; // 5 minutes
+let _configCache = null; // { value: { botToken, chatId }, ts: number }
+
+export function invalidateTelegramConfig() {
+  _configCache = null;
+}
+
+/**
  * Fetch Telegram credentials from store_settings.
  * Returns { botToken, chatId } — either or both may be empty strings.
  */
 async function getTelegramConfig() {
+  if (_configCache && Date.now() - _configCache.ts < TELEGRAM_CONFIG_TTL_MS) {
+    return _configCache.value;
+  }
   const supabase = createServiceClient();
   const { data } = await supabase
     .from('store_settings')
@@ -12,25 +27,36 @@ async function getTelegramConfig() {
     .in('key', ['telegram_bot_token', 'telegram_chat_id']);
 
   const map = Object.fromEntries((data ?? []).map((r) => [r.key, r.value ?? '']));
-  return { botToken: map.telegram_bot_token ?? '', chatId: map.telegram_chat_id ?? '' };
+  const value = { botToken: map.telegram_bot_token ?? '', chatId: map.telegram_chat_id ?? '' };
+  _configCache = { value, ts: Date.now() };
+  return value;
 }
+
+// Telegram's sendMessage tops out at 4096 chars. Truncate defensively so
+// oversized orders don't silently fail to notify the operator.
+const TELEGRAM_MAX_LEN = 4000;
 
 /**
  * Send a plain-text message to a Telegram chat via Bot API.
  * Fire-and-forget — errors are logged but never thrown.
  *
- * @param {string} text  Markdown-safe message text
+ * @param {string} text  HTML-safe message text
  */
 export async function sendTelegramMessage(text) {
   try {
     const { botToken, chatId } = await getTelegramConfig();
     if (!botToken || !chatId) return; // not configured — skip silently
 
+    const safe = String(text ?? '');
+    const payload = safe.length > TELEGRAM_MAX_LEN
+      ? safe.slice(0, TELEGRAM_MAX_LEN - 20) + '\n… [truncated]'
+      : safe;
+
     const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),
+      body: JSON.stringify({ chat_id: chatId, text: payload, parse_mode: 'HTML' }),
     });
 
     if (!res.ok) {

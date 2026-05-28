@@ -1,22 +1,22 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { productService } from '@/modules/products/product.service';
-
-async function isAdmin(supabase, user) {
-  if (!user) return false;
-  const { data } = await supabase.from('users').select('role').eq('id', user.id).single();
-  return data?.role === 'admin';
-}
+import { getAdminUser } from '@/middlewares/authGuard';
+import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 
 /** POST /api/v1/products/[id]/images
  *  Body: { storagePath: string, isMain?: boolean, displayOrder?: number }
  *  The client uploads the file to Supabase Storage first, then calls this to register it.
  */
 export async function POST(req, { params }) {
+  const originRejection = assertSameOrigin(req);
+  if (originRejection) return originRejection;
+  const limited = await rateLimitOrReject(req, { bucket: 'images-post', limit: 30, windowMs: 60_000 });
+  if (limited) return limited;
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!await isAdmin(supabase, user)) {
+    const adminUser = await getAdminUser(supabase);
+    if (!adminUser) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -37,6 +37,10 @@ export async function POST(req, { params }) {
     ) {
       return NextResponse.json({ success: false, error: 'invalid storagePath' }, { status: 400 });
     }
+    // Only allow image file extensions — prevents arbitrary blob uploads.
+    if (!/\.(?:jpe?g|png|webp|avif|gif)$/i.test(cleaned)) {
+      return NextResponse.json({ success: false, error: 'unsupported image type' }, { status: 400 });
+    }
 
     const { data: urlData } = supabase.storage
       .from('product-images')
@@ -50,7 +54,7 @@ export async function POST(req, { params }) {
     });
 
     return NextResponse.json({ success: true, data: image }, { status: 201 });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { success: false, error: 'Failed to add image' },
       { status: 500 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import {
   HERO_SLIDE_DURATION_MS,
@@ -61,28 +62,22 @@ export default function HeroCarousel({ slides }) {
           }`}
           aria-hidden={i !== slideIndex}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src={slide.image}
             alt={slide.title ? `${slide.title} promotional banner` : ""}
-            className={`h-full w-full object-cover will-change-transform transition-transform duration-[7000ms] ease-out ${
+            fill
+            // First slide is LCP \u2014 mark priority so it pre-loads on navigation.
+            priority={i === 0}
+            sizes="100vw"
+            className={`object-cover will-change-transform transition-transform duration-[7000ms] ease-out ${
               i === slideIndex ? "scale-105" : "scale-100"
             }`}
           />
         </div>
       ))}
 
-      {/* Preload next image (decorative) */}
-      {slides.length > 1 && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={slides[(slideIndex + 1) % slides.length].image}
-          alt=""
-          aria-hidden="true"
-          className="hidden"
-          loading="lazy"
-        />
-      )}
+      {/* next/image handles preloading via priority for slide 0; subsequent
+          slides are preloaded by the browser as soon as they enter the DOM. */}
 
       <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/60" />
       <div

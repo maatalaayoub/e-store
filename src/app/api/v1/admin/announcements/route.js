@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { getAdminUser } from '@/middlewares/authGuard';
+import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 
 const ALLOWED_TYPES = ['promotion', 'shipping', 'limited', 'social', 'notification', 'marquee'];
 const ALLOWED_POSITIONS = ['top', 'bottom'];
@@ -197,6 +198,10 @@ export async function GET() {
  * Body: { announcements: [...] }
  */
 export async function PUT(request) {
+  const originRejection = assertSameOrigin(request);
+  if (originRejection) return originRejection;
+  const limited = await rateLimitOrReject(request, { bucket: 'admin-announcements', limit: 10, windowMs: 60_000 });
+  if (limited) return limited;
   try {
     const supabase = await createClient();
     const adminUser = await getAdminUser(supabase);

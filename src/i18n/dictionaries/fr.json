@@ -654,7 +654,11 @@
     "order_whatsapp": "Commander via WhatsApp",
     "cart_empty": "Votre panier est vide",
     "failed": "Échec de la commande. Veuillez réessayer.",
-    "fill_required": "Veuillez remplir les champs obligatoires : {fields}"
+    "fill_required": "Veuillez remplir les champs obligatoires : {fields}",
+    "search_country": "Rechercher un pays...",
+    "search_city": "Rechercher une ville...",
+    "no_countries": "Aucun pays disponible",
+    "select_country_first": "Sélectionnez d'abord un pays"
   },
   "order_confirmed": {
     "title": "Commande reçue !",

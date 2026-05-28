@@ -18,7 +18,6 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { City } from "country-state-city";
 import { findCountry, detectCountryFromIp } from "@/data/countries";
 import { resolveProductTranslation } from "@/lib/product-locale";
 import { parsePrice } from "@/lib/price";
@@ -131,10 +130,18 @@ export function useCheckoutForm({
     [form.country],
   );
 
-  const cities = useMemo(() => {
-    if (!selectedIso) return [];
-    const names = (City.getCitiesOfCountry(selectedIso) ?? []).map((c) => c.name);
-    return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
+  // `country-state-city` is ~200 KB sync. Defer it until the user actually
+  // picks a country so it never lands in the initial bundle.
+  const [cities, setCities] = useState([]);
+  useEffect(() => {
+    if (!selectedIso) { setCities([]); return; }
+    let cancelled = false;
+    import("country-state-city").then(({ City }) => {
+      if (cancelled) return;
+      const names = (City.getCitiesOfCountry(selectedIso) ?? []).map((c) => c.name);
+      setCities(Array.from(new Set(names)).sort((a, b) => a.localeCompare(b)));
+    }).catch(() => { if (!cancelled) setCities([]); });
+    return () => { cancelled = true; };
   }, [selectedIso]);
 
   /* ── Validation ─────────────────────────────────────────────────────────── */

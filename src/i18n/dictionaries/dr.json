@@ -654,7 +654,11 @@
     "order_whatsapp": "طلب عبر واتساب",
     "cart_empty": "القفة خاوية",
     "failed": "ما تقدرش تكمل الطلب. عاود مرة أخرى.",
-    "fill_required": "عمر الخانات الضرورية: {fields}"
+    "fill_required": "عمر الخانات الضرورية: {fields}",
+    "search_country": "قلب على بلاد...",
+    "search_city": "قلب على مدينة...",
+    "no_countries": "ما كاينش بلدان",
+    "select_country_first": "اختار البلاد لول"
   },
   "order_confirmed": {
     "title": "وصل الطلب ديالك!",

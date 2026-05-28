@@ -1,7 +1,9 @@
 "use client";
 
 import { createPortal } from "react-dom";
+import { useEffect, useRef } from "react";
 import { AlertTriangle } from "lucide-react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 /**
  * Reusable confirmation dialog rendered via React portal.
@@ -30,6 +32,17 @@ export default function ConfirmationDialog({
   isDangerous = true,
   icon,
 }) {
+  const dialogRef = useRef(null);
+  useFocusTrap(dialogRef, isOpen);
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e) => {
+      if (e.key === "Escape" && !isLoading) onCancel?.();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [isOpen, isLoading, onCancel]);
+
   if (!isOpen || typeof document === "undefined") return null;
 
   const confirmClass = isDangerous
@@ -45,6 +58,7 @@ export default function ConfirmationDialog({
       aria-modal="true"
     >
       <div
+        ref={dialogRef}
         className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col items-center gap-4"
         onClick={(e) => e.stopPropagation()}
       >

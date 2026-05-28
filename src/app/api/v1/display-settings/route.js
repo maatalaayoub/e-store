@@ -29,7 +29,9 @@ export async function GET() {
     }
 
     return NextResponse.json({ success: true, data: settings }, {
-      headers: { 'Cache-Control': 'no-store' },
+      // Short cache so admin toggles propagate fast, but the SWR window
+      // keeps the storefront snappy under burst load.
+      headers: { 'Cache-Control': 'public, max-age=10, stale-while-revalidate=3600' },
     });
   } catch {
     return NextResponse.json({ success: true, data: { ...DEFAULTS } });

@@ -95,6 +95,7 @@ export default function CurrencyProvider({ children }) {
   useEffect(() => {
     const controller = new AbortController();
     const { signal } = controller;
+    let cancelled = false;
 
     // Try to restore from sessionStorage first
     try {
@@ -109,11 +110,19 @@ export default function CurrencyProvider({ children }) {
       }
     } catch {/* ignore */}
 
+    // Helper: fetch with hard timeout so a hung third-party can't block
+    // hydration indefinitely.
+    const fetchWithTimeout = (url, ms = 5000) => {
+      const timer = setTimeout(() => controller.abort(), ms);
+      return fetch(url, { signal }).finally(() => clearTimeout(timer));
+    };
+
     const detect = async () => {
       try {
         // 1. Detect country via IP
-        const geoRes = await fetch('https://get.geojs.io/v1/ip/geo.json', { signal });
+        const geoRes = await fetchWithTimeout('https://get.geojs.io/v1/ip/geo.json', 5000);
         const geoData = geoRes.ok ? await geoRes.json() : {};
+        if (cancelled) return;
         const country = geoData?.country ?? 'Morocco';
 
         const code = COUNTRY_CURRENCY[country] ?? 'MAD';
@@ -122,11 +131,13 @@ export default function CurrencyProvider({ children }) {
         // 2. Fetch live exchange rate (base: MAD)
         let detectedRate = 1;
         if (code !== 'MAD') {
-          const ratesRes = await fetch('https://open.er-api.com/v6/latest/MAD', { signal });
+          const ratesRes = await fetchWithTimeout('https://open.er-api.com/v6/latest/MAD', 5000);
           const ratesData = ratesRes.ok ? await ratesRes.json() : {};
+          if (cancelled) return;
           detectedRate = ratesData?.rates?.[code] ?? 1;
         }
 
+        if (cancelled) return;
         setCurrency({ code, sym });
         setRate(detectedRate);
 
@@ -135,15 +146,19 @@ export default function CurrencyProvider({ children }) {
           sessionStorage.setItem(SESSION_KEY, JSON.stringify({ code, sym, rate: detectedRate, ts: Date.now() }));
         } catch {/* ignore */}
       } catch (err) {
-        // Silently ignore abort errors (React Strict Mode / component unmount)
-        if (err?.name !== 'AbortError') {
-          // fallback to MAD — already the default state
+        // Silently ignore abort errors (React Strict Mode / component unmount
+        // or timeout). Fall back to MAD — already the default state.
+        if (err?.name !== 'AbortError' && process.env.NODE_ENV !== 'production') {
+          console.warn('[CurrencyProvider] detect failed:', err?.message ?? err);
         }
       }
     };
 
     detect().catch(() => {});
-    return () => controller.abort();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, []);
 
   const value = useMemo(() => ({

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { requireAdmin } from '@/middlewares/authGuard';
+import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
+import { invalidateTelegramConfig } from '@/lib/telegram';
 
 const ALLOWED_KEYS = [
   'telegram_bot_token',
@@ -64,6 +66,10 @@ export async function GET() {
  * Body: { telegram_bot_token?, telegram_chat_id?, whatsapp_number?, whatsapp_business_name? }
  */
 export async function PATCH(req) {
+  const originRejection = assertSameOrigin(req);
+  if (originRejection) return originRejection;
+  const limited = await rateLimitOrReject(req, { bucket: 'admin-settings', limit: 10, windowMs: 60_000 });
+  if (limited) return limited;
   try {
     await requireAdmin();
 
@@ -87,6 +93,12 @@ export async function PATCH(req) {
       .from('store_settings')
       .upsert(upserts, { onConflict: 'key' });
     if (error) throw error;
+
+    // If any Telegram credential changed, drop the in-memory cache so the
+    // next order picks up the new token/chat without a server restart.
+    if (upserts.some((u) => u.key === 'telegram_bot_token' || u.key === 'telegram_chat_id')) {
+      invalidateTelegramConfig();
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {

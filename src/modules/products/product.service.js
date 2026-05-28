@@ -1,6 +1,7 @@
 import { productRepository } from './product.repository';
 import { resolveProductTranslation } from '@/lib/product-locale';
 import { sanitizeSections } from '@/modules/product-sections/sanitize';
+import { computeDiscountInfo } from '@/lib/price';
 
 /** Compute derived fields so every layer works with a consistent shape. */
 export function normalizeProduct(raw, locale) {
@@ -13,19 +14,9 @@ export function normalizeProduct(raw, locale) {
 
   const mainImage = sortedImages.find((img) => img.is_main) ?? sortedImages[0] ?? null;
 
-  let effective_price = raw.price;
-  if (raw.discount_price != null) {
-    effective_price = raw.discount_price;
-  } else if (raw.discount_percentage != null) {
-    effective_price = raw.price * (1 - raw.discount_percentage / 100);
-  }
-
-  let badge = null;
-  if (raw.discount_percentage) badge = `-${Math.round(raw.discount_percentage)}%`;
-  else if (raw.discount_price) {
-    const pct = Math.round(((raw.price - raw.discount_price) / raw.price) * 100);
-    if (pct > 0) badge = `-${pct}%`;
-  }
+  // Centralised pricing math \u2014 see src/lib/price.js for precedence rules.
+  const { effective: effective_price, percent: discountPercent } = computeDiscountInfo(raw);
+  const badge = discountPercent > 0 ? `-${discountPercent}%` : null;
 
   let product = {
     ...raw,

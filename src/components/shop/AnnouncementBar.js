@@ -176,8 +176,23 @@ function pathMatchesScope(pathname, scope) {
 export function Countdown({ endAt, labels, expiredLabel }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
+    // Pause the per-second tick while the tab is hidden — a background
+    // page firing setState every 1s wakes up the main thread for no reason.
+    let t = null;
+    const start = () => {
+      if (t) return;
+      t = setInterval(() => setNow(Date.now()), 1000);
+    };
+    const stop = () => {
+      if (t) { clearInterval(t); t = null; }
+    };
+    if (typeof document === 'undefined' || document.visibilityState === 'visible') start();
+    const onVis = () => (document.visibilityState === 'visible' ? (setNow(Date.now()), start()) : stop());
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVis);
+    return () => {
+      stop();
+      if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVis);
+    };
   }, []);
 
   const end = new Date(endAt).getTime();
@@ -188,7 +203,7 @@ export function Countdown({ endAt, labels, expiredLabel }) {
   if (isExpired) {
     return (
       <span
-        className="inline-flex items-center justify-center px-2 py-0.5 rounded border border-current/35 bg-black/10 text-[10px] uppercase tracking-wide font-semibold ml-3"
+        className="inline-flex items-center justify-center px-2 py-0.5 rounded border border-current/35 bg-black/10 text-[10px] uppercase tracking-wide font-semibold ms-3"
         aria-live="polite"
       >
         {expiredLabel ?? 'Expired'}
@@ -209,7 +224,7 @@ export function Countdown({ endAt, labels, expiredLabel }) {
   units.push(          { v: pad(s), l: labels?.s ?? 's' });
 
   return (
-    <span className="inline-flex items-center gap-1 ml-3">
+    <span className="inline-flex items-center gap-1 ms-3">
       {units.map(({ v, l }) => (
         <span key={l} className="inline-flex flex-col items-center justify-center px-1.5 py-0.5 rounded border border-current/35 bg-black/10 min-w-[1.75rem]">
           <span className="font-mono font-semibold text-xs tabular-nums leading-none">{v}</span>
@@ -236,7 +251,7 @@ function PromoCode({ code, label = "Copy" }) {
     <button
       type="button"
       onClick={handle}
-      className="inline-flex items-center gap-1.5 ml-2 px-2 py-0.5 rounded bg-white/20 hover:bg-white/30 text-xs sm:text-sm font-mono font-semibold transition-colors"
+      className="inline-flex items-center gap-1.5 ms-2 px-2 py-0.5 rounded bg-white/20 hover:bg-white/30 text-xs sm:text-sm font-mono font-semibold transition-colors"
       aria-label={label}
     >
       <span className="tracking-wider">{code}</span>
@@ -654,10 +669,24 @@ export default function AnnouncementBar() {
     };
   }, [fetchTick]);
 
-  // Re-evaluate scheduling every 60s (for limited offers expiring while page open)
+  // Re-evaluate scheduling every 60s (for limited offers expiring while page open).
+  // Pause when tab is hidden — no point re-evaluating timestamps in the background.
   useEffect(() => {
-    const t = setInterval(() => setTick((n) => n + 1), 60_000);
-    return () => clearInterval(t);
+    let t = null;
+    const start = () => {
+      if (t) return;
+      t = setInterval(() => setTick((n) => n + 1), 60_000);
+    };
+    const stop = () => {
+      if (t) { clearInterval(t); t = null; }
+    };
+    if (typeof document === 'undefined' || document.visibilityState === 'visible') start();
+    const onVis = () => (document.visibilityState === 'visible' ? (setTick((n) => n + 1), start()) : stop());
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVis);
+    return () => {
+      stop();
+      if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVis);
+    };
   }, []);
 
   // Visible list: scope filter + schedule + dismissed
@@ -678,15 +707,26 @@ export default function AnnouncementBar() {
   // Auto-rotate carousel — only when there are multiple visible items.
   // The legacy `carousel_enabled` flag is ignored: with multiple items we
   // rotate, with a single item we never do (avoids pointless re-renders).
+  // Also pauses while the tab is hidden.
   useEffect(() => {
     if (rotationRef.current) clearInterval(rotationRef.current);
     if (visible.length <= 1) return;
     const interval = (Number(visible[0]?.rotation_seconds) || 5) * 1000;
-    rotationRef.current = setInterval(() => {
-      setActiveIdx((i) => (i + 1) % visible.length);
-    }, interval);
+    const start = () => {
+      if (rotationRef.current) return;
+      rotationRef.current = setInterval(() => {
+        setActiveIdx((i) => (i + 1) % visible.length);
+      }, interval);
+    };
+    const stop = () => {
+      if (rotationRef.current) { clearInterval(rotationRef.current); rotationRef.current = null; }
+    };
+    if (typeof document === 'undefined' || document.visibilityState === 'visible') start();
+    const onVis = () => (document.visibilityState === 'visible' ? start() : stop());
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVis);
     return () => {
-      if (rotationRef.current) clearInterval(rotationRef.current);
+      stop();
+      if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVis);
     };
   }, [visible]);
 

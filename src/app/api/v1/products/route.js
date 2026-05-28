@@ -2,34 +2,31 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { productService } from '@/modules/products/product.service';
 import { productSchema } from '@/modules/products/product.validation';
-
-async function isAdmin(supabase, user) {
-  if (!user) return false;
-  const { data } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-  return data?.role === 'admin';
-}
+import { getAdminUser } from '@/middlewares/authGuard';
+import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 
 export async function GET(req) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    const admin = await isAdmin(supabase, user);
+    const adminUser = await getAdminUser(supabase);
 
     const { searchParams } = new URL(req.url);
     const featured = searchParams.get('featured') === 'true' ? true : undefined;
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')) : undefined;
+    const limitParam = searchParams.get('limit');
+    const offsetParam = searchParams.get('offset');
+    // Clamp limit so a public caller can't request the whole catalogue.
+    const limit = limitParam ? Math.min(100, Math.max(1, parseInt(limitParam, 10) || 20)) : undefined;
+    const offset = offsetParam ? Math.max(0, parseInt(offsetParam, 10) || 0) : undefined;
     const locale = searchParams.get('locale') ?? undefined;
     // Admins can filter by status (including 'all'); public only sees 'active'
     const statusParam = searchParams.get('status');
-    const status = admin ? (statusParam ?? 'active') : 'active';
+    const status = adminUser ? (statusParam ?? 'active') : 'active';
 
-    const products = await productService.getProducts({ status, featured, limit, locale });
-    return NextResponse.json({ success: true, data: products });
-  } catch (error) {
+    const products = await productService.getProducts({ status, featured, limit, offset, locale });
+    return NextResponse.json({ success: true, data: products }, {
+      headers: adminUser ? undefined : { 'Cache-Control': 'public, max-age=60, stale-while-revalidate=600' },
+    });
+  } catch {
     return NextResponse.json(
       { success: false, error: 'Failed to fetch products' },
       { status: 500 }
@@ -38,10 +35,14 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
+  const originRejection = assertSameOrigin(req);
+  if (originRejection) return originRejection;
+  const limited = await rateLimitOrReject(req, { bucket: 'products-post', limit: 10, windowMs: 60_000 });
+  if (limited) return limited;
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!await isAdmin(supabase, user)) {
+    const adminUser = await getAdminUser(supabase);
+    if (!adminUser) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 

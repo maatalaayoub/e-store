@@ -68,19 +68,41 @@ async function getUpstashLimiter(limit, windowMs) {
 
 const _memHits = new Map(); // key -> number[] of timestamps
 
+// Periodic GC interval: every 60s scan and prune. Cheaper than per-request
+// sweeps for benign traffic, and still kicks in opportunistically under
+// attack (see threshold below).
+let _gcStarted = false;
+function startMemoryGc() {
+  if (_gcStarted) return;
+  _gcStarted = true;
+  if (typeof setInterval !== 'function') return;
+  const interval = setInterval(() => {
+    const cutoff = Date.now() - 10 * 60 * 1000; // drop everything older than 10 min
+    for (const [k, v] of _memHits) {
+      const filtered = v.filter((t) => t > cutoff);
+      if (filtered.length === 0) _memHits.delete(k);
+      else if (filtered.length !== v.length) _memHits.set(k, filtered);
+    }
+  }, 60_000);
+  // Don't keep the event loop alive just for GC.
+  if (typeof interval?.unref === 'function') interval.unref();
+}
+
 function memoryLimit(key, limit, windowMs) {
+  startMemoryGc();
   const now = Date.now();
   const cutoff = now - windowMs;
   const arr = (_memHits.get(key) ?? []).filter((t) => t > cutoff);
   arr.push(now);
   _memHits.set(key, arr);
 
-  // Opportunistic GC so the map can't grow unbounded under attack.
-  if (_memHits.size > 5000) {
+  // Opportunistic GC at lower threshold so the map can't grow unbounded
+  // under a key-spraying attack between scheduled sweeps.
+  if (_memHits.size > 1000) {
     for (const [k, v] of _memHits) {
       const filtered = v.filter((t) => t > cutoff);
       if (filtered.length === 0) _memHits.delete(k);
-      else _memHits.set(k, filtered);
+      else if (filtered.length !== v.length) _memHits.set(k, filtered);
     }
   }
 

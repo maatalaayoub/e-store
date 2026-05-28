@@ -14,6 +14,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getAdminUser } from '@/middlewares/authGuard';
 import { productSectionService } from '@/modules/product-sections/service';
 import { sanitizeSections } from '@/modules/product-sections/sanitize';
+import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 
 export async function GET() {
   try {
@@ -33,6 +34,10 @@ export async function GET() {
 }
 
 export async function PUT(request) {
+  const originRejection = assertSameOrigin(request);
+  if (originRejection) return originRejection;
+  const limited = await rateLimitOrReject(request, { bucket: 'admin-product-sections', limit: 10, windowMs: 60_000 });
+  if (limited) return limited;
   try {
     const supabase = await createClient();
     const adminUser = await getAdminUser(supabase);

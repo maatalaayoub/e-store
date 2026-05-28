@@ -84,9 +84,10 @@ export async function POST(req) {
       .single();
 
     if (error) {
-      // Unique constraint — already favorited, treat as success
+      // Unique constraint — already favorited, treat as idempotent success.
+      // Returning the same envelope shape avoids leaking schema details.
       if (error.code === '23505') {
-        return NextResponse.json({ success: true, alreadyExists: true });
+        return NextResponse.json({ success: true, data: null });
       }
       throw error;
     }
@@ -133,7 +134,7 @@ export async function DELETE(req) {
 
     if (error) throw error;
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, data: null });
   } catch (err) {
     console.error('[DELETE /api/v1/favorites]', err?.message ?? err);
     return NextResponse.json({ success: false, error: 'Failed to remove favorite' }, { status: 500 });

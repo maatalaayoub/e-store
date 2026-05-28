@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X, Check, ShoppingCart } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 /**
  * VariantPickerModal
@@ -40,6 +41,8 @@ export default function VariantPickerModal({
   const [selectedColor, setSelectedColor] = useState(hasColors ? colors[0] : null);
   const [selectedSize, setSelectedSize] = useState(hasSizes ? sizes[0] : null);
   const [submitted, setSubmitted] = useState(false);
+  const dialogRef = useRef(null);
+  useFocusTrap(dialogRef, open);
 
   // Reset state whenever the modal opens for a new product.
   useEffect(() => {
@@ -90,6 +93,7 @@ export default function VariantPickerModal({
       aria-modal="true"
     >
       <div
+        ref={dialogRef}
         className="relative w-full sm:max-w-md bg-white shadow-2xl rounded-t-2xl sm:rounded-2xl overflow-hidden max-h-[95dvh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
@@ -116,7 +120,7 @@ export default function VariantPickerModal({
             type="button"
             onClick={onClose}
             aria-label={tCommon.close ?? "Close"}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100 transition-colors -mr-2"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100 transition-colors -me-2"
           >
             <X className="h-4 w-4" />
           </button>

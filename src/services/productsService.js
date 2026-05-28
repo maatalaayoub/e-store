@@ -9,7 +9,8 @@ export async function fetchFeaturedProducts({ signal, locale } = {}) {
     const localeParam = locale ? `&locale=${locale}` : '';
     const res = await fetch(`/api/v1/products?status=active${localeParam}`, {
       signal,
-      cache: "no-store",
+      // Let the browser honour the API's Cache-Control header
+      // (public, max-age=60, stale-while-revalidate=600).
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();

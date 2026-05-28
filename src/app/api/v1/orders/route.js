@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase/service';
 import { sendTelegramMessage, buildOrderMessage } from '@/lib/telegram';
 import { getAdminUser } from '@/middlewares/authGuard';
 import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
+import { computeEffectivePrice } from '@/lib/price';
 
 const IS_DEV = process.env.NODE_ENV !== 'production';
 const PRICE_TOLERANCE = 0.01; // MAD
@@ -44,20 +45,9 @@ function isMissingVariantColumnError(error) {
 }
 
 function effectivePriceMad(product) {
-  // Mirror the rule used everywhere else: discount_price wins, else
-  // discount_percentage off list, else list price.
-  const list = Number(product.price ?? 0);
-  if (product.discount_price != null) {
-    const dp = Number(product.discount_price);
-    if (Number.isFinite(dp) && dp >= 0) return dp;
-  }
-  if (product.discount_percentage != null) {
-    const pct = Number(product.discount_percentage);
-    if (Number.isFinite(pct) && pct > 0 && pct <= 100) {
-      return Math.round(list * (1 - pct / 100) * 100) / 100;
-    }
-  }
-  return list;
+  // Centralised in src/lib/price.js \u2014 keeps server-side trusted pricing
+  // and client-side display in lockstep.
+  return computeEffectivePrice(product);
 }
 
 function safeExchangeRate(input) {

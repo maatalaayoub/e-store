@@ -654,7 +654,11 @@
     "order_whatsapp": "الطلب عبر واتساب",
     "cart_empty": "سلتك فارغة",
     "failed": "فشل تقديم الطلب. يرجى المحاولة مرة أخرى.",
-    "fill_required": "يرجى ملء الحقول المطلوبة: {fields}"
+    "fill_required": "يرجى ملء الحقول المطلوبة: {fields}",
+    "search_country": "ابحث عن دولة...",
+    "search_city": "ابحث عن مدينة...",
+    "no_countries": "لا توجد دول متاحة",
+    "select_country_first": "اختر الدولة أولاً"
   },
   "order_confirmed": {
     "title": "تم استلام طلبك!",

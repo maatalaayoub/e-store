@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { getAdminUser } from '@/middlewares/authGuard';
+import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 
 /**
  * Allowed schemes for hero hrefs and image URLs.
@@ -76,6 +77,10 @@ export async function GET() {
  * Body: { slides: [{ image_url, title, cta_text, href, is_active }] }
  */
 export async function PUT(request) {
+  const originRejection = assertSameOrigin(request);
+  if (originRejection) return originRejection;
+  const limited = await rateLimitOrReject(request, { bucket: 'admin-hero-slides', limit: 10, windowMs: 60_000 });
+  if (limited) return limited;
   try {
     const supabase = await createClient();
     const adminUser = await getAdminUser(supabase);

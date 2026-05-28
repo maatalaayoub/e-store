@@ -30,7 +30,7 @@ const PRODUCT_LIST_SELECT = `
 `.trim();
 
 export class ProductRepository {
-  async findAll({ status, featured, limit } = {}) {
+  async findAll({ status, featured, limit, offset } = {}) {
     const supabase = await createClient();
     let query = supabase
       .from('products')
@@ -40,7 +40,15 @@ export class ProductRepository {
 
     if (status && status !== 'all') query = query.eq('status', status);
     if (featured === true) query = query.eq('is_featured', true);
-    if (limit) query = query.limit(limit);
+
+    // Offset + limit translate to PostgREST `range(from, to)`; we apply
+    // `limit` directly when no offset is provided to keep older callers
+    // working.
+    if (offset != null && limit != null) {
+      query = query.range(offset, offset + limit - 1);
+    } else if (limit != null) {
+      query = query.limit(limit);
+    }
 
     const { data, error } = await query;
     if (error) throw error;

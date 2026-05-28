@@ -1,27 +1,29 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { categoryService } from '@/modules/categories/category.service';
-
-async function isAdmin(supabase, user) {
-  if (!user) return false;
-  const { data } = await supabase.from('users').select('role').eq('id', user.id).single();
-  return data?.role === 'admin';
-}
+import { getAdminUser } from '@/middlewares/authGuard';
+import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 
 export async function GET() {
   try {
     const categories = await categoryService.getCategories();
-    return NextResponse.json({ success: true, data: categories });
+    return NextResponse.json({ success: true, data: categories }, {
+      headers: { 'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600' },
+    });
   } catch {
     return NextResponse.json({ success: false, error: 'Failed to fetch categories' }, { status: 500 });
   }
 }
 
 export async function POST(req) {
+  const originRejection = assertSameOrigin(req);
+  if (originRejection) return originRejection;
+  const limited = await rateLimitOrReject(req, { bucket: 'categories-post', limit: 10, windowMs: 60_000 });
+  if (limited) return limited;
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!await isAdmin(supabase, user)) {
+    const adminUser = await getAdminUser(supabase);
+    if (!adminUser) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -36,7 +38,7 @@ export async function POST(req) {
 
     const category = await categoryService.createCategory(raw);
     return NextResponse.json({ success: true, data: category }, { status: 201 });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { success: false, error: 'Failed to create category' },
       { status: 500 }

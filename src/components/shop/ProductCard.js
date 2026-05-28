@@ -6,6 +6,7 @@ import { useCurrency } from "@/components/providers/CurrencyProvider";
 import { useCartStore } from "@/store/useCartStore";
 import { resolveProductTranslation } from "@/lib/product-locale";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 import { ShoppingCart, Check, Heart, ArrowUpRight } from "lucide-react";
 import { useFavorite } from "@/hooks/useFavorite";
@@ -250,12 +251,13 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
     >
       <Link href={`/${locale}/product/${product.id}`} className={imgWrapperClass}>
         {imgSrc ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={imgSrc}
             alt={product.name}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             loading="lazy"
-            className={`h-full w-full transition-transform duration-700 ease-out group-hover:scale-105 ${isFloating ? 'object-contain p-3' : 'object-cover'}`}
+            className={`transition-transform duration-700 ease-out group-hover:scale-105 ${isFloating ? 'object-contain p-3' : 'object-cover'}`}
           />
         ) : (
           <div className="h-full w-full bg-zinc-100" />
