@@ -1,6 +1,5 @@
 import { productRepository } from './product.repository';
 import { resolveProductTranslation } from '@/lib/product-locale';
-import { sanitizeSections } from '@/modules/product-sections/sanitize';
 import { computeDiscountInfo } from '@/lib/price';
 
 /** Compute derived fields so every layer works with a consistent shape. */
@@ -49,14 +48,14 @@ export class ProductService {
   }
 
   async createProduct(data) {
-    const payload = sanitizeProductWritePayload(data);
+    const payload = await sanitizeProductWritePayload(data);
     const raw = await productRepository.create(payload);
     return normalizeProduct(raw);
   }
 
   async updateProduct(id, data) {
     if (!id) throw new Error('Product ID required');
-    const payload = sanitizeProductWritePayload(data);
+    const payload = await sanitizeProductWritePayload(data);
     const raw = await productRepository.update(id, payload);
     return normalizeProduct(raw);
   }
@@ -87,10 +86,11 @@ export class ProductService {
  * `use_default_sections=true` always implies `sections_config=null` so
  * the two columns can never disagree on which scope wins.
  */
-function sanitizeProductWritePayload(data) {
+async function sanitizeProductWritePayload(data) {
   const payload = { ...data };
 
   if (Object.prototype.hasOwnProperty.call(payload, 'sections_config')) {
+    const { sanitizeSections } = await import('@/modules/product-sections/sanitize');
     payload.sections_config = Array.isArray(payload.sections_config)
       ? sanitizeSections(payload.sections_config)
       : null;
