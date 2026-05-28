@@ -75,7 +75,13 @@ export async function proxy(request) {
         },
       },
     });
-    await supabase.auth.getUser();
+    try {
+      await supabase.auth.getUser();
+    } catch (err) {
+      // A stale or malformed auth cookie must NEVER crash the proxy;
+      // continue serving the request as anonymous.
+      console.warn('[proxy] supabase.auth.getUser failed:', err?.message ?? err);
+    }
   }
 
   // API routes — skip locale redirect but keep session-refreshed response.

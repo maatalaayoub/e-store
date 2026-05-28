@@ -29,7 +29,12 @@ export async function GET(req) {
   } catch (error) {
     console.error('[api/products] GET failed:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch products' },
+      {
+        success: false,
+        error: 'Failed to fetch products',
+        detail: error?.message ?? String(error),
+        code: error?.code ?? null,
+      },
       { status: 500 }
     );
   }
