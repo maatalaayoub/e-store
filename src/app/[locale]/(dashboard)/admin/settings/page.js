@@ -38,7 +38,6 @@ import { Blocks } from "lucide-react";
 import { getMainImage } from "@/lib/product-image";
 import ProductCard from "@/components/shop/ProductCard";
 import { CARD_LAYOUTS } from "@/components/shop/ProductCard";
-import { featuredProductsFallback } from "@/data/featuredProducts";
 
 const SECTION_DEFS = [
   { id: "general", icon: Store },
@@ -415,15 +414,14 @@ const LAYOUT_PRESETS = [
 ];
 
 const PREVIEW_PRODUCT = {
-  ...featuredProductsFallback[0],
-  id: featuredProductsFallback[0]?.id ?? 'preview-product',
-  name: featuredProductsFallback[0]?.name ?? 'Premium Wireless Headphones',
-  short_description: featuredProductsFallback[0]?.short_description ?? 'A refined everyday essential with premium finishing.',
+  id: 'preview-product',
+  name: 'Preview Product',
+  short_description: 'A sample card preview for storefront styling.',
   price: 299,
   effective_price: 299,
-  main_image: featuredProductsFallback[0]?.image ?? null,
-  image: featuredProductsFallback[0]?.image ?? null,
-  category_name: featuredProductsFallback[0]?.category ?? 'Accessories',
+  main_image: null,
+  image: null,
+  category_name: 'Preview',
 };
 
 function normalizePreviewProduct(product) {

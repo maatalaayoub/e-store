@@ -240,7 +240,7 @@
         "use_default_layout_hint": "Inherit the global sections defined in Store Settings.",
         "sections_empty": "Add sections to customize this product's page.",
         "name_label": "Name",
-        "name_placeholder": "e.g. Premium Wireless Headphones",
+        "name_placeholder": "e.g. Product name",
         "category_label": "Category",
         "category_none": "No category",
         "category_new": "+ New",

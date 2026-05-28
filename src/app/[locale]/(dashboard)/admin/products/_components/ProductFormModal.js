@@ -568,7 +568,7 @@ export default function ProductFormModal({
                   dispatch({ type: "set_translation", lang: activeLang, field: "name", value: e.target.value })
                 }
                 dir={RTL_LANGS.has(activeLang) ? "rtl" : "ltr"}
-                placeholder={t.name_placeholder ?? "e.g. Premium Wireless Headphones"}
+                placeholder={t.name_placeholder ?? "e.g. Product name"}
                 className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
