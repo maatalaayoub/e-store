@@ -32,9 +32,6 @@ const securityHeaders = [
 
 const nextConfig = {
   reactCompiler: true,
-  // isomorphic-dompurify → jsdom has native bindings that webpack cannot bundle.
-  // Tell Next.js to require() them from node_modules at runtime instead.
-  serverExternalPackages: ['isomorphic-dompurify', 'jsdom'],
   allowedDevOrigins: [
     'localhost',
     '192.168.8.102',

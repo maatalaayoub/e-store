@@ -5,7 +5,6 @@
  * filters anything dangerous (script tags, javascript: hrefs, etc.).
  */
 
-import DOMPurify from 'isomorphic-dompurify';
 import {
   SECTION_REGISTRY,
   generateSectionId,
@@ -71,9 +70,6 @@ function pickEnum(v, allowed, fallback) {
  * handler / `javascript:` URL. Output is safe to pass to
  * dangerouslySetInnerHTML in the renderer.
  *
- * Implementation uses DOMPurify (a battle-tested HTML sanitizer) instead of
- * regex parsing, which is fundamentally unsafe for HTML.
- *
  * Whitelist: p, br, strong, em, b, i, u, ul, ol, li, h2, h3, h4, blockquote,
  *            a (href only, with rel + target hardened), code, pre, span.
  */
@@ -82,7 +78,20 @@ const ALLOWED_TAGS = [
   'ul', 'ol', 'li', 'h2', 'h3', 'h4',
   'blockquote', 'a', 'code', 'pre', 'span',
 ];
-const ALLOWED_ATTR = ['href', 'rel', 'target'];
+const VOID_TAGS = new Set(['br']);
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value).replace(/`/g, '&#96;');
+}
 
 export function sanitizeHtml(input) {
   if (input == null) return null;
@@ -90,23 +99,20 @@ export function sanitizeHtml(input) {
   if (!html.trim()) return null;
   if (html.length > MAX_HTML_LEN) html = html.slice(0, MAX_HTML_LEN);
 
-  const cleaned = DOMPurify.sanitize(html, {
-    ALLOWED_TAGS,
-    ALLOWED_ATTR,
-    ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|tel:|\/(?!\/))/i,
-    FORBID_TAGS: ['style', 'script', 'iframe', 'object', 'embed', 'svg', 'math'],
-    FORBID_ATTR: ['style', 'srcset', 'formaction', 'xlink:href'],
-    ADD_ATTR: ['target', 'rel'],
-    KEEP_CONTENT: true,
-    USE_PROFILES: { html: true },
-  });
+  html = html
+    .replace(/<\s*(script|style|iframe|object|embed|svg|math)\b[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
+    .replace(/<!--([\s\S]*?)-->/g, '');
 
-  // Force all surviving <a> tags to have safe rel/target.
-  const safe = cleaned.replace(/<a\b([^>]*)>/gi, (m, attrs) => {
-    const hrefMatch = attrs.match(/\bhref\s*=\s*"([^"]*)"/i);
-    if (!hrefMatch) return '<span>';
-    const href = hrefMatch[1];
-    return `<a href="${href}" rel="noopener noreferrer nofollow" target="_blank">`;
+  const safe = html.replace(/<\/?([a-z][a-z0-9-]*)\b([^>]*)>/gi, (match, rawTag, rawAttrs = '') => {
+    const tag = rawTag.toLowerCase();
+    if (!ALLOWED_TAGS.includes(tag)) return escapeHtml(match);
+    if (match.startsWith('</')) return VOID_TAGS.has(tag) ? '' : `</${tag}>`;
+    if (tag !== 'a') return VOID_TAGS.has(tag) ? `<${tag}>` : `<${tag}>`;
+
+    const hrefMatch = rawAttrs.match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+    const href = hrefMatch?.[1] ?? hrefMatch?.[2] ?? hrefMatch?.[3] ?? '';
+    if (!SAFE_HREF_RE.test(href)) return '<span>';
+    return `<a href="${escapeAttr(href)}" rel="noopener noreferrer nofollow" target="_blank">`;
   });
 
   return safe.trim() ? safe : null;
