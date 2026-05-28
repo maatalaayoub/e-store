@@ -12,12 +12,14 @@ import { parsePrice } from "@/lib/price";
 import { useCheckoutForm } from "@/components/shop/checkout/useCheckoutForm";
 import CheckoutFields from "@/components/shop/checkout/CheckoutFields";
 import CheckoutActions from "@/components/shop/checkout/CheckoutActions";
+import { getMainImage } from "@/lib/product-image";
 
 export default function CheckoutClient({ locale, dict }) {
   const router = useRouter();
   const { items, clearCart, removeItem, updateQuantity } = useCartStore();
   const tCheckout = dict?.checkout ?? {};
   const tCart = dict?.cart ?? {};
+  const tProduct = dict?.product ?? {};
   const isRtl = isRtlLocale(locale);
   const BackIcon = isRtl ? ArrowRight : ArrowLeft;
 
@@ -96,18 +98,38 @@ export default function CheckoutClient({ locale, dict }) {
                   <p className="py-8 text-sm text-zinc-400 text-center">{tCart.empty_state_title ?? "Your cart is empty"}</p>
                 ) : (
                   items.map((item) => {
+                    const lineKey = item.lineKey ?? item.id;
                     const resolved = resolveProductTranslation(item, locale);
                     const price = parsePrice(item.effective_price ?? item.price);
-                    const img = Array.isArray(item.images) && item.images[0]?.url
-                      ? item.images[0].url
-                      : "/placeholder-view.svg";
+                    const selectedColor = item.selectedColor ?? item.selected_color ?? null;
+                    const selectedSize = item.selectedSize ?? item.selected_size ?? null;
+                    const img = getMainImage(item) ?? "/images/placeholder-product.svg";
                     return (
-                      <div key={item.id} className="flex items-center gap-4 px-4 py-4 bg-white">
+                      <div key={lineKey} className="flex items-center gap-4 px-4 py-4 bg-white">
                         <div className="h-16 w-16 relative shrink-0 rounded-lg overflow-hidden border border-zinc-200 bg-white">
                           <Image src={img} alt={resolved.name} fill sizes="64px" loading="eager" className="object-cover" />
                         </div>
                         <div className="flex flex-1 flex-col gap-1 min-w-0">
                           <span className="text-sm font-semibold text-zinc-900 leading-snug truncate">{resolved.name}</span>
+                          {(selectedColor?.name || selectedSize) && (
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500">
+                              {selectedColor?.name && (
+                                <span className="inline-flex items-center gap-1.5">
+                                  {selectedColor?.hex && (
+                                    <span
+                                      aria-hidden="true"
+                                      className="inline-block h-3 w-3 rounded-full border border-zinc-200"
+                                      style={{ backgroundColor: selectedColor.hex }}
+                                    />
+                                  )}
+                                  <span>{tProduct.color ?? "Color"}: <span className="font-medium text-zinc-700">{selectedColor.name}</span></span>
+                                </span>
+                              )}
+                              {selectedSize && (
+                                <span>{tProduct.size ?? "Size"}: <span className="font-medium text-zinc-700">{selectedSize}</span></span>
+                              )}
+                            </div>
+                          )}
                           <span className="text-sm font-bold text-zinc-900">
                             {formatPrice(price * item.quantity)}
                           </span>
@@ -116,8 +138,8 @@ export default function CheckoutClient({ locale, dict }) {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  if (item.quantity <= 1) removeItem(item.id);
-                                  else updateQuantity(item.id, item.quantity - 1);
+                                  if (item.quantity <= 1) removeItem(lineKey);
+                                  else updateQuantity(lineKey, item.quantity - 1);
                                 }}
                                 className="flex h-6 w-6 items-center justify-center rounded-full text-zinc-600 hover:bg-zinc-100 transition-colors"
                                 aria-label="Decrease quantity"
@@ -129,7 +151,7 @@ export default function CheckoutClient({ locale, dict }) {
                               </span>
                               <button
                                 type="button"
-                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                onClick={() => updateQuantity(lineKey, item.quantity + 1)}
                                 disabled={item.stock != null && item.quantity >= item.stock}
                                 className="flex h-6 w-6 items-center justify-center rounded-full text-zinc-600 hover:bg-zinc-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                                 aria-label="Increase quantity"
@@ -139,7 +161,7 @@ export default function CheckoutClient({ locale, dict }) {
                             </div>
                             <button
                               type="button"
-                              onClick={() => removeItem(item.id)}
+                              onClick={() => removeItem(lineKey)}
                               aria-label={`Remove ${resolved.name}`}
                               className="text-zinc-300 hover:text-red-400 transition-colors"
                             >

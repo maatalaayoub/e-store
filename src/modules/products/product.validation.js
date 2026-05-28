@@ -2,11 +2,13 @@ import { z } from 'zod';
 
 const translationEntry = z.object({
   name: z.string().optional().nullable(),
+  short_description: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
 });
 
 export const productSchema = z.object({
   name: z.string().min(2).max(200),
+  short_description: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
   price: z.number().positive(),
   discount_price: z.number().nonnegative().optional().nullable(),

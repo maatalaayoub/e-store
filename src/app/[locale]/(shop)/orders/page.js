@@ -96,6 +96,25 @@ function OrderCard({ order, onCancel }) {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-zinc-900 truncate">{item.products?.name ?? "Product"}</p>
                 <p className="text-xs text-zinc-500 mt-0.5">{tOrders.qty ?? "Qty"}: {item.quantity}</p>
+                {(item.selected_color?.name || item.selected_size) && (
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500">
+                    {item.selected_color?.name && (
+                      <span className="inline-flex items-center gap-1.5">
+                        {item.selected_color?.hex && (
+                          <span
+                            aria-hidden="true"
+                            className="inline-block h-3 w-3 rounded-full border border-zinc-200"
+                            style={{ backgroundColor: item.selected_color.hex }}
+                          />
+                        )}
+                        <span>{dict?.product?.color ?? "Color"}: <span className="font-medium text-zinc-700">{item.selected_color.name}</span></span>
+                      </span>
+                    )}
+                    {item.selected_size && (
+                      <span>{dict?.product?.size ?? "Size"}: <span className="font-medium text-zinc-700">{item.selected_size}</span></span>
+                    )}
+                  </div>
+                )}
               </div>
               <p className="text-sm font-semibold text-zinc-900 shrink-0">{formatPrice(item.unit_price)}</p>
             </li>

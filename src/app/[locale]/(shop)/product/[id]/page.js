@@ -39,6 +39,7 @@ export default async function ProductDetailsPage({ params }) {
   const checkoutSection = resolvedSections.find((s) => s.type === "checkout") ?? null;
   const hasCheckoutSection = !!checkoutSection;
   const CheckoutCmp = checkoutSection ? getSectionComponent("checkout") : null;
+  const excludedSectionTypes = ["description", ...(hasCheckoutSection ? ["checkout"] : [])];
 
   return (
     <div className="min-h-screen bg-white">
@@ -47,25 +48,16 @@ export default async function ProductDetailsPage({ params }) {
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-20 pb-10 lg:py-10 lg:pt-20">
         <nav className="flex items-center gap-1.5 text-sm text-zinc-500 mb-8">
           <a href={`/${locale}`} className="hover:text-zinc-900">{dict?.product?.homepage ?? "Homepage"}</a>
-          {product.category && (
-            <>
-              <ChevronRight className="h-3.5 w-3.5" />
-              <span className="hover:text-zinc-900">{product.category}</span>
-            </>
-          )}
           <ChevronRight className="h-3.5 w-3.5" />
           <span className="text-zinc-900 font-medium truncate max-w-xs">{product.name}</span>
         </nav>
 
         <div className="lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16">
-          <div className="relative pb-20 lg:pb-0">
+          <div className="relative pb-24 lg:pb-0">
             <ProductGallery images={product.images} productName={product.name} productId={product.id} />
           </div>
 
-          <div className="mt-10 lg:mt-0">            {product.category && (
-              <p className="text-sm text-zinc-500 mb-2">{product.category}</p>
-            )}
-
+          <div className="mt-4 lg:mt-0">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">
               {product.name}
             </h1>
@@ -91,13 +83,21 @@ export default async function ProductDetailsPage({ params }) {
               </div>
             </div>
 
+            {product.short_description && (
+              <p className="mt-4 max-w-xl text-sm sm:text-[15px] text-zinc-600 leading-relaxed whitespace-pre-line">
+                {product.short_description}
+              </p>
+            )}
+
             {product.description && (
-              <div className="mt-6">
-                <h3 className="font-semibold text-zinc-900 mb-2">{dict?.product?.description ?? "Description"}:</h3>
-                <p className="text-sm text-zinc-600 leading-relaxed whitespace-pre-line line-clamp-3">
+              <section className="mt-6 border-t border-zinc-100 pt-5">
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-900 mb-3">
+                  {dict?.product?.description ?? "Description"}
+                </h2>
+                <p className="text-sm text-zinc-600 leading-relaxed whitespace-pre-line">
                   {product.description}
                 </p>
-              </div>
+              </section>
             )}
 
             <ProductPurchasePanel
@@ -124,7 +124,7 @@ export default async function ProductDetailsPage({ params }) {
           product={product}
           locale={locale}
           dict={dict}
-          excludeTypes={hasCheckoutSection ? ["checkout"] : []}
+          excludeTypes={excludedSectionTypes}
         />
       </main>
     </div>

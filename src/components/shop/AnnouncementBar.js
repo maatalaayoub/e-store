@@ -353,7 +353,11 @@ function SocialInfoPanel({ a }) {
   return (
     <span className="inline-flex items-center gap-2">
       {showLogo && (
-        <img src={a.social_logo_url} alt="" className="h-7 w-7 rounded-full object-cover shrink-0" />
+        <img
+          src={a.social_logo_url}
+          alt={a.social_business_name ? `${a.social_business_name} logo` : 'Social channel logo'}
+          className="h-7 w-7 rounded-full object-cover shrink-0"
+        />
       )}
       {(showName || showPhone) && (
         <span className="flex flex-col leading-tight">

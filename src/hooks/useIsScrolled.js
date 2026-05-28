@@ -29,14 +29,22 @@ export function useIsScrolled(threshold = HEADER_SCROLL_THRESHOLD_PX) {
     // Listen to actual scroll events
     window.addEventListener("scroll", handleScroll, { passive: true });
 
-    // Check periodically for asynchronous scroll restoration.
-    // Next.js and browsers often restore scroll position without firing a scroll event,
-    // causing the state to be stale (e.g. transparent header when scrolled down).
-    const interval = setInterval(handleScroll, 150);
+    // Catch async scroll restoration (bfcache, popstate, mobile keyboard close)
+    // by re-checking on the events the browser fires for those cases — far
+    // cheaper than a 150ms polling interval.
+    const onRestore = () => {
+      // run on the next two animation frames so layout has settled
+      requestAnimationFrame(() => requestAnimationFrame(handleScroll));
+    };
+    window.addEventListener("pageshow", onRestore);
+    window.addEventListener("popstate", onRestore);
+    window.addEventListener("resize", handleScroll, { passive: true });
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
-      clearInterval(interval);
+      window.removeEventListener("pageshow", onRestore);
+      window.removeEventListener("popstate", onRestore);
+      window.removeEventListener("resize", handleScroll);
     };
   }, [threshold]);
 

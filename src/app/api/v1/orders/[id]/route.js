@@ -65,6 +65,8 @@ export async function GET(req, { params }) {
         order_items (
           quantity,
           unit_price,
+          selected_color,
+          selected_size,
           products ( name )
         )
       `);

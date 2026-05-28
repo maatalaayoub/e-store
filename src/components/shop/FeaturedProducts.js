@@ -34,6 +34,7 @@ export default function FeaturedProducts({ onItemAdded }) {
   const [outlineBg, setOutlineBg] = useState(() => _dsCache?.product_card_outline_bg ?? null);
   const [buttonFontSize, setButtonFontSize] = useState(() => parseInt(_dsCache?.product_card_button_font_size) || 10);
   const [layout, setLayout] = useState(() => _dsCache?.product_card_layout ?? null);
+  const [showShortDescription, setShowShortDescription] = useState(() => _dsCache?.product_card_show_short_description === 'true');
   const [itemsMobile,  setItemsMobile]  = useState(() => parseInt(_dsCache?.carousel_items_mobile)  || 2);
   const [itemsTablet,  setItemsTablet]  = useState(() => parseInt(_dsCache?.carousel_items_tablet)  || 3);
   const [itemsDesktop, setItemsDesktop] = useState(() => parseInt(_dsCache?.carousel_items_desktop) || 4);
@@ -50,9 +51,12 @@ export default function FeaturedProducts({ onItemAdded }) {
       fetchFeaturedProducts({ signal: controller.signal, locale }),
       fetchDisplaySettings(),
     ]).then(([data, ds]) => {
-      _cache.set(locale, data);
+      if (!mounted) return;
+      if (Array.isArray(data) && data.length > 0) {
+        _cache.set(locale, data);
+      }
       _dsCache = ds;
-      if (mounted) {
+      {
         setProducts(data);
         setButtonStyle(ds?.product_card_button_style ?? null);
         setFilledBg(ds?.product_card_filled_bg ?? null);
@@ -63,6 +67,7 @@ export default function FeaturedProducts({ onItemAdded }) {
         setOutlineBg(ds?.product_card_outline_bg ?? null);
         setButtonFontSize(parseInt(ds?.product_card_button_font_size) || 10);
         setLayout(ds?.product_card_layout ?? null);
+        setShowShortDescription(ds?.product_card_show_short_description === 'true');
         setItemsMobile(parseInt(ds?.carousel_items_mobile)  || 2);
         setItemsTablet(parseInt(ds?.carousel_items_tablet)  || 3);
         setItemsDesktop(parseInt(ds?.carousel_items_desktop) || 4);
@@ -115,6 +120,7 @@ export default function FeaturedProducts({ onItemAdded }) {
             outlineBg={outlineBg}
             buttonFontSize={buttonFontSize}
             layout={layout}
+            showShortDescription={showShortDescription}
             itemsMobile={itemsMobile}
             itemsTablet={itemsTablet}
             itemsDesktop={itemsDesktop}

@@ -3,7 +3,7 @@
 import "client-only";
 import { X, Minus, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useCartStore } from "@/store/useCartStore";
 import { useDictionary } from "@/components/providers/LocaleProvider";
@@ -24,11 +24,19 @@ export default function CartSidebar({ isOpen, onClose }) {
   useEffect(() => setHydrated(true), []);
   const { formatPrice } = useCurrency();
 
-  const subtotal = items.reduce(
-    (acc, item) => acc + parsePrice(item.effective_price ?? item.price) * item.quantity,
-    0
+  const subtotal = useMemo(
+    () =>
+      items.reduce(
+        (acc, item) =>
+          acc + parsePrice(item.effective_price ?? item.price) * item.quantity,
+        0,
+      ),
+    [items],
   );
-  const totalItems = items.reduce((acc, i) => acc + i.quantity, 0);
+  const totalItems = useMemo(
+    () => items.reduce((acc, i) => acc + i.quantity, 0),
+    [items],
+  );
 
   return (
     <>
@@ -103,9 +111,15 @@ export default function CartSidebar({ isOpen, onClose }) {
           <>
             {/* ── Cart items list ── */}
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
-              {items.map((item, index) => (
-                <div 
-                  key={item.id} 
+              {items.map((item, index) => {
+                const lineKey = item.lineKey ?? item.id;
+                const selectedColor = item.selectedColor ?? null;
+                const selectedSize = item.selectedSize ?? null;
+                const colorLabel = dict?.product?.color ?? "Color";
+                const sizeLabel = dict?.product?.size ?? "Size";
+                return (
+                <div
+                  key={lineKey}
                   className={`flex gap-3 transition-all duration-500 ease-out ${isOpen ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}
                   style={{ transitionDelay: `${isOpen ? index * 75 + 150 : 0}ms` }}
                 >
@@ -125,6 +139,25 @@ export default function CartSidebar({ isOpen, onClose }) {
                     <p className="text-sm font-medium text-zinc-900 line-clamp-2 leading-snug">
                       {item.name}
                     </p>
+                    {(selectedColor?.name || selectedSize) && (
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-zinc-500">
+                        {selectedColor?.name && (
+                          <span className="inline-flex items-center gap-1">
+                            {selectedColor?.hex && (
+                              <span
+                                aria-hidden="true"
+                                className="inline-block h-2.5 w-2.5 rounded-full border border-zinc-200"
+                                style={{ backgroundColor: selectedColor.hex }}
+                              />
+                            )}
+                            <span>{colorLabel}: <span className="font-medium text-zinc-700">{selectedColor.name}</span></span>
+                          </span>
+                        )}
+                        {selectedSize && (
+                          <span>{sizeLabel}: <span className="font-medium text-zinc-700">{selectedSize}</span></span>
+                        )}
+                      </div>
+                    )}
                     {item.category && (
                       <p className="text-[11px] text-zinc-400 uppercase tracking-wide">
                         {item.category}
@@ -138,8 +171,8 @@ export default function CartSidebar({ isOpen, onClose }) {
                       <div className="flex items-center gap-0.5 rounded-full border border-zinc-200 bg-white px-1">
                         <button
                           onClick={() => {
-                            if (item.quantity <= 1) removeItem(item.id);
-                            else updateQuantity(item.id, item.quantity - 1);
+                            if (item.quantity <= 1) removeItem(lineKey);
+                            else updateQuantity(lineKey, item.quantity - 1);
                           }}
                           className="flex h-7 w-7 items-center justify-center rounded-full text-zinc-600 hover:bg-zinc-100 transition-colors"
                           aria-label="Decrease quantity"
@@ -151,7 +184,7 @@ export default function CartSidebar({ isOpen, onClose }) {
                         </span>
                         <button
                           onClick={() =>
-                            updateQuantity(item.id, item.quantity + 1)
+                            updateQuantity(lineKey, item.quantity + 1)
                           }
                           className="flex h-7 w-7 items-center justify-center rounded-full text-zinc-600 hover:bg-zinc-100 transition-colors"
                           aria-label="Increase quantity"
@@ -162,7 +195,7 @@ export default function CartSidebar({ isOpen, onClose }) {
 
                       {/* Remove */}
                       <button
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => removeItem(lineKey)}
                         className="text-zinc-400 hover:text-red-500 transition-colors"
                         aria-label="Remove item"
                       >
@@ -171,7 +204,8 @@ export default function CartSidebar({ isOpen, onClose }) {
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* ── Footer: subtotal + CTA ── */}

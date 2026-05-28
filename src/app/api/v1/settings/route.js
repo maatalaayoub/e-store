@@ -16,6 +16,7 @@ const ALLOWED_KEYS = [
   'product_card_outline_bg',
   'product_card_button_font_size',
   'product_card_layout',
+  'product_card_show_short_description',
   'carousel_items_mobile',
   'carousel_items_tablet',
   'carousel_items_desktop',

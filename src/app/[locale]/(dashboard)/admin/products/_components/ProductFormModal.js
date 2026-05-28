@@ -17,7 +17,9 @@ const LANG_LABELS = { en: "English", fr: "Français", ar: "العربية", dr: 
 const RTL_LANGS = new Set(RTL_LOCALES);
 
 function emptyTranslations() {
-  return Object.fromEntries(SUPPORTED_LANGS.map((l) => [l, { name: "", description: "" }]));
+  return Object.fromEntries(
+    SUPPORTED_LANGS.map((l) => [l, { name: "", short_description: "", description: "" }])
+  );
 }
 
 const initialForm = {
@@ -69,14 +71,19 @@ function productToForm(p) {
       if (p.translations[l]) {
         translations[l] = {
           name: p.translations[l].name ?? "",
+          short_description: p.translations[l].short_description ?? "",
           description: p.translations[l].description ?? "",
         };
       }
     });
   } else {
-    // Legacy product without translations: pre-fill all langs with existing name/description
+    // Legacy product without translations: pre-fill all langs with existing text fields
     SUPPORTED_LANGS.forEach((l) => {
-      translations[l] = { name: p.name ?? "", description: p.description ?? "" };
+      translations[l] = {
+        name: p.name ?? "",
+        short_description: p.short_description ?? "",
+        description: p.description ?? "",
+      };
     });
   }
 
@@ -342,9 +349,10 @@ export default function ProductFormModal({
       const translationsData = {};
       SUPPORTED_LANGS.forEach((l) => {
         const tr = form.translations[l];
-        if (tr?.name?.trim() || tr?.description?.trim()) {
+        if (tr?.name?.trim() || tr?.short_description?.trim() || tr?.description?.trim()) {
           translationsData[l] = {
             name: tr.name.trim() || null,
+            short_description: tr.short_description.trim() || null,
             description: tr.description.trim() || null,
           };
         }
@@ -352,6 +360,8 @@ export default function ProductFormModal({
 
       const payload = {
         name: primaryName,
+        short_description:
+          primaryTrans.short_description?.trim() || fallbackTrans?.short_description?.trim() || null,
         description: primaryTrans.description?.trim() || fallbackTrans?.description?.trim() || null,
         translations: Object.keys(translationsData).length > 0 ? translationsData : null,
         category_id: form.category_id || null,
@@ -641,10 +651,32 @@ export default function ProductFormModal({
               )}
             </div>
 
-            {/* Description */}
+            {/* Short Description */}
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-1">
-                {t.description_label ?? "Description"}
+                {t.short_description_label ?? "Short Description"}
+              </label>
+              <textarea
+                value={form.translations[activeLang]?.short_description ?? ""}
+                onChange={(e) =>
+                  dispatch({
+                    type: "set_translation",
+                    lang: activeLang,
+                    field: "short_description",
+                    value: e.target.value,
+                  })
+                }
+                dir={RTL_LANGS.has(activeLang) ? "rtl" : "ltr"}
+                rows={2}
+                placeholder={t.short_description_placeholder ?? "Brief product summary..."}
+                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              />
+            </div>
+
+            {/* Long Description */}
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 mb-1">
+                {t.description_label ?? "Long Description"}
               </label>
               <textarea
                 value={form.translations[activeLang]?.description ?? ""}
@@ -653,7 +685,7 @@ export default function ProductFormModal({
                 }
                 dir={RTL_LANGS.has(activeLang) ? "rtl" : "ltr"}
                 rows={3}
-                placeholder={t.description_placeholder ?? "Product description..."}
+                placeholder={t.description_placeholder ?? "Detailed product description..."}
                 className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               />
             </div>

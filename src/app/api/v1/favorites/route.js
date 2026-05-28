@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 
 /**
  * GET /api/v1/favorites
@@ -14,6 +15,9 @@ export async function GET() {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Only fetch the main image to avoid an N+1-style explosion when a user
+    // has favorited many products with many images each. The product card
+    // only ever displays the main image, so the rest is dead weight.
     const { data, error } = await supabase
       .from('favorites')
       .select(`
@@ -27,10 +31,14 @@ export async function GET() {
           discount_price,
           discount_percentage,
           status,
-          product_images ( url, is_main )
+          stock,
+          colors,
+          sizes,
+          product_images!inner ( url, is_main )
         )
       `)
       .eq('user_id', user.id)
+      .eq('products.product_images.is_main', true)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -48,6 +56,14 @@ export async function GET() {
  * Body: { product_id }
  */
 export async function POST(req) {
+  const originRejection = assertSameOrigin(req);
+  if (originRejection) return originRejection;
+  const limited = await rateLimitOrReject(req, {
+    bucket: 'favorites-post',
+    limit: 30,
+    windowMs: 60_000,
+  });
+  if (limited) return limited;
   try {
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -88,6 +104,14 @@ export async function POST(req) {
  * Body: { product_id }
  */
 export async function DELETE(req) {
+  const originRejection = assertSameOrigin(req);
+  if (originRejection) return originRejection;
+  const limited = await rateLimitOrReject(req, {
+    bucket: 'favorites-delete',
+    limit: 30,
+    windowMs: 60_000,
+  });
+  if (limited) return limited;
   try {
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();

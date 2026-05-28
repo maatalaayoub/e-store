@@ -19,7 +19,8 @@
     "or": "OR",
     "language": "Language",
     "loading": "Loading...",
-    "store_name": "My Store"
+    "store_name": "My Store",
+    "close": "Close"
   },
   "nav": {
     "home": "Home",
@@ -88,7 +89,9 @@
     "buy_now": "Add to Cart",
     "shop_now": "Shop Now",
     "badge_new": "New",
-    "badge_hot": "Hot"
+    "badge_hot": "Hot",
+    "best_seller_label": "Best Seller",
+    "go_to_slide": "Go to slide {n}"
   },
   "perks": {
     "support_title": "24/7 customer support",
@@ -243,8 +246,10 @@
         "category_new": "+ New",
         "category_name_placeholder": "Category name",
         "category_add": "Add",
-        "description_label": "Description",
-        "description_placeholder": "Product description...",
+        "short_description_label": "Short Description",
+        "short_description_placeholder": "Brief product summary...",
+        "description_label": "Long Description",
+        "description_placeholder": "Detailed product description...",
         "price_label": "Price ($)",
         "stock_label": "Stock",
         "discount_label": "Discount",
@@ -597,7 +602,10 @@
     "added_to_cart": "Added to Cart",
     "add_to_cart": "Add To Cart",
     "checkout_now": "Checkout Now",
-    "unavailable": "Unavailable"
+    "unavailable": "Unavailable",
+    "choose_options": "Choose options",
+    "select_color": "Select a color",
+    "select_size": "Select a size"
   },
   "account": {
     "title": "Account Settings",

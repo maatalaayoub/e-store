@@ -1,9 +1,32 @@
 import { createClient } from '@/lib/supabase/server';
 
+// Full payload — used for admin edit screens and the product detail page,
+// where the client needs every column and every image.
 const PRODUCT_SELECT = `
   *,
   categories (id, name, slug),
   product_images (id, url, storage_path, is_main, display_order)
+`.trim();
+
+// Slim payload — used for listing screens (shop grid, featured rails,
+// search results). Avoids dragging long_description / metadata over the
+// wire for every card, and limits images to the main one.
+const PRODUCT_LIST_SELECT = `
+  id,
+  name,
+  short_description,
+  price,
+  discount_price,
+  discount_percentage,
+  status,
+  stock,
+  is_featured,
+  translations,
+  colors,
+  sizes,
+  created_at,
+  categories (id, name, slug),
+  product_images (id, url, is_main, display_order)
 `.trim();
 
 export class ProductRepository {
@@ -11,7 +34,7 @@ export class ProductRepository {
     const supabase = await createClient();
     let query = supabase
       .from('products')
-      .select(PRODUCT_SELECT)
+      .select(PRODUCT_LIST_SELECT)
       .order('is_featured', { ascending: false })
       .order('created_at', { ascending: false });
 

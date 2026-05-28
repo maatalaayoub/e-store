@@ -107,7 +107,7 @@ export default function AdminSettingsPage() {
         </aside>
 
         {/* CONTENT */}
-        <section className="rounded-xl border border-zinc-100 bg-white p-6">
+        <section className="min-w-0 rounded-xl border border-zinc-100 bg-white p-6">
           {active === "general" && <GeneralSection />}
           {active === "storefront" && <StorefrontSection />}
           {active === "announcements" && <AnnouncementsSection />}
@@ -407,12 +407,18 @@ const LAYOUT_PRESETS = [
     label: 'Boutique',
     description: 'Bordered card with brand line, title, price, and full-width pill Buy Now button.',
   },
+  {
+    value: 'floating',
+    label: 'Floating',
+    description: 'Edge-to-edge image with a circular discount badge and a floating white pill (cart + favorite) over the image.',
+  },
 ];
 
 const PREVIEW_PRODUCT = {
   ...featuredProductsFallback[0],
   id: featuredProductsFallback[0]?.id ?? 'preview-product',
   name: featuredProductsFallback[0]?.name ?? 'Premium Wireless Headphones',
+  short_description: featuredProductsFallback[0]?.short_description ?? 'A refined everyday essential with premium finishing.',
   price: 299,
   effective_price: 299,
   main_image: featuredProductsFallback[0]?.image ?? null,
@@ -533,6 +539,23 @@ function LayoutMiniPreview({ value }) {
             <div className="h-1 w-2/3 bg-zinc-700 rounded-sm" />
           </div>
           <div className="h-3 mx-1 mb-0.5 bg-zinc-900 rounded-full" />
+        </div>
+      );
+    case 'floating':
+      return (
+        <div className={wrapBase}>
+          <div className="relative flex-1 bg-gradient-to-br from-zinc-200 to-zinc-300">
+            <div className="absolute left-1 top-1 h-3 w-3 rounded-full bg-[#c8a85a]" />
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-1 flex items-center gap-0.5 rounded-full bg-white px-1 py-[2px] shadow-sm">
+              <span className="h-1.5 w-1.5 rounded-full bg-zinc-700" />
+              <span className="h-1.5 w-1.5 rounded-full bg-zinc-700" />
+            </div>
+          </div>
+          <div className="py-1 flex flex-col items-center gap-0.5">
+            <div className="h-1 w-1/2 bg-zinc-700 rounded-sm" />
+            <div className="h-1 w-1/4 bg-zinc-400 rounded-sm" />
+            <div className="h-1 w-1/3 bg-[#c8a85a] rounded-sm" />
+          </div>
         </div>
       );
     default:
@@ -762,6 +785,7 @@ function CarouselSection() {
 function LayoutSection() {
   const tL = useDictionary()?.admin?.settings?.layout ?? {};
   const [layout, setLayout] = useState('overlay');
+  const [showShortDescription, setShowShortDescription] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [previewProduct, setPreviewProduct] = useState(PREVIEW_PRODUCT);
@@ -785,6 +809,7 @@ function LayoutSection() {
       .then(([settings, products]) => {
         if (settings.success && settings.data) {
           if (settings.data.product_card_layout) setLayout(settings.data.product_card_layout);
+          setShowShortDescription(settings.data.product_card_show_short_description === 'true');
           setDisplaySettings((s) => ({ ...s, ...settings.data }));
         }
         setPreviewProduct(normalizePreviewProduct(products.success ? products.data?.[0] : null));
@@ -799,7 +824,10 @@ function LayoutSection() {
       const res = await fetch('/api/v1/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ product_card_layout: layout }),
+        body: JSON.stringify({
+          product_card_layout: layout,
+          product_card_show_short_description: showShortDescription ? 'true' : 'false',
+        }),
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error ?? 'Save failed');
@@ -826,6 +854,18 @@ function LayoutSection() {
         title={tL.title ?? 'Product Card Layout'}
         description={tL.desc ?? 'Choose a ready-made card layout for your storefront. Pair it with the colours and button styles from the previous tab.'}
       />
+
+      <div className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-zinc-200 bg-white px-4 py-3">
+        <div>
+          <p className="text-sm font-semibold text-zinc-900">
+            {tL.short_description_toggle ?? 'Show short description'}
+          </p>
+          <p className="mt-1 text-xs text-zinc-500">
+            {tL.short_description_hint ?? 'Display the product short description inside product cards.'}
+          </p>
+        </div>
+        <Toggle checked={showShortDescription} onChange={setShowShortDescription} />
+      </div>
 
       {/* Preset picker — horizontal scroll so all tiles stay readable at any viewport */}
       <div
@@ -890,6 +930,7 @@ function LayoutSection() {
               outlineIcon={displaySettings.product_card_outline_icon}
               outlineBg={displaySettings.product_card_outline_bg}
               buttonFontSize={parseInt(displaySettings.product_card_button_font_size) || 10}
+              showShortDescription={showShortDescription}
             />
           ) : (
             <div className="animate-pulse">
@@ -906,7 +947,10 @@ function LayoutSection() {
       <div className="mt-6 flex items-center justify-between sm:justify-end sm:gap-6 border-t border-zinc-100 pt-5">
         <button
           type="button"
-          onClick={() => setLayout('overlay')}
+          onClick={() => {
+            setLayout('overlay');
+            setShowShortDescription(false);
+          }}
           className="text-sm font-medium text-zinc-500 hover:text-zinc-900"
         >
           <span className="hidden sm:inline">{tL.reset ?? 'Reset to defaults'}</span>
@@ -1876,7 +1920,7 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
   const typeInfo = ANNOUNCEMENT_TYPES.find((x) => x.id === value.type) ?? ANNOUNCEMENT_TYPES[0];
   return (
     <div
-      className={`group rounded-md border transition-all ${
+      className={`group w-full min-w-0 max-w-full overflow-hidden rounded-md border transition-all ${
         value.is_active
           ? 'border-zinc-200 bg-white hover:border-zinc-300'
           : 'border-zinc-100 bg-zinc-50/50'
@@ -1884,7 +1928,7 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
     >
       {/* Live preview bar */}
       <div
-        className={`rounded-t-md overflow-hidden text-xs sm:text-sm font-medium ${
+        className={`w-full min-w-0 max-w-full rounded-t-md overflow-hidden text-xs sm:text-sm font-medium break-words ${
           value.is_active ? '' : 'opacity-50 grayscale'
         }`}
         style={{
@@ -1902,9 +1946,9 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
             }
           </div>
         ) : value.type === 'social' ? (
-            <div className="px-4 py-2.5 flex items-center gap-2">
+            <div className="px-4 py-2.5 flex flex-wrap items-center gap-2">
               {/* Left: info */}
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 shrink-0 min-w-0">
                 {value.social_show_logo && value.social_logo_url && (
                   <img src={value.social_logo_url} alt="" className="h-6 w-6 rounded-full object-cover shrink-0" />
                 )}
@@ -1916,11 +1960,11 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
                 )}
               </div>
               {/* Center: text */}
-              <div className="flex-1 text-center">
+              <div className="flex-1 min-w-0 text-center break-words">
                 {value.text || <span className="opacity-60 italic">{t.preview_placeholder ?? 'Preview…'}</span>}
               </div>
               {/* Right: buttons */}
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex flex-wrap items-center gap-1.5 shrink-0 justify-end">
                 {(value.social_platforms ?? []).filter((pid) => value[`social_${pid}`]).map((pid) => {
                   const p = SOCIAL_PLATFORMS.find((x) => x.id === pid);
                   if (!p) return null;
@@ -1935,8 +1979,8 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
               </div>
             </div>
           ) : (
-            <div className="px-4 py-2.5 text-center">
-              <span className="inline-flex items-center gap-1.5 flex-wrap justify-center">
+            <div className="px-4 py-2.5 text-center break-words">
+              <span className="inline-flex items-center gap-1.5 flex-wrap justify-center max-w-full">
                 {value.icon_enabled && value.icon && (
                   <PreviewAnnouncementIcon icon={value.icon} className="h-3.5 w-3.5 shrink-0" />
                 )}
@@ -1962,7 +2006,7 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
       </div>
 
       {/* Meta + actions */}
-      <div className="flex items-center gap-3 px-3 sm:px-4 py-2.5">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 sm:px-4 py-2.5">
         <span className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium capitalize"
           style={{ backgroundColor: `${typeInfo.bg}1a`, color: typeInfo.bg }}>
           <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: typeInfo.bg }} />
@@ -1975,8 +2019,7 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
         <span className="text-[11px] text-zinc-400 capitalize hidden sm:inline">
           {value.position ?? 'top'}
         </span>
-        <div className="flex-1" />
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-0.5 ms-auto">
           <button onClick={() => onMove(-1)} disabled={isFirst}
             className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 disabled:opacity-25 transition-colors"
             aria-label={t.move_up ?? 'Move up'}>
@@ -2887,7 +2930,7 @@ function AnnouncementsSection() {
               return (
                 <section
                   key={g.scope}
-                  className="rounded-2xl border border-zinc-200 bg-white/60 overflow-hidden"
+                  className="min-w-0 max-w-full rounded-2xl border border-zinc-200 bg-white/60 overflow-hidden"
                 >
                   {/* Group header */}
                   <header className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-zinc-100 bg-zinc-50/70 flex-wrap">

@@ -22,7 +22,7 @@ export async function PATCH(_req, { params }) {
     return NextResponse.json({ success: true, data: image });
   } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to update image' },
+      { success: false, error: 'Failed to update image' },
       { status: 500 }
     );
   }
@@ -42,7 +42,7 @@ export async function DELETE(_req, { params }) {
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to delete image' },
+      { success: false, error: 'Failed to delete image' },
       { status: 500 }
     );
   }

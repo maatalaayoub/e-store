@@ -19,7 +19,8 @@
     "or": "ولا",
     "language": "اللغة",
     "loading": "كيتحمّل...",
-    "store_name": "حانوتي"
+    "store_name": "حانوتي",
+    "close": "سد"
   },
   "nav": {
     "home": "الرئيسية",
@@ -88,7 +89,9 @@
     "buy_now": "زيد للقفة",
     "shop_now": "شوف المنتج",
     "badge_new": "جديد",
-    "badge_hot": "كيدور بزّاف"
+    "badge_hot": "كيدور بزّاف",
+    "best_seller_label": "الأكثر بيعا",
+    "go_to_slide": "سير للشريحة {n}"
   },
   "perks": {
     "support_title": "دعم 24 ساعة على 7",
@@ -241,8 +244,10 @@
         "category_new": "+ جديد",
         "category_name_placeholder": "اسم الفئة",
         "category_add": "زيد",
-        "description_label": "الوصف",
-        "description_placeholder": "وصف المنتج...",
+        "short_description_label": "وصف قصير",
+        "short_description_placeholder": "ملخص قصير ديال المنتج...",
+        "description_label": "الوصف الطويل",
+        "description_placeholder": "وصف مفصل ديال المنتج...",
         "price_label": "الثمن ($)",
         "stock_label": "الستوك",
         "discount_label": "التخفيض",
@@ -599,7 +604,10 @@
     "added_to_cart": "تزاد للقفة",
     "add_to_cart": "زيد للقفة",
     "checkout_now": "شري دابا",
-    "unavailable": "ما كاينش"
+    "unavailable": "ما كاينش",
+    "choose_options": "ختار الخيارات",
+    "select_color": "ختار اللون",
+    "select_size": "ختار القياس"
   },
   "account": {
     "title": "إعدادات الحساب",

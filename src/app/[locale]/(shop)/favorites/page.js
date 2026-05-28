@@ -17,6 +17,7 @@ import { useCurrency } from "@/components/providers/CurrencyProvider";
 import { useCartStore } from "@/store/useCartStore";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { getMainImage } from "@/lib/product-image";
+import VariantPickerModal from "@/components/shop/VariantPickerModal";
 
 // Module-level cache: persists across client-side navigations, cleared on hard refresh
 let _favCache = null;
@@ -43,6 +44,13 @@ function FavoriteCard({ item, onRemove }) {
   const isDiscounted = effectivePrice < Number(product?.price ?? 0);
   const [removing, setRemoving] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [variantOpen, setVariantOpen] = useState(false);
+
+  const colors = Array.isArray(product?.colors)
+    ? product.colors.filter((c) => c && c.name && c.hex)
+    : [];
+  const sizes = Array.isArray(product?.sizes) ? product.sizes.filter(Boolean) : [];
+  const hasVariants = colors.length > 0 || sizes.length > 0;
 
   const handleRemove = async () => {
     setRemoving(true);
@@ -50,17 +58,28 @@ function FavoriteCard({ item, onRemove }) {
     setRemoving(false);
   };
 
-  const handleAddToCart = () => {
+  const buildCartProduct = () => ({
+    id: product.id,
+    name: product.name,
+    price: product.price,
+    effective_price: effectivePrice,
+    image: imgUrl,
+    main_image: imgUrl,
+    stock: product.stock ?? null,
+  });
+
+  const commitAdd = ({ selectedColor = null, selectedSize = null } = {}) => {
+    addItem(buildCartProduct(), { quantity: 1, selectedColor, selectedSize });
     setAdding(true);
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      effective_price: effectivePrice,
-      image: imgUrl,
-      quantity: 1,
-    });
     setTimeout(() => setAdding(false), 800);
+  };
+
+  const handleAddToCart = () => {
+    if (hasVariants) {
+      setVariantOpen(true);
+      return;
+    }
+    commitAdd();
   };
 
   return (
@@ -125,6 +144,18 @@ function FavoriteCard({ item, onRemove }) {
           {adding ? (tFav.added ?? "Added!") : product?.status !== "active" ? (tFav.unavailable ?? "Unavailable") : (tFav.add_to_cart ?? "Add to Cart")}
         </button>
       </div>
+
+      <VariantPickerModal
+        open={variantOpen}
+        onClose={() => setVariantOpen(false)}
+        onConfirm={({ selectedColor, selectedSize }) => {
+          setVariantOpen(false);
+          commitAdd({ selectedColor, selectedSize });
+        }}
+        product={{ ...buildCartProduct(), name: product?.name }}
+        colors={colors}
+        sizes={sizes}
+      />
     </div>
   );
 }

@@ -33,7 +33,7 @@ export default function ProductGallery({ images = [], productName, productId }) 
   const current = list[idx];
 
   return (
-    <div className="flex gap-3">
+    <div className="relative flex gap-3">
       {/* LEFT: vertical thumbnail strip (desktop only) */}
       {list.length > 1 && (
         <div className="hidden lg:flex flex-col gap-2 w-[5.5rem] shrink-0">
@@ -153,7 +153,7 @@ export default function ProductGallery({ images = [], productName, productId }) 
 
       {/* Mobile thumbnail row */}
       {list.length > 1 && (
-        <div className="absolute -bottom-16 left-0 right-0 flex gap-2 overflow-x-auto px-0.5 py-1 lg:hidden">
+        <div className="absolute left-0 right-0 top-full mt-4 flex gap-2 overflow-x-auto px-0.5 py-1 lg:hidden">
           {list.map((img, i) => (
             <button
               key={img.id || i}

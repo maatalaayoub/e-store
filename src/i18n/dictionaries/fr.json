@@ -19,7 +19,8 @@
     "or": "OU",
     "language": "Langue",
     "loading": "Chargement...",
-    "store_name": "Ma Boutique"
+    "store_name": "Ma Boutique",
+    "close": "Fermer"
   },
   "nav": {
     "home": "Accueil",
@@ -88,7 +89,9 @@
     "buy_now": "Ajouter au panier",
     "shop_now": "Voir le produit",
     "badge_new": "Nouveau",
-    "badge_hot": "Top"
+    "badge_hot": "Top",
+    "best_seller_label": "Meilleure vente",
+    "go_to_slide": "Aller à la diapositive {n}"
   },
   "perks": {
     "support_title": "Assistance 24h/24 et 7j/7",
@@ -241,8 +244,10 @@
         "category_new": "+ Nouveau",
         "category_name_placeholder": "Nom de la catégorie",
         "category_add": "Ajouter",
-        "description_label": "Description",
-        "description_placeholder": "Description du produit...",
+        "short_description_label": "Description courte",
+        "short_description_placeholder": "Résumé bref du produit...",
+        "description_label": "Description longue",
+        "description_placeholder": "Description détaillée du produit...",
         "price_label": "Prix ($)",
         "stock_label": "Stock",
         "discount_label": "Remise",
@@ -599,7 +604,10 @@
     "added_to_cart": "Ajouté au panier",
     "add_to_cart": "Ajouter au panier",
     "checkout_now": "Commander maintenant",
-    "unavailable": "Indisponible"
+    "unavailable": "Indisponible",
+    "choose_options": "Choisir les options",
+    "select_color": "Choisissez une couleur",
+    "select_size": "Choisissez une taille"
   },
   "account": {
     "title": "Paramètres du compte",

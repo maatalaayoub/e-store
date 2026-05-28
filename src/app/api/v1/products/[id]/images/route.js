@@ -52,7 +52,7 @@ export async function POST(req, { params }) {
     return NextResponse.json({ success: true, data: image }, { status: 201 });
   } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to add image' },
+      { success: false, error: 'Failed to add image' },
       { status: 500 }
     );
   }

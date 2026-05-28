@@ -29,6 +29,8 @@ export async function GET() {
           id,
           quantity,
           unit_price,
+          selected_color,
+          selected_size,
           products (
             id,
             name,

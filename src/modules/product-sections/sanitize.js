@@ -5,6 +5,7 @@
  * filters anything dangerous (script tags, javascript: hrefs, etc.).
  */
 
+import DOMPurify from 'isomorphic-dompurify';
 import {
   SECTION_REGISTRY,
   generateSectionId,
@@ -70,14 +71,18 @@ function pickEnum(v, allowed, fallback) {
  * handler / `javascript:` URL. Output is safe to pass to
  * dangerouslySetInnerHTML in the renderer.
  *
+ * Implementation uses DOMPurify (a battle-tested HTML sanitizer) instead of
+ * regex parsing, which is fundamentally unsafe for HTML.
+ *
  * Whitelist: p, br, strong, em, b, i, u, ul, ol, li, h2, h3, h4, blockquote,
- *            a (href only), code, pre, span.
+ *            a (href only, with rel + target hardened), code, pre, span.
  */
-const ALLOWED_TAGS = new Set([
+const ALLOWED_TAGS = [
   'p', 'br', 'strong', 'em', 'b', 'i', 'u',
   'ul', 'ol', 'li', 'h2', 'h3', 'h4',
   'blockquote', 'a', 'code', 'pre', 'span',
-]);
+];
+const ALLOWED_ATTR = ['href', 'rel', 'target'];
 
 export function sanitizeHtml(input) {
   if (input == null) return null;
@@ -85,28 +90,26 @@ export function sanitizeHtml(input) {
   if (!html.trim()) return null;
   if (html.length > MAX_HTML_LEN) html = html.slice(0, MAX_HTML_LEN);
 
-  // Remove <script>…</script> and <style>…</style> blocks completely.
-  html = html.replace(/<\/?(script|style)[^>]*>[\s\S]*?<\/\1>/gi, '');
-  html = html.replace(/<\/?(script|style)[^>]*>/gi, '');
-  // Remove HTML comments (could be conditional / hide payloads).
-  html = html.replace(/<!--[\s\S]*?-->/g, '');
-
-  // Walk every tag; drop anything not in the whitelist; sanitize <a href>.
-  return html.replace(/<\/?([a-zA-Z][a-zA-Z0-9-]*)\b([^>]*)>/g, (match, tag, attrs) => {
-    const lower = tag.toLowerCase();
-    if (!ALLOWED_TAGS.has(lower)) return '';
-    if (match.startsWith('</')) return `</${lower}>`;
-
-    if (lower === 'a') {
-      const hrefMatch = attrs.match(/\bhref\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i);
-      const rawHref = hrefMatch ? (hrefMatch[2] ?? hrefMatch[3] ?? hrefMatch[4] ?? '') : '';
-      const href = safeHref(rawHref);
-      if (!href) return '<span>';
-      return `<a href="${href.replace(/"/g, '&quot;')}" rel="noopener noreferrer nofollow" target="_blank">`;
-    }
-
-    return `<${lower}>`;
+  const cleaned = DOMPurify.sanitize(html, {
+    ALLOWED_TAGS,
+    ALLOWED_ATTR,
+    ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|tel:|\/(?!\/))/i,
+    FORBID_TAGS: ['style', 'script', 'iframe', 'object', 'embed', 'svg', 'math'],
+    FORBID_ATTR: ['style', 'srcset', 'formaction', 'xlink:href'],
+    ADD_ATTR: ['target', 'rel'],
+    KEEP_CONTENT: true,
+    USE_PROFILES: { html: true },
   });
+
+  // Force all surviving <a> tags to have safe rel/target.
+  const safe = cleaned.replace(/<a\b([^>]*)>/gi, (m, attrs) => {
+    const hrefMatch = attrs.match(/\bhref\s*=\s*"([^"]*)"/i);
+    if (!hrefMatch) return '<span>';
+    const href = hrefMatch[1];
+    return `<a href="${href}" rel="noopener noreferrer nofollow" target="_blank">`;
+  });
+
+  return safe.trim() ? safe : null;
 }
 
 function sanitizeTranslations(raw, fields) {

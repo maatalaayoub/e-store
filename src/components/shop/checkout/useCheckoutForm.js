@@ -158,11 +158,20 @@ export function useCheckoutForm({
     const e = validate();
     if (Object.keys(e).length) { setErrors(e); return; }
     if (!Array.isArray(items) || items.length === 0) return;
+    if (placing) return; // double-submit guard
     setPlacing(true);
+    // Stable idempotency key for this submit. A network retry inside the
+    // same submit attempt reuses it; a fresh submit gets a new key.
+    const idempotencyKey =
+      (globalThis.crypto?.randomUUID?.() ??
+        `${Date.now()}-${Math.random().toString(36).slice(2)}`);
     try {
       const res = await fetch("/api/v1/orders", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKey,
+        },
         body: JSON.stringify({
           shipping: {
             full_name: form.fullName,
@@ -173,30 +182,34 @@ export function useCheckoutForm({
             zip: form.zip,
             country: form.country,
           },
+          // unit_price_mad / total_mad are accepted by the server for backward
+          // compatibility but ignored — pricing is recomputed server-side from
+          // the canonical products table. We send them anyway for telemetry.
           items: items.map((item) => ({
             id: item.id,
             quantity: item.quantity ?? 1,
-            unit_price_mad: parsePrice(item.effective_price ?? item.price),
+            selected_color: item.selectedColor ?? item.selected_color ?? null,
+            selected_size:  item.selectedSize  ?? item.selected_size  ?? null,
           })),
-          total_mad: subtotal,
           currency_code: currency?.code,
           exchange_rate: rate,
         }),
       });
-      const json = await res.json();
-      if (!json.success) {
-        // eslint-disable-next-line no-console
-        console.error("[Order failed]", json);
-        throw new Error(json.details || json.error || "Order failed");
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.success) {
+        const message = json.error || `Order failed (${res.status})`;
+        throw new Error(message);
       }
       onOrderSuccess?.(json.data.id);
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error(err);
-      setErrors((prev) => ({ ...prev, submit: "Failed to place order. Please try again." }));
+      setErrors((prev) => ({
+        ...prev,
+        submit: err?.message || "Failed to place order. Please try again.",
+      }));
+    } finally {
       setPlacing(false);
     }
-  }, [validate, items, form, subtotal, currency, rate, onOrderSuccess]);
+  }, [validate, items, form, currency, rate, onOrderSuccess, placing]);
 
   const handleOrderWhatsApp = useCallback(() => {
     const e = validate();
@@ -215,7 +228,13 @@ export function useCheckoutForm({
         const resolved = resolveProductTranslation(item, locale);
         const price = parsePrice(item.effective_price ?? item.price);
         const qty = item.quantity ?? 1;
-        return `- ${resolved.name} x${qty} = ${formatPrice(price * qty)}`;
+        const color = item.selectedColor?.name ?? item.selected_color?.name ?? null;
+        const size  = item.selectedSize ?? item.selected_size ?? null;
+        const variantParts = [];
+        if (color) variantParts.push(`Color: ${color}`);
+        if (size)  variantParts.push(`Size: ${size}`);
+        const variantSuffix = variantParts.length ? `\n   ↳ ${variantParts.join(' • ')}` : '';
+        return `- ${resolved.name} x${qty} = ${formatPrice(price * qty)}${variantSuffix}`;
       }),
       ``,
       `*Total: ${formatPrice(subtotal)}*`,

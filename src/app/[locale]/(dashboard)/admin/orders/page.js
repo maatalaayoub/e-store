@@ -269,6 +269,9 @@ function OrderDrawer({ order, onClose }) {
                 {items.map((item, i) => {
                   const name = item.products?.name ?? `Product #${i + 1}`;
                   const subtotal = (Number(item.unit_price ?? 0) * Number(item.quantity ?? 1)).toFixed(2);
+                  const colorName = item.selected_color?.name ?? null;
+                  const colorHex  = item.selected_color?.hex ?? null;
+                  const sizeLabel = item.selected_size ?? null;
                   return (
                     <li key={i} className="flex items-start justify-between gap-3 rounded-xl bg-zinc-50 px-4 py-3">
                       <div className="flex items-start gap-2.5 min-w-0">
@@ -278,6 +281,25 @@ function OrderDrawer({ order, onClose }) {
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-zinc-900 truncate">{name}</p>
                           <p className="text-xs text-zinc-400 mt-0.5">{tD.qty ?? "Qty"}: {item.quantity} &times; {Number(item.unit_price ?? 0).toFixed(2)} DH</p>
+                          {(colorName || sizeLabel) && (
+                            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-600">
+                              {colorName && (
+                                <span className="inline-flex items-center gap-1.5">
+                                  {colorHex && (
+                                    <span
+                                      aria-hidden="true"
+                                      className="inline-block h-3 w-3 rounded-full border border-zinc-200"
+                                      style={{ backgroundColor: colorHex }}
+                                    />
+                                  )}
+                                  <span>Color: <span className="font-medium text-zinc-800">{colorName}</span></span>
+                                </span>
+                              )}
+                              {sizeLabel && (
+                                <span>Size: <span className="font-medium text-zinc-800">{sizeLabel}</span></span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <span className="text-sm font-semibold text-zinc-900 whitespace-nowrap shrink-0">{subtotal} DH</span>

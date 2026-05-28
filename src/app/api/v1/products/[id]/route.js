@@ -40,7 +40,7 @@ export async function PUT(req, { params }) {
     if (error?.name === 'ZodError') {
       return NextResponse.json({ success: false, errors: error.errors }, { status: 400 });
     }
-    return NextResponse.json({ success: false, error: error.message || 'Internal Error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal Error' }, { status: 500 });
   }
 }
 

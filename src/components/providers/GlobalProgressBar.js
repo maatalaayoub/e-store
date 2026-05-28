@@ -5,6 +5,24 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { loadingProgress } from "@/lib/loading-progress";
 
 const INITIAL_LOAD_SUPPRESS_MS = 2500;
+const USER_INTERACTION_WINDOW_MS = 1800;
+const PROGRESS_OPT_OUT_SELECTOR = "[data-no-global-progress]";
+
+let lastUserInteractionAt = 0;
+
+function markUserInteraction(event) {
+  if (event && event.isTrusted === false) return;
+  if (event?.target?.closest?.(PROGRESS_OPT_OUT_SELECTOR)) return;
+  lastUserInteractionAt = Date.now();
+}
+
+function isProgressOptOutEvent(event) {
+  return Boolean(event?.target?.closest?.(PROGRESS_OPT_OUT_SELECTOR));
+}
+
+function hasRecentUserInteraction() {
+  return Date.now() - lastUserInteractionAt <= USER_INTERACTION_WINDOW_MS;
+}
 
 function getUrlKey(pathname, searchParams) {
   const query = searchParams?.toString();
@@ -69,6 +87,7 @@ function useNavigationProgress() {
 
     const beginNavigation = ({ force = false } = {}) => {
       if (!force && !canTrackHistoryRef.current) return;
+      if (!force && !hasRecentUserInteraction()) return;
       if (finishNavigationRef.current) return;
       clearTimeout(fallbackTimerRef.current);
       finishNavigationRef.current = loadingProgress.start();
@@ -92,8 +111,14 @@ function useNavigationProgress() {
     };
 
     const onClick = (event) => {
+      if (isProgressOptOutEvent(event)) return;
+      markUserInteraction(event);
       const anchor = event.target?.closest?.("a[href]");
       if (shouldTrackAnchor(anchor, event)) beginNavigation({ force: true });
+    };
+
+    const onUserInteraction = (event) => {
+      markUserInteraction(event);
     };
 
     const originalPushState = window.history.pushState;
@@ -110,12 +135,20 @@ function useNavigationProgress() {
     };
 
     document.addEventListener("click", onClick, true);
+    document.addEventListener("pointerdown", onUserInteraction, true);
+    document.addEventListener("keydown", onUserInteraction, true);
+    document.addEventListener("submit", onUserInteraction, true);
+    document.addEventListener("change", onUserInteraction, true);
 
     return () => {
       clearTimeout(settleTimer);
       window.history.pushState = originalPushState;
       window.history.replaceState = originalReplaceState;
       document.removeEventListener("click", onClick, true);
+      document.removeEventListener("pointerdown", onUserInteraction, true);
+      document.removeEventListener("keydown", onUserInteraction, true);
+      document.removeEventListener("submit", onUserInteraction, true);
+      document.removeEventListener("change", onUserInteraction, true);
       clearTimeout(fallbackTimerRef.current);
       finishNavigationRef.current?.();
     };
@@ -132,7 +165,7 @@ function useFetchProgress() {
     }, INITIAL_LOAD_SUPPRESS_MS);
 
     window.fetch = async (...args) => {
-      const finish = shouldTrackFetches ? loadingProgress.start() : null;
+      const finish = shouldTrackFetches && hasRecentUserInteraction() ? loadingProgress.start() : null;
       try {
         return await originalFetch(...args);
       } finally {

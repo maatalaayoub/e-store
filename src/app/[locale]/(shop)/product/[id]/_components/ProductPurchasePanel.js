@@ -35,21 +35,13 @@ export default function ProductPurchasePanel({
   const { formatPrice } = useCurrency();
 
   const handleAdd = () => {
-    addItem(
-      {
-        ...product,
-        // Attach selected variant info to the cart line if needed
-        selectedColor,
-        selectedSize,
-      },
-      qty
-    );
+    addItem(product, { quantity: qty, selectedColor, selectedSize });
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
   };
 
   const handleCheckout = () => {
-    addItem({ ...product, selectedColor, selectedSize }, qty);
+    addItem(product, { quantity: qty, selectedColor, selectedSize });
     router.push(`/${locale}/checkout`);
   };
 
@@ -66,13 +58,16 @@ export default function ProductPurchasePanel({
             {colors.map((c) => {
               const active = selectedColor?.name === c.name && selectedColor?.hex === c.hex;
               // Decide checkmark color based on brightness of the swatch
-              const isDark = (() => {
-                const hex = c.hex.replace("#", "");
-                const r = parseInt(hex.slice(0, 2), 16);
-                const g = parseInt(hex.slice(2, 4), 16);
-                const b = parseInt(hex.slice(4, 6), 16);
-                return (r * 299 + g * 587 + b * 114) / 1000 < 128;
-              })();
+              const hex6 = c.hex.replace("#", "");
+              const brightness =
+                hex6.length >= 6
+                  ? (parseInt(hex6.slice(0, 2), 16) * 299 +
+                      parseInt(hex6.slice(2, 4), 16) * 587 +
+                      parseInt(hex6.slice(4, 6), 16) * 114) /
+                    1000
+                  : 128;
+              const isDark = brightness < 128;
+              const isLight = brightness >= 200;
               return (
                 <div key={`${c.name}-${c.hex}`} className="relative group">
                   <button
@@ -82,10 +77,22 @@ export default function ProductPurchasePanel({
                     title={c.name}
                     style={{
                       backgroundColor: c.hex,
-                      boxShadow: active ? `0 0 0 2px white, 0 0 0 4px ${c.hex}` : undefined,
+                      boxShadow: active
+                        ? isLight
+                          ? `0 0 0 2px #d1d5db, 0 0 0 4px #6b7280`
+                          : `0 0 0 2px white, 0 0 0 4px ${c.hex}`
+                        : undefined,
                     }}
                     className={`h-9 w-9 rounded-full transition-all duration-200 flex items-center justify-center
-                      ${active ? "scale-110" : "hover:scale-105 ring-1 ring-zinc-200 hover:ring-zinc-400"}
+                      ${
+                        active
+                          ? "scale-110"
+                          : `hover:scale-105 ring-1 ${
+                              isLight
+                                ? "ring-zinc-400 hover:ring-zinc-500"
+                                : "ring-zinc-200 hover:ring-zinc-400"
+                            }`
+                      }
                     `}
                   >
                     {active && (
@@ -188,7 +195,7 @@ export default function ProductPurchasePanel({
           <button
             onClick={handleAdd}
             disabled={isOutOfStock}
-            className={`w-full flex items-center justify-center gap-2 rounded-xl px-6 h-13 text-base font-semibold text-white transition-colors ${
+            className={`w-full flex items-center justify-center gap-2 rounded-[7px] px-6 h-13 text-base font-semibold text-white transition-colors ${
               isOutOfStock
                 ? "bg-zinc-300 cursor-not-allowed"
                 : added
@@ -213,7 +220,7 @@ export default function ProductPurchasePanel({
           <button
             onClick={handleCheckout}
             disabled={isOutOfStock}
-            className="w-full flex items-center justify-center rounded-xl border-2 border-zinc-900 px-6 h-13 text-base font-semibold text-zinc-900 hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center rounded-[7px] border-2 border-zinc-900 px-6 h-13 text-base font-semibold text-zinc-900 hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {tProduct.checkout_now ?? "Checkout Now"}
           </button>

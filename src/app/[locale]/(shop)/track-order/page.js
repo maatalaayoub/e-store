@@ -21,6 +21,7 @@ export default function TrackOrderPage() {
   const { locale } = useParams();
   const dict = useDictionary();
   const t = dict?.track_order ?? {};
+  const tProduct = dict?.product ?? {};
   const isRtl = isRtlLocale(locale);
 
   const [query, setQuery] = useState("");
@@ -185,11 +186,35 @@ export default function TrackOrderPage() {
               <ul className="flex flex-col gap-2">
                 {items.map((item, i) => {
                   const unit = Number(item.unit_price) * rate;
+                  const colorName = item.selected_color?.name ?? null;
+                  const colorHex = item.selected_color?.hex ?? null;
+                  const sizeLabel = item.selected_size ?? null;
                   return (
-                    <li key={i} className="flex items-center justify-between text-sm">
-                      <span className="text-zinc-800 flex-1 min-w-0 truncate">
-                        {item.products?.name ?? "Product"}
-                      </span>
+                    <li key={i} className="flex items-start justify-between gap-3 text-sm">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-zinc-800 truncate">
+                          {item.products?.name ?? "Product"}
+                        </p>
+                        {(colorName || sizeLabel) && (
+                          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500">
+                            {colorName && (
+                              <span className="inline-flex items-center gap-1.5">
+                                {colorHex && (
+                                  <span
+                                    aria-hidden="true"
+                                    className="inline-block h-3 w-3 rounded-full border border-zinc-200"
+                                    style={{ backgroundColor: colorHex }}
+                                  />
+                                )}
+                                <span>{tProduct.color ?? "Color"}: <span className="font-medium text-zinc-700">{colorName}</span></span>
+                              </span>
+                            )}
+                            {sizeLabel && (
+                              <span>{tProduct.size ?? "Size"}: <span className="font-medium text-zinc-700">{sizeLabel}</span></span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                       <span className="text-zinc-500 mx-3 shrink-0">× {item.quantity}</span>
                       <span className="font-medium text-zinc-900 shrink-0">
                         {(unit * item.quantity).toFixed(2)} {currency}

@@ -3,25 +3,142 @@ import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { sendTelegramMessage, buildOrderMessage } from '@/lib/telegram';
 import { getAdminUser } from '@/middlewares/authGuard';
+import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
+
+const IS_DEV = process.env.NODE_ENV !== 'production';
+const PRICE_TOLERANCE = 0.01; // MAD
+const MIN_EXCHANGE_RATE = 0.0001;
+const MAX_EXCHANGE_RATE = 10000;
+
+// Very small in-memory idempotency cache. Best-effort only — useful in long-lived
+// node processes and within a single warm serverless instance. Survives ~5 minutes.
+const idempotencyStore = new Map(); // key -> { ts, response }
+const IDEMPOTENCY_TTL_MS = 5 * 60 * 1000;
+function rememberIdempotent(key, payload) {
+  idempotencyStore.set(key, { ts: Date.now(), payload });
+  // opportunistic cleanup
+  if (idempotencyStore.size > 500) {
+    const cutoff = Date.now() - IDEMPOTENCY_TTL_MS;
+    for (const [k, v] of idempotencyStore) if (v.ts < cutoff) idempotencyStore.delete(k);
+  }
+}
+function recallIdempotent(key) {
+  const hit = idempotencyStore.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.ts > IDEMPOTENCY_TTL_MS) { idempotencyStore.delete(key); return null; }
+  return hit.payload;
+}
+
+function isMissingVariantColumnError(error) {
+  const message = String(error?.message ?? '').toLowerCase();
+  const details = String(error?.details ?? '').toLowerCase();
+  const hint = String(error?.hint ?? '').toLowerCase();
+  const text = `${message} ${details} ${hint}`;
+  return (
+    (error?.code === '42703' || error?.code === 'PGRST204') &&
+    (
+      text.includes('selected_color') ||
+      text.includes('selected_size')
+    )
+  );
+}
+
+function effectivePriceMad(product) {
+  // Mirror the rule used everywhere else: discount_price wins, else
+  // discount_percentage off list, else list price.
+  const list = Number(product.price ?? 0);
+  if (product.discount_price != null) {
+    const dp = Number(product.discount_price);
+    if (Number.isFinite(dp) && dp >= 0) return dp;
+  }
+  if (product.discount_percentage != null) {
+    const pct = Number(product.discount_percentage);
+    if (Number.isFinite(pct) && pct > 0 && pct <= 100) {
+      return Math.round(list * (1 - pct / 100) * 100) / 100;
+    }
+  }
+  return list;
+}
+
+function safeExchangeRate(input) {
+  const n = Number(input);
+  if (!Number.isFinite(n) || n < MIN_EXCHANGE_RATE || n > MAX_EXCHANGE_RATE) return 1;
+  return n;
+}
 
 /**
  * POST /api/v1/orders
  * Create a new order (available to anyone — supports guest checkout).
- * Body: { shipping, items, total_mad, currency_code, exchange_rate }
+ *
+ * Body: { shipping, items: [{id, quantity, selected_color?, selected_size?}],
+ *         currency_code?, exchange_rate? }
+ *
+ * SECURITY: Prices, totals, and stock are all computed/validated server-side
+ * from the canonical `products` table. The `unit_price_mad` / `total_mad`
+ * fields the client may send are IGNORED — kept only for backward compat.
  */
 export async function POST(req) {
+  // CSRF defence: reject if Origin/Referer is foreign in production.
+  const originRejection = assertSameOrigin(req);
+  if (originRejection) return originRejection;
+  // Rate limit — 5 orders per minute per IP is generous for a human checkout.
+  const limited = await rateLimitOrReject(req, {
+    bucket: 'orders-post',
+    limit: 5,
+    windowMs: 60_000,
+  });
+  if (limited) return limited;
   try {
     const body = await req.json();
-    const { shipping, items, total_mad, currency_code, exchange_rate } = body;
+    const { shipping, items, currency_code, exchange_rate } = body;
 
-    if (!shipping || !Array.isArray(items) || items.length === 0 || total_mad == null) {
+    if (
+      !shipping ||
+      typeof shipping !== 'object' ||
+      !Array.isArray(items) ||
+      items.length === 0
+    ) {
       return NextResponse.json(
-        { success: false, error: 'Missing required fields: shipping, items, total_mad' },
+        { success: false, error: 'Missing required fields: shipping, items' },
         { status: 400 }
       );
     }
 
-    // Try to get current user id (null for guests, or if auth call fails)
+    // Hard cap on cart size to bound resource usage / batch size.
+    if (items.length > 100) {
+      return NextResponse.json(
+        { success: false, error: 'Too many items in a single order' },
+        { status: 400 }
+      );
+    }
+
+    // Normalize items: keep only id + qty + variants. Reject malformed entries.
+    const normalizedItems = [];
+    for (const raw of items) {
+      const id = String(raw?.id ?? '').trim();
+      const quantity = Math.floor(Number(raw?.quantity));
+      if (!id || !Number.isFinite(quantity) || quantity <= 0 || quantity > 1000) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid cart item' },
+          { status: 400 }
+        );
+      }
+      normalizedItems.push({
+        id,
+        quantity,
+        selected_color: raw?.selected_color ?? null,
+        selected_size: raw?.selected_size ?? null,
+      });
+    }
+
+    // Idempotency: caller may send a header to deduplicate retries.
+    const idempotencyKey = req.headers.get('idempotency-key') || req.headers.get('Idempotency-Key');
+    if (idempotencyKey) {
+      const cached = recallIdempotent(idempotencyKey);
+      if (cached) return NextResponse.json(cached, { status: 201 });
+    }
+
+    // Try to get current user id (null for guests).
     let userId = null;
     try {
       const sessionClient = await createClient();
@@ -31,10 +148,99 @@ export async function POST(req) {
       userId = null;
     }
 
-    // Use service client to bypass RLS — guests can create orders too
+    // Service client — bypasses RLS so guests can create orders, and so the
+    // stock-decrement / restore compensating writes work in a guest context.
     const db = createServiceClient();
 
-    // Generate a random 8-digit order number; retry up to 5 times on collision
+    // ── 1. Fetch canonical product rows for pricing + stock validation ────
+    const productIds = normalizedItems.map((i) => i.id);
+    const { data: productRows, error: productErr } = await db
+      .from('products')
+      .select('id, name, price, discount_price, discount_percentage, stock, status')
+      .in('id', productIds);
+
+    if (productErr) throw productErr;
+
+    const productMap = new Map((productRows ?? []).map((p) => [p.id, p]));
+    const missing = productIds.filter((id) => !productMap.has(id));
+    if (missing.length > 0) {
+      return NextResponse.json(
+        { success: false, error: 'One or more items are no longer available' },
+        { status: 409 }
+      );
+    }
+
+    // ── 2. Server-side validation: status, stock, prices ──────────────────
+    let serverTotalMad = 0;
+    for (const item of normalizedItems) {
+      const product = productMap.get(item.id);
+      if (product.status !== 'active') {
+        return NextResponse.json(
+          { success: false, error: `Item unavailable: ${product.name}` },
+          { status: 409 }
+        );
+      }
+      if (Number(product.stock ?? 0) < item.quantity) {
+        return NextResponse.json(
+          { success: false, error: `Insufficient stock for: ${product.name}`, productId: product.id, available: product.stock },
+          { status: 409 }
+        );
+      }
+      item.unit_price_mad = effectivePriceMad(product);
+      item.name = product.name;
+      serverTotalMad += item.unit_price_mad * item.quantity;
+    }
+    serverTotalMad = Math.round(serverTotalMad * 100) / 100;
+
+    // Sanitize currency hints (display only; canonical accounting stays in MAD).
+    const safeCurrency = typeof currency_code === 'string' && /^[A-Z]{3}$/.test(currency_code)
+      ? currency_code : 'MAD';
+    const safeRate = safeExchangeRate(exchange_rate);
+
+    // ── 3. Atomic stock decrement with compensating restore on failure ────
+    // Each UPDATE is conditional on stock >= qty so two concurrent orders
+    // for the last unit cannot both succeed. We track which ones succeeded
+    // so we can roll them back if a later step fails.
+    const decremented = []; // [{ id, quantity }]
+    for (const item of normalizedItems) {
+      const { data: updated, error: decErr } = await db.rpc('decrement_product_stock', {
+        p_product_id: item.id,
+        p_qty: item.quantity,
+      });
+      // If the RPC doesn't exist yet, fall back to a conditional UPDATE.
+      // (The migration script defines decrement_product_stock; this fallback
+      // keeps existing deployments working until the migration is applied.)
+      let ok;
+      if (decErr && (decErr.code === '42883' /* undefined_function */ || decErr.code === 'PGRST202')) {
+        const { data: rows, error: upErr } = await db
+          .from('products')
+          .update({ stock: (productMap.get(item.id).stock - item.quantity) })
+          .eq('id', item.id)
+          .gte('stock', item.quantity) // race guard
+          .select('id');
+        if (upErr) {
+          await restoreStock(db, decremented);
+          throw upErr;
+        }
+        ok = (rows?.length ?? 0) > 0;
+      } else if (decErr) {
+        await restoreStock(db, decremented);
+        throw decErr;
+      } else {
+        ok = updated === true || (Array.isArray(updated) && updated[0]?.ok === true) || updated === 1;
+      }
+
+      if (!ok) {
+        await restoreStock(db, decremented);
+        return NextResponse.json(
+          { success: false, error: `Insufficient stock for: ${item.name}` },
+          { status: 409 }
+        );
+      }
+      decremented.push({ id: item.id, quantity: item.quantity });
+    }
+
+    // ── 4. Insert the order + items. Roll back stock on failure. ──────────
     const randomOrderNumber = () => Math.floor(10000000 + Math.random() * 90000000);
 
     let order, orderErr;
@@ -44,16 +250,15 @@ export async function POST(req) {
         .insert({
           user_id: userId,
           status: 'pending',
-          total_amount: total_mad,
-          currency_code: currency_code ?? 'MAD',
-          exchange_rate: exchange_rate ?? 1,
+          total_amount: serverTotalMad,     // canonical, server-computed
+          currency_code: safeCurrency,
+          exchange_rate: safeRate,
           shipping_address: shipping,
           order_number: randomOrderNumber(),
         })
         .select('id, order_number')
         .single();
 
-      // 23505 = unique_violation — try a different number
       if (!result.error || result.error.code !== '23505') {
         order = result.data;
         orderErr = result.error;
@@ -61,28 +266,40 @@ export async function POST(req) {
       }
     }
 
-    if (orderErr) throw orderErr;
+    if (orderErr) {
+      await restoreStock(db, decremented);
+      throw orderErr;
+    }
 
-    const orderItems = items.map((item) => ({
+    const orderItems = normalizedItems.map((item) => ({
       order_id: order.id,
       product_id: item.id,
       quantity: item.quantity,
       unit_price: item.unit_price_mad,
+      selected_color: item.selected_color,
+      selected_size: item.selected_size,
     }));
 
-    const { error: itemsErr } = await db.from('order_items').insert(orderItems);
-    if (itemsErr) throw itemsErr;
+    let { error: itemsErr } = await db.from('order_items').insert(orderItems);
+    if (itemsErr) {
+      if (isMissingVariantColumnError(itemsErr)) {
+        const fallback = orderItems.map(({ selected_color, selected_size, ...rest }) => rest);
+        const retry = await db.from('order_items').insert(fallback);
+        itemsErr = retry.error;
+        if (IS_DEV && !itemsErr) {
+          console.warn('[POST /api/v1/orders] variant columns missing — migration pending');
+        }
+      }
+      if (itemsErr) {
+        // Roll back the order row + stock to avoid orphaned bookings.
+        await db.from('orders').delete().eq('id', order.id);
+        await restoreStock(db, decremented);
+        throw itemsErr;
+      }
+    }
 
-    // Send Telegram notification before responding so it always runs within
-    // the request lifecycle. Serverless runtimes freeze execution immediately
-    // after the response is returned, so a fire-and-forget IIFE is unreliable.
+    // ── 5. Telegram (best-effort, never fails the order) ──────────────────
     try {
-      const { data: products } = await db
-        .from('products')
-        .select('id, name')
-        .in('id', items.map((i) => i.id));
-      const productMap = Object.fromEntries((products ?? []).map((p) => [p.id, p.name]));
-
       const message = buildOrderMessage({
         id: String(order.order_number),
         customerName: shipping.full_name || 'Guest',
@@ -90,30 +307,61 @@ export async function POST(req) {
         address: shipping.address ?? '',
         city: shipping.city ?? '',
         country: shipping.country ?? '',
-        items: items.map((item) => ({
-          name: productMap[item.id] ?? `Product #${item.id.slice(0, 6)}`,
+        items: normalizedItems.map((item) => ({
+          name: item.name,
           qty: item.quantity,
           price: `${item.unit_price_mad} MAD`,
+          color: item.selected_color?.name ?? null,
+          size:  item.selected_size ?? null,
         })),
-        total: total_mad,
-        currency: currency_code ?? 'MAD',
+        total: serverTotalMad,
+        currency: 'MAD',
       });
       await sendTelegramMessage(message);
     } catch { /* notification errors must never surface */ }
 
-    return NextResponse.json({ success: true, data: { id: order.id, order_number: order.order_number } }, { status: 201 });
+    const responsePayload = { success: true, data: { id: order.id, order_number: order.order_number } };
+    if (idempotencyKey) rememberIdempotent(idempotencyKey, responsePayload);
+    return NextResponse.json(responsePayload, { status: 201 });
   } catch (err) {
-    console.error('[POST /api/v1/orders]', err?.message ?? err);
+    if (IS_DEV) console.error('[POST /api/v1/orders]', err?.message ?? err);
     return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to create order',
-        details: err?.message ?? String(err),
-        code: err?.code,
-        hint: err?.hint,
-      },
+      { success: false, error: 'Failed to create order' },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Compensating action: restore stock for items we already decremented when a
+ * later step in the order flow fails. Best-effort — logged but never thrown.
+ */
+async function restoreStock(db, decremented) {
+  for (const d of decremented) {
+    try {
+      // Use raw SQL via RPC if available, otherwise read-modify-write. The
+      // read-modify-write is safe enough as a recovery path because the
+      // original conditional UPDATE already serialized the contended path.
+      const { error } = await db.rpc('increment_product_stock', {
+        p_product_id: d.id,
+        p_qty: d.quantity,
+      });
+      if (error && (error.code === '42883' || error.code === 'PGRST202')) {
+        const { data: row } = await db
+          .from('products')
+          .select('stock')
+          .eq('id', d.id)
+          .single();
+        if (row) {
+          await db
+            .from('products')
+            .update({ stock: Number(row.stock ?? 0) + d.quantity })
+            .eq('id', d.id);
+        }
+      }
+    } catch (e) {
+      if (IS_DEV) console.error('[restoreStock]', d, e?.message ?? e);
+    }
   }
 }
 
@@ -183,6 +431,8 @@ export async function GET(req) {
       order_items (
         quantity,
         unit_price,
+        selected_color,
+        selected_size,
         products ( name )
       )
     `;

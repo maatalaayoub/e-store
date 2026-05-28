@@ -113,8 +113,15 @@ export async function downloadInvoicePdf(order) {
   const body = items.map((it) => {
     const unit = Number(it.unit_price) * rate;
     const sub = unit * it.quantity;
+    const baseName = it.products?.name ?? "Product";
+    const variantParts = [];
+    if (it.selected_color?.name) variantParts.push(`Color: ${it.selected_color.name}`);
+    if (it.selected_size)        variantParts.push(`Size: ${it.selected_size}`);
+    const name = variantParts.length
+      ? `${baseName}\n${variantParts.join('  •  ')}`
+      : baseName;
     return [
-      it.products?.name ?? "Product",
+      name,
       String(it.quantity),
       `${unit.toFixed(2)} ${currency}`,
       `${sub.toFixed(2)} ${currency}`,

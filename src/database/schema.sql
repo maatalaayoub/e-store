@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS products (
   id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
   category_id uuid REFERENCES categories(id) ON DELETE SET NULL,
   name text NOT NULL,
+  short_description text,
   description text,
   price numeric(10, 2) NOT NULL CHECK (price >= 0),
   -- Discount: set one or none. discount_price takes priority if both set.
@@ -74,6 +75,7 @@ CREATE TABLE IF NOT EXISTS products (
 ALTER TABLE products ADD COLUMN IF NOT EXISTS colors jsonb DEFAULT NULL;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS sizes  jsonb DEFAULT NULL;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS translations jsonb DEFAULT NULL;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS short_description text;
 
 -- ========================
 -- PRODUCT IMAGES
@@ -142,6 +144,12 @@ CREATE TABLE IF NOT EXISTS order_items (
   quantity integer NOT NULL CHECK (quantity > 0),
   unit_price numeric(10, 2) NOT NULL
 );
+
+-- Per-line variant selections captured at checkout (idempotent for existing DBs):
+--   selected_color → jsonb like { "name": "Black", "hex": "#000000" }
+--   selected_size  → text label (e.g. "M", "42")
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS selected_color jsonb DEFAULT NULL;
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS selected_size  text  DEFAULT NULL;
 
 -- ========================
 -- TRIGGER: updated_at
@@ -536,6 +544,7 @@ $$;
 -- ========================================================================
 -- Stores arbitrary admin settings such as:
 --   • product_card_button_style — controls the action button(s) on product cards
+--   • product_card_show_short_description — toggles product summaries on cards
 --   • telegram_bot_token / telegram_chat_id — Telegram notification integration
 --   • whatsapp_number / whatsapp_business_name — WhatsApp Business integration
 -- ========================================================================
@@ -562,6 +571,9 @@ END $$;
 -- Seed the default button style (safe no-op if already set).
 INSERT INTO store_settings (key, value)
 VALUES ('product_card_button_style', 'add_to_cart')
+ON CONFLICT (key) DO NOTHING;
+INSERT INTO store_settings (key, value)
+VALUES ('product_card_show_short_description', 'false')
 ON CONFLICT (key) DO NOTHING;
 
 -- ========================================================================
@@ -641,3 +653,124 @@ BEGIN
 END;
 $$;
 
+
+-- ========================================================================
+-- SECURITY HARDENING / PERFORMANCE INDEXES / FAVORITES  (May 2026 audit)
+-- ========================================================================
+-- Idempotent migrations. Safe to re-run.
+
+-- ------------------------------------------------------------------------
+-- FAVORITES TABLE  (was queried by the API but missing from the schema)
+-- ------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS favorites (
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  product_id uuid REFERENCES products(id) ON DELETE CASCADE NOT NULL,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  UNIQUE (user_id, product_id)
+);
+
+CREATE INDEX IF NOT EXISTS favorites_user_id_idx     ON favorites (user_id);
+CREATE INDEX IF NOT EXISTS favorites_product_id_idx  ON favorites (product_id);
+CREATE INDEX IF NOT EXISTS favorites_user_created_idx ON favorites (user_id, created_at DESC);
+
+ALTER TABLE favorites ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'favorites' AND policyname = 'Users view own favorites') THEN
+    EXECUTE 'CREATE POLICY "Users view own favorites" ON favorites FOR SELECT USING (auth.uid() = user_id)';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'favorites' AND policyname = 'Users insert own favorites') THEN
+    EXECUTE 'CREATE POLICY "Users insert own favorites" ON favorites FOR INSERT WITH CHECK (auth.uid() = user_id)';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'favorites' AND policyname = 'Users delete own favorites') THEN
+    EXECUTE 'CREATE POLICY "Users delete own favorites" ON favorites FOR DELETE USING (auth.uid() = user_id)';
+  END IF;
+END $$;
+
+-- ------------------------------------------------------------------------
+-- ATOMIC STOCK DECREMENT / INCREMENT RPCs
+-- Used by POST /api/v1/orders for race-free inventory management.
+-- Returns true on success, false if not enough stock was available.
+-- ------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION decrement_product_stock(p_product_id uuid, p_qty integer)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_rows integer;
+BEGIN
+  IF p_qty IS NULL OR p_qty <= 0 THEN
+    RETURN false;
+  END IF;
+  UPDATE products
+     SET stock = stock - p_qty
+   WHERE id = p_product_id
+     AND stock >= p_qty;
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+  RETURN v_rows = 1;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION increment_product_stock(p_product_id uuid, p_qty integer)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF p_qty IS NULL OR p_qty <= 0 THEN
+    RETURN;
+  END IF;
+  UPDATE products SET stock = stock + p_qty WHERE id = p_product_id;
+END;
+$$;
+
+-- ------------------------------------------------------------------------
+-- PERFORMANCE INDEXES on hot columns
+-- ------------------------------------------------------------------------
+CREATE INDEX IF NOT EXISTS orders_user_id_idx          ON orders (user_id);
+CREATE INDEX IF NOT EXISTS orders_status_idx           ON orders (status);
+CREATE INDEX IF NOT EXISTS orders_created_at_idx       ON orders (created_at DESC);
+CREATE INDEX IF NOT EXISTS orders_user_created_idx     ON orders (user_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS order_items_order_id_idx    ON order_items (order_id);
+CREATE INDEX IF NOT EXISTS order_items_product_id_idx  ON order_items (product_id);
+
+CREATE INDEX IF NOT EXISTS products_status_idx         ON products (status);
+CREATE INDEX IF NOT EXISTS products_status_featured_idx ON products (status, is_featured);
+CREATE INDEX IF NOT EXISTS products_category_status_idx ON products (category_id, status);
+
+CREATE INDEX IF NOT EXISTS product_images_product_main_idx
+  ON product_images (product_id, is_main);
+
+-- ------------------------------------------------------------------------
+-- STORE SETTINGS � allow public read of an explicit set of display keys.
+-- Replaces the legacy policy that only exposed product_card_button_style.
+-- ------------------------------------------------------------------------
+DO $$ BEGIN
+  -- Drop the legacy single-key policy if present
+  IF EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'store_settings' AND policyname = 'Public reads display settings') THEN
+    EXECUTE 'DROP POLICY "Public reads display settings" ON store_settings';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'store_settings' AND policyname = 'Public reads public display keys') THEN
+    EXECUTE $p$CREATE POLICY "Public reads public display keys" ON store_settings
+      FOR SELECT USING (key IN (
+        'product_card_button_style',
+        'product_card_show_short_description',
+        'product_card_show_old_price',
+        'product_card_show_discount_badge',
+        'product_card_show_rating',
+        'product_card_show_favorite',
+        'product_card_show_colors',
+        'product_card_show_sizes',
+        'whatsapp_number',
+        'whatsapp_business_name',
+        'shop_hero_layout',
+        'shop_perks_layout',
+        'shop_footer_layout',
+        'shop_announcement_layout'
+      ))$p$;
+  END IF;
+END $$;

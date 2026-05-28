@@ -19,7 +19,8 @@
     "or": "أو",
     "language": "اللغة",
     "loading": "جارٍ التحميل...",
-    "store_name": "متجري"
+    "store_name": "متجري",
+    "close": "إغلاق"
   },
   "nav": {
     "home": "الرئيسية",
@@ -88,7 +89,9 @@
     "buy_now": "أضف إلى السلة",
     "shop_now": "تسوق الآن",
     "badge_new": "جديد",
-    "badge_hot": "الأكثر طلباً"
+    "badge_hot": "الأكثر طلباً",
+    "best_seller_label": "الأكثر مبيعًا",
+    "go_to_slide": "انتقل إلى الشريحة {n}"
   },
   "perks": {
     "support_title": "دعم على مدار الساعة",
@@ -241,8 +244,10 @@
         "category_new": "+ جديد",
         "category_name_placeholder": "اسم الفئة",
         "category_add": "إضافة",
-        "description_label": "الوصف",
-        "description_placeholder": "وصف المنتج...",
+        "short_description_label": "وصف قصير",
+        "short_description_placeholder": "ملخص قصير للمنتج...",
+        "description_label": "الوصف الطويل",
+        "description_placeholder": "وصف تفصيلي للمنتج...",
         "price_label": "السعر ($)",
         "stock_label": "المخزون",
         "discount_label": "الخصم",
@@ -599,7 +604,10 @@
     "added_to_cart": "أضيف إلى السلة",
     "add_to_cart": "أضف إلى السلة",
     "checkout_now": "اشترِ الآن",
-    "unavailable": "غير متوفر"
+    "unavailable": "غير متوفر",
+    "choose_options": "اختر الخيارات",
+    "select_color": "اختر اللون",
+    "select_size": "اختر المقاس"
   },
   "account": {
     "title": "إعدادات الحساب",

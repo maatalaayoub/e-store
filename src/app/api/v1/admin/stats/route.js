@@ -15,27 +15,58 @@ export async function GET() {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
-    // Run all queries in parallel
-    const [ordersRes, productsRes, customersRes, recentProductsRes] = await Promise.all([
-      // All orders — for revenue + count
-      supabase
-        .from('orders')
-        .select('id, total_amount, status, created_at'),
+    // Period boundaries (computed once so SQL filters are consistent).
+    const now = new Date();
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
 
-      // All products — for count (all statuses)
-      supabase
-        .from('products')
-        .select('id', { count: 'exact', head: true }),
+    // Each block below is a small server-side aggregate (count or sum)
+    // instead of pulling every orders row into Node. For a store with
+    // 100k+ orders this is the difference between ~200ms and OOM.
+    const sumActiveRevenue = (b) => b.select('total_amount').neq('status', 'cancelled');
 
-      // Active customers (users with at least one order, or just total users)
-      supabase
-        .from('users')
+    const [
+      totalOrdersCountRes,
+      totalRevenueRes,
+      thisMonthOrdersCountRes,
+      lastMonthOrdersCountRes,
+      thisMonthRevenueRes,
+      lastMonthRevenueRes,
+      productsRes,
+      customersRes,
+      recentProductsRes,
+    ] = await Promise.all([
+      // Total order count (head:true \u2014 no row payload).
+      supabase.from('orders').select('id', { count: 'exact', head: true }),
+
+      // Total non-cancelled revenue \u2014 stream only `total_amount`.
+      sumActiveRevenue(supabase.from('orders')),
+
+      // This-month order count.
+      supabase.from('orders')
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', startOfThisMonth),
+
+      // Last-month order count.
+      supabase.from('orders')
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', startOfLastMonth)
+        .lt('created_at', startOfThisMonth),
+
+      // This-month non-cancelled revenue.
+      sumActiveRevenue(supabase.from('orders'))
+        .gte('created_at', startOfThisMonth),
+
+      // Last-month non-cancelled revenue.
+      sumActiveRevenue(supabase.from('orders'))
+        .gte('created_at', startOfLastMonth)
+        .lt('created_at', startOfThisMonth),
+
+      supabase.from('products').select('id', { count: 'exact', head: true }),
+      supabase.from('users')
         .select('id', { count: 'exact', head: true })
         .eq('role', 'customer'),
-
-      // Recent 5 products for table
-      supabase
-        .from('products')
+      supabase.from('products')
         .select(`
           id,
           name,
@@ -48,35 +79,21 @@ export async function GET() {
         .limit(5),
     ]);
 
-    if (ordersRes.error) throw ordersRes.error;
-    if (productsRes.error) throw productsRes.error;
-    if (customersRes.error) throw customersRes.error;
-    if (recentProductsRes.error) throw recentProductsRes.error;
+    for (const r of [totalOrdersCountRes, totalRevenueRes, thisMonthOrdersCountRes,
+      lastMonthOrdersCountRes, thisMonthRevenueRes, lastMonthRevenueRes,
+      productsRes, customersRes, recentProductsRes]) {
+      if (r.error) throw r.error;
+    }
 
-    const orders = ordersRes.data ?? [];
+    const sumAmount = (rows) =>
+      (rows ?? []).reduce((s, r) => s + Number(r.total_amount ?? 0), 0);
 
-    // Revenue: sum of all non-cancelled orders
-    const totalRevenue = orders
-      .filter((o) => o.status !== 'cancelled')
-      .reduce((sum, o) => sum + Number(o.total_amount ?? 0), 0);
-
-    // This month vs last month helpers
-    const now = new Date();
-    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
-
-    const thisMonthOrders = orders.filter((o) => new Date(o.created_at).getTime() >= startOfThisMonth);
-    const lastMonthOrders = orders.filter((o) => {
-      const t = new Date(o.created_at).getTime();
-      return t >= startOfLastMonth && t < startOfThisMonth;
-    });
-
-    const thisMonthRevenue = thisMonthOrders
-      .filter((o) => o.status !== 'cancelled')
-      .reduce((s, o) => s + Number(o.total_amount ?? 0), 0);
-    const lastMonthRevenue = lastMonthOrders
-      .filter((o) => o.status !== 'cancelled')
-      .reduce((s, o) => s + Number(o.total_amount ?? 0), 0);
+    const totalRevenue = sumAmount(totalRevenueRes.data);
+    const thisMonthRevenue = sumAmount(thisMonthRevenueRes.data);
+    const lastMonthRevenue = sumAmount(lastMonthRevenueRes.data);
+    const totalOrdersCount = totalOrdersCountRes.count ?? 0;
+    const thisMonthCount = thisMonthOrdersCountRes.count ?? 0;
+    const lastMonthCount = lastMonthOrdersCountRes.count ?? 0;
 
     function pct(current, previous) {
       if (previous === 0) return current > 0 ? '+100.0%' : '—';
@@ -90,8 +107,8 @@ export async function GET() {
         trend: pct(thisMonthRevenue, lastMonthRevenue),
       },
       orders: {
-        value: orders.length,
-        trend: pct(thisMonthOrders.length, lastMonthOrders.length),
+        value: totalOrdersCount,
+        trend: pct(thisMonthCount, lastMonthCount),
       },
       products: {
         value: productsRes.count ?? 0,

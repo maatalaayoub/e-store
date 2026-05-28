@@ -43,20 +43,45 @@ export async function sendTelegramMessage(text) {
 }
 
 /**
+ * Escape characters reserved by Telegram's HTML parse mode so user input
+ * cannot break formatting or inject markup. Telegram only requires
+ * `< > &` to be escaped in text nodes (and `"` inside attribute values),
+ * but we escape `"` defensively too.
+ */
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/**
  * Build an order notification message for Telegram.
+ * All user-controlled fields are HTML-escaped before being embedded.
  */
 export function buildOrderMessage({ id, customerName, phone, address, city, country, items, total, currency }) {
+  const e = escapeHtml;
+  const itemLines = [];
+  for (const item of items) {
+    itemLines.push(`  • ${e(item.name)} × ${e(item.qty)}  (${e(item.price)})`);
+    const variantParts = [];
+    if (item.color) variantParts.push(`Color: ${e(item.color)}`);
+    if (item.size)  variantParts.push(`Size: ${e(item.size)}`);
+    if (variantParts.length) itemLines.push(`     ↳ ${variantParts.join(' • ')}`);
+  }
+
   const lines = [
-    `🛒 <b>New Order #${id}</b>`,
+    `🛒 <b>New Order #${e(id)}</b>`,
     ``,
-    `👤 <b>${customerName}</b>`,
-    phone ? `📞 ${phone}` : null,
-    `📍 ${[address, city, country].filter(Boolean).join(', ')}`,
+    `👤 <b>${e(customerName)}</b>`,
+    phone ? `📞 ${e(phone)}` : null,
+    `📍 ${[address, city, country].filter(Boolean).map(e).join(', ')}`,
     ``,
     `<b>Items:</b>`,
-    ...items.map((item) => `  • ${item.name} × ${item.qty}  (${item.price})`),
+    ...itemLines,
     ``,
-    `💰 <b>Total: ${total} ${currency}</b>`,
+    `💰 <b>Total: ${e(total)} ${e(currency)}</b>`,
   ];
 
   return lines.filter((l) => l !== null).join('\n');

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
 import { useCartStore } from "@/store/useCartStore";
@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ShoppingCart, Check, Heart, ArrowUpRight } from "lucide-react";
 import { useFavorite } from "@/hooks/useFavorite";
+import VariantPickerModal from "@/components/shop/VariantPickerModal";
 
 // Valid button style values — also used by admin UI and section config
 export const BUTTON_STYLES = {
@@ -28,9 +29,10 @@ export const CARD_LAYOUTS = {
   SHADOW:   'shadow',    // Soft-shadow card with internal padding
   SHOWCASE: 'showcase',  // Premium boutique style — favorite + arrow CTA
   BOUTIQUE: 'boutique',  // Bordered card with brand, title, price, full-width pill CTA
+  FLOATING: 'floating',  // Edge-to-edge image with circular discount badge + floating pill (cart + favorite) overlay
 };
 
-export default function ProductCard({ product: rawProduct, onAdded, buttonStyle, filledBg, filledText, outlineBorder, outlineText, outlineIcon, outlineBg, buttonFontSize, layout }) {
+export default function ProductCard({ product: rawProduct, onAdded, buttonStyle, filledBg, filledText, outlineBorder, outlineText, outlineIcon, outlineBg, buttonFontSize, layout, showShortDescription }) {
   const dict = useDictionary();
   const { locale } = useParams();
   const tHome = dict?.home ?? {};
@@ -40,12 +42,37 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
   const { isFavorited, toggle: toggleFav } = useFavorite(rawProduct?.id);
 
   const product = resolveProductTranslation(rawProduct, locale);
+  const shortDescription = product.short_description?.trim();
+  const shouldShowShortDescription = showShortDescription === true && Boolean(shortDescription);
 
-  const handleAdd = () => {
-    addItem(product);
+  // ── Variant detection ────────────────────────────────────────────────
+  const colors = useMemo(
+    () =>
+      Array.isArray(rawProduct?.colors)
+        ? rawProduct.colors.filter((c) => c && c.name && c.hex)
+        : [],
+    [rawProduct?.colors],
+  );
+  const sizes = useMemo(
+    () => (Array.isArray(rawProduct?.sizes) ? rawProduct.sizes.filter(Boolean) : []),
+    [rawProduct?.sizes],
+  );
+  const hasVariants = colors.length > 0 || sizes.length > 0;
+  const [variantOpen, setVariantOpen] = useState(false);
+
+  const commitAdd = ({ selectedColor = null, selectedSize = null } = {}) => {
+    addItem(product, { quantity: 1, selectedColor, selectedSize });
     onAdded?.();
     setAdded(true);
     setTimeout(() => setAdded(false), 900);
+  };
+
+  const handleAdd = () => {
+    if (hasVariants) {
+      setVariantOpen(true);
+      return;
+    }
+    commitAdd();
   };
 
   const isArabicName = /[\u0600-\u06FF]/.test(product.name ?? "");
@@ -70,7 +97,7 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
   const style = buttonStyle ?? BUTTON_STYLES.ADD_TO_CART;
 
   // Shared button class fragments (colours driven by CSS custom properties set on <article>)
-  const btnBase    = "flex h-full min-w-0 items-center justify-center px-2 text-center leading-none transition-all duration-300 active:scale-[0.98] font-bold uppercase tracking-[0.1em] rounded-[2px]";
+  const btnBase    = "flex h-full min-w-0 items-center justify-center px-2 text-center leading-none transition-all duration-300 active:scale-[0.98] font-bold uppercase tracking-[0.1em] rounded-[7px]";
   const btnOutline = `${btnBase} border pcard-btn-outline`;
   const btnFilled  = `${btnBase} pcard-btn-filled`;
   // Added-to-cart feedback state (always green — not colour-overridable)
@@ -90,6 +117,7 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
     [CARD_LAYOUTS.SHADOW]:   "group flex flex-col h-full rounded-[8px] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.10)] transition-shadow duration-300 p-3 sm:p-4 overflow-hidden",
     [CARD_LAYOUTS.SHOWCASE]: "group flex flex-col h-full rounded-[18px] bg-zinc-50 hover:bg-zinc-100/80 transition-colors duration-300 p-2 sm:p-2.5 overflow-hidden",
     [CARD_LAYOUTS.BOUTIQUE]: "group flex flex-col h-full rounded-[20px] border border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] transition-all duration-300 p-3 sm:p-4 overflow-hidden",
+    [CARD_LAYOUTS.FLOATING]: "group flex flex-col h-full",
   }[cardLayout];
 
   const imgWrapperClass = cardLayout === CARD_LAYOUTS.BORDERED || cardLayout === CARD_LAYOUTS.SHADOW
@@ -98,18 +126,30 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
     ? "relative aspect-square w-full overflow-hidden bg-[#ebebeb] block rounded-[14px]"
     : cardLayout === CARD_LAYOUTS.BOUTIQUE
     ? "relative aspect-square w-full overflow-hidden bg-zinc-100 block rounded-[14px]"
+    : cardLayout === CARD_LAYOUTS.FLOATING
+    ? "relative aspect-[4/5] w-full overflow-hidden bg-white block"
     : "relative aspect-square w-full overflow-hidden bg-[#ebebeb] block";
 
   const showOverlayInfo = cardLayout === CARD_LAYOUTS.OVERLAY;
   const isShowcase      = cardLayout === CARD_LAYOUTS.SHOWCASE;
   const isBoutique      = cardLayout === CARD_LAYOUTS.BOUTIQUE;
-  const showInfoBelow   = !showOverlayInfo && !isShowcase && !isBoutique;
+  const isFloating      = cardLayout === CARD_LAYOUTS.FLOATING;
+  const showInfoBelow   = !showOverlayInfo && !isShowcase && !isBoutique && !isFloating;
+
+  // Discount percentage (used by FLOATING badge)
+  const discountPercent = hasDiscount
+    ? Math.round(
+        ((Number(String(originalPrice).replace(/[^0-9.]/g, '')) -
+          Number(String(effectivePrice).replace(/[^0-9.]/g, ''))) /
+          Number(String(originalPrice).replace(/[^0-9.]/g, ''))) * 100
+      )
+    : 0;
 
   // Buttons block — re-used across layouts
   const ButtonsBlock = (
     <div className="h-full">
       {style === BUTTON_STYLES.ADD_TO_CART && (
-        <button onClick={handleAdd} className={`w-full ${added ? btnAdded : btnOutline}`}>
+        <button data-no-global-progress="true" onClick={handleAdd} className={`w-full ${added ? btnAdded : btnOutline}`}>
           {added ? <Check className="h-4 w-4 mx-auto" /> : tHome.buy_now}
         </button>
       )}
@@ -126,9 +166,10 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
             {tHome.shop_now}
           </Link>
           <button
+            data-no-global-progress="true"
             onClick={handleAdd}
             aria-label={tHome.buy_now}
-            className={`flex-none flex h-full items-center justify-center w-11 sm:w-12 rounded-[2px] transition-all duration-300 active:scale-[0.98] border ${
+            className={`flex-none flex h-full items-center justify-center w-11 sm:w-12 rounded-[7px] transition-all duration-300 active:scale-[0.98] border ${
               added ? "border-green-500 bg-green-500 text-white scale-[1.04]" : "pcard-btn-outline"
             }`}
           >
@@ -142,7 +183,7 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
           <Link href={`/${locale}/product/${product.id}`} className={`flex-1 flex items-center justify-center ${btnFilled}`}>
             {tHome.shop_now}
           </Link>
-          <button onClick={handleAdd} className={`flex-1 ${added ? btnAdded : btnOutline}`}>
+          <button data-no-global-progress="true" onClick={handleAdd} className={`flex-1 ${added ? btnAdded : btnOutline}`}>
             {added ? <Check className="h-4 w-4 mx-auto" /> : tHome.buy_now}
           </button>
         </div>
@@ -153,7 +194,7 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
           <Link href={`/${locale}/product/${product.id}`} className={`w-full flex-1 ${btnFilled} h-auto`}>
             {tHome.shop_now}
           </Link>
-          <button onClick={handleAdd} className={`w-full flex-1 ${added ? btnAdded : btnOutline} h-auto`}>
+          <button data-no-global-progress="true" onClick={handleAdd} className={`w-full flex-1 ${added ? btnAdded : btnOutline} h-auto`}>
             {added ? <Check className="h-4 w-4 mx-auto" /> : tHome.buy_now}
           </button>
         </div>
@@ -164,13 +205,18 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
   // Info block — text + price (rendered below image except in overlay layout)
   const isMinimal = cardLayout === CARD_LAYOUTS.MINIMAL;
   const InfoBlock = (
-    <div className={`flex h-[104px] flex-col overflow-hidden ${isMinimal ? 'text-start' : 'text-center'} pt-3 pb-3 sm:h-[108px]`}>
+    <div className={`flex ${shouldShowShortDescription ? 'h-[136px] sm:h-[142px]' : 'h-[104px] sm:h-[108px]'} flex-col overflow-hidden ${isMinimal ? 'text-start' : 'text-center'} pt-3 pb-3`}>
       <Link href={`/${locale}/product/${product.id}`}>
         <h3 className={`line-clamp-2 h-[2.75em] text-zinc-900 leading-snug hover:text-blue-600 transition-colors ${isArabicName ? "text-sm sm:text-base font-semibold tracking-normal font-[family-name:var(--font-cairo)]" : isMinimal ? "text-xs sm:text-sm font-semibold uppercase tracking-[0.1em]" : "text-xs sm:text-sm font-bold uppercase tracking-[0.15em] sm:tracking-[0.18em]"}`}>
           {product.name}
         </h3>
       </Link>
-      <div className={`mt-2 flex min-h-6 items-center gap-2 ${isMinimal ? 'justify-start' : 'justify-center'}`}>
+      {shouldShowShortDescription && (
+        <p className="mt-1 line-clamp-2 min-h-[2.5em] text-xs leading-snug text-zinc-500">
+          {shortDescription}
+        </p>
+      )}
+      <div className={`mt-auto flex min-h-6 items-center gap-2 ${isMinimal ? 'justify-start' : 'justify-center'}`}>
         {hasDiscount ? (
           <>
             <span className="text-sm sm:text-base font-semibold tracking-widest text-zinc-900 uppercase">
@@ -209,13 +255,13 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
             src={imgSrc}
             alt={product.name}
             loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+            className={`h-full w-full transition-transform duration-700 ease-out group-hover:scale-105 ${isFloating ? 'object-contain p-3' : 'object-cover'}`}
           />
         ) : (
           <div className="h-full w-full bg-zinc-100" />
         )}
 
-        {badge && !isBoutique && (
+        {badge && !isBoutique && !isFloating && (
           <span
             dir="ltr"
             className="absolute left-3 top-3 bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-zinc-900 shadow-sm z-10"
@@ -232,7 +278,7 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
                 dir="ltr"
                 className="absolute left-3 top-3 z-10 rounded-full bg-white px-3 py-1.5 text-[11px] font-medium text-zinc-700 shadow-sm"
               >
-                {badge ?? 'Best Seller'}
+                {badge ?? (tHome.best_seller_label ?? 'Best Seller')}
               </span>
             )}
             <button
@@ -250,6 +296,45 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
               <span className="h-1.5 w-1.5 rounded-full bg-zinc-300" />
               <span className="h-1.5 w-1.5 rounded-full bg-zinc-300" />
+            </div>
+          </>
+        )}
+
+        {/* Floating: circular discount badge + white pill (cart + favorite) */}
+        {isFloating && (
+          <>
+            {hasDiscount && (
+              <span
+                dir="ltr"
+                className="absolute left-2 top-2 z-10 flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-[#c8a85a] text-white text-[10px] sm:text-[11px] font-semibold tracking-tight shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
+              >
+                -{discountPercent}%
+              </span>
+            )}
+            <div
+              className="absolute left-1/2 bottom-3 z-10 flex -translate-x-1/2 items-center gap-0.5 rounded-full bg-white px-1.5 py-1.5 shadow-[0_4px_14px_rgba(0,0,0,0.10)]"
+              onClick={(e) => e.preventDefault()}
+            >
+              <button
+                type="button"
+                data-no-global-progress="true"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleAdd(); }}
+                aria-label={tHome.buy_now ?? 'Add to cart'}
+                className="flex h-7 w-9 items-center justify-center rounded-full text-zinc-800 hover:bg-zinc-100 transition-colors"
+              >
+                {added ? <Check className="h-4 w-4 text-green-600" /> : <ShoppingCart className="h-4 w-4" strokeWidth={1.75} />}
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFav(); }}
+                aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                className="flex h-7 w-9 items-center justify-center rounded-full text-zinc-800 hover:bg-zinc-100 transition-colors"
+              >
+                <Heart
+                  className={`h-4 w-4 transition-all ${isFavorited ? 'fill-red-500 text-red-500' : 'fill-transparent'}`}
+                  strokeWidth={1.75}
+                />
+              </button>
             </div>
           </>
         )}
@@ -283,6 +368,11 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
             <h3 className={`line-clamp-1 text-white leading-snug drop-shadow ${isArabicName ? "text-sm font-semibold tracking-normal font-[family-name:var(--font-cairo)]" : "text-[11px] font-bold uppercase tracking-[0.15em]"}`}>
               {product.name}
             </h3>
+            {shouldShowShortDescription && (
+              <p className="mt-1 line-clamp-1 text-[11px] leading-snug text-white/80 drop-shadow">
+                {shortDescription}
+              </p>
+            )}
             <div className="mt-1 flex items-center gap-2">
               {hasDiscount ? (
                 <>
@@ -306,11 +396,16 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
       {showInfoBelow && InfoBlock}
 
       {isShowcase && (
-        <div className="flex h-[76px] items-end justify-between gap-3 overflow-hidden px-2 pt-3 pb-2 sm:px-3">
+        <div className={`flex ${shouldShowShortDescription ? 'h-[112px]' : 'h-[76px]'} items-end justify-between gap-3 overflow-hidden px-2 pt-3 pb-2 sm:px-3`}>
           <Link href={`/${locale}/product/${product.id}`} className="min-w-0 flex-1">
             <h3 className={`truncate text-zinc-900 leading-snug hover:text-zinc-600 transition-colors ${isArabicName ? "text-sm sm:text-base font-semibold font-[family-name:var(--font-cairo)]" : "text-[13px] sm:text-[15px] font-semibold tracking-tight"}`}>
               {product.name}
             </h3>
+            {shouldShowShortDescription && (
+              <p className="mt-1 line-clamp-2 text-xs leading-snug text-zinc-500">
+                {shortDescription}
+              </p>
+            )}
             <div className="mt-1 flex items-center gap-2">
               {hasDiscount ? (
                 <>
@@ -332,14 +427,44 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
         </div>
       )}
 
-      {!isShowcase && !isBoutique && (
+      {!isShowcase && !isBoutique && !isFloating && (
         <div className={actionSlotClass}>
           {ButtonsBlock}
         </div>
       )}
 
+      {isFloating && (
+        <div className="flex flex-col items-center gap-1 px-2 pt-5 pb-3 text-center">
+          <Link href={`/${locale}/product/${product.id}`}>
+            <h3 className={`line-clamp-1 text-zinc-900 hover:text-zinc-600 transition-colors ${isArabicName ? "text-base sm:text-lg font-semibold font-[family-name:var(--font-cairo)]" : "text-[15px] sm:text-[17px] font-medium tracking-tight"}`}>
+              {product.name}
+            </h3>
+          </Link>
+          {(product.category?.name || product.category_name) && (
+            <span className="text-[13px] sm:text-sm text-zinc-400">
+              {product.category?.name ?? product.category_name}
+            </span>
+          )}
+          {shouldShowShortDescription && (
+            <p className="line-clamp-1 text-xs text-zinc-500">
+              {shortDescription}
+            </p>
+          )}
+          <div className="mt-1 flex items-center justify-center gap-2" dir="ltr">
+            {hasDiscount ? (
+              <>
+                <span className="text-sm text-zinc-400 line-through">{fmt(originalPrice)}</span>
+                <span className="text-[15px] sm:text-base font-semibold text-[#c8a85a]">{fmt(effectivePrice)}</span>
+              </>
+            ) : (
+              <span className="text-[15px] sm:text-base font-semibold text-zinc-900">{fmt(originalPrice)}</span>
+            )}
+          </div>
+        </div>
+      )}
+
       {isBoutique && (
-        <div className="flex h-[176px] flex-col overflow-hidden px-1 pt-4 pb-1 gap-1">
+        <div className={`flex ${shouldShowShortDescription ? 'h-[212px]' : 'h-[176px]'} flex-col overflow-hidden px-1 pt-4 pb-1 gap-1`}>
           {(product.category?.name || product.category_name) && (
             <span className="text-[13px] font-medium text-emerald-600">
               {product.category?.name ?? product.category_name}
@@ -353,6 +478,11 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
               {product.name}
             </h3>
           </Link>
+          {shouldShowShortDescription && (
+            <p className="line-clamp-2 min-h-[2.5em] text-xs leading-snug text-zinc-500">
+              {shortDescription}
+            </p>
+          )}
           <div className="flex min-h-6 items-center gap-2">
             {hasDiscount ? (
               <>
@@ -365,8 +495,9 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
           </div>
           <button
             type="button"
+            data-no-global-progress="true"
             onClick={handleAdd}
-            className={`mt-auto w-full rounded-full py-3.5 text-sm font-medium transition-all duration-300 active:scale-[0.98] ${
+            className={`mt-auto w-full rounded-[7px] py-3.5 text-sm font-medium transition-all duration-300 active:scale-[0.98] ${
               added
                 ? 'bg-green-500 text-white'
                 : 'bg-zinc-900 text-white hover:bg-zinc-800'
@@ -376,6 +507,18 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
           </button>
         </div>
       )}
+
+      <VariantPickerModal
+        open={variantOpen}
+        onClose={() => setVariantOpen(false)}
+        onConfirm={({ selectedColor, selectedSize }) => {
+          setVariantOpen(false);
+          commitAdd({ selectedColor, selectedSize });
+        }}
+        product={product}
+        colors={colors}
+        sizes={sizes}
+      />
     </article>
   );
 }

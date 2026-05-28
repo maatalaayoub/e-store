@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useDictionary } from "@/components/providers/LocaleProvider";
 import {
   HERO_SLIDE_DURATION_MS,
   HERO_TRANSITION_HALFWAY_MS,
@@ -9,6 +10,8 @@ import {
 } from "@/config/constants";
 
 export default function HeroCarousel({ slides }) {
+  const dict = useDictionary();
+  const tHero = dict?.home ?? {};
   const [slideIndex, setSlideIndex] = useState(0);
   const [displayIndex, setDisplayIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -61,7 +64,7 @@ export default function HeroCarousel({ slides }) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={slide.image}
-            alt=""
+            alt={slide.title ? `${slide.title} promotional banner` : ""}
             className={`h-full w-full object-cover will-change-transform transition-transform duration-[7000ms] ease-out ${
               i === slideIndex ? "scale-105" : "scale-100"
             }`}
@@ -69,7 +72,7 @@ export default function HeroCarousel({ slides }) {
         </div>
       ))}
 
-      {/* Preload next image */}
+      {/* Preload next image (decorative) */}
       {slides.length > 1 && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -77,6 +80,7 @@ export default function HeroCarousel({ slides }) {
           alt=""
           aria-hidden="true"
           className="hidden"
+          loading="lazy"
         />
       )}
 
@@ -117,7 +121,7 @@ export default function HeroCarousel({ slides }) {
               <button
                 key={i}
                 onClick={() => setSlideIndex(i)}
-                aria-label={`Go to slide ${i + 1}`}
+                aria-label={(tHero.go_to_slide ?? "Go to slide {n}").replace("{n}", String(i + 1))}
                 className={`relative h-[2px] overflow-hidden transition-all duration-500 ${
                   isActive ? "w-12 bg-white/30" : "w-6 bg-white/40 hover:bg-white/70"
                 }`}
