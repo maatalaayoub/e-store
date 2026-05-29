@@ -411,6 +411,11 @@ const LAYOUT_PRESETS = [
     label: 'Floating',
     description: 'Edge-to-edge image with a circular discount badge and a floating white pill (cart + favorite) over the image.',
   },
+  {
+    value: 'retail',
+    label: 'Retail',
+    description: 'Compact iHerb-style card — contained image, category, name, rating, price, and orange Add button.',
+  },
 ];
 
 const PREVIEW_PRODUCT = {
@@ -553,6 +558,22 @@ function LayoutMiniPreview({ value }) {
             <div className="h-1 w-1/2 bg-zinc-700 rounded-sm" />
             <div className="h-1 w-1/4 bg-zinc-400 rounded-sm" />
             <div className="h-1 w-1/3 bg-[#c8a85a] rounded-sm" />
+          </div>
+        </div>
+      );
+    case 'retail':
+      return (
+        <div className="flex flex-col w-full h-full bg-white rounded-lg border border-zinc-200 overflow-hidden shadow-sm">
+          <div className="relative flex-1 bg-[#f5f5f5] flex items-center justify-center">
+            <div className="h-3/5 w-3/5 rounded bg-zinc-200" />
+            <div className="absolute left-1 top-1 h-1.5 w-5 rounded-sm bg-[#fff3dc]" />
+          </div>
+          <div className="px-1.5 py-1 flex flex-col gap-[3px]">
+            <div className="h-[3px] w-1/3 bg-zinc-300 rounded-sm" />
+            <div className="h-[3px] w-3/4 bg-zinc-600 rounded-sm" />
+            <div className="h-[3px] w-1/2 bg-zinc-400 rounded-sm" />
+            <div className="h-[3px] w-2/5 bg-zinc-800 rounded-sm" />
+            <div className="h-2.5 w-2/3 bg-[#ff9200] rounded-md mt-0.5" />
           </div>
         </div>
       );
@@ -929,6 +950,7 @@ function LayoutSection() {
               outlineBg={displaySettings.product_card_outline_bg}
               buttonFontSize={parseInt(displaySettings.product_card_button_font_size) || 10}
               showShortDescription={showShortDescription}
+              hideButtons={displaySettings.product_card_hide_buttons === 'true'}
             />
           ) : (
             <div className="animate-pulse">
@@ -980,6 +1002,9 @@ function DisplaySection() {
   const [outlineIcon, setOutlineIcon] = useState('#18181b');
   const [outlineBg, setOutlineBg] = useState('transparent');
   const [buttonFontSize, setButtonFontSize] = useState(10);
+  const [cardLayout, setCardLayout] = useState('overlay');
+  const [showShortDescription, setShowShortDescription] = useState(false);
+  const [hideButtons, setHideButtons] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [previewProduct, setPreviewProduct] = useState(PREVIEW_PRODUCT);
@@ -1000,6 +1025,9 @@ function DisplaySection() {
           if (d.product_card_outline_icon) setOutlineIcon(d.product_card_outline_icon);
           if (d.product_card_outline_bg) setOutlineBg(d.product_card_outline_bg);
           if (d.product_card_button_font_size) setButtonFontSize(parseInt(d.product_card_button_font_size) || 10);
+          if (d.product_card_layout) setCardLayout(d.product_card_layout);
+          setShowShortDescription(d.product_card_show_short_description === 'true');
+          setHideButtons(d.product_card_hide_buttons === 'true');
         }
         setPreviewProduct(normalizePreviewProduct(products.success ? products.data?.[0] : null));
       })
@@ -1022,6 +1050,7 @@ function DisplaySection() {
           product_card_outline_icon:   outlineIcon,
           product_card_outline_bg:    outlineBg,
           product_card_button_font_size: String(buttonFontSize),
+          product_card_hide_buttons:  hideButtons ? 'true' : 'false',
         }),
       });
       const json = await res.json();
@@ -1034,9 +1063,14 @@ function DisplaySection() {
     }
   };
 
-  const styleHasFilled = ['shop_now', 'horizontal_style1', 'horizontal_style2', 'vertical'].includes(buttonStyle);
-  const styleHasOutline = ['add_to_cart', 'horizontal_style1', 'horizontal_style2', 'vertical'].includes(buttonStyle);
-  const styleHasIcon = buttonStyle === 'horizontal_style1';
+  const usesButtonBlock = !['showcase', 'boutique', 'floating', 'retail'].includes(cardLayout);
+  const isRetailLayout   = cardLayout === 'retail';
+  const hasOwnButton     = ['showcase', 'boutique', 'floating'].includes(cardLayout);
+
+  const styleHasFilled  = usesButtonBlock && ['shop_now', 'horizontal_style1', 'horizontal_style2', 'vertical'].includes(buttonStyle);
+  const styleHasOutline = isRetailLayout || (usesButtonBlock && ['add_to_cart', 'horizontal_style1', 'horizontal_style2', 'vertical'].includes(buttonStyle));
+  const styleHasIcon    = isRetailLayout || (usesButtonBlock && buttonStyle === 'horizontal_style1');
+  const showFontSize    = !hasOwnButton;
 
   if (loading) {
     return (
@@ -1054,7 +1088,22 @@ function DisplaySection() {
         description={tD.desc ?? 'Pick a button layout and tune its colours. The preview updates live.'}
       />
 
-      <div className="mb-6 flex flex-wrap gap-2.5" role="radiogroup" aria-label="Button Styles">
+      {usesButtonBlock && (
+      <div className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-zinc-200 bg-white px-4 py-3">
+        <div>
+          <p className="text-sm font-semibold text-zinc-900">
+            {tD.hide_buttons_toggle ?? 'Hide buttons'}
+          </p>
+          <p className="mt-1 text-xs text-zinc-500">
+            {tD.hide_buttons_hint ?? 'Remove the Shop Now and Add to Cart buttons from product cards.'}
+          </p>
+        </div>
+        <Toggle checked={hideButtons} onChange={setHideButtons} />
+      </div>
+      )}
+
+      {usesButtonBlock && (
+      <div className={`mb-6 flex flex-wrap gap-2.5 transition-opacity duration-200 ${hideButtons ? 'opacity-40 pointer-events-none select-none' : ''}`} role="radiogroup" aria-label="Button Styles">
         {BUTTON_STYLE_OPTIONS.map((opt) => {
           const selected = buttonStyle === opt.value;
           return (
@@ -1086,6 +1135,7 @@ function DisplaySection() {
           );
         })}
       </div>
+      )}
 
       {/* 2. Workshop panel — preview LEFT, controls RIGHT */}
       <div className="rounded-xl border border-zinc-200 overflow-hidden grid grid-cols-1 md:grid-cols-2">
@@ -1095,8 +1145,9 @@ function DisplaySection() {
           <div className="w-full max-w-[240px] pointer-events-none select-none">
             {previewProduct ? (
               <ProductCard
-                key={`button-preview-${buttonStyle}`}
+                key={`button-preview-${buttonStyle}-${cardLayout}`}
                 product={previewProduct}
+                layout={cardLayout}
                 buttonStyle={buttonStyle}
                 filledBg={filledBg}
                 filledText={filledText}
@@ -1105,6 +1156,8 @@ function DisplaySection() {
                 outlineIcon={outlineIcon}
                 outlineBg={outlineBg}
                 buttonFontSize={buttonFontSize}
+                showShortDescription={showShortDescription}
+                hideButtons={hideButtons}
               />
             ) : (
               <div className="animate-pulse">
@@ -1116,12 +1169,23 @@ function DisplaySection() {
             )}
           </div>
           <p className="text-xs text-zinc-500 text-center max-w-[240px]">
-            {tBS[buttonStyle]?.desc ?? BUTTON_STYLE_OPTIONS.find((o) => o.value === buttonStyle)?.description}
+            {usesButtonBlock
+              ? (tBS[buttonStyle]?.desc ?? BUTTON_STYLE_OPTIONS.find((o) => o.value === buttonStyle)?.description)
+              : isRetailLayout
+              ? (tD.retail_desc ?? 'Compact Add to Cart button with cart icon — colours controlled by the outline button settings.')
+              : (tD.own_button_desc ?? 'This layout uses a built-in button whose style is set by the Card Layout.')}
           </p>
         </div>
 
         {/* Controls */}
-        <div className="p-5">
+        <div className={`p-5 transition-opacity duration-200 ${hideButtons && usesButtonBlock ? 'opacity-40 pointer-events-none select-none' : ''}`}>
+          {hasOwnButton && (
+            <div className="flex h-full items-center justify-center rounded-lg bg-zinc-50 border border-zinc-200 p-5 text-center">
+              <p className="text-sm text-zinc-500">
+                {tD.own_button_notice ?? 'The active card layout has a built-in button. Switch to a different layout to customise button colours.'}
+              </p>
+            </div>
+          )}
           {styleHasFilled && (
             <div className="mb-4">
               <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-semibold mb-1">{tD.filled_group ?? 'Filled button'}</p>
@@ -1162,6 +1226,7 @@ function DisplaySection() {
           )}
 
           {/* Font size picker */}
+          {showFontSize && (
           <div className="mt-4 pt-4 border-t border-zinc-100">
             <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-semibold mb-3">{tD.font_size_label ?? 'Button Text Size'}</p>
             <div className="flex items-center gap-2">
@@ -1182,6 +1247,7 @@ function DisplaySection() {
             </div>
             <p className="mt-1.5 text-[10px] text-zinc-400">{buttonFontSize}px</p>
           </div>
+          )}
         </div>
       </div>
 
@@ -1198,6 +1264,7 @@ function DisplaySection() {
             setOutlineIcon('#18181b');
             setOutlineBg('transparent');
             setButtonFontSize(10);
+            setHideButtons(false);
           }}
           className="text-sm font-medium text-zinc-500 hover:text-zinc-900"
         >

@@ -116,6 +116,9 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS currency_code text DEFAULT 'MAD';
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS exchange_rate numeric(12, 6) DEFAULT 1.0;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS cancelled_by text CHECK (cancelled_by IN ('customer', 'admin')) DEFAULT NULL;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_number BIGINT;
+-- Tracks whether stock has been decremented for this order.
+-- Set to TRUE when admin confirms; reset to FALSE when stock is restored on cancellation.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS stock_committed BOOLEAN DEFAULT FALSE;
 -- Update CHECK constraint to include 'confirmed' status (run once on existing DB):
 ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check;
 ALTER TABLE orders ADD CONSTRAINT orders_status_check
@@ -746,7 +749,7 @@ CREATE INDEX IF NOT EXISTS product_images_product_main_idx
   ON product_images (product_id, is_main);
 
 -- ------------------------------------------------------------------------
--- STORE SETTINGS — allow public read of an explicit set of display keys.
+-- STORE SETTINGS ï¿½ allow public read of an explicit set of display keys.
 -- Replaces the legacy policy that only exposed product_card_button_style.
 -- ------------------------------------------------------------------------
 DO $$ BEGIN

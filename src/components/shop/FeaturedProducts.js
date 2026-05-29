@@ -31,6 +31,7 @@ function deriveSettings(ds) {
     buttonFontSize:        parseInt(ds?.product_card_button_font_size) || 10,
     layout:                ds?.product_card_layout ?? null,
     showShortDescription:  ds?.product_card_show_short_description === 'true',
+    hideButtons:           ds?.product_card_hide_buttons === 'true',
     itemsMobile:           parseInt(ds?.carousel_items_mobile)  || 2,
     itemsTablet:           parseInt(ds?.carousel_items_tablet)  || 3,
     itemsDesktop:          parseInt(ds?.carousel_items_desktop) || 4,
@@ -112,6 +113,7 @@ export default function FeaturedProducts({ onItemAdded }) {
             buttonFontSize={settings.buttonFontSize}
             layout={settings.layout}
             showShortDescription={settings.showShortDescription}
+            hideButtons={settings.hideButtons}
             itemsMobile={settings.itemsMobile}
             itemsTablet={settings.itemsTablet}
             itemsDesktop={settings.itemsDesktop}

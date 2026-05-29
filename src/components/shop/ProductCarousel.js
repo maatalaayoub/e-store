@@ -328,6 +328,7 @@ export default function ProductCarousel({
   buttonFontSize,
   layout,
   showShortDescription,
+  hideButtons,
   itemsMobile     = 2,
   itemsTablet     = 3,
   itemsDesktop    = 4,
@@ -371,6 +372,7 @@ export default function ProductCarousel({
     buttonFontSize,
     layout,
     showShortDescription,
+    hideButtons,
   };
 
   return (

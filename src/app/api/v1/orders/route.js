@@ -187,50 +187,10 @@ export async function POST(req) {
       ? currency_code : 'MAD';
     const safeRate = safeExchangeRate(exchange_rate);
 
-    // ── 3. Atomic stock decrement with compensating restore on failure ────
-    // Each UPDATE is conditional on stock >= qty so two concurrent orders
-    // for the last unit cannot both succeed. We track which ones succeeded
-    // so we can roll them back if a later step fails.
-    const decremented = []; // [{ id, quantity }]
-    for (const item of normalizedItems) {
-      const { data: updated, error: decErr } = await db.rpc('decrement_product_stock', {
-        p_product_id: item.id,
-        p_qty: item.quantity,
-      });
-      // If the RPC doesn't exist yet, fall back to a conditional UPDATE.
-      // (The migration script defines decrement_product_stock; this fallback
-      // keeps existing deployments working until the migration is applied.)
-      let ok;
-      if (decErr && (decErr.code === '42883' /* undefined_function */ || decErr.code === 'PGRST202')) {
-        const { data: rows, error: upErr } = await db
-          .from('products')
-          .update({ stock: (productMap.get(item.id).stock - item.quantity) })
-          .eq('id', item.id)
-          .gte('stock', item.quantity) // race guard
-          .select('id');
-        if (upErr) {
-          await restoreStock(db, decremented);
-          throw upErr;
-        }
-        ok = (rows?.length ?? 0) > 0;
-      } else if (decErr) {
-        await restoreStock(db, decremented);
-        throw decErr;
-      } else {
-        ok = updated === true || (Array.isArray(updated) && updated[0]?.ok === true) || updated === 1;
-      }
-
-      if (!ok) {
-        await restoreStock(db, decremented);
-        return NextResponse.json(
-          { success: false, error: `Insufficient stock for: ${item.name}` },
-          { status: 409 }
-        );
-      }
-      decremented.push({ id: item.id, quantity: item.quantity });
-    }
-
-    // ── 4. Insert the order + items. Roll back stock on failure. ──────────
+    // ── 3. Insert the order + items. ─────────────────────────────────────
+    // Stock is NOT decremented here. It is decremented only when the admin
+    // confirms the order (PATCH → confirmed) and restored if cancelled before
+    // shipping (PATCH → cancelled from confirmed/processing).
     const randomOrderNumber = () => Math.floor(10000000 + Math.random() * 90000000);
 
     let order, orderErr;
@@ -257,7 +217,6 @@ export async function POST(req) {
     }
 
     if (orderErr) {
-      await restoreStock(db, decremented);
       throw orderErr;
     }
 
@@ -281,9 +240,7 @@ export async function POST(req) {
         }
       }
       if (itemsErr) {
-        // Roll back the order row + stock to avoid orphaned bookings.
         await db.from('orders').delete().eq('id', order.id);
-        await restoreStock(db, decremented);
         throw itemsErr;
       }
     }
@@ -320,6 +277,45 @@ export async function POST(req) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Atomically decrement stock for a list of items.
+ * Uses the decrement_product_stock RPC when available, falls back to a
+ * conditional UPDATE (.gte race guard). Compensates already-decremented items
+ * on failure. Returns null on success, or an error message string on failure.
+ */
+async function applyStockDecrement(db, items) {
+  const decremented = [];
+  for (const item of items) {
+    const { data: updated, error: decErr } = await db.rpc('decrement_product_stock', {
+      p_product_id: item.id,
+      p_qty: item.quantity,
+    });
+    let ok;
+    if (decErr && (decErr.code === '42883' || decErr.code === 'PGRST202')) {
+      const { data: row } = await db.from('products').select('stock').eq('id', item.id).single();
+      const { data: rows, error: upErr } = await db
+        .from('products')
+        .update({ stock: Number(row?.stock ?? 0) - item.quantity })
+        .eq('id', item.id)
+        .gte('stock', item.quantity)
+        .select('id');
+      if (upErr) { await restoreStock(db, decremented); throw upErr; }
+      ok = (rows?.length ?? 0) > 0;
+    } else if (decErr) {
+      await restoreStock(db, decremented);
+      throw decErr;
+    } else {
+      ok = updated === true || (Array.isArray(updated) && updated[0]?.ok === true) || updated === 1;
+    }
+    if (!ok) {
+      await restoreStock(db, decremented);
+      return `Insufficient stock for product: ${item.id}`;
+    }
+    decremented.push(item);
+  }
+  return null;
 }
 
 /**
@@ -529,8 +525,39 @@ export async function PATCH(req) {
     const isAdmin = userData?.role === 'admin';
 
     if (isAdmin) {
-      // Admin can set any status
+      const db = createServiceClient();
+
+      // Fetch current order + items to manage stock on status transitions
+      const { data: currentOrder, error: orderFetchErr } = await db
+        .from('orders')
+        .select('id, status, stock_committed, order_items(product_id, quantity)')
+        .eq('id', id)
+        .single();
+      if (orderFetchErr || !currentOrder) {
+        return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
+      }
+
+      const prevStatus = currentOrder.status;
+      const stockCommitted = currentOrder.stock_committed ?? false;
+      const stockItems = (currentOrder.order_items ?? []).map(i => ({ id: i.product_id, quantity: i.quantity }));
+
       const update = { status };
+
+      // Decrement stock when confirming (idempotent: skip if already committed)
+      if (status === 'confirmed' && !stockCommitted) {
+        const stockErr = await applyStockDecrement(db, stockItems);
+        if (stockErr) {
+          return NextResponse.json({ success: false, error: stockErr }, { status: 409 });
+        }
+        update.stock_committed = true;
+      }
+
+      // Restore stock when cancelling any order that had stock committed (before shipping)
+      if (status === 'cancelled' && stockCommitted) {
+        await restoreStock(db, stockItems);
+        update.stock_committed = false;
+      }
+
       if (status === 'cancelled') update.cancelled_by = 'admin';
       else update.cancelled_by = null;
       const { data: updated, error } = await supabase.from('orders').update(update).eq('id', id).select('id');
@@ -544,9 +571,10 @@ export async function PATCH(req) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
-    const { data: order, error: fetchErr } = await supabase
+    const db = createServiceClient();
+    const { data: order, error: fetchErr } = await db
       .from('orders')
-      .select('id, status, user_id')
+      .select('id, status, user_id, stock_committed, order_items(product_id, quantity)')
       .eq('id', id)
       .single();
 
@@ -560,9 +588,15 @@ export async function PATCH(req) {
       return NextResponse.json({ success: false, error: 'Only pending orders can be cancelled' }, { status: 400 });
     }
 
-    const { data: updated, error } = await supabase
+    // Restore stock if it was committed for this order
+    if (order.stock_committed) {
+      const stockItems = (order.order_items ?? []).map(i => ({ id: i.product_id, quantity: i.quantity }));
+      await restoreStock(db, stockItems);
+    }
+
+    const { data: updated, error } = await db
       .from('orders')
-      .update({ status: 'cancelled', cancelled_by: 'customer' })
+      .update({ status: 'cancelled', cancelled_by: 'customer', stock_committed: false })
       .eq('id', id)
       .select('id');
     if (error) throw error;

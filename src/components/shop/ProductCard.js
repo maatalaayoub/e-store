@@ -8,7 +8,7 @@ import { resolveProductTranslation } from "@/lib/product-locale";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import { ShoppingCart, Check, Heart, ArrowUpRight } from "lucide-react";
+import { ShoppingCart, Check, Heart, ArrowUpRight, Star } from "lucide-react";
 import { useFavorite } from "@/hooks/useFavorite";
 import VariantPickerModal from "@/components/shop/VariantPickerModal";
 
@@ -31,9 +31,10 @@ export const CARD_LAYOUTS = {
   SHOWCASE: 'showcase',  // Premium boutique style — favorite + arrow CTA
   BOUTIQUE: 'boutique',  // Bordered card with brand, title, price, full-width pill CTA
   FLOATING: 'floating',  // Edge-to-edge image with circular discount badge + floating pill (cart + favorite) overlay
+  RETAIL:   'retail',    // iHerb-style compact card — contained image, category, name, rating, price, orange Add button
 };
 
-export default function ProductCard({ product: rawProduct, onAdded, buttonStyle, filledBg, filledText, outlineBorder, outlineText, outlineIcon, outlineBg, buttonFontSize, layout, showShortDescription }) {
+export default function ProductCard({ product: rawProduct, onAdded, buttonStyle, filledBg, filledText, outlineBorder, outlineText, outlineIcon, outlineBg, buttonFontSize, layout, showShortDescription, hideButtons }) {
   const dict = useDictionary();
   const { locale } = useParams();
   const tHome = dict?.home ?? {};
@@ -125,6 +126,7 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
     [CARD_LAYOUTS.SHOWCASE]: "group flex flex-col h-full rounded-[18px] bg-zinc-50 hover:bg-zinc-100/80 transition-colors duration-300 p-2 sm:p-2.5 overflow-hidden",
     [CARD_LAYOUTS.BOUTIQUE]: "group flex flex-col h-full rounded-[20px] border border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] transition-all duration-300 p-3 sm:p-4 overflow-hidden",
     [CARD_LAYOUTS.FLOATING]: "group flex flex-col h-full",
+    [CARD_LAYOUTS.RETAIL]:   "group flex h-full flex-col bg-white rounded-[12px] overflow-hidden border border-zinc-100",
   }[cardLayout];
 
   const imgWrapperClass = cardLayout === CARD_LAYOUTS.BORDERED || cardLayout === CARD_LAYOUTS.SHADOW
@@ -135,13 +137,21 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
     ? "relative aspect-square w-full overflow-hidden bg-zinc-100 block rounded-[14px]"
     : cardLayout === CARD_LAYOUTS.FLOATING
     ? "relative aspect-[4/5] w-full overflow-hidden bg-white block"
+    : cardLayout === CARD_LAYOUTS.RETAIL
+    ? "relative aspect-square w-full overflow-hidden bg-[#f5f5f5] block"
     : "relative aspect-square w-full overflow-hidden bg-[#ebebeb] block";
 
   const showOverlayInfo = cardLayout === CARD_LAYOUTS.OVERLAY;
   const isShowcase      = cardLayout === CARD_LAYOUTS.SHOWCASE;
   const isBoutique      = cardLayout === CARD_LAYOUTS.BOUTIQUE;
   const isFloating      = cardLayout === CARD_LAYOUTS.FLOATING;
-  const showInfoBelow   = !showOverlayInfo && !isShowcase && !isBoutique && !isFloating;
+  const isRetail        = cardLayout === CARD_LAYOUTS.RETAIL;
+  const showInfoBelow   = !showOverlayInfo && !isShowcase && !isBoutique && !isFloating && !isRetail;
+
+  // Rating (used by RETAIL layout)
+  const ratingValue = Number(product.rating ?? product.average_rating ?? product.reviews_average ?? 0);
+  const ratingCount = Number(product.rating_count ?? product.review_count ?? product.reviews_count ?? 0);
+  const hasRating   = ratingValue > 0;
 
   // Discount percentage (used by FLOATING badge)
   const discountPercent = hasDiscount
@@ -264,18 +274,28 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             loading="lazy"
-            className={`transition-transform duration-700 ease-out group-hover:scale-105 ${isFloating ? 'object-contain p-3' : 'object-cover'}`}
+            className={`transition-transform duration-700 ease-out group-hover:scale-105 ${isRetail ? 'object-contain p-3 sm:p-4' : isFloating ? 'object-contain p-3' : 'object-cover'}`}
           />
         ) : (
           <div className="h-full w-full bg-zinc-100" />
         )}
 
-        {badge && !isBoutique && !isFloating && (
+        {badge && !isBoutique && !isFloating && !isRetail && !(showOverlayInfo && hasDiscount) && (
           <span
             dir="ltr"
             className="absolute left-3 top-3 bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-zinc-900 shadow-sm z-10"
           >
             {badge}
+          </span>
+        )}
+
+        {/* Overlay: discount badge — top-right */}
+        {showOverlayInfo && hasDiscount && (
+          <span
+            dir="ltr"
+            className="absolute right-2.5 top-2.5 z-10 rounded-[5px] bg-red-600 px-2 py-1 text-[10px] sm:text-[11px] font-bold text-white leading-none"
+          >
+            -{discountPercent}%
           </span>
         )}
 
@@ -285,6 +305,16 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
               {outOfStockText}
             </span>
           </div>
+        )}
+
+        {/* Retail: discount badge */}
+        {isRetail && hasDiscount && (
+          <span
+            dir="ltr"
+            className="absolute left-2 top-2 z-10 rounded-[5px] bg-[#fff3dc] px-[7px] py-[3px] text-[10px] sm:text-[11px] font-semibold text-[#b45309]"
+          >
+            -{discountPercent}%
+          </span>
         )}
 
         {/* Boutique: pill badge + favorite + dots */}
@@ -391,13 +421,13 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
                 {shortDescription}
               </p>
             )}
-            <div className="mt-1 flex items-center gap-2">
+            <div className="mt-1.5 flex items-baseline gap-1.5">
               {hasDiscount ? (
                 <>
-                  <span className="text-xs font-semibold tracking-widest text-white uppercase drop-shadow">
+                  <span className="text-sm font-bold text-white drop-shadow">
                     {fmt(effectivePrice)}
                   </span>
-                  <span className="text-[10px] tracking-widest text-white/60 line-through uppercase">
+                  <span className="text-[10px] text-white/55 line-through leading-none">
                     {fmt(originalPrice)}
                   </span>
                 </>
@@ -445,9 +475,78 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
         </div>
       )}
 
-      {!isShowcase && !isBoutique && !isFloating && (
+      {!isShowcase && !isBoutique && !isFloating && !isRetail && !hideButtons && (
         <div className={actionSlotClass}>
           {ButtonsBlock}
+        </div>
+      )}
+
+      {isRetail && (
+        <div className="flex flex-col gap-1.5 px-2.5 pt-2.5 pb-3 sm:px-3 sm:pt-3">
+          {/* Category */}
+          {(product.category?.name || product.category_name) && (
+            <span className="text-[10px] sm:text-[11px] font-medium text-zinc-400 uppercase tracking-wider leading-none line-clamp-1">
+              {product.category?.name ?? product.category_name}
+            </span>
+          )}
+          {/* Product name */}
+          <Link href={`/${locale}/product/${product.id}`}>
+            <h3 className={`line-clamp-2 min-h-[2.5em] leading-snug text-zinc-800 hover:text-zinc-600 transition-colors ${isArabicName ? "text-[13px] sm:text-sm font-medium font-[family-name:var(--font-cairo)]" : "text-[12px] sm:text-[13px] font-normal"}`}>
+              {product.name}
+            </h3>
+          </Link>
+          {/* Short description */}
+          {shouldShowShortDescription && (
+            <p className="line-clamp-2 min-h-[2.5em] text-[10px] sm:text-[11px] leading-snug text-zinc-400">
+              {shortDescription}
+            </p>
+          )}
+          {/* Rating */}
+          {hasRating && (
+            <div className="flex items-center gap-1" dir="ltr">
+              <Star className="h-3 w-3 sm:h-3.5 sm:w-3.5 fill-amber-400 text-amber-400 flex-shrink-0" />
+              <span className="text-[11px] sm:text-xs text-zinc-600 font-medium">{ratingValue.toFixed(1)}</span>
+              {ratingCount > 0 && (
+                <span className="text-[11px] sm:text-xs text-teal-600">({ratingCount.toLocaleString()})</span>
+              )}
+            </div>
+          )}
+          {/* Price */}
+          <div className="mt-auto flex items-baseline gap-1.5" dir="ltr">
+            {hasDiscount ? (
+              <>
+                <span className="text-[13px] sm:text-[14px] font-bold text-red-600 leading-none">{fmt(effectivePrice)}</span>
+                <span className="text-[11px] text-zinc-400 line-through leading-none">{fmt(originalPrice)}</span>
+              </>
+            ) : (
+              <span className="text-[13px] sm:text-[14px] font-bold text-zinc-900 leading-none">{fmt(originalPrice)}</span>
+            )}
+          </div>
+          {/* Add button */}
+          <button
+            type="button"
+            data-no-global-progress="true"
+            onClick={handleAdd}
+            disabled={isOutOfStock}
+            className={`mt-0.5 inline-flex w-fit items-center gap-1.5 rounded-[8px] px-3 sm:px-3.5 py-2 text-[11px] sm:text-xs font-semibold transition-all duration-200 active:scale-[0.97] ${
+              isOutOfStock
+                ? 'cursor-not-allowed bg-zinc-100 text-zinc-400'
+                : added
+                ? 'bg-green-500 text-white border-green-500 border'
+                : 'border pcard-btn-outline'
+            }`}
+          >
+            {isOutOfStock ? (
+              <span className="line-clamp-1">{outOfStockText}</span>
+            ) : added ? (
+              <Check className="h-3.5 w-3.5" />
+            ) : (
+              <>
+                <ShoppingCart className="h-3.5 w-3.5 flex-shrink-0" />
+                {tHome.add ?? 'Add'}
+              </>
+            )}
+          </button>
         </div>
       )}
 

@@ -323,6 +323,7 @@ export async function RelatedProductsSection({ section, product, locale }) {
   let buttonFontSize = 10;
   let layout = 'overlay';
   let showShortDescription = false;
+  let hideButtons = false;
   try {
     // eslint-disable-next-line no-restricted-imports -- server component, runs only on the server
     const { createServiceClient } = await import('@/lib/supabase/service');
@@ -330,7 +331,7 @@ export async function RelatedProductsSection({ section, product, locale }) {
     const { data } = await supabase
       .from('store_settings')
       .select('key, value')
-      .in('key', ['product_card_filled_bg', 'product_card_filled_text', 'product_card_outline_border', 'product_card_outline_text', 'product_card_outline_icon', 'product_card_outline_bg', 'product_card_button_font_size', 'product_card_layout', 'product_card_show_short_description']);
+      .in('key', ['product_card_filled_bg', 'product_card_filled_text', 'product_card_outline_border', 'product_card_outline_text', 'product_card_outline_icon', 'product_card_outline_bg', 'product_card_button_font_size', 'product_card_layout', 'product_card_show_short_description', 'product_card_hide_buttons']);
     for (const row of data ?? []) {
       if (row.key === 'product_card_filled_bg'      && row.value) filledBg     = row.value;
       if (row.key === 'product_card_filled_text'    && row.value) filledText   = row.value;
@@ -341,6 +342,7 @@ export async function RelatedProductsSection({ section, product, locale }) {
       if (row.key === 'product_card_button_font_size' && row.value) buttonFontSize = parseInt(row.value) || 10;
       if (row.key === 'product_card_layout'         && row.value) layout       = row.value;
       if (row.key === 'product_card_show_short_description') showShortDescription = row.value === 'true';
+      if (row.key === 'product_card_hide_buttons') hideButtons = row.value === 'true';
     }
   } catch { /* use defaults */ }
 
@@ -369,7 +371,7 @@ export async function RelatedProductsSection({ section, product, locale }) {
         style={{ gridTemplateColumns: `repeat(${Math.min(Math.max(cols, 2), 6)}, minmax(0, 1fr))` }}
       >
         {items.map((p) => (
-          <ProductCard key={p.id} product={p} locale={locale} buttonStyle={section.config?.button_style} filledBg={filledBg} filledText={filledText} outlineBorder={outlineBorder} outlineText={outlineText} outlineIcon={outlineIcon} outlineBg={outlineBg} buttonFontSize={buttonFontSize} layout={layout} showShortDescription={showShortDescription} />
+          <ProductCard key={p.id} product={p} locale={locale} buttonStyle={section.config?.button_style} filledBg={filledBg} filledText={filledText} outlineBorder={outlineBorder} outlineText={outlineText} outlineIcon={outlineIcon} outlineBg={outlineBg} buttonFontSize={buttonFontSize} layout={layout} showShortDescription={showShortDescription} hideButtons={hideButtons} />
         ))}
       </div>
     </div>
