@@ -8,6 +8,7 @@ const isProd = process.env.NODE_ENV === 'production';
 const CSP = [
   "default-src 'self'",
   "img-src 'self' data: blob: https://*.supabase.co",
+  "media-src 'self' blob: https://*.supabase.co",
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
   isProd

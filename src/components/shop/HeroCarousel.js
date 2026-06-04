@@ -10,9 +10,13 @@ import {
   HERO_TRANSITION_END_MS,
 } from "@/config/constants";
 
-export default function HeroCarousel({ slides }) {
+export default function HeroCarousel({ slides, locale = "en" }) {
   const dict = useDictionary();
   const tHero = dict?.home ?? {};
+  const resolveSlide = (slide) => ({
+    title: slide?.translations?.[locale]?.title || slide?.title || "",
+    cta:   slide?.translations?.[locale]?.cta_text || slide?.cta || "",
+  });
   const [slideIndex, setSlideIndex] = useState(0);
   const [displayIndex, setDisplayIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -99,13 +103,13 @@ export default function HeroCarousel({ slides }) {
             className="font-light uppercase tracking-[0.25em] text-3xl sm:text-5xl md:text-6xl lg:text-7xl leading-[1.15] max-w-5xl drop-shadow-lg"
             style={{ letterSpacing: "0.2em" }}
           >
-            {slides[displayIndex].title}
+            {resolveSlide(slides[displayIndex]).title}
           </h1>
           <Link
             href={slides[displayIndex].href}
             className="mt-10 inline-flex items-center justify-center border border-white/80 px-10 py-3.5 text-xs sm:text-sm font-light uppercase tracking-[0.4em] text-white transition-all duration-300 hover:bg-white hover:text-zinc-900 hover:tracking-[0.5em]"
           >
-            {slides[displayIndex].cta}
+            {resolveSlide(slides[displayIndex]).cta}
           </Link>
         </div>
 

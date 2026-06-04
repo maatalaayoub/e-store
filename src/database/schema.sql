@@ -264,8 +264,12 @@ CREATE TABLE IF NOT EXISTS hero_slides (
   href text NOT NULL DEFAULT '/shop',   -- path without locale prefix (e.g. /shop)
   display_order integer NOT NULL DEFAULT 0,
   is_active boolean DEFAULT true,
+  translations jsonb NOT NULL DEFAULT '{}',
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Migration (run once, idempotent):
+-- ALTER TABLE hero_slides ADD COLUMN IF NOT EXISTS translations jsonb NOT NULL DEFAULT '{}';
 
 ALTER TABLE hero_slides ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Hero slides are public" ON hero_slides FOR SELECT USING (true);
@@ -437,7 +441,7 @@ CREATE POLICY "Admins manage announcements" ON announcements
 
 -- Replace ALL hero_slides with the supplied JSON array.
 -- Input shape: jsonb array of objects with keys
---   { image_url, title, cta_text, href, display_order, is_active }
+--   { image_url, title, cta_text, href, display_order, is_active, translations }
 CREATE OR REPLACE FUNCTION replace_hero_slides(p_slides jsonb)
 RETURNS void
 LANGUAGE plpgsql
@@ -450,14 +454,15 @@ BEGIN
   DELETE FROM hero_slides;
 
   IF jsonb_array_length(p_slides) > 0 THEN
-    INSERT INTO hero_slides (image_url, title, cta_text, href, display_order, is_active)
+    INSERT INTO hero_slides (image_url, title, cta_text, href, display_order, is_active, translations)
     SELECT
       COALESCE(item->>'image_url', ''),
       COALESCE(item->>'title', ''),
       COALESCE(item->>'cta_text', ''),
       COALESCE(item->>'href', '/shop'),
       COALESCE((item->>'display_order')::int, (idx - 1)::int),
-      COALESCE((item->>'is_active')::boolean, true)
+      COALESCE((item->>'is_active')::boolean, true),
+      COALESCE(item->'translations', '{}'::jsonb)
     FROM jsonb_array_elements(p_slides) WITH ORDINALITY AS t(item, idx);
   END IF;
 END;
@@ -578,6 +583,15 @@ ON CONFLICT (key) DO NOTHING;
 INSERT INTO store_settings (key, value)
 VALUES ('product_card_show_short_description', 'false')
 ON CONFLICT (key) DO NOTHING;
+
+-- ── Hero type settings (run once, idempotent) ─────────────────────────────
+-- Sets the default hero type to 'slider' so existing stores are unaffected.
+-- hero_single_config, hero_multi_config, hero_video_config, and
+-- hero_countdown_config are created on first save via the admin dashboard.
+INSERT INTO store_settings (key, value)
+VALUES ('hero_type', 'slider')
+ON CONFLICT (key) DO NOTHING;
+-- ─────────────────────────────────────────────────────────────────────────
 
 -- ========================================================================
 -- Two scopes:

@@ -26,11 +26,19 @@ import {
   Clock,
   ShoppingCart,
   ExternalLink,
+  Play,
+  Film,
+  LayoutGrid,
+  Timer,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { invalidateBarCache, MarqueePreview, Countdown, SwapStack } from "@/components/shop/AnnouncementBar";
 import { toast } from "sonner";
 import { useDictionary } from "@/components/providers/LocaleProvider";
+import { localeMetadata } from "@/i18n/config";
 import { AdminSettingsSkeleton } from "@/components/skeletons";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
 import SectionsBuilder from "@/components/admin/product-sections/SectionsBuilder";
@@ -1458,24 +1466,79 @@ function LocalizationSection() {
   );
 }
 
-function HeroSection() {
-  const dict = useDictionary();
-  const t = dict?.admin?.settings?.hero ?? {};
-  const [slides, setSlides] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState({}); // { [idx]: true }
-  const [confirmDelete, setConfirmDelete] = useState(null); // idx to confirm
-  const [previewImage, setPreviewImage] = useState(null); // url to preview fullscreen
+// ── Hero type definitions ─────────────────────────────────────────────────
+/** Returns a fresh per-locale translation bucket for hero text fields. */
+const mkTrans = () => Object.fromEntries(Object.keys(localeMetadata).map((l) => [l, {}]));
 
+const HERO_TYPES = [
+  { value: 'slider',    label: 'Slider',       icon: Layers,     desc: 'Multi-slide cinematic carousel' },
+  { value: 'single',   label: 'Single Image',  icon: ImageIcon,  desc: 'Static full-viewport image' },
+  { value: 'multi',    label: 'Multi-Image',   icon: LayoutGrid, desc: 'Gallery with auto-rotation' },
+  { value: 'video',    label: 'Video Hero',    icon: Film,       desc: 'Full-screen video background' },
+  { value: 'countdown',label: 'Countdown',     icon: Timer,      desc: 'Animated countdown timer' },
+];
+
+function HeroSection() {
+  const t = (useDictionary()?.admin?.settings?.hero) ?? {};
+
+  // ── State ────────────────────────────────────────────────────────────
+  const [heroType, setHeroType]         = useState('slider');
+  const [activeLang, setActiveLang]     = useState('en');
+  const [slides, setSlides]             = useState([]);
+  const [singleCfg, setSingleCfg]       = useState({ image_url: '', overlay_opacity: 40, text_align: 'center', cta_href: '/shop', translations: mkTrans() });
+  const [multiCfg, setMultiCfg]         = useState({ auto_rotate: true, rotation_interval: 4000, overlay_opacity: 40, cta_href: '/shop', translations: mkTrans() });
+  const [videoCfg, setVideoCfg]         = useState({ video_url: '', autoplay: true, loop: true, muted: true, poster_url: '', overlay_opacity: 40, cta_href: '/shop', translations: mkTrans() });
+  const [countdownCfg, setCountdownCfg] = useState({ background_type: 'image', background_url: '', countdown_end: '', expired_behavior: 'hide', overlay_opacity: 40, cta_href: '/shop', translations: mkTrans() });
+  const [loading, setLoading]           = useState(true);
+  const [saving, setSaving]             = useState(false);
+  const [uploading, setUploading]       = useState({});
+  const [uploadingKey, setUploadingKey] = useState({});
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
+
+  // ── Load ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    fetch('/api/v1/admin/hero-slides')
-      .then((r) => r.json())
-      .then((json) => { if (json.success) setSlides(json.data); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch('/api/v1/admin/hero-slides').then((r) => r.json()).catch(() => ({ success: false, data: [] })),
+      fetch('/api/v1/settings').then((r) => r.json()).catch(() => ({ success: false, data: [] })),
+    ]).then(([slidesJson, settingsJson]) => {
+      if (slidesJson.success) {
+        // Migrate flat title/cta_text → translations.en; ensure all locale buckets exist
+        setSlides((slidesJson.data ?? []).map(slide => {
+          const trans = { ...mkTrans(), ...(slide.translations ?? {}) };
+          if ((slide.title || slide.cta_text) && !trans.en?.title) {
+            trans.en = { title: slide.title ?? '', cta_text: slide.cta_text ?? '', ...(trans.en ?? {}) };
+          }
+          return { ...slide, translations: trans };
+        }));
+      }
+      if (settingsJson.success) {
+        const s = settingsJson.data ?? {};
+        if (s.hero_type) setHeroType(s.hero_type);
+        const TEXT_FIELDS = ['title', 'description', 'cta_text', 'expired_message'];
+        const tryParse = (key, setter) => {
+          try {
+            if (!s[key]) return;
+            const parsed = JSON.parse(s[key]);
+            // Migrate old flat text fields into translations.en
+            const trans = { ...mkTrans(), ...(parsed.translations ?? {}) };
+            if (TEXT_FIELDS.some(f => parsed[f]) && !trans.en?.title) {
+              trans.en = { ...Object.fromEntries(TEXT_FIELDS.filter(f => parsed[f]).map(f => [f, parsed[f]])), ...(trans.en ?? {}) };
+              TEXT_FIELDS.forEach(f => delete parsed[f]);
+            }
+            parsed.translations = trans;
+            setter(prev => ({ ...prev, ...parsed }));
+          } catch {}
+        };
+        tryParse('hero_single_config',    setSingleCfg);
+        tryParse('hero_multi_config',     setMultiCfg);
+        tryParse('hero_video_config',     setVideoCfg);
+        tryParse('hero_countdown_config', setCountdownCfg);
+      }
+    }).finally(() => setLoading(false));
   }, []);
 
+  // ── Slide helpers ────────────────────────────────────────────────────
   const update = (idx, field, value) =>
     setSlides((prev) => prev.map((s, i) => (i === idx ? { ...s, [field]: value } : s)));
 
@@ -1490,7 +1553,7 @@ function HeroSection() {
   const add = () =>
     setSlides((prev) => [
       ...prev,
-      { image_url: '', title: '', cta_text: '', href: '/shop', is_active: true },
+      { image_url: '', href: '/shop', is_active: true, translations: mkTrans() },
     ]);
 
   const remove = (idx) => {
@@ -1498,41 +1561,98 @@ function HeroSection() {
     setConfirmDelete(null);
   };
 
-  const handleImageUpload = async (idx, file) => {
+  // ── Upload helpers ────────────────────────────────────────────────────
+  const uploadFile = async (file, folder) => {
+    const supabase = createClient();
+    const ext = file.name.split('.').pop();
+    const path = `${folder}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('hero-images').upload(path, file, { upsert: true });
+    if (error) throw error;
+    return supabase.storage.from('hero-images').getPublicUrl(path).data.publicUrl;
+  };
+
+  const handleSlideImageUpload = async (idx, file) => {
     if (!file) return;
     setUploading((prev) => ({ ...prev, [idx]: true }));
     try {
-      const supabase = createClient();
-      const ext = file.name.split('.').pop();
-      const path = `hero/${Date.now()}_${idx}.${ext}`;
-      const { error } = await supabase.storage
-        .from('hero-images')
-        .upload(path, file, { upsert: true });
-      if (error) throw error;
-      const { data: { publicUrl } } = supabase.storage
-        .from('hero-images')
-        .getPublicUrl(path);
-      update(idx, 'image_url', publicUrl);
+      const url = await uploadFile(file, 'hero/slides');
+      update(idx, 'image_url', url);
     } catch (err) {
-      toast.error((t.upload_error ?? 'Image upload failed') + ': ' + (err?.message ?? 'Unknown error'));
+      toast.error((t.upload_error ?? 'Upload failed') + ': ' + (err?.message ?? ''));
     } finally {
       setUploading((prev) => ({ ...prev, [idx]: false }));
     }
   };
 
+  const handleSpecialUpload = async (key, setter, field, file, folder) => {
+    if (!file) return;
+    setUploadingKey((prev) => ({ ...prev, [key]: true }));
+    try {
+      const url = await uploadFile(file, folder);
+      setter((prev) => ({ ...prev, [field]: url }));
+    } catch (err) {
+      toast.error((t.upload_error ?? 'Upload failed') + ': ' + (err?.message ?? ''));
+    } finally {
+      setUploadingKey((prev) => ({ ...prev, [key]: false }));
+    }
+  };
+
+  // ── Locale-aware text helpers ─────────────────────────────────────────
+  const getTxt = (cfg, field) => cfg?.translations?.[activeLang]?.[field] ?? '';
+  const setTxt = (setter, field) => (e) =>
+    setter(prev => ({
+      ...prev,
+      translations: {
+        ...mkTrans(),
+        ...(prev.translations ?? {}),
+        [activeLang]: { ...(prev.translations?.[activeLang] ?? {}), [field]: e.target.value }
+      }
+    }));
+  const setSlideTxt = (idx, field) => (e) =>
+    setSlides(prev => prev.map((s, i) => i !== idx ? s : {
+      ...s,
+      translations: {
+        ...mkTrans(),
+        ...(s.translations ?? {}),
+        [activeLang]: { ...(s.translations?.[activeLang] ?? {}), [field]: e.target.value }
+      }
+    }));
+
+  // ── Save ─────────────────────────────────────────────────────────────
   const save = async () => {
     setSaving(true);
     try {
-      const res = await fetch('/api/v1/admin/hero-slides', {
-        method: 'PUT',
+      const configMap = {
+        single:    ['hero_single_config',    singleCfg],
+        multi:     ['hero_multi_config',     multiCfg],
+        video:     ['hero_video_config',     videoCfg],
+        countdown: ['hero_countdown_config', countdownCfg],
+      };
+      const settingsBody = { hero_type: heroType };
+      if (configMap[heroType]) {
+        const [cfgKey, cfgVal] = configMap[heroType];
+        settingsBody[cfgKey] = JSON.stringify(cfgVal);
+      }
+      const settingsRes = await fetch('/api/v1/settings', {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slides }),
+        body: JSON.stringify(settingsBody),
       });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error ?? 'Save failed');
-      toast.success(t.saved ?? 'Hero slides saved');
+      if (!settingsRes.ok) throw new Error('Settings save failed');
+
+      if (heroType === 'slider' || heroType === 'multi') {
+        const slidesRes = await fetch('/api/v1/admin/hero-slides', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slides }),
+        });
+        const slidesJson = await slidesRes.json();
+        if (!slidesJson.success) throw new Error(slidesJson.error ?? 'Slides save failed');
+      }
+
+      toast.success(t.saved ?? 'Hero settings saved');
     } catch (err) {
-      toast.error(err.message ?? 'Failed to save');
+      toast.error(err?.message ?? 'Failed to save');
     } finally {
       setSaving(false);
     }
@@ -1548,154 +1668,375 @@ function HeroSection() {
     );
   }
 
+  // ── Image upload tile ────────────────────────────────────────────────
+  const ImageTile = ({ imageUrl, isUploading, onUpload, onPreview, hint }) => (
+    <label
+      className={`relative flex flex-col items-center justify-center w-full rounded-xl border-2 border-dashed cursor-pointer overflow-hidden transition-colors ${imageUrl ? 'border-transparent' : 'border-zinc-200 hover:border-blue-400 bg-zinc-50 hover:bg-blue-50'}`}
+      style={{ minHeight: '10rem' }}
+    >
+      {isUploading ? (
+        <div className="flex flex-col items-center gap-2 py-8 text-zinc-400">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span className="text-sm">{t.uploading ?? 'Uploading…'}</span>
+        </div>
+      ) : imageUrl ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={imageUrl} alt="" className="w-full h-40 object-cover rounded-xl" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+          <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-3 rounded-xl">
+            {onPreview && (
+              <button type="button" onClick={(e) => { e.preventDefault(); onPreview(imageUrl); }}
+                className="flex items-center gap-1.5 rounded-lg bg-white/20 hover:bg-white/30 px-3 py-2 text-white text-sm font-medium backdrop-blur-sm">
+                <Maximize2 className="h-4 w-4" /> {t.preview_image ?? 'Preview'}
+              </button>
+            )}
+            <span className="text-white text-sm font-medium flex items-center gap-1">
+              <ImageIcon className="h-4 w-4" /> {t.change_image ?? 'Change'}
+            </span>
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-col items-center gap-2 py-8 text-zinc-400">
+          <ImageIcon className="h-8 w-8" />
+          <span className="text-sm font-medium">{hint ?? t.image_label ?? 'Click to upload image'}</span>
+          <span className="text-xs">JPG, PNG, WebP</span>
+        </div>
+      )}
+      <input type="file" accept="image/*" className="hidden" onChange={(e) => onUpload(e.target.files?.[0])} />
+    </label>
+  );
+
+  // ── Overlay slider ────────────────────────────────────────────────────
+  const OverlaySlider = ({ value, onChange }) => (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-zinc-700">Overlay opacity</span>
+        <span className="text-xs font-semibold text-zinc-500 tabular-nums w-12 text-right">{value}%</span>
+      </div>
+      <input type="range" min={0} max={90} step={5} value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full h-1.5 rounded-full accent-blue-600" />
+    </div>
+  );
+
+  // ── Text-align picker ─────────────────────────────────────────────────
+  const AlignPicker = ({ value, onChange }) => (
+    <div className="flex items-center gap-0 border border-zinc-200 rounded-lg overflow-hidden w-fit">
+      {[['left', AlignLeft], ['center', AlignCenter], ['right', AlignRight]].map(([val, Icon]) => (
+        <button key={val} type="button" onClick={() => onChange(val)}
+          className={`flex items-center justify-center h-8 w-9 transition-colors ${value === val ? 'bg-blue-600 text-white' : 'bg-white text-zinc-500 hover:bg-zinc-50'}`}>
+          <Icon className="h-3.5 w-3.5" />
+        </button>
+      ))}
+    </div>
+  );
+
+  // ── Locale tab bar ────────────────────────────────────────────────────
+  const RTL_LANGS = new Set(['ar', 'dr']);
+  const inputDir  = RTL_LANGS.has(activeLang) ? 'rtl' : 'ltr';
+  const LocaleTabBar = () => (
+    <div className="flex items-center gap-1 border-b border-zinc-100 mb-3 -mx-4 px-4 pt-1">
+      {Object.entries(localeMetadata).map(([lang, meta]) => (
+        <button key={lang} type="button" onClick={() => setActiveLang(lang)}
+          className={`px-3 py-1.5 text-[11px] font-bold rounded-t border-b-2 -mb-px transition-colors uppercase tracking-wider ${
+            activeLang === lang ? 'border-blue-600 text-blue-700 bg-blue-50/60' : 'border-transparent text-zinc-400 hover:text-zinc-700'
+          }`}>
+          {lang.toUpperCase()}
+          {meta.dir === 'rtl' && <span className="ml-1 text-[9px] opacity-60">&#x202B;</span>}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <>
       <SectionHeader
-        title={t.title ?? "Hero Carousel"}
-        description={t.desc ?? "Manage the slides shown on the homepage hero section. Changes are live immediately after saving."}
+        title="Hero Section"
+        description="Choose a hero type and configure it. Slides are shared between Slider and Multi-Image heroes."
       />
 
-      <div className="flex flex-col gap-4 mb-4">
-        {slides.length === 0 && (
-          <p className="text-sm text-zinc-400 text-center py-8">
-            {t.no_slides ?? "No slides yet. Add one below."}
-          </p>
-        )}
-        {slides.map((slide, idx) => (
-          <div key={idx} className="border border-zinc-200 rounded-xl p-4 flex flex-col gap-3">
-            {/* Header row */}
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">{t.slide ?? "Slide"} {idx + 1}</span>
-              <div className="flex items-center gap-1">
-                <button onClick={() => move(idx, -1)} disabled={idx === 0} className="p-1 rounded text-zinc-400 hover:text-zinc-700 disabled:opacity-30" title="Move up">
-                  <ChevronUp className="h-4 w-4" />
-                </button>
-                <button onClick={() => move(idx, 1)} disabled={idx === slides.length - 1} className="p-1 rounded text-zinc-400 hover:text-zinc-700 disabled:opacity-30" title="Move down">
-                  <ChevronDown className="h-4 w-4" />
-                </button>
-                <button onClick={() => setConfirmDelete(idx)} className="p-1 rounded text-red-400 hover:text-red-600" title="Remove slide">
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Image upload area */}
-            <label className={`relative flex flex-col items-center justify-center w-full rounded-xl border-2 border-dashed cursor-pointer overflow-hidden transition-colors ${slide.image_url ? 'border-transparent' : 'border-zinc-200 hover:border-blue-400 bg-zinc-50 hover:bg-blue-50'}`} style={{ minHeight: '10rem' }}>
-              {uploading[idx] ? (
-                <div className="flex flex-col items-center gap-2 py-8 text-zinc-400">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                  <span className="text-sm">{t.uploading ?? "Uploading…"}</span>
+      {/* ── Type selector ────────────────────────────────────────────── */}
+      <div className="mb-6">
+        <p className="text-sm font-medium text-zinc-700 mb-3">Hero Type</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {HERO_TYPES.map((ht) => {
+            const Icon = ht.icon;
+            const active = heroType === ht.value;
+            return (
+              <button key={ht.value} type="button" onClick={() => setHeroType(ht.value)}
+                className={`flex flex-col items-start gap-2 rounded-xl border-2 p-3 text-left transition-all ${active ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-200' : 'border-zinc-200 bg-white hover:border-zinc-300'}`}>
+                <Icon className={`h-5 w-5 ${active ? 'text-blue-600' : 'text-zinc-400'}`} />
+                <div>
+                  <p className={`text-xs font-semibold leading-tight ${active ? 'text-blue-700' : 'text-zinc-800'}`}>{ht.label}</p>
+                  <p className="text-[11px] text-zinc-400 leading-snug mt-0.5 hidden sm:block">{ht.desc}</p>
                 </div>
-              ) : slide.image_url ? (
-                <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={slide.image_url} alt="" className="w-full h-40 object-cover rounded-xl" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-3 rounded-xl">
-                    <button
-                      type="button"
-                      onClick={(e) => { e.preventDefault(); setPreviewImage(slide.image_url); }}
-                      className="flex items-center gap-1.5 rounded-lg bg-white/20 hover:bg-white/30 px-3 py-2 text-white text-sm font-medium backdrop-blur-sm transition-colors"
-                    >
-                      <Maximize2 className="h-4 w-4" /> {t.preview_image ?? "Preview"}
-                    </button>
-                    <span className="text-white text-sm font-medium flex items-center gap-1"><ImageIcon className="h-4 w-4" /> {t.change_image ?? "Change image"}</span>
-                  </div>
-                </>
-              ) : (
-                <div className="flex flex-col items-center gap-2 py-8 text-zinc-400">
-                  <ImageIcon className="h-8 w-8" />
-                  <span className="text-sm font-medium">{t.image_label ?? "Click to upload image"}</span>
-                  <span className="text-xs">{t.image_hint ?? "JPG, PNG, WebP"}</span>
-                </div>
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => handleImageUpload(idx, e.target.files?.[0])}
-              />
-            </label>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-            <input
-              className={inputClass}
-              placeholder={t.title_placeholder ?? "Title (e.g. THE LUXURY YOU DESERVE)"}
-              value={slide.title}
-              onChange={(e) => update(idx, 'title', e.target.value)}
-            />
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                className={inputClass}
-                placeholder={t.cta_placeholder ?? "Button text (e.g. SHOP NOW)"}
-                value={slide.cta_text}
-                onChange={(e) => update(idx, 'cta_text', e.target.value)}
-              />
-              <input
-                className={inputClass}
-                placeholder={t.link_placeholder ?? "Link path (e.g. /shop)"}
-                value={slide.href}
-                onChange={(e) => update(idx, 'href', e.target.value)}
-              />
-            </div>
+      {/* ── Single Image settings ─────────────────────────────────────── */}
+      {heroType === 'single' && (
+        <div className="space-y-4 border border-zinc-200 rounded-xl p-4 mb-4">
+          <p className="text-sm font-semibold text-zinc-700">Single Image Hero</p>
+          <ImageTile
+            imageUrl={singleCfg.image_url}
+            isUploading={uploadingKey.single_img}
+            onUpload={(f) => handleSpecialUpload('single_img', setSingleCfg, 'image_url', f, 'hero/single')}
+            onPreview={setPreviewImage}
+          />
+          <LocaleTabBar />
+          <input className={inputClass} dir={inputDir} placeholder="Title (optional, uppercase)"
+            value={getTxt(singleCfg, 'title')} onChange={setTxt(setSingleCfg, 'title')} />
+          <textarea className={`${inputClass} resize-none`} dir={inputDir} rows={2} placeholder="Description (optional)"
+            value={getTxt(singleCfg, 'description')} onChange={setTxt(setSingleCfg, 'description')} />
+          <div className="grid grid-cols-2 gap-3">
+            <input className={inputClass} dir={inputDir} placeholder="CTA text (e.g. SHOP NOW)"
+              value={getTxt(singleCfg, 'cta_text')} onChange={setTxt(setSingleCfg, 'cta_text')} />
+            <input className={inputClass} placeholder="CTA link (e.g. /shop)" value={singleCfg.cta_href}
+              onChange={(e) => setSingleCfg((p) => ({ ...p, cta_href: e.target.value }))} />
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-zinc-700 shrink-0">Text align</span>
+            <AlignPicker value={singleCfg.text_align} onChange={(v) => setSingleCfg((p) => ({ ...p, text_align: v }))} />
+          </div>
+          <OverlaySlider value={singleCfg.overlay_opacity} onChange={(v) => setSingleCfg((p) => ({ ...p, overlay_opacity: v }))} />
+        </div>
+      )}
+
+      {/* ── Video Hero settings ───────────────────────────────────────── */}
+      {heroType === 'video' && (
+        <div className="space-y-4 border border-zinc-200 rounded-xl p-4 mb-4">
+          <p className="text-sm font-semibold text-zinc-700">Video Hero</p>
+          <div>
+            <label className="text-xs text-zinc-500 mb-1 block">Video URL (Supabase storage)</label>
             <div className="flex items-center gap-2">
-              <Toggle
-                defaultChecked={slide.is_active}
-                onChange={(val) => update(idx, 'is_active', val)}
-              />
-              <span className="text-sm text-zinc-600">{t.active ?? "Active"}</span>
+              <Film className="h-4 w-4 text-zinc-400 shrink-0" />
+              <input className={inputClass} placeholder="https://…/video.mp4" value={videoCfg.video_url}
+                onChange={(e) => setVideoCfg((p) => ({ ...p, video_url: e.target.value }))} />
+            </div>
+            <p className="text-[11px] text-zinc-400 mt-1">Upload your video via the Supabase Storage dashboard, then paste its public URL here.</p>
+          </div>
+          <div>
+            <label className="text-xs text-zinc-500 mb-1 block">Poster image (shown while video loads)</label>
+            <ImageTile
+              imageUrl={videoCfg.poster_url}
+              isUploading={uploadingKey.poster}
+              onUpload={(f) => handleSpecialUpload('poster', setVideoCfg, 'poster_url', f, 'hero/posters')}
+              onPreview={setPreviewImage}
+              hint="Upload poster image"
+            />
+          </div>
+          <LocaleTabBar />
+          <input className={inputClass} dir={inputDir} placeholder="Title (optional)"
+            value={getTxt(videoCfg, 'title')} onChange={setTxt(setVideoCfg, 'title')} />
+          <textarea className={`${inputClass} resize-none`} dir={inputDir} rows={2} placeholder="Description (optional)"
+            value={getTxt(videoCfg, 'description')} onChange={setTxt(setVideoCfg, 'description')} />
+          <div className="grid grid-cols-2 gap-3">
+            <input className={inputClass} dir={inputDir} placeholder="CTA text"
+              value={getTxt(videoCfg, 'cta_text')} onChange={setTxt(setVideoCfg, 'cta_text')} />
+            <input className={inputClass} placeholder="CTA link (e.g. /shop)" value={videoCfg.cta_href}
+              onChange={(e) => setVideoCfg((p) => ({ ...p, cta_href: e.target.value }))} />
+          </div>
+          <div className="flex flex-wrap items-center gap-6 text-sm text-zinc-700">
+            {[['autoplay', 'Autoplay'], ['loop', 'Loop'], ['muted', 'Muted']].map(([field, label]) => (
+              <label key={field} className="flex items-center gap-2 cursor-pointer select-none">
+                <Toggle checked={videoCfg[field]} onChange={(v) => setVideoCfg((p) => ({ ...p, [field]: v }))} />
+                {label}
+              </label>
+            ))}
+          </div>
+          <OverlaySlider value={videoCfg.overlay_opacity} onChange={(v) => setVideoCfg((p) => ({ ...p, overlay_opacity: v }))} />
+        </div>
+      )}
+
+      {/* ── Countdown Hero settings ───────────────────────────────────── */}
+      {heroType === 'countdown' && (
+        <div className="space-y-4 border border-zinc-200 rounded-xl p-4 mb-4">
+          <p className="text-sm font-semibold text-zinc-700">Countdown Hero</p>
+          <div>
+            <label className="text-xs text-zinc-500 mb-2 block">Background type</label>
+            <div className="flex items-center gap-3">
+              {[['image', 'Image', ImageIcon], ['video', 'Video URL', Film]].map(([val, lbl, Icon]) => (
+                <button key={val} type="button" onClick={() => setCountdownCfg((p) => ({ ...p, background_type: val }))}
+                  className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${countdownCfg.background_type === val ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-zinc-200 text-zinc-600 hover:border-zinc-300'}`}>
+                  <Icon className="h-4 w-4" /> {lbl}
+                </button>
+              ))}
             </div>
           </div>
-        ))}
-      </div>
+          {countdownCfg.background_type === 'image' ? (
+            <ImageTile
+              imageUrl={countdownCfg.background_url}
+              isUploading={uploadingKey.countdown_bg}
+              onUpload={(f) => handleSpecialUpload('countdown_bg', setCountdownCfg, 'background_url', f, 'hero/countdown')}
+              onPreview={setPreviewImage}
+              hint="Upload background image"
+            />
+          ) : (
+            <div>
+              <label className="text-xs text-zinc-500 mb-1 block">Video background URL</label>
+              <input className={inputClass} placeholder="https://…/bg-video.mp4" value={countdownCfg.background_url}
+                onChange={(e) => setCountdownCfg((p) => ({ ...p, background_url: e.target.value }))} />
+            </div>
+          )}
+          <LocaleTabBar />
+          <input className={inputClass} dir={inputDir} placeholder="Title (optional)"
+            value={getTxt(countdownCfg, 'title')} onChange={setTxt(setCountdownCfg, 'title')} />
+          <textarea className={`${inputClass} resize-none`} dir={inputDir} rows={2} placeholder="Description (optional)"
+            value={getTxt(countdownCfg, 'description')} onChange={setTxt(setCountdownCfg, 'description')} />
+          <div>
+            <label className="text-xs text-zinc-500 mb-1 block">Countdown end date/time</label>
+            <input type="datetime-local" className={inputClass}
+              value={countdownCfg.countdown_end ? countdownCfg.countdown_end.slice(0, 16) : ''}
+              onChange={(e) => setCountdownCfg((p) => ({ ...p, countdown_end: e.target.value ? new Date(e.target.value).toISOString() : '' }))} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <input className={inputClass} dir={inputDir} placeholder="CTA text"
+              value={getTxt(countdownCfg, 'cta_text')} onChange={setTxt(setCountdownCfg, 'cta_text')} />
+            <input className={inputClass} placeholder="CTA link (e.g. /shop)" value={countdownCfg.cta_href}
+              onChange={(e) => setCountdownCfg((p) => ({ ...p, cta_href: e.target.value }))} />
+          </div>
+          <div>
+            <label className="text-xs text-zinc-500 mb-2 block">When countdown expires</label>
+            <select className={inputClass} value={countdownCfg.expired_behavior}
+              onChange={(e) => setCountdownCfg((p) => ({ ...p, expired_behavior: e.target.value }))}>
+              <option value="hide">Hide hero</option>
+              <option value="show_message">Show expired message</option>
+              <option value="show_hero">Show hero without timer</option>
+            </select>
+          </div>
+          {countdownCfg.expired_behavior === 'show_message' && (
+            <input className={inputClass} dir={inputDir} placeholder="Expired message (e.g. The event has ended)"
+              value={getTxt(countdownCfg, 'expired_message')} onChange={setTxt(setCountdownCfg, 'expired_message')} />
+          )}
+          <OverlaySlider value={countdownCfg.overlay_opacity} onChange={(v) => setCountdownCfg((p) => ({ ...p, overlay_opacity: v }))} />
+        </div>
+      )}
 
-      <div className="flex items-center justify-between pt-2 border-t border-zinc-100">
-        <button
-          onClick={add}
-          className="flex items-center gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-        >
-          <Plus className="h-4 w-4" />
-          {t.add_slide ?? "Add Slide"}
-        </button>
-        <button
-          onClick={save}
-          disabled={saving}
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-        >
+      {/* ── Multi-Image global config ─────────────────────────────────── */}
+      {heroType === 'multi' && (
+        <div className="space-y-4 border border-zinc-200 rounded-xl p-4 mb-4">
+          <p className="text-sm font-semibold text-zinc-700">Global Settings</p>
+          <LocaleTabBar />
+          <input className={inputClass} dir={inputDir} placeholder="Title (optional, overlaid on all images)"
+            value={getTxt(multiCfg, 'title')} onChange={setTxt(setMultiCfg, 'title')} />
+          <textarea className={`${inputClass} resize-none`} dir={inputDir} rows={2} placeholder="Description (optional)"
+            value={getTxt(multiCfg, 'description')} onChange={setTxt(setMultiCfg, 'description')} />
+          <div className="grid grid-cols-2 gap-3">
+            <input className={inputClass} dir={inputDir} placeholder="CTA text"
+              value={getTxt(multiCfg, 'cta_text')} onChange={setTxt(setMultiCfg, 'cta_text')} />
+            <input className={inputClass} placeholder="CTA link" value={multiCfg.cta_href}
+              onChange={(e) => setMultiCfg((p) => ({ ...p, cta_href: e.target.value }))} />
+          </div>
+          <div className="flex flex-wrap items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-zinc-700">
+              <Toggle checked={multiCfg.auto_rotate} onChange={(v) => setMultiCfg((p) => ({ ...p, auto_rotate: v }))} />
+              Auto-rotate
+            </label>
+            {multiCfg.auto_rotate && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-zinc-500 shrink-0">Interval</span>
+                <input type="number" min={1000} max={15000} step={500} className={`${inputClass} w-28`}
+                  value={multiCfg.rotation_interval}
+                  onChange={(e) => setMultiCfg((p) => ({ ...p, rotation_interval: Number(e.target.value) }))} />
+                <span className="text-xs text-zinc-400">ms</span>
+              </div>
+            )}
+          </div>
+          <OverlaySlider value={multiCfg.overlay_opacity} onChange={(v) => setMultiCfg((p) => ({ ...p, overlay_opacity: v }))} />
+        </div>
+      )}
+
+      {/* ── Slides list (Slider & Multi-Image) ───────────────────────── */}
+      {(heroType === 'slider' || heroType === 'multi') && (
+        <>
+          <LocaleTabBar />
+          <div className="flex flex-col gap-4 mb-4">
+            {slides.length === 0 && (
+              <p className="text-sm text-zinc-400 text-center py-8">{t.no_slides ?? 'No slides yet. Add one below.'}</p>
+            )}
+            {slides.map((slide, idx) => (
+              <div key={idx} className="border border-zinc-200 rounded-xl p-4 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">{t.slide ?? 'Slide'} {idx + 1}</span>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => move(idx, -1)} disabled={idx === 0} className="p-1 rounded text-zinc-400 hover:text-zinc-700 disabled:opacity-30">
+                      <ChevronUp className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => move(idx, 1)} disabled={idx === slides.length - 1} className="p-1 rounded text-zinc-400 hover:text-zinc-700 disabled:opacity-30">
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => setConfirmDelete(idx)} className="p-1 rounded text-red-400 hover:text-red-600">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <ImageTile
+                  imageUrl={slide.image_url}
+                  isUploading={uploading[idx]}
+                  onUpload={(f) => handleSlideImageUpload(idx, f)}
+                  onPreview={setPreviewImage}
+                />
+
+                <input className={inputClass} dir={inputDir}
+                  placeholder={t.title_placeholder ?? 'Title (e.g. THE LUXURY YOU DESERVE)'}
+                  value={slide.translations?.[activeLang]?.title ?? ''}
+                  onChange={setSlideTxt(idx, 'title')} />
+                <div className="grid grid-cols-2 gap-3">
+                  <input className={inputClass} dir={inputDir}
+                    placeholder={t.cta_placeholder ?? 'Button text (e.g. SHOP NOW)'}
+                    value={slide.translations?.[activeLang]?.cta_text ?? ''}
+                    onChange={setSlideTxt(idx, 'cta_text')} />
+                  <input className={inputClass} placeholder={t.link_placeholder ?? 'Link path (e.g. /shop)'}
+                    value={slide.href} onChange={(e) => update(idx, 'href', e.target.value)} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Toggle defaultChecked={slide.is_active} onChange={(val) => update(idx, 'is_active', val)} />
+                  <span className="text-sm text-zinc-600">{t.active ?? 'Active'}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <button onClick={add} className="flex items-center gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 mb-4">
+            <Plus className="h-4 w-4" /> {t.add_slide ?? 'Add Slide'}
+          </button>
+        </>
+      )}
+
+      {/* ── Save button ──────────────────────────────────────────────── */}
+      <div className="flex justify-end pt-2 border-t border-zinc-100">
+        <button onClick={save} disabled={saving}
+          className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60">
           <Save className="h-4 w-4" />
-          {saving ? (t.saving ?? 'Saving…') : (t.save ?? 'Save Slides')}
+          {saving ? (t.saving ?? 'Saving…') : (t.save ?? 'Save Hero Settings')}
         </button>
       </div>
 
-      {/* ── Fullscreen image preview ── */}
-      {previewImage && typeof document !== "undefined" && createPortal(
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
-          onClick={() => setPreviewImage(null)}
-        >
-          <button
-            onClick={() => setPreviewImage(null)}
+      {/* ── Fullscreen image preview portal ─────────────────────────── */}
+      {previewImage && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4" onClick={() => setPreviewImage(null)}>
+          <button onClick={() => setPreviewImage(null)}
             className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-            aria-label="Close preview"
-          >
+            aria-label="Close preview">
             <XIcon className="h-5 w-5" />
           </button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={previewImage}
-            alt="Hero preview"
-            onClick={(e) => e.stopPropagation()}
-            className="max-h-[90vh] max-w-full rounded-xl object-contain shadow-2xl"
-          />
+          <img src={previewImage} alt="Hero preview" onClick={(e) => e.stopPropagation()}
+            className="max-h-[90vh] max-w-full rounded-xl object-contain shadow-2xl" />
         </div>,
         document.body
       )}
 
-      {/* ── Delete confirmation dialog ── */}
+      {/* ── Delete confirmation ──────────────────────────────────────── */}
       <ConfirmationDialog
         isOpen={confirmDelete !== null}
-        title={t.dialog_title ?? "Delete Slide"}
-        description={t.dialog_desc ?? "Are you sure you want to delete this slide? This action cannot be undone."}
-        confirmText={t.yes ?? "Yes, delete"}
-        cancelText={t.no ?? "Cancel"}
+        title={t.dialog_title ?? 'Delete Slide'}
+        description={t.dialog_desc ?? 'Are you sure you want to delete this slide? This action cannot be undone.'}
+        confirmText={t.yes ?? 'Yes, delete'}
+        cancelText={t.no ?? 'Cancel'}
         icon={<Trash2 className="h-5 w-5" />}
         onConfirm={() => remove(confirmDelete)}
         onCancel={() => setConfirmDelete(null)}

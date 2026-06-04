@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import CartSidebar from "@/components/ui/CartSidebar";
 import ShopHeader from "@/components/shop/ShopHeader";
-import HeroCarousel from "@/components/shop/HeroCarousel";
+import HeroRenderer from "@/components/shop/HeroRenderer";
 import FeaturedProducts from "@/components/shop/FeaturedProducts";
 import ShopPerks from "@/components/shop/ShopPerks";
 import ShopFooter from "@/components/shop/ShopFooter";
@@ -18,7 +18,7 @@ export default function HomePage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const params = useParams();
   const locale = params?.locale || "en";
-  const [slides, setSlides] = useState(() => _heroCache.get(locale) ?? []);
+  const [heroData, setHeroData] = useState(() => _heroCache.get(locale) ?? null);
   const [heroLoading, setHeroLoading] = useState(() => !_heroCache.has(locale));
 
   useBfcacheReload();
@@ -27,15 +27,21 @@ export default function HomePage() {
     fetch("/api/v1/hero-slides")
       .then((r) => r.json())
       .then((json) => {
-        if (json.success && json.data?.length > 0) {
-          const mapped = json.data.map((s) => ({
-            image: s.image_url,
-            title: s.title,
-            cta: s.cta_text,
-            href: s.href.startsWith("http") ? s.href : `/${locale}${s.href}`,
+        if (json.success) {
+          const slides = (json.data ?? []).map((s) => ({
+            image:        s.image_url,
+            title:        s.title,
+            cta:          s.cta_text,
+            href:         s.href?.startsWith("http") ? s.href : `/${locale}${s.href ?? "/shop"}`,
+            translations: s.translations ?? {},
           }));
-          _heroCache.set(locale, mapped);
-          setSlides(mapped);
+          const data = {
+            type: json.hero_type || "slider",
+            config: json.config ?? null,
+            slides,
+          };
+          _heroCache.set(locale, data);
+          setHeroData(data);
         }
       })
       .catch(() => {})
@@ -48,7 +54,16 @@ export default function HomePage() {
       <ShopHeader onOpenCart={() => setIsCartOpen(true)} />
 
       <main className="flex-1">
-        {heroLoading ? <HeroCarouselSkeleton /> : <HeroCarousel slides={slides} />}
+        {heroLoading ? (
+          <HeroCarouselSkeleton />
+        ) : (
+          <HeroRenderer
+            heroType={heroData?.type ?? "slider"}
+            slides={heroData?.slides ?? []}
+            heroConfig={heroData?.config}
+            locale={locale}
+          />
+        )}
         <FeaturedProducts />
         <ShopPerks />
       </main>
@@ -57,3 +72,4 @@ export default function HomePage() {
     </div>
   );
 }
+

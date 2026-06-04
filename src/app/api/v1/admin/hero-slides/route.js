@@ -33,14 +33,30 @@ function safeImageUrl(v) {
   return null;
 }
 
+function sanitizeTranslations(t) {
+  if (!t || typeof t !== 'object') return {};
+  const result = {};
+  for (const [lang, val] of Object.entries(t)) {
+    if (typeof lang !== 'string' || lang.length > 10) continue;
+    if (val && typeof val === 'object') {
+      result[lang] = {
+        title:    safeStr(val.title,    200),
+        cta_text: safeStr(val.cta_text,  80),
+      };
+    }
+  }
+  return result;
+}
+
 function sanitizeSlide(s, idx) {
   return {
-    image_url: safeImageUrl(s?.image_url),
-    title: safeStr(s?.title, 200),
-    cta_text: safeStr(s?.cta_text, 80),
-    href: safeHref(s?.href),
+    image_url:    safeImageUrl(s?.image_url),
+    title:        safeStr(s?.title, 200),
+    cta_text:     safeStr(s?.cta_text, 80),
+    href:         safeHref(s?.href),
     display_order: idx,
-    is_active: s?.is_active !== false,
+    is_active:    s?.is_active !== false,
+    translations: sanitizeTranslations(s?.translations),
   };
 }
 
@@ -115,10 +131,24 @@ export async function PUT(request) {
     if (delError) throw delError;
 
     if (sanitized.length > 0) {
-      const { error: insError } = await db.from('hero_slides').insert(sanitized);
+      let { error: insError } = await db.from('hero_slides').insert(sanitized);
+
+      // If the translations column doesn't exist yet (migration not run),
+      // retry without it so saving slides is never blocked.
+      if (insError && (
+        insError.code === 'PGRST204' ||
+        insError.code === '42703' ||
+        insError.message?.toLowerCase().includes('translations')
+      )) {
+        const stripped = sanitized.map(({ translations: _t, ...rest }) => rest);
+        const { error: retryErr } = await db.from('hero_slides').insert(stripped);
+        insError = retryErr;
+      }
+
       if (insError) {
+        // Best-effort rollback — ignore any error here.
         if (Array.isArray(snapshot) && snapshot.length > 0) {
-          await db.from('hero_slides').insert(snapshot).catch(() => {});
+          try { await db.from('hero_slides').insert(snapshot); } catch (_) {}
         }
         throw insError;
       }

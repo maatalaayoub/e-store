@@ -27,7 +27,22 @@ const ALLOWED_KEYS = [
   'carousel_autoplay',
   'carousel_interval',
   'carousel_speed',
+  // Hero section
+  'hero_type',
+  'hero_single_config',
+  'hero_multi_config',
+  'hero_video_config',
+  'hero_countdown_config',
 ];
+
+// Per-key value size limits. Hero configs can hold long JSON (image URLs etc.).
+const VALUE_MAX = {
+  hero_single_config:    8000,
+  hero_multi_config:     4000,
+  hero_video_config:     6000,
+  hero_countdown_config: 5000,
+};
+const DEFAULT_VALUE_MAX = 1000;
 
 /**
  * GET /api/v1/settings
@@ -80,8 +95,8 @@ export async function PATCH(req) {
       .map(([key, value]) => ({
         key,
         // Hard-bound the stored value so a typo / pasted blob can't bloat
-        // the settings table.
-        value: String(value ?? '').slice(0, 1000),
+        // the settings table. Config keys get a larger allowance for JSON.
+        value: String(value ?? '').slice(0, VALUE_MAX[key] ?? DEFAULT_VALUE_MAX),
         updated_at: new Date().toISOString(),
       }));
 
