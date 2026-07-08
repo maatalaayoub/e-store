@@ -38,6 +38,17 @@ const ALLOWED_KEYS = [
   'contact_phone',
   'contact_whatsapp',
   'contact_address',
+  // General / footer
+  'store_name',
+  'store_description',
+  'show_social_whatsapp',
+  'show_social_instagram',
+  'show_social_facebook',
+  'show_social_tiktok',
+  'social_whatsapp',
+  'social_instagram',
+  'social_facebook',
+  'social_tiktok',
 ];
 
 // Per-key value size limits. Hero configs can hold long JSON (image URLs etc.).

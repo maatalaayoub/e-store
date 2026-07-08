@@ -11,6 +11,17 @@ const PUBLIC_KEYS = [
   'hero_type',
   // Contact info shown on the public contact page
   'contact_email', 'contact_phone', 'contact_whatsapp', 'contact_address',
+  // Footer / general
+  'store_name',
+  'store_description',
+  'show_social_whatsapp',
+  'show_social_instagram',
+  'show_social_facebook',
+  'show_social_tiktok',
+  'social_whatsapp',
+  'social_instagram',
+  'social_facebook',
+  'social_tiktok',
 ];
 const DEFAULTS = {
   product_card_button_style: 'add_to_cart',
@@ -36,6 +47,16 @@ const DEFAULTS = {
   contact_phone: '',
   contact_whatsapp: '',
   contact_address: '',
+  store_name: 'My store',
+  store_description: '',
+  show_social_whatsapp: 'true',
+  show_social_instagram: 'true',
+  show_social_facebook: 'true',
+  show_social_tiktok: 'true',
+  social_whatsapp: '',
+  social_instagram: '',
+  social_facebook: '',
+  social_tiktok: '',
 };
 
 /**

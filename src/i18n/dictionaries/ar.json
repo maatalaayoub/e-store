@@ -408,10 +408,19 @@
         "contact_address": "عنوان المتجر",
         "contact_address_hint": "العنوان الظاهر في صفحة التواصل.",
         "description": "الوصف",
-        "description_hint": "ملخّص قصير عن متجرك.",
+        "description_hint": "ملخّص قصير يظهر في تذييل الصفحة.",
         "description_placeholder": "أخبر العملاء بما تبيعه...",
         "saved": "تم حفظ الإعدادات",
-        "save": "حفظ التغييرات"
+        "save": "حفظ التغييرات",
+        "social_title": "وسائل التواصل الاجتماعي",
+        "show_social_whatsapp": "إظهار واتساب",
+        "show_social_instagram": "إظهار إنستغرام",
+        "show_social_facebook": "إظهار فيسبوك",
+        "show_social_tiktok": "إظهار تيك توك",
+        "social_whatsapp_placeholder": "رقم واتساب",
+        "social_instagram_placeholder": "حساب إنستغرام",
+        "social_facebook_placeholder": "حساب فيسبوك",
+        "social_tiktok_placeholder": "حساب تيك توك"
       },
       "payments": {
         "title": "المدفوعات",

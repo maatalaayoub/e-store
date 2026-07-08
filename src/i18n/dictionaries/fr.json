@@ -408,10 +408,19 @@
         "contact_address": "Adresse de la boutique",
         "contact_address_hint": "Adresse physique affichée sur la page de contact.",
         "description": "Description",
-        "description_hint": "Un bref résumé de votre boutique.",
+        "description_hint": "Un bref résumé affiché dans le pied de page.",
         "description_placeholder": "Dites aux clients ce que vous vendez...",
         "saved": "Paramètres enregistrés",
-        "save": "Enregistrer"
+        "save": "Enregistrer",
+        "social_title": "Réseaux sociaux",
+        "show_social_whatsapp": "Afficher WhatsApp",
+        "show_social_instagram": "Afficher Instagram",
+        "show_social_facebook": "Afficher Facebook",
+        "show_social_tiktok": "Afficher TikTok",
+        "social_whatsapp_placeholder": "Numéro WhatsApp",
+        "social_instagram_placeholder": "Nom Instagram",
+        "social_facebook_placeholder": "Nom Facebook",
+        "social_tiktok_placeholder": "Nom TikTok"
       },
       "payments": {
         "title": "Paiements",

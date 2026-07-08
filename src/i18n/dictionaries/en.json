@@ -406,10 +406,19 @@
         "contact_address": "Store address",
         "contact_address_hint": "Physical address shown on the contact page.",
         "description": "Description",
-        "description_hint": "A short summary of your store.",
+        "description_hint": "A short summary shown in the footer.",
         "description_placeholder": "Tell customers what you sell...",
         "saved": "Settings saved",
-        "save": "Save changes"
+        "save": "Save changes",
+        "social_title": "Social Media",
+        "show_social_whatsapp": "Show WhatsApp",
+        "show_social_instagram": "Show Instagram",
+        "show_social_facebook": "Show Facebook",
+        "show_social_tiktok": "Show TikTok",
+        "social_whatsapp_placeholder": "WhatsApp number",
+        "social_instagram_placeholder": "Instagram handle",
+        "social_facebook_placeholder": "Facebook handle",
+        "social_tiktok_placeholder": "TikTok handle"
       },
       "payments": {
         "title": "Payments",

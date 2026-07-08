@@ -408,10 +408,19 @@
         "contact_address": "عنوان المتجر",
         "contact_address_hint": "العنوان اللي كيبان ف صفحة التواصل.",
         "description": "الوصف",
-        "description_hint": "ملخص قصير على المتجر.",
+        "description_hint": "ملخص قصير كيبان ف الفوتر.",
         "description_placeholder": "قول للعملاء شنو كتبيع...",
         "saved": "تما حفظ الإعدادات",
-        "save": "حفظ التبديلات"
+        "save": "حفظ التبديلات",
+        "social_title": "مواقع التواصل",
+        "show_social_whatsapp": "وري واتساب",
+        "show_social_instagram": "وري إنستغرام",
+        "show_social_facebook": "وري فيسبوك",
+        "show_social_tiktok": "وري تيك توك",
+        "social_whatsapp_placeholder": "رقم واتساب",
+        "social_instagram_placeholder": "حساب إنستغرام",
+        "social_facebook_placeholder": "حساب فيسبوك",
+        "social_tiktok_placeholder": "حساب تيك توك"
       },
       "payments": {
         "title": "المدفوعات",

@@ -586,7 +586,17 @@ DO $$ BEGIN
         'contact_email',
         'contact_phone',
         'contact_whatsapp',
-        'contact_address'
+        'contact_address',
+        'store_name',
+        'store_description',
+        'show_social_whatsapp',
+        'show_social_instagram',
+        'show_social_facebook',
+        'show_social_tiktok',
+        'social_whatsapp',
+        'social_instagram',
+        'social_facebook',
+        'social_tiktok'
       ))$p$;
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'store_settings' AND policyname = 'Admins manage settings') THEN
@@ -657,6 +667,16 @@ CREATE OR REPLACE TRIGGER contact_messages_updated_at
 --   • contact_phone       — public phone number
 --   • contact_whatsapp    — WhatsApp number (without '+')
 --   • contact_address     — physical store address
+--   • store_name          — store name used in footer / browser tab
+--   • store_description   — short store description used in footer
+--   • show_social_whatsapp   — 'true'|'false' toggle
+--   • show_social_instagram  — 'true'|'false' toggle
+--   • show_social_facebook   — 'true'|'false' toggle
+--   • show_social_tiktok     — 'true'|'false' toggle
+--   • social_whatsapp     — WhatsApp link number
+--   • social_instagram    — Instagram handle
+--   • social_facebook     — Facebook page handle
+--   • social_tiktok       — TikTok handle
 -- ========================================================================
 
 -- ========================================================================
@@ -853,7 +873,21 @@ DO $$ BEGIN
         'shop_hero_layout',
         'shop_perks_layout',
         'shop_footer_layout',
-        'shop_announcement_layout'
+        'shop_announcement_layout',
+        'contact_email',
+        'contact_phone',
+        'contact_whatsapp',
+        'contact_address',
+        'store_name',
+        'store_description',
+        'show_social_whatsapp',
+        'show_social_instagram',
+        'show_social_facebook',
+        'show_social_tiktok',
+        'social_whatsapp',
+        'social_instagram',
+        'social_facebook',
+        'social_tiktok'
       ))$p$;
   END IF;
 END $$;
