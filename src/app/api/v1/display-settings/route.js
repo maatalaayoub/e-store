@@ -1,8 +1,42 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/service';
 
-const PUBLIC_KEYS = ['product_card_button_style', 'product_card_filled_bg', 'product_card_filled_text', 'product_card_outline_border', 'product_card_outline_text', 'product_card_outline_icon', 'product_card_outline_bg', 'product_card_button_font_size', 'product_card_layout', 'product_card_show_short_description', 'product_card_hide_buttons', 'carousel_items_mobile', 'carousel_items_tablet', 'carousel_items_desktop', 'carousel_products_per_row', 'carousel_autoplay', 'carousel_interval', 'carousel_speed', 'hero_type'];
-const DEFAULTS = { product_card_button_style: 'add_to_cart', product_card_filled_bg: '#18181b', product_card_filled_text: '#ffffff', product_card_outline_border: '#18181b', product_card_outline_text: '#18181b', product_card_outline_icon: '#18181b', product_card_outline_bg: 'transparent', product_card_button_font_size: '10', product_card_layout: 'overlay', product_card_show_short_description: 'false', product_card_hide_buttons: 'false', carousel_items_mobile: '2', carousel_items_tablet: '3', carousel_items_desktop: '4', carousel_products_per_row: '8', carousel_autoplay: 'true', carousel_interval: '3000', carousel_speed: '500', hero_type: 'slider' };
+const PUBLIC_KEYS = [
+  'product_card_button_style', 'product_card_filled_bg', 'product_card_filled_text',
+  'product_card_outline_border', 'product_card_outline_text', 'product_card_outline_icon',
+  'product_card_outline_bg', 'product_card_button_font_size', 'product_card_layout',
+  'product_card_show_short_description', 'product_card_hide_buttons',
+  'carousel_items_mobile', 'carousel_items_tablet', 'carousel_items_desktop',
+  'carousel_products_per_row', 'carousel_autoplay', 'carousel_interval', 'carousel_speed',
+  'hero_type',
+  // Contact info shown on the public contact page
+  'contact_email', 'contact_phone', 'contact_whatsapp', 'contact_address',
+];
+const DEFAULTS = {
+  product_card_button_style: 'add_to_cart',
+  product_card_filled_bg: '#18181b',
+  product_card_filled_text: '#ffffff',
+  product_card_outline_border: '#18181b',
+  product_card_outline_text: '#18181b',
+  product_card_outline_icon: '#18181b',
+  product_card_outline_bg: 'transparent',
+  product_card_button_font_size: '10',
+  product_card_layout: 'overlay',
+  product_card_show_short_description: 'false',
+  product_card_hide_buttons: 'false',
+  carousel_items_mobile: '2',
+  carousel_items_tablet: '3',
+  carousel_items_desktop: '4',
+  carousel_products_per_row: '8',
+  carousel_autoplay: 'true',
+  carousel_interval: '3000',
+  carousel_speed: '500',
+  hero_type: 'slider',
+  contact_email: '',
+  contact_phone: '',
+  contact_whatsapp: '',
+  contact_address: '',
+};
 
 /**
  * GET /api/v1/display-settings

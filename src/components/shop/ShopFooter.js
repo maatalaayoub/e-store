@@ -1,12 +1,13 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useDictionary, useLocale } from "@/components/providers/LocaleProvider";
 import { WHATSAPP_NUMBER, INSTAGRAM_HANDLE } from "@/config/constants";
 
 export default function ShopFooter() {
   const dict = useDictionary();
-  const { dir } = useLocale();
+  const { dir, locale } = useLocale();
   const tFooter = dict?.footer ?? {};
   const isRtl = dir === "rtl";
 
@@ -72,7 +73,7 @@ export default function ShopFooter() {
             <h4 className="font-semibold text-white">{tFooter.support_heading}</h4>
             <a href="#" className="text-sm text-zinc-400 hover:text-white transition-colors">{tFooter.faq}</a>
             <a href="#" className="text-sm text-zinc-400 hover:text-white transition-colors">{tFooter.shipping_returns}</a>
-            <a href="#" className="text-sm text-zinc-400 hover:text-white transition-colors">{tFooter.contact}</a>
+            <Link href={`/${locale}/contact`} className="text-sm text-zinc-400 hover:text-white transition-colors">{tFooter.contact}</Link>
             <a href="#" className="text-sm text-zinc-400 hover:text-white transition-colors">{tFooter.about_us}</a>
             <a href="#" className="text-sm text-zinc-400 hover:text-white transition-colors">{tFooter.privacy_policy}</a>
           </div>

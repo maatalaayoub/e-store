@@ -564,11 +564,30 @@ CREATE TABLE IF NOT EXISTS store_settings (
 
 ALTER TABLE store_settings ENABLE ROW LEVEL SECURITY;
 
--- Public can read non-sensitive display settings; admins can mutate all.
+-- Public can read non-sensitive display/contact settings; admins can mutate all.
 DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'store_settings' AND policyname = 'Public reads display settings') THEN
-    EXECUTE $p$CREATE POLICY "Public reads display settings" ON store_settings
-      FOR SELECT USING (key = 'product_card_button_style')$p$;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'store_settings' AND policyname = 'Public reads public display keys') THEN
+    EXECUTE $p$CREATE POLICY "Public reads public display keys" ON store_settings
+      FOR SELECT USING (key IN (
+        'product_card_button_style',
+        'product_card_show_short_description',
+        'product_card_show_old_price',
+        'product_card_show_discount_badge',
+        'product_card_show_rating',
+        'product_card_show_favorite',
+        'product_card_show_colors',
+        'product_card_show_sizes',
+        'whatsapp_number',
+        'whatsapp_business_name',
+        'shop_hero_layout',
+        'shop_perks_layout',
+        'shop_footer_layout',
+        'shop_announcement_layout',
+        'contact_email',
+        'contact_phone',
+        'contact_whatsapp',
+        'contact_address'
+      ))$p$;
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'store_settings' AND policyname = 'Admins manage settings') THEN
     EXECUTE $p$CREATE POLICY "Admins manage settings" ON store_settings
@@ -592,6 +611,53 @@ INSERT INTO store_settings (key, value)
 VALUES ('hero_type', 'slider')
 ON CONFLICT (key) DO NOTHING;
 -- ─────────────────────────────────────────────────────────────────────────
+
+-- ========================================================================
+-- CONTACT MESSAGES
+-- ========================================================================
+-- Messages submitted by visitors via the public contact page.
+-- Admins can read, mark as read/unread, and delete entries.
+-- ========================================================================
+CREATE TABLE IF NOT EXISTS contact_messages (
+  id          uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  name        text NOT NULL,
+  email       text NOT NULL,
+  phone       text,
+  subject     text,
+  message     text NOT NULL,
+  status      text CHECK (status IN ('new', 'read', 'replied', 'archived')) DEFAULT 'new',
+  created_at  timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at  timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS contact_messages_status_created_idx
+  ON contact_messages (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS contact_messages_email_idx
+  ON contact_messages (email);
+
+ALTER TABLE contact_messages ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'contact_messages' AND policyname = 'Admins manage contact messages') THEN
+    EXECUTE $p$CREATE POLICY "Admins manage contact messages" ON contact_messages
+      FOR ALL USING (EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'))$p$;
+  END IF;
+END $$;
+
+-- Trigger to keep updated_at current
+CREATE OR REPLACE TRIGGER contact_messages_updated_at
+  BEFORE UPDATE ON contact_messages
+  FOR EACH ROW EXECUTE PROCEDURE public.set_updated_at();
+
+-- ========================================================================
+-- CONTACT SETTINGS (stored in store_settings)
+-- ========================================================================
+-- The following keys are managed through the admin General settings tab:
+--   • contact_email       — public contact email shown on the contact page
+--   • contact_phone       — public phone number
+--   • contact_whatsapp    — WhatsApp number (without '+')
+--   • contact_address     — physical store address
+-- ========================================================================
 
 -- ========================================================================
 -- Two scopes:

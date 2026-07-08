@@ -24,6 +24,7 @@ import {
   Menu,
   X,
   LogOut,
+  Mail,
 } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import AdminSearch from "@/components/layouts/AdminSearch";
@@ -34,6 +35,7 @@ const NAV_ITEMS = [
   { href: "/admin/products", key: "products", icon: Package },
   { href: "/admin/orders", key: "orders", icon: ShoppingCart },
   { href: "/admin/customers", key: "customers", icon: Users },
+  { href: "/admin/messages", key: "messages", icon: Mail },
   { href: "/admin/settings", key: "settings", icon: Settings },
 ];
 

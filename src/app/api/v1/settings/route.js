@@ -33,6 +33,11 @@ const ALLOWED_KEYS = [
   'hero_multi_config',
   'hero_video_config',
   'hero_countdown_config',
+  // Contact section
+  'contact_email',
+  'contact_phone',
+  'contact_whatsapp',
+  'contact_address',
 ];
 
 // Per-key value size limits. Hero configs can hold long JSON (image URLs etc.).

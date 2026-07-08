@@ -187,30 +187,133 @@ function SectionHeader({ title, description }) {
 
 function GeneralSection() {
   const t = useDictionary()?.admin?.settings?.general ?? {};
+  const [form, setForm] = useState({
+    store_name: '',
+    contact_email: '',
+    contact_phone: '',
+    contact_whatsapp: '',
+    contact_address: '',
+    description: '',
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/v1/settings')
+      .then((r) => r.json())
+      .then(({ success, data }) => {
+        if (success && data) {
+          setForm({
+            store_name: data.store_name ?? '',
+            contact_email: data.contact_email ?? '',
+            contact_phone: data.contact_phone ?? '',
+            contact_whatsapp: data.contact_whatsapp ?? '',
+            contact_address: data.contact_address ?? '',
+            description: data.description ?? '',
+          });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleChange = (key) => (e) =>
+    setForm((prev) => ({ ...prev, [key]: e.target.value }));
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/v1/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error ?? 'Save failed');
+      toast.success(t.saved ?? 'Settings saved');
+    } catch (err) {
+      toast.error(err?.message ?? 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-4 animate-pulse">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="h-10 rounded-lg bg-zinc-100" />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <>
-      <SectionHeader
-        title={t.title}
-        description={t.desc}
-      />
+      <SectionHeader title={t.title} description={t.desc} />
       <Field label={t.store_name} hint={t.store_name_hint}>
-        <input className={inputClass} defaultValue="My store" />
+        <input
+          className={inputClass}
+          value={form.store_name}
+          onChange={handleChange('store_name')}
+          placeholder="My store"
+        />
       </Field>
-      <Field label={t.contact_email}>
+      <Field label={t.contact_email} hint={t.contact_email_hint}>
         <input
           type="email"
           className={inputClass}
+          value={form.contact_email}
+          onChange={handleChange('contact_email')}
           placeholder="hello@mystore.com"
+        />
+      </Field>
+      <Field label={t.contact_phone} hint={t.contact_phone_hint}>
+        <input
+          type="tel"
+          className={inputClass}
+          value={form.contact_phone}
+          onChange={handleChange('contact_phone')}
+          placeholder="+212 600 000 000"
+        />
+      </Field>
+      <Field label={t.contact_whatsapp} hint={t.contact_whatsapp_hint}>
+        <input
+          type="tel"
+          className={inputClass}
+          value={form.contact_whatsapp}
+          onChange={handleChange('contact_whatsapp')}
+          placeholder="212600000000"
+        />
+      </Field>
+      <Field label={t.contact_address} hint={t.contact_address_hint}>
+        <textarea
+          rows={3}
+          className={inputClass}
+          value={form.contact_address}
+          onChange={handleChange('contact_address')}
+          placeholder="123 Main Street, City, Country"
         />
       </Field>
       <Field label={t.description} hint={t.description_hint}>
         <textarea
           rows={3}
           className={inputClass}
+          value={form.description}
+          onChange={handleChange('description')}
           placeholder={t.description_placeholder}
         />
       </Field>
-      <SectionSaveButton />
+      <div className="pt-4 mt-2 border-t border-zinc-100 flex justify-end">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+        >
+          <Save className="h-4 w-4" />
+          {saving ? '…' : (t.save ?? 'Save changes')}
+        </button>
+      </div>
     </>
   );
 }
