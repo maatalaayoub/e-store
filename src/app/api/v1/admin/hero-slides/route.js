@@ -48,15 +48,33 @@ function sanitizeTranslations(t) {
   return result;
 }
 
+function firstTranslationString(translations, field, max) {
+  if (!translations || typeof translations !== 'object') return null;
+  // Prefer English, then any locale with a non-empty value.
+  const candidates = [translations.en, translations.fr, translations.ar, translations.dr];
+  for (const bucket of candidates) {
+    const v = safeStr(bucket?.[field], max);
+    if (v) return v;
+  }
+  for (const bucket of Object.values(translations)) {
+    const v = safeStr(bucket?.[field], max);
+    if (v) return v;
+  }
+  return null;
+}
+
 function sanitizeSlide(s, idx) {
+  const translations = sanitizeTranslations(s?.translations);
   return {
     image_url:    safeImageUrl(s?.image_url),
-    title:        safeStr(s?.title, 200),
-    cta_text:     safeStr(s?.cta_text, 80),
+    // The admin UI stores text in translations; fall back from there when
+    // the legacy flat fields are absent so the NOT NULL column never gets null.
+    title:        safeStr(s?.title, 200) ?? firstTranslationString(translations, 'title', 200) ?? '',
+    cta_text:     safeStr(s?.cta_text, 80) ?? firstTranslationString(translations, 'cta_text', 80) ?? '',
     href:         safeHref(s?.href),
     display_order: idx,
     is_active:    s?.is_active !== false,
-    translations: sanitizeTranslations(s?.translations),
+    translations,
   };
 }
 
