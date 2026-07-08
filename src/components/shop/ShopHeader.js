@@ -11,36 +11,30 @@ import { useOnClickOutside } from "@/hooks/useOnClickOutside";
 import ShopSidebarNav from "./ShopSidebarNav";
 
 function useStoreLogo() {
-  const [logo, setLogo] = useState({ loading: true, default: null, dark: null });
+  const [logo, setLogo] = useState({ default: null, dark: null });
   useEffect(() => {
     fetch("/api/v1/display-settings")
       .then((r) => r.json())
       .then((json) => {
         if (json.success && json.data) {
           setLogo({
-            loading: false,
             default: json.data.store_logo ? json.data.store_logo : null,
             dark: json.data.store_logo_dark ? json.data.store_logo_dark : null,
           });
-        } else {
-          setLogo((prev) => ({ ...prev, loading: false }));
         }
       })
-      .catch(() => setLogo((prev) => ({ ...prev, loading: false })));
+      .catch(() => {});
   }, []);
   return logo;
 }
 
 function HeaderLogo({ isLight }) {
   const logo = useStoreLogo();
-  if (logo.loading) {
-    return <div className="h-5 w-32 animate-pulse rounded bg-current opacity-20" />;
-  }
-  const lightSrc = logo.default || "/images/shop-logo-darck.png";
-  const darkSrc = logo.dark || "/images/shop-logo-white.png";
+  const src = isLight ? logo.default : logo.dark;
+  if (!src) return <div className="h-5 w-32" />;
   return (
     <Image
-      src={isLight ? lightSrc : darkSrc}
+      src={src}
       alt="LaCérémonie"
       width={160}
       height={40}

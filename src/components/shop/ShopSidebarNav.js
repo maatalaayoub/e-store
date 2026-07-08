@@ -37,6 +37,18 @@ export default function ShopSidebarNav({ isOpen, onClose }) {
   const supabase = createClient();
   const [user, setUser] = useState(null);
   const [userIsAdmin, setUserIsAdmin] = useState(false);
+  const [logoUrl, setLogoUrl] = useState("");
+
+  useEffect(() => {
+    fetch("/api/v1/display-settings")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success && json.data?.store_logo) {
+          setLogoUrl(json.data.store_logo);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -115,7 +127,11 @@ export default function ShopSidebarNav({ isOpen, onClose }) {
           >
             <XIcon className="w-5 h-5" />
           </button>
-          <Image src="/images/shop-logo-darck.png" alt="LaCérémonie" width={140} height={35} className="h-5 w-auto object-contain" />
+          {logoUrl ? (
+            <Image src={logoUrl} alt="LaCérémonie" width={140} height={35} className="h-5 w-auto object-contain" />
+          ) : (
+            <div className="h-5 w-32" />
+          )}
         </div>
 
         <div className="flex flex-col flex-1 overflow-y-auto scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">

@@ -10,7 +10,7 @@
  * @param {{ children: React.ReactNode }} props
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams, usePathname } from "next/navigation";
@@ -47,6 +47,18 @@ export default function AdminShell({ children }) {
   const tNav = dict?.admin?.nav ?? {};
   const isRtl = isRtlLocale(locale);
   const logoutIconDirectionClass = isRtl ? "" : "-scale-x-100";
+  const [logoUrl, setLogoUrl] = useState("");
+
+  useEffect(() => {
+    fetch("/api/v1/display-settings")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success && json.data?.store_logo) {
+          setLogoUrl(json.data.store_logo);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const withLocale = (href) => `/${locale}${href}`;
 
@@ -74,16 +86,20 @@ export default function AdminShell({ children }) {
         }`}
       >
         <div className="flex h-16 items-center justify-between border-b border-zinc-200 px-6">
-          <Link href={withLocale("/admin")} className="flex items-center">
-            <Image
-              src="/images/shop-logo-darck.png"
-              alt="LaCérémonie"
-              width={160}
-              height={40}
-              className="h-5 w-auto object-contain"
-              priority
-            />
-          </Link>
+          {logoUrl ? (
+            <Link href={withLocale("/admin")} className="flex items-center">
+              <Image
+                src={logoUrl}
+                alt="LaCérémonie"
+                width={160}
+                height={40}
+                className="h-5 w-auto object-contain"
+                priority
+              />
+            </Link>
+          ) : (
+            <div className="h-5 w-32" />
+          )}
           <button
             className="lg:hidden text-zinc-500"
             onClick={() => setIsSidebarOpen(false)}

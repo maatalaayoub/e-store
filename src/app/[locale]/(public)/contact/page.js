@@ -9,39 +9,34 @@ import Image from "next/image";
 import { toast } from "sonner";
 
 function useStoreLogo() {
-  const [logo, setLogo] = useState({ loading: true, url: null });
+  const [logo, setLogo] = useState({ url: null });
   useEffect(() => {
     fetch("/api/v1/display-settings")
       .then((r) => r.json())
       .then((json) => {
         if (json.success && json.data) {
-          setLogo({ loading: false, url: json.data.store_logo ? json.data.store_logo : null });
-        } else {
-          setLogo({ loading: false, url: null });
+          setLogo({ url: json.data.store_logo ? json.data.store_logo : null });
         }
       })
-      .catch(() => setLogo({ loading: false, url: null }));
+      .catch(() => {});
   }, []);
   return logo;
 }
 
 function ContactLogo() {
   const { locale } = useParams();
-  const { loading, url } = useStoreLogo();
+  const { url } = useStoreLogo();
+  if (!url) return <div className="h-5 w-32" />;
   return (
     <Link href={`/${locale}`} className="flex items-center">
-      {loading ? (
-        <div className="h-5 w-32 animate-pulse rounded bg-zinc-200" />
-      ) : (
-        <Image
-          src={url || "/images/shop-logo-darck.png"}
-          alt="LaCérémonie"
-          width={160}
-          height={40}
-          className="h-5 w-auto object-contain"
-          priority
-        />
-      )}
+      <Image
+        src={url}
+        alt="LaCérémonie"
+        width={160}
+        height={40}
+        className="h-5 w-auto object-contain"
+        priority
+      />
     </Link>
   );
 }

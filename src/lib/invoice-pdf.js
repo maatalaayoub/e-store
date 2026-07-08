@@ -19,10 +19,14 @@ export async function downloadInvoicePdf(order) {
   const isArabic = (str) => /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(String(str ?? ""));
 
   // Load Cairo font (supports Arabic + Latin) and logo in parallel
+  const settingsRes = await fetch("/api/v1/display-settings").catch(() => null);
+  const settings = settingsRes && await settingsRes.json().catch(() => null);
+  const logoUrl = settings?.success && settings?.data?.store_logo ? settings.data.store_logo : null;
+
   const [regularBuf, boldBuf, logoBuf] = await Promise.all([
     fetch("/fonts/Cairo-Regular.ttf").then((r) => r.arrayBuffer()),
     fetch("/fonts/Cairo-Bold.ttf").then((r) => r.arrayBuffer()),
-    fetch("/images/shop-logo-darck.png").then((r) => r.arrayBuffer()).catch(() => null),
+    logoUrl ? fetch(logoUrl).then((r) => r.arrayBuffer()).catch(() => null) : Promise.resolve(null),
   ]);
 
   const ship = order.shipping_address ?? {};

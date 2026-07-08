@@ -1929,9 +1929,9 @@ function HeroSection() {
   }
 
   // ── Image upload tile ────────────────────────────────────────────────
-  const ImageTile = ({ imageUrl, isUploading, onUpload, onPreview, hint }) => (
-    <label
-      className={`relative flex flex-col items-center justify-center w-full rounded-xl border-2 border-dashed cursor-pointer overflow-hidden transition-colors ${imageUrl ? 'border-transparent' : 'border-zinc-200 hover:border-blue-400 bg-zinc-50 hover:bg-blue-50'}`}
+  const ImageTile = ({ imageUrl, isUploading, onUpload, onDelete, onPreview, hint }) => (
+    <div
+      className={`relative flex flex-col items-center justify-center w-full rounded-xl border-2 border-dashed overflow-hidden transition-colors ${imageUrl ? 'border-transparent' : 'border-zinc-200 bg-zinc-50 hover:border-blue-400 hover:bg-blue-50'}`}
       style={{ minHeight: '10rem' }}
     >
       {isUploading ? (
@@ -1943,27 +1943,34 @@ function HeroSection() {
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={imageUrl} alt="" className="w-full h-40 object-cover rounded-xl" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-          <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-3 rounded-xl">
+          <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-xl">
             {onPreview && (
               <button type="button" onClick={(e) => { e.preventDefault(); onPreview(imageUrl); }}
                 className="flex items-center gap-1.5 rounded-lg bg-white/20 hover:bg-white/30 px-3 py-2 text-white text-sm font-medium backdrop-blur-sm">
                 <Maximize2 className="h-4 w-4" /> {t.preview_image ?? 'Preview'}
               </button>
             )}
-            <span className="text-white text-sm font-medium flex items-center gap-1">
+            <label className="flex items-center gap-1.5 rounded-lg bg-white/20 hover:bg-white/30 px-3 py-2 text-white text-sm font-medium backdrop-blur-sm cursor-pointer">
               <ImageIcon className="h-4 w-4" /> {t.change_image ?? 'Change'}
-            </span>
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => onUpload(e.target.files?.[0])} />
+            </label>
+            {onDelete && (
+              <button type="button" onClick={(e) => { e.preventDefault(); onDelete(); }}
+                className="flex items-center gap-1.5 rounded-lg bg-red-500/80 hover:bg-red-600/80 px-3 py-2 text-white text-sm font-medium backdrop-blur-sm">
+                <Trash2 className="h-4 w-4" /> {t.remove_image ?? 'Remove'}
+              </button>
+            )}
           </div>
         </>
       ) : (
-        <div className="flex flex-col items-center gap-2 py-8 text-zinc-400">
+        <label className="flex flex-col items-center gap-2 py-8 text-zinc-400 cursor-pointer w-full h-full justify-center">
           <ImageIcon className="h-8 w-8" />
           <span className="text-sm font-medium">{hint ?? t.image_label ?? 'Click to upload image'}</span>
           <span className="text-xs">JPG, PNG, WebP</span>
-        </div>
+          <input type="file" accept="image/*" className="hidden" onChange={(e) => onUpload(e.target.files?.[0])} />
+        </label>
       )}
-      <input type="file" accept="image/*" className="hidden" onChange={(e) => onUpload(e.target.files?.[0])} />
-    </label>
+    </div>
   );
 
   // ── Overlay slider ────────────────────────────────────────────────────
@@ -2044,6 +2051,7 @@ function HeroSection() {
             imageUrl={singleCfg.image_url}
             isUploading={uploadingKey.single_img}
             onUpload={(f) => handleSpecialUpload('single_img', setSingleCfg, 'image_url', f, 'hero/single')}
+            onDelete={() => setSingleCfg((p) => ({ ...p, image_url: '' }))}
             onPreview={setPreviewImage}
           />
           <LocaleTabBar />
@@ -2084,6 +2092,7 @@ function HeroSection() {
               imageUrl={videoCfg.poster_url}
               isUploading={uploadingKey.poster}
               onUpload={(f) => handleSpecialUpload('poster', setVideoCfg, 'poster_url', f, 'hero/posters')}
+              onDelete={() => setVideoCfg((p) => ({ ...p, poster_url: '' }))}
               onPreview={setPreviewImage}
               hint="Upload poster image"
             />
@@ -2131,6 +2140,7 @@ function HeroSection() {
               imageUrl={countdownCfg.background_url}
               isUploading={uploadingKey.countdown_bg}
               onUpload={(f) => handleSpecialUpload('countdown_bg', setCountdownCfg, 'background_url', f, 'hero/countdown')}
+              onDelete={() => setCountdownCfg((p) => ({ ...p, background_url: '' }))}
               onPreview={setPreviewImage}
               hint="Upload background image"
             />
