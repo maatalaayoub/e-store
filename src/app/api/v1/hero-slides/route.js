@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 
 const HERO_CONFIG_KEYS = [
   'hero_type',
@@ -13,10 +13,15 @@ const HERO_CONFIG_KEYS = [
  * GET /api/v1/hero-slides
  * Public — returns active hero slides + hero type and type-specific config.
  * Falls back gracefully if tables don't exist yet.
+ *
+ * Uses the service client because hero settings are public storefront data;
+ * the row-level security policy on store_settings does not expose the
+ * hero_* keys to anonymous users, so a session-aware client would always
+ * return the default slider for logged-out visitors.
  */
 export async function GET() {
   try {
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
     // Fetch active slides and hero settings in parallel.
     const [slidesResult, settingsResult] = await Promise.all([
