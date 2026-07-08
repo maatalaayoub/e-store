@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Trash2, Minus, Plus } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
@@ -14,6 +15,21 @@ import CheckoutFields from "@/components/shop/checkout/CheckoutFields";
 import CheckoutActions from "@/components/shop/checkout/CheckoutActions";
 import { getMainImage } from "@/lib/product-image";
 
+function useStoreLogo() {
+  const [logoUrl, setLogoUrl] = useState("");
+  useEffect(() => {
+    fetch("/api/v1/display-settings")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success && json.data?.store_logo) {
+          setLogoUrl(json.data.store_logo);
+        }
+      })
+      .catch(() => {});
+  }, []);
+  return logoUrl;
+}
+
 export default function CheckoutClient({ locale, dict }) {
   const router = useRouter();
   const { items, clearCart, removeItem, updateQuantity } = useCartStore();
@@ -22,6 +38,7 @@ export default function CheckoutClient({ locale, dict }) {
   const tProduct = dict?.product ?? {};
   const isRtl = isRtlLocale(locale);
   const BackIcon = isRtl ? ArrowRight : ArrowLeft;
+  const logoUrl = useStoreLogo();
 
   const { formatPrice, currency, rate } = useCurrency();
 
@@ -52,17 +69,34 @@ export default function CheckoutClient({ locale, dict }) {
     <div className="min-h-screen bg-white">
       {/* ── Top bar ── */}
       <header className="bg-white border-b border-zinc-100">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 h-14 flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
-            aria-label="Go back"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100 transition-colors"
-          >
-            <BackIcon className="h-5 w-5" />
-          </button>
-          <span className="text-sm font-semibold tracking-widest uppercase text-zinc-800">
-            {tCheckout.title ?? "Checkout"}
-          </span>
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.back()}
+              aria-label="Go back"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100 transition-colors"
+            >
+              <BackIcon className="h-5 w-5" />
+            </button>
+            <span className="text-sm font-semibold tracking-widest uppercase text-zinc-800">
+              {tCheckout.title ?? "Checkout"}
+            </span>
+          </div>
+
+          {logoUrl ? (
+            <Link href={`/${locale}`} className="flex items-center">
+              <Image
+                src={logoUrl}
+                alt="LaCérémonie"
+                width={140}
+                height={35}
+                className="h-5 w-auto object-contain"
+                priority
+              />
+            </Link>
+          ) : (
+            <div className="h-5 w-32" />
+          )}
         </div>
       </header>
 
