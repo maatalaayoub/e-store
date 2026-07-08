@@ -38,7 +38,8 @@
     "privacy_policy": "سياسة الخصوصية",
     "contact": "تواصل معانا",
     "account_settings": "إعدادات الحساب",
-    "track_order": "تتبع الطلب"
+    "track_order": "تتبع الطلب",
+    "back": "رجوع"
   },
   "track_order": {
     "title": "تتبع الطلب ديالك",
@@ -410,6 +411,16 @@
         "description": "الوصف",
         "description_hint": "ملخص قصير كيبان ف الفوتر.",
         "description_placeholder": "قول للعملاء شنو كتبيع...",
+        "store_logo": "لوقو ديال المتجر",
+        "store_logo_hint": "كيتستعمل ف الهيدر والفوتر والإيميلات. در PNG شفاف باش يجي مزيان.",
+        "store_logo_dark": "لوقو (نسخة داكنة)",
+        "store_logo_dark_hint": "كيتستعمل ف الخلفيات الداكنة بحال الفوتر. در نسخة بيضا/فاتحة.",
+        "upload_logo": "رفع اللوقو",
+        "upload_logo_dark": "رفع اللوقو الداكن",
+        "uploading": "كيرفع…",
+        "remove_logo": "حيد اللوقو",
+        "no_logo": "ماكاين لوقو",
+        "no_logo_dark": "ماكاين لوقو داكن",
         "saved": "تما حفظ الإعدادات",
         "save": "حفظ التبديلات",
         "social_title": "مواقع التواصل",

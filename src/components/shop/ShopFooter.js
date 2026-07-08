@@ -6,14 +6,18 @@ import { useEffect, useState } from "react";
 import { useDictionary, useLocale } from "@/components/providers/LocaleProvider";
 
 function useFooterSettings() {
-  const [settings, setSettings] = useState(null);
+  const [settings, setSettings] = useState({ loading: true, data: null });
   useEffect(() => {
     fetch("/api/v1/display-settings")
       .then((r) => r.json())
       .then((json) => {
-        if (json.success) setSettings(json.data);
+        if (json.success) {
+          setSettings({ loading: false, data: json.data });
+        } else {
+          setSettings({ loading: false, data: null });
+        }
       })
-      .catch(() => {});
+      .catch(() => setSettings({ loading: false, data: null }));
   }, []);
   return settings;
 }
@@ -43,7 +47,7 @@ export default function ShopFooter() {
   const { dir, locale } = useLocale();
   const tFooter = dict?.footer ?? {};
   const isRtl = dir === "rtl";
-  const settings = useFooterSettings();
+  const { loading: settingsLoading, data: settings } = useFooterSettings();
 
   const storeName = settings?.store_name ?? tFooter.copyright?.replace?.(/^© \d+\s*/, "") ?? "My store";
   const tagline = settings?.store_description ?? tFooter.tagline;
@@ -117,7 +121,11 @@ export default function ShopFooter() {
       <div className="px-6 pb-12 pt-4">
         <div className={`mx-auto max-w-7xl grid gap-8 md:grid-cols-3 items-start mb-12 ${isRtl ? "text-right" : "text-left"}`}>
           <div>
-            <Image src="/images/shop-logo-white.png" alt={storeName} width={180} height={45} className="h-6 w-auto object-contain mb-4" />
+            {settingsLoading ? (
+              <div className="h-6 w-32 animate-pulse rounded bg-zinc-800 mb-4" />
+            ) : (
+              <Image src={settings?.store_logo_dark || "/images/shop-logo-white.png"} alt={storeName} width={180} height={45} className="h-6 w-auto object-contain mb-4" />
+            )}
             <p className={`text-sm text-zinc-400 max-w-xs ${isRtl ? "ms-auto md:ms-0" : ""}`}>{tagline}</p>
             {/* Social links */}
             {socials.length > 0 && (

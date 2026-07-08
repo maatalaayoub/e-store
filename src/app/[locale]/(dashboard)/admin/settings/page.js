@@ -190,6 +190,8 @@ function GeneralSection() {
   const [form, setForm] = useState({
     store_name: '',
     store_description: '',
+    store_logo: '',
+    store_logo_dark: '',
     contact_email: '',
     contact_phone: '',
     contact_whatsapp: '',
@@ -214,6 +216,8 @@ function GeneralSection() {
           setForm({
             store_name: data.store_name ?? '',
             store_description: data.store_description ?? '',
+            store_logo: data.store_logo ?? '',
+            store_logo_dark: data.store_logo_dark ?? '',
             contact_email: data.contact_email ?? '',
             contact_phone: data.contact_phone ?? '',
             contact_whatsapp: data.contact_whatsapp ?? '',
@@ -238,6 +242,27 @@ function GeneralSection() {
 
   const handleToggle = (key) => (val) =>
     setForm((prev) => ({ ...prev, [key]: String(val) }));
+
+  const [uploadingLogo, setUploadingLogo] = useState({});
+
+  const handleLogoUpload = async (e, key) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo((prev) => ({ ...prev, [key]: true }));
+    try {
+      const supabase = createClient();
+      const ext = file.name.split('.').pop();
+      const path = `store/logo-${key}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from('hero-images').upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from('hero-images').getPublicUrl(path);
+      setForm((prev) => ({ ...prev, [key]: data.publicUrl }));
+    } catch (err) {
+      toast.error((t.upload_error ?? 'Upload failed') + ': ' + (err?.message ?? ''));
+    } finally {
+      setUploadingLogo((prev) => ({ ...prev, [key]: false }));
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -277,6 +302,60 @@ function GeneralSection() {
           onChange={handleChange('store_name')}
           placeholder="My store"
         />
+      </Field>
+      <Field label={t.store_logo ?? 'Store logo'} hint={t.store_logo_hint ?? 'Used in headers, footers, and emails. Upload a transparent PNG for best results.'}>
+        <div className="flex flex-col sm:flex-row gap-4 items-start">
+          <div className="flex h-20 w-40 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50">
+            {form.store_logo ? (
+              <img src={form.store_logo} alt="Store logo" className="max-h-full max-w-full object-contain p-2" />
+            ) : (
+              <span className="text-xs text-zinc-400">{t.no_logo ?? 'No logo'}</span>
+            )}
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
+              <Loader2 className={`h-4 w-4 ${uploadingLogo.store_logo ? 'animate-spin' : 'hidden'}`} />
+              <span>{uploadingLogo.store_logo ? (t.uploading ?? 'Uploading…') : (t.upload_logo ?? 'Upload logo')}</span>
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => handleLogoUpload(e, 'store_logo')} />
+            </label>
+            {form.store_logo && (
+              <button
+                type="button"
+                onClick={() => setForm((prev) => ({ ...prev, store_logo: '' }))}
+                className="text-xs text-red-600 hover:text-red-700 text-left"
+              >
+                {t.remove_logo ?? 'Remove logo'}
+              </button>
+            )}
+          </div>
+        </div>
+      </Field>
+      <Field label={t.store_logo_dark ?? 'Store logo (dark version)'} hint={t.store_logo_dark_hint ?? 'Used on dark backgrounds like the footer. Upload a white/light version.'}>
+        <div className="flex flex-col sm:flex-row gap-4 items-start">
+          <div className="flex h-20 w-40 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-900">
+            {form.store_logo_dark ? (
+              <img src={form.store_logo_dark} alt="Store logo dark" className="max-h-full max-w-full object-contain p-2" />
+            ) : (
+              <span className="text-xs text-zinc-500">{t.no_logo_dark ?? 'No dark logo'}</span>
+            )}
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
+              <Loader2 className={`h-4 w-4 ${uploadingLogo.store_logo_dark ? 'animate-spin' : 'hidden'}`} />
+              <span>{uploadingLogo.store_logo_dark ? (t.uploading ?? 'Uploading…') : (t.upload_logo_dark ?? 'Upload dark logo')}</span>
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => handleLogoUpload(e, 'store_logo_dark')} />
+            </label>
+            {form.store_logo_dark && (
+              <button
+                type="button"
+                onClick={() => setForm((prev) => ({ ...prev, store_logo_dark: '' }))}
+                className="text-xs text-red-600 hover:text-red-700 text-left"
+              >
+                {t.remove_logo ?? 'Remove logo'}
+              </button>
+            )}
+          </div>
+        </div>
       </Field>
       <Field label={t.description} hint={t.description_hint}>
         <textarea
@@ -367,7 +446,7 @@ function GeneralSection() {
                 {icon}
               </div>
               <input
-                className={inputClass}
+                className={`${inputClass} flex-1 min-w-0`}
                 value={form[`social_${key}`]}
                 onChange={handleChange(`social_${key}`)}
                 placeholder={t[`social_${key}_placeholder`] ?? `${key.charAt(0).toUpperCase() + key.slice(1)} handle`}
@@ -2242,7 +2321,7 @@ function Toggle({ defaultChecked = false, checked: controlledChecked, onChange, 
         if (!isControlled) setInternalOn(next);
         onChange?.(next);
       }}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-0 p-0 transition-colors ${
         on ? "bg-blue-600" : "bg-zinc-300"
       } ${disabled || loading ? 'opacity-60 cursor-not-allowed' : ''}`}
     >

@@ -41,6 +41,8 @@ const ALLOWED_KEYS = [
   // General / footer
   'store_name',
   'store_description',
+  'store_logo',
+  'store_logo_dark',
   'show_social_whatsapp',
   'show_social_instagram',
   'show_social_facebook',

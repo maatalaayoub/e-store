@@ -2,17 +2,57 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { useDictionary } from "@/components/providers/LocaleProvider";
-import { Mail, Phone, MapPin, MessageCircle, Send, Loader2 } from "lucide-react";
+import { useDictionary, useLocale } from "@/components/providers/LocaleProvider";
+import { Mail, Phone, MapPin, MessageCircle, Send, Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
 
+function useStoreLogo() {
+  const [logo, setLogo] = useState({ loading: true, url: null });
+  useEffect(() => {
+    fetch("/api/v1/display-settings")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success && json.data) {
+          setLogo({ loading: false, url: json.data.store_logo ? json.data.store_logo : null });
+        } else {
+          setLogo({ loading: false, url: null });
+        }
+      })
+      .catch(() => setLogo({ loading: false, url: null }));
+  }, []);
+  return logo;
+}
+
+function ContactLogo() {
+  const { locale } = useParams();
+  const { loading, url } = useStoreLogo();
+  return (
+    <Link href={`/${locale}`} className="flex items-center">
+      {loading ? (
+        <div className="h-5 w-32 animate-pulse rounded bg-zinc-200" />
+      ) : (
+        <Image
+          src={url || "/images/shop-logo-darck.png"}
+          alt="LaCérémonie"
+          width={160}
+          height={40}
+          className="h-5 w-auto object-contain"
+          priority
+        />
+      )}
+    </Link>
+  );
+}
+
 export default function ContactPage() {
   const { locale } = useParams();
+  const { dir } = useLocale();
   const dict = useDictionary();
   const t = dict?.contact ?? {};
   const tNav = dict?.nav ?? {};
+  const isRtl = dir === "rtl";
 
   const [settings, setSettings] = useState({
     contact_email: "",
@@ -76,22 +116,14 @@ export default function ContactPage() {
       {/* Simple header */}
       <header className="border-b border-zinc-100">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href={`/${locale}`} className="flex items-center">
-            <Image
-              src="/images/shop-logo-darck.png"
-              alt="LaCérémonie"
-              width={160}
-              height={40}
-              className="h-5 w-auto object-contain"
-              priority
-            />
-          </Link>
           <Link
             href={`/${locale}`}
-            className="text-sm font-medium text-zinc-600 hover:text-zinc-900"
+            className="flex items-center gap-2 text-sm font-medium text-zinc-600 hover:text-zinc-900"
           >
-            {tNav.home ?? "Home"}
+            <ArrowLeft className={`h-4 w-4 ${isRtl ? "rotate-180" : ""}`} />
+            {tNav.back ?? "Back"}
           </Link>
+          <ContactLogo />
         </div>
       </header>
 

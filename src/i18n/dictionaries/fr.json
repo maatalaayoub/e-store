@@ -38,7 +38,8 @@
     "privacy_policy": "Politique de confidentialité",
     "contact": "Nous contacter",
     "account_settings": "Paramètres du compte",
-    "track_order": "Suivre ma commande"
+    "track_order": "Suivre ma commande",
+    "back": "Retour"
   },
   "track_order": {
     "title": "Suivre votre commande",
@@ -410,6 +411,16 @@
         "description": "Description",
         "description_hint": "Un bref résumé affiché dans le pied de page.",
         "description_placeholder": "Dites aux clients ce que vous vendez...",
+        "store_logo": "Logo de la boutique",
+        "store_logo_hint": "Utilisé dans les en-têtes, pieds de page et e-mails. Utilisez un PNG transparent pour un meilleur rendu.",
+        "store_logo_dark": "Logo (version foncée)",
+        "store_logo_dark_hint": "Utilisé sur les arrière-plans sombres comme le pied de page. Utilisez une version claire/blanche.",
+        "upload_logo": "Télécharger le logo",
+        "upload_logo_dark": "Télécharger le logo foncé",
+        "uploading": "Téléchargement…",
+        "remove_logo": "Supprimer le logo",
+        "no_logo": "Aucun logo",
+        "no_logo_dark": "Aucun logo foncé",
         "saved": "Paramètres enregistrés",
         "save": "Enregistrer",
         "social_title": "Réseaux sociaux",

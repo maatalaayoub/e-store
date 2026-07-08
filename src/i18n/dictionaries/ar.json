@@ -38,7 +38,8 @@
     "privacy_policy": "سياسة الخصوصية",
     "contact": "تواصل معنا",
     "account_settings": "إعدادات الحساب",
-    "track_order": "تتبع الطلب"
+    "track_order": "تتبع الطلب",
+    "back": "رجوع"
   },
   "track_order": {
     "title": "تتبع طلبك",
@@ -410,6 +411,16 @@
         "description": "الوصف",
         "description_hint": "ملخّص قصير يظهر في تذييل الصفحة.",
         "description_placeholder": "أخبر العملاء بما تبيعه...",
+        "store_logo": "شعار المتجر",
+        "store_logo_hint": "يُستخدم في الرأس والتذييل والرسائل. استخدم PNG شفّاف للحصول على أفضل نتيجة.",
+        "store_logo_dark": "شعار المتجر (نسخة داكنة)",
+        "store_logo_dark_hint": "يُستخدم على الخلفيات الداكنة مثل التذييل. استخدم نسخة بيضاء/فاتحة.",
+        "upload_logo": "رفع الشعار",
+        "upload_logo_dark": "رفع الشعار الداكن",
+        "uploading": "جارٍ الرفع…",
+        "remove_logo": "إزالة الشعار",
+        "no_logo": "لا يوجد شعار",
+        "no_logo_dark": "لا يوجد شعار داكن",
         "saved": "تم حفظ الإعدادات",
         "save": "حفظ التغييرات",
         "social_title": "وسائل التواصل الاجتماعي",

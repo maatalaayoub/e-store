@@ -38,7 +38,8 @@
     "privacy_policy": "Privacy Policy",
     "contact": "Contact Us",
     "account_settings": "Account Settings",
-    "track_order": "Track Order"
+    "track_order": "Track Order",
+    "back": "Back"
   },
   "track_order": {
     "title": "Track Your Order",
@@ -408,6 +409,16 @@
         "description": "Description",
         "description_hint": "A short summary shown in the footer.",
         "description_placeholder": "Tell customers what you sell...",
+        "store_logo": "Store logo",
+        "store_logo_hint": "Used in headers, footers, and emails. Upload a transparent PNG for best results.",
+        "store_logo_dark": "Store logo (dark version)",
+        "store_logo_dark_hint": "Used on dark backgrounds like the footer. Upload a white/light version.",
+        "upload_logo": "Upload logo",
+        "upload_logo_dark": "Upload dark logo",
+        "uploading": "Uploading…",
+        "remove_logo": "Remove logo",
+        "no_logo": "No logo",
+        "no_logo_dark": "No dark logo",
         "saved": "Settings saved",
         "save": "Save changes",
         "social_title": "Social Media",

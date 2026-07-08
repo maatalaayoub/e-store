@@ -14,6 +14,8 @@ const PUBLIC_KEYS = [
   // Footer / general
   'store_name',
   'store_description',
+  'store_logo',
+  'store_logo_dark',
   'show_social_whatsapp',
   'show_social_instagram',
   'show_social_facebook',
@@ -49,6 +51,8 @@ const DEFAULTS = {
   contact_address: '',
   store_name: 'My store',
   store_description: '',
+  store_logo: '',
+  store_logo_dark: '',
   show_social_whatsapp: 'true',
   show_social_instagram: 'true',
   show_social_facebook: 'true',
