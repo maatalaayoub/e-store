@@ -215,6 +215,7 @@
       "orders": "الطلبات",
       "customers": "العملاء",
       "messages": "الرسائل",
+      "notifications": "الإشعارات",
       "settings": "إعدادات المتجر",
       "exit": "الخروج من الإدارة"
     },
@@ -451,10 +452,13 @@
       },
       "notifications": {
         "title": "الإشعارات",
-        "desc": "تحكّم في الرسائل التي تتلقّاها أنت وعملاؤك.",
-        "new_order": "إشعار طلب جديد",
-        "low_stock": "تنبيه نفاد المخزون",
-        "weekly": "ملخّص أسبوعي"
+        "desc": "تحكّم في التنبيهات التي يتلقّاها المشرفون داخل لوحة التحكم.",
+        "new_order": "طلب جديد",
+        "order_cancelled": "إلغاء طلب",
+        "low_stock": "تنبيهات انخفاض المخزون",
+        "out_of_stock": "تنبيهات نفاد المخزون",
+        "low_stock_threshold": "حد انخفاض المخزون",
+        "low_stock_threshold_hint": "أرسل تنبيهاً عندما ينخفض المنتج إلى هذا العدد أو أقل."
       },
       "integrations": {
         "title": "التكاملات",
@@ -632,6 +636,32 @@
         "yes": "نعم، احذف",
         "no": "إلغاء"
       }
+    },
+    "notifications": {
+      "title": "الإشعارات",
+      "empty": "لا توجد إشعارات بعد",
+      "unread": "غير مقروءة",
+      "filter_all": "الكل",
+      "filter_unread": "غير مقروءة",
+      "read": "مقروءة",
+      "load_more": "تحميل المزيد",
+      "mark_read": "تحديد كمقروء",
+      "mark_all_read": "تحديد الكل كمقروء",
+      "clear_read": "مسح المقروءة",
+      "delete": "حذف",
+      "view": "عرض",
+      "type_new_order": "طلب جديد",
+      "type_order_cancelled": "تم إلغاء الطلب",
+      "type_low_stock": "مخزون منخفض",
+      "type_out_of_stock": "نفاد المخزون",
+      "new_order_desc": "الطلب {order} من {customer} · {total}",
+      "cancelled_desc": "تم إلغاء الطلب {order} بواسطة {by}",
+      "low_stock_desc": "تبقّى من {product} فقط {stock} وحدة",
+      "out_of_stock_desc": "نفد مخزون {product}",
+      "new_order_toast": "طلب جديد {order} · {total}",
+      "cancelled_toast": "تم إلغاء الطلب {order}",
+      "low_stock_toast": "المخزون منخفض لـ {product}",
+      "out_of_stock_toast": "نفد مخزون {product}"
     }
   },
   "orders": {

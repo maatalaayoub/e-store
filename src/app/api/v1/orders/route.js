@@ -5,6 +5,10 @@ import { sendTelegramMessage, buildOrderMessage } from '@/lib/telegram';
 import { getAdminUser } from '@/middlewares/authGuard';
 import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 import { computeEffectivePrice } from '@/lib/price';
+import {
+  createNewOrderNotification,
+  createOrderCancelledNotification,
+} from '@/modules/notifications/notification.service';
 
 const IS_DEV = process.env.NODE_ENV !== 'production';
 const PRICE_TOLERANCE = 0.01; // MAD
@@ -206,7 +210,7 @@ export async function POST(req) {
           shipping_address: shipping,
           order_number: randomOrderNumber(),
         })
-        .select('id, order_number')
+        .select('id, order_number, total_amount, currency_code')
         .single();
 
       if (!result.error || result.error.code !== '23505') {
@@ -265,6 +269,11 @@ export async function POST(req) {
         currency: 'MAD',
       });
       await sendTelegramMessage(message);
+    } catch { /* notification errors must never surface */ }
+
+    // ── 6. In-app admin notification (best-effort) ────────────────────────
+    try {
+      await createNewOrderNotification(order, shipping);
     } catch { /* notification errors must never surface */ }
 
     const responsePayload = { success: true, data: { id: order.id, order_number: order.order_number } };
@@ -530,7 +539,7 @@ export async function PATCH(req) {
       // Fetch current order + items to manage stock on status transitions
       const { data: currentOrder, error: orderFetchErr } = await db
         .from('orders')
-        .select('id, status, stock_committed, order_items(product_id, quantity)')
+        .select('id, order_number, status, stock_committed, total_amount, currency_code, order_items(product_id, quantity), shipping_address')
         .eq('id', id)
         .single();
       if (orderFetchErr || !currentOrder) {
@@ -563,6 +572,14 @@ export async function PATCH(req) {
       const { data: updated, error } = await supabase.from('orders').update(update).eq('id', id).select('id');
       if (error) throw error;
       if (!updated?.length) throw new Error('Update blocked — check RLS policies');
+
+      // Notify admins when an order is cancelled.
+      if (status === 'cancelled') {
+        try {
+          await createOrderCancelledNotification(currentOrder, 'admin');
+        } catch { /* notification errors must never surface */ }
+      }
+
       return NextResponse.json({ success: true });
     }
 
@@ -574,7 +591,7 @@ export async function PATCH(req) {
     const db = createServiceClient();
     const { data: order, error: fetchErr } = await db
       .from('orders')
-      .select('id, status, user_id, stock_committed, order_items(product_id, quantity)')
+      .select('id, order_number, status, user_id, stock_committed, total_amount, currency_code, order_items(product_id, quantity), shipping_address')
       .eq('id', id)
       .single();
 
@@ -601,6 +618,11 @@ export async function PATCH(req) {
       .select('id');
     if (error) throw error;
     if (!updated?.length) throw new Error('Update blocked — check RLS policies on orders table');
+
+    // Notify admins when a customer cancels an order.
+    try {
+      await createOrderCancelledNotification(order, 'customer');
+    } catch { /* notification errors must never surface */ }
 
     return NextResponse.json({ success: true });
   } catch (err) {

@@ -529,22 +529,99 @@ function ShippingSection() {
 
 function NotificationsSection() {
   const t = useDictionary()?.admin?.settings?.notifications ?? {};
+  const [form, setForm] = useState({
+    notify_new_order: 'true',
+    notify_order_cancelled: 'true',
+    notify_low_stock: 'true',
+    notify_out_of_stock: 'true',
+    notify_low_stock_threshold: '5',
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/v1/settings')
+      .then((r) => r.json())
+      .then(({ success, data }) => {
+        if (success && data) {
+          setForm((prev) => ({
+            ...prev,
+            notify_new_order: data.notify_new_order ?? 'true',
+            notify_order_cancelled: data.notify_order_cancelled ?? 'true',
+            notify_low_stock: data.notify_low_stock ?? 'true',
+            notify_out_of_stock: data.notify_out_of_stock ?? 'true',
+            notify_low_stock_threshold: data.notify_low_stock_threshold ?? '5',
+          }));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleToggle = (key) => (val) =>
+    setForm((prev) => ({ ...prev, [key]: String(val) }));
+
+  const handleThreshold = (e) => {
+    const value = e.target.value.replace(/[^0-9]/g, '');
+    setForm((prev) => ({ ...prev, notify_low_stock_threshold: value }));
+  };
+
+  const handleSave = async () => {
+    const payload = {
+      notify_new_order: form.notify_new_order,
+      notify_order_cancelled: form.notify_order_cancelled,
+      notify_low_stock: form.notify_low_stock,
+      notify_out_of_stock: form.notify_out_of_stock,
+      notify_low_stock_threshold: String(Math.max(1, parseInt(form.notify_low_stock_threshold || '5', 10) || 5)),
+    };
+
+    const res = await fetch('/api/v1/settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Failed to save');
+  };
+
+  if (loading) return <AdminSettingsSkeleton />;
+
   return (
     <>
-      <SectionHeader
-        title={t.title}
-        description={t.desc}
-      />
+      <SectionHeader title={t.title} description={t.desc} />
       <Field label={t.new_order}>
-        <Toggle defaultChecked />
+        <Toggle
+          checked={form.notify_new_order === 'true'}
+          onChange={handleToggle('notify_new_order')}
+        />
+      </Field>
+      <Field label={t.order_cancelled}>
+        <Toggle
+          checked={form.notify_order_cancelled === 'true'}
+          onChange={handleToggle('notify_order_cancelled')}
+        />
       </Field>
       <Field label={t.low_stock}>
-        <Toggle defaultChecked />
+        <Toggle
+          checked={form.notify_low_stock === 'true'}
+          onChange={handleToggle('notify_low_stock')}
+        />
       </Field>
-      <Field label={t.weekly}>
-        <Toggle />
+      <Field label={t.out_of_stock}>
+        <Toggle
+          checked={form.notify_out_of_stock === 'true'}
+          onChange={handleToggle('notify_out_of_stock')}
+        />
       </Field>
-      <SectionSaveButton />
+      <Field label={t.low_stock_threshold} hint={t.low_stock_threshold_hint}>
+        <input
+          type="number"
+          min={1}
+          value={form.notify_low_stock_threshold}
+          onChange={handleThreshold}
+          className={inputClass}
+        />
+      </Field>
+      <SectionSaveButton onSave={handleSave} />
     </>
   );
 }

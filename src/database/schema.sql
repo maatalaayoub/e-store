@@ -893,3 +893,125 @@ DO $$ BEGIN
       ))$p$;
   END IF;
 END $$;
+
+-- ========================================================================
+-- ADMIN NOTIFICATIONS
+-- ========================================================================
+-- Real-time notification feed for admins. One row per event. Service-role
+-- inserts from application code / triggers; admins can read/mark/delete.
+-- ========================================================================
+CREATE TABLE IF NOT EXISTS admin_notifications (
+  id          uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  type        text NOT NULL CHECK (type IN ('new_order', 'order_cancelled', 'low_stock', 'out_of_stock')),
+  payload     jsonb NOT NULL DEFAULT '{}'::jsonb,
+  read        boolean NOT NULL DEFAULT false,
+  created_at  timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at  timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS admin_notifications_created_at_idx
+  ON admin_notifications (created_at DESC);
+CREATE INDEX IF NOT EXISTS admin_notifications_read_created_idx
+  ON admin_notifications (read, created_at DESC);
+
+-- Prevent duplicate unread stock alerts for the same product.
+CREATE UNIQUE INDEX IF NOT EXISTS admin_notifications_unread_stock_per_product
+  ON admin_notifications ((payload->>'product_id'), type)
+  WHERE type IN ('low_stock', 'out_of_stock') AND read = false;
+
+-- Prevent duplicate order event notifications for the same order.
+CREATE UNIQUE INDEX IF NOT EXISTS admin_notifications_order_event_per_order
+  ON admin_notifications ((payload->>'order_id'), type)
+  WHERE type IN ('new_order', 'order_cancelled');
+
+ALTER TABLE admin_notifications ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'admin_notifications' AND policyname = 'Admins manage admin notifications') THEN
+    EXECUTE $p$CREATE POLICY "Admins manage admin notifications" ON admin_notifications
+      FOR ALL USING (EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'))$p$;
+  END IF;
+END $$;
+
+CREATE OR REPLACE TRIGGER admin_notifications_updated_at
+  BEFORE UPDATE ON admin_notifications
+  FOR EACH ROW EXECUTE PROCEDURE public.set_updated_at();
+
+-- Enable realtime for admin notifications (required for the live bell).
+-- Safe no-op if the publication does not exist.
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE admin_notifications';
+  END IF;
+END $$;
+
+-- Seed default notification settings.
+INSERT INTO store_settings (key, value)
+VALUES
+  ('notify_new_order', 'true'),
+  ('notify_order_cancelled', 'true'),
+  ('notify_low_stock', 'true'),
+  ('notify_out_of_stock', 'true'),
+  ('notify_low_stock_threshold', '5')
+ON CONFLICT (key) DO NOTHING;
+
+-- ========================================================================
+-- TRIGGER: stock-change notifications for admins
+-- Fires when a product's stock is updated and inserts low/out-of-stock
+-- alerts based on the configured notify_low_stock_threshold setting.
+-- ========================================================================
+CREATE OR REPLACE FUNCTION check_admin_stock_notifications()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  low_threshold int := 5;
+  notify_low boolean := true;
+  notify_out boolean := true;
+BEGIN
+  IF NEW.stock IS NOT DISTINCT FROM OLD.stock THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT (value::int) INTO low_threshold
+  FROM store_settings
+  WHERE key = 'notify_low_stock_threshold'
+    AND value ~ '^[0-9]+$';
+
+  IF low_threshold IS NULL THEN
+    low_threshold := 5;
+  END IF;
+
+  SELECT (value::boolean) INTO notify_low
+  FROM store_settings
+  WHERE key = 'notify_low_stock';
+
+  SELECT (value::boolean) INTO notify_out
+  FROM store_settings
+  WHERE key = 'notify_out_of_stock';
+
+  IF NEW.stock = 0 AND (OLD.stock IS NULL OR OLD.stock > 0) THEN
+    IF notify_out THEN
+      INSERT INTO admin_notifications (type, payload)
+      VALUES ('out_of_stock', jsonb_build_object('product_id', NEW.id, 'product_name', NEW.name, 'stock', 0))
+      ON CONFLICT DO NOTHING;
+    END IF;
+  ELSIF NEW.stock > 0 AND NEW.stock <= low_threshold AND (OLD.stock IS NULL OR OLD.stock > low_threshold) THEN
+    IF notify_low THEN
+      INSERT INTO admin_notifications (type, payload)
+      VALUES ('low_stock', jsonb_build_object('product_id', NEW.id, 'product_name', NEW.name, 'stock', NEW.stock, 'threshold', low_threshold))
+      ON CONFLICT DO NOTHING;
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS products_stock_notifications ON products;
+CREATE TRIGGER products_stock_notifications
+  AFTER UPDATE OF stock ON products
+  FOR EACH ROW
+  EXECUTE FUNCTION check_admin_stock_notifications();

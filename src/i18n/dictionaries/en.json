@@ -215,6 +215,7 @@
       "orders": "Orders",
       "customers": "Customers",
       "messages": "Messages",
+      "notifications": "Notifications",
       "settings": "Store Settings",
       "exit": "Exit Admin"
     },
@@ -449,10 +450,13 @@
       },
       "notifications": {
         "title": "Notifications",
-        "desc": "Control which emails you and your customers receive.",
-        "new_order": "New order email",
+        "desc": "Control which in-app alerts admins receive for store events.",
+        "new_order": "New order",
+        "order_cancelled": "Order cancelled",
         "low_stock": "Low stock alerts",
-        "weekly": "Weekly summary"
+        "out_of_stock": "Out of stock alerts",
+        "low_stock_threshold": "Low stock threshold",
+        "low_stock_threshold_hint": "Notify when a product drops to this quantity or below."
       },
       "integrations": {
         "title": "Integrations",
@@ -630,6 +634,32 @@
         "yes": "Yes, delete",
         "no": "Cancel"
       }
+    },
+    "notifications": {
+      "title": "Notifications",
+      "empty": "No notifications yet",
+      "unread": "unread",
+      "filter_all": "All",
+      "filter_unread": "Unread",
+      "read": "Read",
+      "load_more": "Load more",
+      "mark_read": "Mark as read",
+      "mark_all_read": "Mark all as read",
+      "clear_read": "Clear read",
+      "delete": "Delete",
+      "view": "View",
+      "type_new_order": "New order",
+      "type_order_cancelled": "Order cancelled",
+      "type_low_stock": "Low stock",
+      "type_out_of_stock": "Out of stock",
+      "new_order_desc": "Order {order} from {customer} · {total}",
+      "cancelled_desc": "Order {order} was cancelled by {by}",
+      "low_stock_desc": "{product} has only {stock} units left",
+      "out_of_stock_desc": "{product} is out of stock",
+      "new_order_toast": "New order {order} · {total}",
+      "cancelled_toast": "Order {order} cancelled",
+      "low_stock_toast": "{product} is running low",
+      "out_of_stock_toast": "{product} is out of stock"
     }
   },
   "orders": {

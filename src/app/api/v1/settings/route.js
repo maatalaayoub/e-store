@@ -51,6 +51,12 @@ const ALLOWED_KEYS = [
   'social_instagram',
   'social_facebook',
   'social_tiktok',
+  // Admin notification settings
+  'notify_new_order',
+  'notify_order_cancelled',
+  'notify_low_stock',
+  'notify_out_of_stock',
+  'notify_low_stock_threshold',
 ];
 
 // Per-key value size limits. Hero configs can hold long JSON (image URLs etc.).

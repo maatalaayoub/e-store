@@ -6,8 +6,8 @@ import Image from "next/image";
 
 /**
  * HeroVideo
- * Full-viewport video-background hero. Video is lazy-loaded via preload="none"
- * and played only when the element enters the viewport.
+ * Full-viewport video-background hero. Video starts buffering immediately
+ * and plays as soon as enough data is available.
  *
  * Props:
  *   config — { video_url, autoplay, loop, muted, poster_url,
@@ -70,7 +70,7 @@ export default function HeroVideo({ config = {}, locale = "en" }) {
         loop={loop}
         muted={muted}
         playsInline
-        preload="none"
+        preload="auto"
         poster={poster_url || undefined}
       >
         <source src={video_url} />

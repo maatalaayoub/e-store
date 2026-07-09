@@ -215,6 +215,7 @@
       "orders": "الطلبات",
       "customers": "العملاء",
       "messages": "الرسائل",
+      "notifications": "الإشعارات",
       "settings": "إعدادات المتجر",
       "exit": "خرج من الإدارة"
     },
@@ -451,10 +452,13 @@
       },
       "notifications": {
         "title": "الإشعارات",
-        "desc": "تحكّم ف الإيميلات اللي كتوصلكم.",
-        "new_order": "إشعار طلب جديد",
-        "low_stock": "تنبيه قلة الستوك",
-        "weekly": "ملخّص أسبوعي"
+        "desc": "تحكّم ف التنبيهات اللي كيوصلوا لمشرفين ف لوحة التحكم.",
+        "new_order": "طلب جديد",
+        "order_cancelled": "طلب تلغى",
+        "low_stock": "تنبيهات قلة الستوك",
+        "out_of_stock": "تنبيهات نفاد الستوك",
+        "low_stock_threshold": "حد قلة الستوك",
+        "low_stock_threshold_hint": "بعث تنبيه منين المنتج يوصل لهاد العدد ولا أقل."
       },
       "integrations": {
         "title": "التكاملات",
@@ -632,6 +636,32 @@
         "yes": "إيه، امسح",
         "no": "إلغاء"
       }
+    },
+    "notifications": {
+      "title": "الإشعارات",
+      "empty": "ما كاين حتا إشعار",
+      "unread": "ما مقروءش",
+      "filter_all": "الكل",
+      "filter_unread": "ما مقروءش",
+      "read": "مقروء",
+      "load_more": "تحميل زيادة",
+      "mark_read": "حيد كمقروء",
+      "mark_all_read": "حيد الكل كمقروء",
+      "clear_read": "مسح المقروء",
+      "delete": "مسح",
+      "view": "شوف",
+      "type_new_order": "طلب جديد",
+      "type_order_cancelled": "طلب تلغى",
+      "type_low_stock": "الستوك قليل",
+      "type_out_of_stock": "الستوك سالا",
+      "new_order_desc": "الطلب {order} من {customer} · {total}",
+      "cancelled_desc": "الطلب {order} تلغى من {by}",
+      "low_stock_desc": "{product} بقاو غير {stock} وحدة",
+      "out_of_stock_desc": "{product} سالا الستوك ديالو",
+      "new_order_toast": "طلب جديد {order} · {total}",
+      "cancelled_toast": "الطلب {order} تلغى",
+      "low_stock_toast": "الستوك قليل ف {product}",
+      "out_of_stock_toast": "{product} سالا الستوك"
     }
   },
   "orders": {

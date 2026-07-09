@@ -215,6 +215,7 @@
       "orders": "Commandes",
       "customers": "Clients",
       "messages": "Messages",
+      "notifications": "Notifications",
       "settings": "Paramètres",
       "exit": "Quitter l'admin"
     },
@@ -451,10 +452,13 @@
       },
       "notifications": {
         "title": "Notifications",
-        "desc": "Contrôlez les e-mails que vous et vos clients recevez.",
-        "new_order": "E-mail de nouvelle commande",
+        "desc": "Contrôlez les alertes en temps réel que les administrateurs reçoivent.",
+        "new_order": "Nouvelle commande",
+        "order_cancelled": "Commande annulée",
         "low_stock": "Alertes de stock bas",
-        "weekly": "Résumé hebdomadaire"
+        "out_of_stock": "Alertes de rupture de stock",
+        "low_stock_threshold": "Seuil de stock bas",
+        "low_stock_threshold_hint": "Envoyer une alerte lorsqu'un produit atteint cette quantité ou moins."
       },
       "integrations": {
         "title": "Intégrations",
@@ -632,6 +636,32 @@
         "yes": "Oui, supprimer",
         "no": "Annuler"
       }
+    },
+    "notifications": {
+      "title": "Notifications",
+      "empty": "Aucune notification",
+      "unread": "non lues",
+      "filter_all": "Tout",
+      "filter_unread": "Non lues",
+      "read": "Lues",
+      "load_more": "Charger plus",
+      "mark_read": "Marquer comme lu",
+      "mark_all_read": "Tout marquer comme lu",
+      "clear_read": "Effacer les lues",
+      "delete": "Supprimer",
+      "view": "Voir",
+      "type_new_order": "Nouvelle commande",
+      "type_order_cancelled": "Commande annulée",
+      "type_low_stock": "Stock bas",
+      "type_out_of_stock": "Rupture de stock",
+      "new_order_desc": "Commande {order} de {customer} · {total}",
+      "cancelled_desc": "La commande {order} a été annulée par {by}",
+      "low_stock_desc": "{product} n'a plus que {stock} unité(s)",
+      "out_of_stock_desc": "{product} est en rupture de stock",
+      "new_order_toast": "Nouvelle commande {order} · {total}",
+      "cancelled_toast": "Commande {order} annulée",
+      "low_stock_toast": "Stock bas pour {product}",
+      "out_of_stock_toast": "{product} est en rupture de stock"
     }
   },
   "orders": {

@@ -20,14 +20,15 @@ import {
   ShoppingCart,
   Users,
   Settings,
-  Bell,
   Menu,
   X,
   LogOut,
   Mail,
+  Bell,
 } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import AdminSearch from "@/components/layouts/AdminSearch";
+import NotificationBell from "@/components/admin/NotificationBell";
 import { isRtlLocale } from "@/config/constants";
 
 const NAV_ITEMS = [
@@ -36,6 +37,7 @@ const NAV_ITEMS = [
   { href: "/admin/orders", key: "orders", icon: ShoppingCart },
   { href: "/admin/customers", key: "customers", icon: Users },
   { href: "/admin/messages", key: "messages", icon: Mail },
+  { href: "/admin/notifications", key: "notifications", icon: Bell },
   { href: "/admin/settings", key: "settings", icon: Settings },
 ];
 
@@ -162,13 +164,7 @@ export default function AdminShell({ children }) {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <button
-                className="relative p-2 text-zinc-500 hover:text-zinc-900"
-                aria-label="Notifications"
-              >
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500" />
-              </button>
+              <NotificationBell />
             </div>
           </div>
           {/* Mobile search row — only visible below sm */}

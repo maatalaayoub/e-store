@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Search, Filter, Download, ShoppingCart, RefreshCw, ChevronDown, Check, X, MapPin, Phone, User, Package, Calendar } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { AdminOrdersSkeleton } from "@/components/skeletons";
+import { useSearchParams } from "next/navigation";
 
 const TAB_KEYS = ["all", "pending", "confirmed", "processing", "shipped", "delivered", "cancelled"];
 
@@ -341,6 +342,16 @@ export default function AdminOrdersPage() {
   const tStats = t.stats ?? {};
   const tTabs = t.tabs ?? {};
   const tH = t.headers ?? {};
+  const searchParams = useSearchParams();
+
+  /* ── Open order drawer from URL ?id=... (used by notifications) ── */
+  useEffect(() => {
+    const orderId = searchParams.get("id");
+    if (!orderId || orders.length === 0) return;
+    const order = orders.find((o) => o.id === orderId);
+    if (order) setSelectedOrder(order);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, orders]);
 
   /* ── Fetch orders + live MAD exchange rates in parallel ── */
   const loadData = useCallback(async () => {

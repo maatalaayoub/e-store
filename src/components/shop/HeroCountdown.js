@@ -69,7 +69,7 @@ export default function HeroCountdown({ config = {}, locale = "en" }) {
   const { timeLeft, expired } = useCountdown(countdown_end);
   const videoRef = useRef(null);
 
-  // Lazy-load background video via IntersectionObserver.
+  // Background video preloads automatically and plays as soon as data is available.
   useEffect(() => {
     const el = videoRef.current;
     if (!el) return;
@@ -109,7 +109,7 @@ export default function HeroCountdown({ config = {}, locale = "en" }) {
           loop
           muted
           playsInline
-          preload="none"
+          preload="auto"
         >
           <source src={background_url} />
         </video>
