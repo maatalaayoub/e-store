@@ -85,7 +85,7 @@ export async function PATCH(req) {
       .update({ read, updated_at: new Date().toISOString() });
 
     if (all) {
-      // Update all rows.
+      query = query.not('id', 'is', null);
     } else if (Array.isArray(ids) && ids.length > 0) {
       query = query.in('id', ids);
     } else if (id) {

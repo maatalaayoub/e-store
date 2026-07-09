@@ -458,7 +458,14 @@
         "low_stock": "Alertes de stock bas",
         "out_of_stock": "Alertes de rupture de stock",
         "low_stock_threshold": "Seuil de stock bas",
-        "low_stock_threshold_hint": "Envoyer une alerte lorsqu'un produit atteint cette quantité ou moins."
+        "low_stock_threshold_hint": "Envoyer une alerte lorsqu'un produit atteint cette quantité ou moins.",
+        "telegram_title": "Bot Telegram",
+        "telegram_desc": "Envoyer les alertes vers votre bot Telegram configuré.",
+        "telegram_enabled": "Activer les notifications Telegram",
+        "telegram_new_order": "Nouvelle commande",
+        "telegram_order_cancelled": "Commande annulée",
+        "telegram_low_stock": "Alertes de stock bas",
+        "telegram_out_of_stock": "Alertes de rupture de stock"
       },
       "integrations": {
         "title": "Intégrations",
@@ -649,6 +656,9 @@
       "mark_all_read": "Tout marquer comme lu",
       "clear_read": "Effacer les lues",
       "delete": "Supprimer",
+      "cancel": "Annuler",
+      "delete_title": "Supprimer la notification ?",
+      "delete_desc": "Cette action est irréversible.",
       "view": "Voir",
       "type_new_order": "Nouvelle commande",
       "type_order_cancelled": "Commande annulée",

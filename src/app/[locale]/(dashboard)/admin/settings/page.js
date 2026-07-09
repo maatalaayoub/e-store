@@ -535,6 +535,11 @@ function NotificationsSection() {
     notify_low_stock: 'true',
     notify_out_of_stock: 'true',
     notify_low_stock_threshold: '5',
+    telegram_notifications_enabled: 'false',
+    telegram_notify_new_order: 'true',
+    telegram_notify_order_cancelled: 'true',
+    telegram_notify_low_stock: 'true',
+    telegram_notify_out_of_stock: 'true',
   });
   const [loading, setLoading] = useState(true);
 
@@ -550,6 +555,11 @@ function NotificationsSection() {
             notify_low_stock: data.notify_low_stock ?? 'true',
             notify_out_of_stock: data.notify_out_of_stock ?? 'true',
             notify_low_stock_threshold: data.notify_low_stock_threshold ?? '5',
+            telegram_notifications_enabled: data.telegram_notifications_enabled ?? 'false',
+            telegram_notify_new_order: data.telegram_notify_new_order ?? 'true',
+            telegram_notify_order_cancelled: data.telegram_notify_order_cancelled ?? 'true',
+            telegram_notify_low_stock: data.telegram_notify_low_stock ?? 'true',
+            telegram_notify_out_of_stock: data.telegram_notify_out_of_stock ?? 'true',
           }));
         }
       })
@@ -572,6 +582,11 @@ function NotificationsSection() {
       notify_low_stock: form.notify_low_stock,
       notify_out_of_stock: form.notify_out_of_stock,
       notify_low_stock_threshold: String(Math.max(1, parseInt(form.notify_low_stock_threshold || '5', 10) || 5)),
+      telegram_notifications_enabled: form.telegram_notifications_enabled,
+      telegram_notify_new_order: form.telegram_notify_new_order,
+      telegram_notify_order_cancelled: form.telegram_notify_order_cancelled,
+      telegram_notify_low_stock: form.telegram_notify_low_stock,
+      telegram_notify_out_of_stock: form.telegram_notify_out_of_stock,
     };
 
     const res = await fetch('/api/v1/settings', {
@@ -582,6 +597,8 @@ function NotificationsSection() {
     const json = await res.json();
     if (!json.success) throw new Error(json.error || 'Failed to save');
   };
+
+  const telegramEnabled = form.telegram_notifications_enabled === 'true';
 
   if (loading) return <AdminSettingsSkeleton />;
 
@@ -619,6 +636,44 @@ function NotificationsSection() {
           value={form.notify_low_stock_threshold}
           onChange={handleThreshold}
           className={inputClass}
+        />
+      </Field>
+
+      <div className="my-6 border-t border-zinc-100" />
+
+      <SectionHeader title={t.telegram_title ?? "Telegram Bot"} description={t.telegram_desc ?? "Send notifications to your configured Telegram bot."} />
+      <Field label={t.telegram_enabled ?? "Enable Telegram notifications"}>
+        <Toggle
+          checked={telegramEnabled}
+          onChange={handleToggle('telegram_notifications_enabled')}
+        />
+      </Field>
+      <Field label={t.telegram_new_order ?? "New order"}>
+        <Toggle
+          checked={form.telegram_notify_new_order === 'true'}
+          onChange={handleToggle('telegram_notify_new_order')}
+          disabled={!telegramEnabled}
+        />
+      </Field>
+      <Field label={t.telegram_order_cancelled ?? "Order cancelled"}>
+        <Toggle
+          checked={form.telegram_notify_order_cancelled === 'true'}
+          onChange={handleToggle('telegram_notify_order_cancelled')}
+          disabled={!telegramEnabled}
+        />
+      </Field>
+      <Field label={t.telegram_low_stock ?? "Low stock alerts"}>
+        <Toggle
+          checked={form.telegram_notify_low_stock === 'true'}
+          onChange={handleToggle('telegram_notify_low_stock')}
+          disabled={!telegramEnabled}
+        />
+      </Field>
+      <Field label={t.telegram_out_of_stock ?? "Out of stock alerts"}>
+        <Toggle
+          checked={form.telegram_notify_out_of_stock === 'true'}
+          onChange={handleToggle('telegram_notify_out_of_stock')}
+          disabled={!telegramEnabled}
         />
       </Field>
       <SectionSaveButton onSave={handleSave} />

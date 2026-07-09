@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
-import { sendTelegramMessage, buildOrderMessage } from '@/lib/telegram';
+import {
+  sendTelegramMessage,
+  buildOrderMessage,
+  buildOrderCancelledMessage,
+  buildLowStockMessage,
+  buildOutOfStockMessage,
+} from '@/lib/telegram';
 import { getAdminUser } from '@/middlewares/authGuard';
 import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 import { computeEffectivePrice } from '@/lib/price';
@@ -268,7 +274,7 @@ export async function POST(req) {
         total: serverTotalMad,
         currency: 'MAD',
       });
-      await sendTelegramMessage(message);
+      await sendTelegramMessage(message, 'new_order');
     } catch { /* notification errors must never surface */ }
 
     // ── 6. In-app admin notification (best-effort) ────────────────────────
@@ -357,6 +363,51 @@ async function restoreStock(db, decremented) {
     } catch (e) {
       if (IS_DEV) console.error('[restoreStock]', d, e?.message ?? e);
     }
+  }
+}
+
+/**
+ * Best-effort Telegram alerts for products that hit low or out-of-stock
+ * levels after an order is confirmed. Errors are swallowed so stock logic
+ * is never affected by notification failures.
+ */
+async function sendStockTelegramAlerts(db, items) {
+  try {
+    const { data: thresholdRow } = await db
+      .from('store_settings')
+      .select('value')
+      .eq('key', 'notify_low_stock_threshold')
+      .single();
+    const threshold = Math.max(1, parseInt(thresholdRow?.value ?? '5', 10) || 5);
+
+    const productIds = items.map((i) => i.id).filter(Boolean);
+    if (productIds.length === 0) return;
+
+    const { data: products } = await db
+      .from('products')
+      .select('id, name, stock')
+      .in('id', productIds);
+
+    for (const product of products ?? []) {
+      const stock = Number(product.stock ?? 0);
+      if (stock === 0) {
+        const msg = buildOutOfStockMessage({
+          productId: product.id,
+          productName: product.name,
+        });
+        await sendTelegramMessage(msg, 'out_of_stock');
+      } else if (stock <= threshold) {
+        const msg = buildLowStockMessage({
+          productId: product.id,
+          productName: product.name,
+          stock,
+          threshold,
+        });
+        await sendTelegramMessage(msg, 'low_stock');
+      }
+    }
+  } catch {
+    /* notification errors must never surface */
   }
 }
 
@@ -559,6 +610,10 @@ export async function PATCH(req) {
           return NextResponse.json({ success: false, error: stockErr }, { status: 409 });
         }
         update.stock_committed = true;
+        // Fire Telegram stock alerts after successful decrement.
+        try {
+          await sendStockTelegramAlerts(db, stockItems);
+        } catch { /* notification errors must never surface */ }
       }
 
       // Restore stock when cancelling any order that had stock committed (before shipping)
@@ -577,6 +632,16 @@ export async function PATCH(req) {
       if (status === 'cancelled') {
         try {
           await createOrderCancelledNotification(currentOrder, 'admin');
+        } catch { /* notification errors must never surface */ }
+        try {
+          const msg = buildOrderCancelledMessage({
+            id: String(currentOrder.order_number ?? currentOrder.id ?? ''),
+            customerName: currentOrder.shipping_address?.full_name || 'Guest',
+            cancelledBy: 'admin',
+            total: Number(currentOrder.total_amount ?? 0),
+            currency: currentOrder.currency_code || 'MAD',
+          });
+          await sendTelegramMessage(msg, 'order_cancelled');
         } catch { /* notification errors must never surface */ }
       }
 
@@ -622,6 +687,16 @@ export async function PATCH(req) {
     // Notify admins when a customer cancels an order.
     try {
       await createOrderCancelledNotification(order, 'customer');
+    } catch { /* notification errors must never surface */ }
+    try {
+      const msg = buildOrderCancelledMessage({
+        id: String(order.order_number ?? order.id ?? ''),
+        customerName: order.shipping_address?.full_name || 'Guest',
+        cancelledBy: 'customer',
+        total: Number(order.total_amount ?? 0),
+        currency: order.currency_code || 'MAD',
+      });
+      await sendTelegramMessage(msg, 'order_cancelled');
     } catch { /* notification errors must never surface */ }
 
     return NextResponse.json({ success: true });

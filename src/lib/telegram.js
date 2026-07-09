@@ -36,14 +36,45 @@ async function getTelegramConfig() {
 // oversized orders don't silently fail to notify the operator.
 const TELEGRAM_MAX_LEN = 4000;
 
+const TELEGRAM_TYPE_KEYS = {
+  new_order: 'telegram_notify_new_order',
+  order_cancelled: 'telegram_notify_order_cancelled',
+  low_stock: 'telegram_notify_low_stock',
+  out_of_stock: 'telegram_notify_out_of_stock',
+};
+
+async function getSetting(key, defaultValue = '') {
+  try {
+    const db = createServiceClient();
+    const { data } = await db.from('store_settings').select('value').eq('key', key).single();
+    return data?.value ?? defaultValue;
+  } catch {
+    return defaultValue;
+  }
+}
+
+async function isTelegramEnabledForType(type) {
+  const globalEnabled = (await getSetting('telegram_notifications_enabled', 'false')) === 'true';
+  if (!globalEnabled) return false;
+  const key = TELEGRAM_TYPE_KEYS[type];
+  if (!key) return false;
+  const typeEnabled = await getSetting(key, 'true');
+  return typeEnabled !== 'false';
+}
+
 /**
  * Send a plain-text message to a Telegram chat via Bot API.
  * Fire-and-forget — errors are logged but never thrown.
  *
  * @param {string} text  HTML-safe message text
+ * @param {string} [type]  Optional notification type. When provided, the
+ *   message is only sent if Telegram notifications are globally enabled AND
+ *   the per-type toggle for that event is on.
  */
-export async function sendTelegramMessage(text) {
+export async function sendTelegramMessage(text, type) {
   try {
+    if (type && !(await isTelegramEnabledForType(type))) return;
+
     const { botToken, chatId } = await getTelegramConfig();
     if (!botToken || !chatId) return; // not configured — skip silently
 
@@ -111,4 +142,46 @@ export function buildOrderMessage({ id, customerName, phone, address, city, coun
   ];
 
   return lines.filter((l) => l !== null).join('\n');
+}
+
+/**
+ * Build an order-cancellation notification message for Telegram.
+ */
+export function buildOrderCancelledMessage({ id, customerName, cancelledBy, total, currency }) {
+  const e = escapeHtml;
+  const actor = cancelledBy === 'admin' ? 'Admin' : 'Customer';
+  return [
+    `❌ <b>Order Cancelled #${e(id)}</b>`,
+    ``,
+    `👤 <b>${e(customerName)}</b>`,
+    `📝 Cancelled by: ${e(actor)}`,
+    ``,
+    `💰 <b>Order total: ${e(total)} ${e(currency)}</b>`,
+  ].join('\n');
+}
+
+/**
+ * Build a low-stock notification message for Telegram.
+ */
+export function buildLowStockMessage({ productId, productName, stock, threshold }) {
+  const e = escapeHtml;
+  return [
+    `⚠️ <b>Low Stock Alert</b>`,
+    ``,
+    `📦 ${e(productName)}`,
+    `🔢 Stock: ${e(stock)} (threshold: ${e(threshold)})`,
+  ].join('\n');
+}
+
+/**
+ * Build an out-of-stock notification message for Telegram.
+ */
+export function buildOutOfStockMessage({ productId, productName }) {
+  const e = escapeHtml;
+  return [
+    `🚫 <b>Out of Stock</b>`,
+    ``,
+    `📦 ${e(productName)}`,
+    `🔢 Stock: 0`,
+  ].join('\n');
 }

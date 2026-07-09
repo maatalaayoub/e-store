@@ -952,7 +952,12 @@ VALUES
   ('notify_order_cancelled', 'true'),
   ('notify_low_stock', 'true'),
   ('notify_out_of_stock', 'true'),
-  ('notify_low_stock_threshold', '5')
+  ('notify_low_stock_threshold', '5'),
+  ('telegram_notifications_enabled', 'false'),
+  ('telegram_notify_new_order', 'true'),
+  ('telegram_notify_order_cancelled', 'true'),
+  ('telegram_notify_low_stock', 'true'),
+  ('telegram_notify_out_of_stock', 'true')
 ON CONFLICT (key) DO NOTHING;
 
 -- ========================================================================

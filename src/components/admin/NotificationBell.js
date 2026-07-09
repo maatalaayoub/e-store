@@ -17,6 +17,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { useDictionary } from "@/components/providers/LocaleProvider";
+import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
 import { isRtlLocale } from "@/config/constants";
 
 const TYPE_META = {
@@ -60,6 +61,12 @@ function formatRelativeTime(dateStr, locale = "en") {
   return date.toLocaleDateString(locale);
 }
 
+function formatCurrency(amount, currency = "MAD") {
+  const value = Number(amount ?? 0);
+  const formatted = Number.isFinite(value) ? value.toFixed(2) : "0.00";
+  return `${formatted} ${currency}`;
+}
+
 function getNotificationLink(n, locale) {
   const type = n.type;
   if (type === "new_order" || type === "order_cancelled") {
@@ -75,7 +82,7 @@ function getNotificationLink(n, locale) {
   return null;
 }
 
-function NotificationItem({ n, locale, t, onRead, onDelete, closeDropdown }) {
+function NotificationItem({ n, locale, t, onRead, onDelete, closeDropdown, onRequestDelete }) {
   const meta = TYPE_META[n.type] ?? TYPE_META.out_of_stock;
   const Icon = meta.icon;
   const link = getNotificationLink(n, locale);
@@ -88,12 +95,13 @@ function NotificationItem({ n, locale, t, onRead, onDelete, closeDropdown }) {
       return t.new_order_desc
         ?.replace("{order}", p.order_number || "#")
         .replace("{customer}", p.customer_name || "Guest")
-        .replace("{total}", `${p.total ?? 0} ${p.currency ?? "MAD"}`);
+        .replace("{total}", formatCurrency(p.total, p.currency));
     }
     if (n.type === "order_cancelled") {
+      const byKey = p.cancelled_by === 'admin' ? 'cancelled_by_admin' : 'cancelled_by_customer';
       return t.cancelled_desc
         ?.replace("{order}", p.order_number || "#")
-        .replace("{by}", p.cancelled_by || "");
+        .replace("{by}", t[byKey] ?? p.cancelled_by ?? "");
     }
     if (n.type === "low_stock") {
       return t.low_stock_desc
@@ -148,7 +156,7 @@ function NotificationItem({ n, locale, t, onRead, onDelete, closeDropdown }) {
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            onDelete(n.id);
+            onRequestDelete(n.id);
           }}
           className="rounded p-1 text-zinc-400 hover:bg-red-50 hover:text-red-600"
           title={t.delete}
@@ -195,6 +203,7 @@ export default function NotificationBell() {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [offset, setOffset] = useState(0);
+  const [deleteId, setDeleteId] = useState(null);
   const bellRef = useRef(null);
   const panelRef = useRef(null);
   const { locale } = useParams();
@@ -259,7 +268,7 @@ export default function NotificationBell() {
           if (n.type === "new_order") {
             message = t.new_order_toast
               ?.replace("{order}", p.order_number || "#")
-              .replace("{total}", `${p.total ?? 0} ${p.currency ?? "MAD"}`);
+              .replace("{total}", formatCurrency(p.total, p.currency));
           } else if (n.type === "order_cancelled") {
             message = t.cancelled_toast?.replace("{order}", p.order_number || "#");
           } else if (n.type === "low_stock") {
@@ -279,12 +288,34 @@ export default function NotificationBell() {
           });
         }
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "admin_notifications",
+        },
+        (payload) => {
+          const n = payload.new;
+          if (!n) return;
+          setNotifications((prev) =>
+            prev.map((item) => (item.id === n.id ? { ...item, read: n.read } : item))
+          );
+          setUnreadCount((prev) => {
+            const current = notifications.filter((x) => !x.read).length;
+            const updated = notifications.some((x) => x.id === n.id && !x.read && n.read)
+              ? current - 1
+              : current;
+            return Math.max(0, updated);
+          });
+        }
+      )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [locale, router, t]);
+  }, [locale, router, t, notifications]);
 
   // Close dropdown when clicking outside or pressing Escape
   useEffect(() => {
@@ -454,6 +485,7 @@ export default function NotificationBell() {
                     t={t}
                     onRead={markAsRead}
                     onDelete={deleteNotification}
+                    onRequestDelete={setDeleteId}
                     closeDropdown={() => setOpen(false)}
                   />
                 ))}
@@ -474,6 +506,7 @@ export default function NotificationBell() {
                 t={t}
                 onRead={markAsRead}
                 onDelete={deleteNotification}
+                onRequestDelete={setDeleteId}
                 closeDropdown={() => setOpen(false)}
               />
             ))}
@@ -496,6 +529,21 @@ export default function NotificationBell() {
           </div>
         </div>
       )}
+
+      <ConfirmationDialog
+        isOpen={!!deleteId}
+        title={t.delete_title ?? "Delete notification?"}
+        description={t.delete_desc ?? "This action cannot be undone."}
+        confirmText={t.delete ?? "Delete"}
+        cancelText={t.cancel ?? "Cancel"}
+        onConfirm={() => {
+          if (deleteId) {
+            deleteNotification(deleteId);
+            setDeleteId(null);
+          }
+        }}
+        onCancel={() => setDeleteId(null)}
+      />
     </div>
   );
 }
