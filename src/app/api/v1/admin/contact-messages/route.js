@@ -35,10 +35,20 @@ export async function GET(req) {
     const { data, error, count } = await query;
     if (error) throw error;
 
+    const { count: unreadCount, error: unreadErr } = await supabase
+      .from('contact_messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'new');
+
+    if (unreadErr) {
+      console.error('[GET /api/v1/admin/contact-messages] unread count error:', unreadErr.message);
+    }
+
     return NextResponse.json({
       success: true,
       data: data ?? [],
       count: count ?? 0,
+      unread_count: unreadCount ?? 0,
       limit,
       offset,
     });

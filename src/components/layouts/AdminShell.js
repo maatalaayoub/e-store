@@ -30,6 +30,7 @@ import { useDictionary } from "@/components/providers/LocaleProvider";
 import AdminSearch from "@/components/layouts/AdminSearch";
 import NotificationBell from "@/components/admin/NotificationBell";
 import { isRtlLocale } from "@/config/constants";
+import { createClient } from "@/lib/supabase/client";
 
 const NAV_ITEMS = [
   { href: "/admin", key: "dashboard", icon: LayoutDashboard, exact: true },
@@ -50,6 +51,8 @@ export default function AdminShell({ children }) {
   const isRtl = isRtlLocale(locale);
   const logoutIconDirectionClass = isRtl ? "" : "-scale-x-100";
   const [logoUrl, setLogoUrl] = useState("");
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   useEffect(() => {
     fetch("/api/v1/display-settings")
@@ -60,6 +63,95 @@ export default function AdminShell({ children }) {
         }
       })
       .catch(() => {});
+  }, []);
+
+  // Fetch initial unread counts for messages and notifications.
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const [messagesRes, notificationsRes] = await Promise.all([
+          fetch("/api/v1/admin/contact-messages?status=new&limit=1"),
+          fetch("/api/v1/notifications?unread=true&limit=1"),
+        ]);
+        const messagesJson = await messagesRes.json();
+        const notificationsJson = await notificationsRes.json();
+        if (messagesJson.success) setUnreadMessages(messagesJson.unread_count ?? 0);
+        if (notificationsJson.success) setUnreadNotifications(notificationsJson.unread_count ?? 0);
+      } catch (e) {
+        console.error("[AdminShell] failed to fetch unread counts", e);
+      }
+    };
+    fetchCounts();
+  }, []);
+
+  // Real-time updates for unread counts.
+  useEffect(() => {
+    const supabase = createClient();
+
+    const notificationsChannel = supabase
+      .channel("admin-shell-notifications")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "admin_notifications" },
+        (payload) => {
+          const n = payload.new;
+          if (n && !n.read) setUnreadNotifications((c) => c + 1);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "admin_notifications" },
+        (payload) => {
+          const oldRead = payload.old?.read ?? true;
+          const newRead = payload.new?.read ?? true;
+          if (oldRead === newRead) return;
+          setUnreadNotifications((c) => Math.max(0, newRead ? c - 1 : c + 1));
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "admin_notifications" },
+        (payload) => {
+          const wasUnread = payload.old?.read === false;
+          if (wasUnread) setUnreadNotifications((c) => Math.max(0, c - 1));
+        }
+      )
+      .subscribe();
+
+    const messagesChannel = supabase
+      .channel("admin-shell-messages")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "contact_messages" },
+        (payload) => {
+          const m = payload.new;
+          if (m && m.status === "new") setUnreadMessages((c) => c + 1);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "contact_messages" },
+        (payload) => {
+          const oldNew = payload.old?.status === "new";
+          const newNew = payload.new?.status === "new";
+          if (oldNew === newNew) return;
+          setUnreadMessages((c) => Math.max(0, newNew ? c + 1 : c - 1));
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "contact_messages" },
+        (payload) => {
+          const wasNew = payload.old?.status === "new";
+          if (wasNew) setUnreadMessages((c) => Math.max(0, c - 1));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(notificationsChannel);
+      supabase.removeChannel(messagesChannel);
+    };
   }, []);
 
   const withLocale = (href) => `/${locale}${href}`;
@@ -115,6 +207,13 @@ export default function AdminShell({ children }) {
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const active = isActive(item);
+            const badgeCount =
+              item.key === "messages"
+                ? unreadMessages
+                : item.key === "notifications"
+                ? unreadNotifications
+                : 0;
+            const showBadge = badgeCount > 0;
             return (
               <Link
                 key={item.href}
@@ -127,7 +226,17 @@ export default function AdminShell({ children }) {
                 }`}
                 style={active ? { backgroundColor: "#1447E620", color: "#1447E6" } : {}}
               >
-                <Icon className="h-5 w-5" />
+                <span className="relative inline-flex">
+                  <Icon className="h-5 w-5" />
+                  {showBadge && (
+                    <span
+                      className="absolute -top-1.5 -end-2 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 ring-2 ring-white text-white text-[10px] font-bold flex items-center justify-center leading-none"
+                      aria-hidden="true"
+                    >
+                      {badgeCount > 99 ? "99+" : badgeCount}
+                    </span>
+                  )}
+                </span>
                 {tNav[item.key] ?? item.key}
               </Link>
             );

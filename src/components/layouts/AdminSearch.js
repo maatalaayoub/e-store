@@ -36,6 +36,11 @@ import {
   CornerDownLeft,
   ArrowUp,
   ArrowDown,
+  Mail,
+  Blocks,
+  AlertTriangle,
+  XCircle,
+  Package as PackageIcon,
 } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 
@@ -59,10 +64,13 @@ function normalize(s) {
 function buildIndex({ dict, locale, t }) {
   const nav = dict?.admin?.nav ?? {};
   const sec = dict?.admin?.settings?.sections ?? {};
+  const settings = dict?.admin?.settings ?? {};
   const dash = dict?.admin?.dashboard ?? {};
   const prod = dict?.admin?.products ?? {};
-  const ann = dict?.admin?.settings?.announcements ?? {};
-  const settingsTitle = dict?.admin?.settings?.title ?? "Settings";
+  const ann = settings.announcements ?? {};
+  const notif = dict?.admin?.notifications ?? {};
+  const messages = settings.messages ?? {};
+  const settingsTitle = settings.title ?? "Settings";
 
   const groupPages = t.group_pages ?? "Pages";
   const groupSettings = t.group_settings ?? settingsTitle;
@@ -72,25 +80,41 @@ function buildIndex({ dict, locale, t }) {
 
   return [
     // Top-level pages
-    { id: "page-dashboard",  group: groupPages,    icon: LayoutDashboard, label: nav.dashboard ?? "Dashboard",  href: wl("/admin"),                  keywords: ["dashboard", "home", "overview", dash.title] },
-    { id: "page-products",   group: groupPages,    icon: Package,         label: nav.products ?? "Products",     href: wl("/admin/products"),         keywords: ["products", "inventory", "catalog", prod.title] },
-    { id: "page-orders",     group: groupPages,    icon: ShoppingCart,    label: nav.orders ?? "Orders",         href: wl("/admin/orders"),           keywords: ["orders", "sales"] },
-    { id: "page-customers",  group: groupPages,    icon: Users,           label: nav.customers ?? "Customers",   href: wl("/admin/customers"),        keywords: ["customers", "users", "clients"] },
-    { id: "page-settings",   group: groupPages,    icon: Settings,        label: nav.settings ?? "Settings",     href: wl("/admin/settings"),         keywords: ["settings", "configuration", "preferences"] },
+    { id: "page-dashboard",     group: groupPages, icon: LayoutDashboard,  label: nav.dashboard     ?? "Dashboard",     href: wl("/admin"),              keywords: ["dashboard", "home", "overview", dash.title] },
+    { id: "page-products",      group: groupPages, icon: Package,          label: nav.products      ?? "Products",      href: wl("/admin/products"),     keywords: ["products", "inventory", "catalog", prod.title] },
+    { id: "page-orders",        group: groupPages, icon: ShoppingCart,     label: nav.orders        ?? "Orders",        href: wl("/admin/orders"),       keywords: ["orders", "sales"] },
+    { id: "page-customers",     group: groupPages, icon: Users,            label: nav.customers     ?? "Customers",     href: wl("/admin/customers"),    keywords: ["customers", "users", "clients"] },
+    { id: "page-messages",      group: groupPages, icon: Mail,             label: nav.messages      ?? "Messages",      href: wl("/admin/messages"),     keywords: ["messages", "contact", "inbox", messages.title] },
+    { id: "page-notifications", group: groupPages, icon: Bell,             label: nav.notifications ?? "Notifications", href: wl("/admin/notifications"), keywords: ["notifications", "alerts", "updates", notif.title] },
+    { id: "page-settings",      group: groupPages, icon: Settings,         label: nav.settings      ?? "Settings",      href: wl("/admin/settings"),     keywords: ["settings", "configuration", "preferences"] },
 
     // Settings sub-sections (deep-linked via ?tab=)
-    { id: "set-general",        group: groupSettings, icon: Store,       label: sec.general        ?? "General",        description: settingsTitle, href: wl("/admin/settings?tab=general"),        keywords: ["general", "store", "info"] },
-    { id: "set-storefront",     group: groupSettings, icon: Layers,      label: sec.storefront     ?? "Storefront",     description: settingsTitle, href: wl("/admin/settings?tab=storefront"),     keywords: ["storefront", "hero", "banner", "carousel", "slides", "display", "buttons", "product cards"] },
-    { id: "set-announcements",  group: groupSettings, icon: Megaphone,   label: sec.announcements  ?? "Announcements",  description: settingsTitle, href: wl("/admin/settings?tab=announcements"),  keywords: ["announcements", "marquee", "promo", "banner", ann.title] },
-    { id: "set-payments",       group: groupSettings, icon: CreditCard,  label: sec.payments       ?? "Payments",       description: settingsTitle, href: wl("/admin/settings?tab=payments"),       keywords: ["payments", "stripe", "checkout"] },
-    { id: "set-shipping",       group: groupSettings, icon: Truck,       label: sec.shipping       ?? "Shipping",       description: settingsTitle, href: wl("/admin/settings?tab=shipping"),       keywords: ["shipping", "delivery", "rates"] },
-    { id: "set-notifications",  group: groupSettings, icon: Bell,        label: sec.notifications  ?? "Notifications",  description: settingsTitle, href: wl("/admin/settings?tab=notifications"),  keywords: ["notifications", "emails", "alerts"] },
-    { id: "set-integrations",   group: groupSettings, icon: Zap,         label: sec.integrations   ?? "Integrations",   description: settingsTitle, href: wl("/admin/settings?tab=integrations"),   keywords: ["integrations", "api", "webhooks"] },
-    { id: "set-localization",   group: groupSettings, icon: Globe,       label: sec.localization   ?? "Localization",   description: settingsTitle, href: wl("/admin/settings?tab=localization"),   keywords: ["localization", "language", "currency", "i18n"] },
+    { id: "set-general",          group: groupSettings, icon: Store,        label: sec.general          ?? "General",          description: settingsTitle, href: wl("/admin/settings?tab=general"),          keywords: ["general", "store", "info", "name", "logo", "contact"] },
+    { id: "set-storefront",       group: groupSettings, icon: Layers,       label: sec.storefront       ?? "Storefront",       description: settingsTitle, href: wl("/admin/settings?tab=storefront"),       keywords: ["storefront", "hero", "banner", "carousel", "slides", "display", "buttons", "product cards"] },
+    { id: "set-announcements",    group: groupSettings, icon: Megaphone,    label: sec.announcements    ?? "Announcements",    description: settingsTitle, href: wl("/admin/settings?tab=announcements"),    keywords: ["announcements", "marquee", "promo", "banner", ann.title] },
+    { id: "set-product-sections", group: groupSettings, icon: Blocks,       label: sec.product_sections ?? "Product Sections", description: settingsTitle, href: wl("/admin/settings?tab=product_sections"), keywords: ["product sections", "sections", "homepage", "builder"] },
+    { id: "set-payments",         group: groupSettings, icon: CreditCard,   label: sec.payments         ?? "Payments",         description: settingsTitle, href: wl("/admin/settings?tab=payments"),         keywords: ["payments", "stripe", "checkout", "cod", "cash on delivery"] },
+    { id: "set-shipping",         group: groupSettings, icon: Truck,        label: sec.shipping         ?? "Shipping",         description: settingsTitle, href: wl("/admin/settings?tab=shipping"),         keywords: ["shipping", "delivery", "rates", "zones"] },
+    { id: "set-notifications",    group: groupSettings, icon: Bell,         label: sec.notifications    ?? "Notifications",    description: settingsTitle, href: wl("/admin/settings?tab=notifications"),    keywords: ["notifications", "alerts", "telegram", "new order", "low stock", "out of stock"] },
+    { id: "set-integrations",     group: groupSettings, icon: Zap,          label: sec.integrations     ?? "Integrations",     description: settingsTitle, href: wl("/admin/settings?tab=integrations"),     keywords: ["integrations", "api", "webhooks", "telegram", "whatsapp"] },
+    { id: "set-localization",     group: groupSettings, icon: Globe,        label: sec.localization     ?? "Localization",     description: settingsTitle, href: wl("/admin/settings?tab=localization"),     keywords: ["localization", "language", "currency", "i18n", "timezone"] },
 
     // Quick actions
-    { id: "act-add-product",      group: groupActions, icon: Plus, label: prod.add ?? dash.add_product ?? "Add Product",   description: nav.products,                          href: wl("/admin/products?new=1"),               keywords: ["add product", "new product", "create"] },
-    { id: "act-add-announcement", group: groupActions, icon: Plus, label: ann.add ?? "Add Announcement",                   description: sec.announcements ?? "Announcements",  href: wl("/admin/settings?tab=announcements&new=1"), keywords: ["add announcement", "new announcement", "banner"] },
+    { id: "act-add-product",      group: groupActions, icon: Plus, label: prod.add ?? dash.add_product ?? "Add Product",      description: nav.products,                            href: wl("/admin/products?new=1"),                   keywords: ["add product", "new product", "create"] },
+    { id: "act-add-announcement", group: groupActions, icon: Plus, label: ann.add ?? "Add Announcement",                      description: sec.announcements ?? "Announcements",    href: wl("/admin/settings?tab=announcements&new=1"), keywords: ["add announcement", "new announcement", "banner"] },
+
+    // Notifications filters
+    { id: "notif-unread",         group: notif.title ?? "Notifications", icon: Bell,          label: notif.filter_unread ?? "Unread",        description: notif.title ?? "Notifications", href: wl("/admin/notifications?tab=unread"),         keywords: ["unread", "notifications"] },
+    { id: "notif-new-order",      group: notif.title ?? "Notifications", icon: ShoppingCart,  label: notif.type_new_order ?? "New order",      description: notif.title ?? "Notifications", href: wl("/admin/notifications?tab=new_order"),      keywords: ["new order", "order", "notification"] },
+    { id: "notif-order-cancelled",group: notif.title ?? "Notifications", icon: XCircle,       label: notif.type_order_cancelled ?? "Order cancelled", description: notif.title ?? "Notifications", href: wl("/admin/notifications?tab=order_cancelled"), keywords: ["cancelled", "order", "notification"] },
+    { id: "notif-low-stock",      group: notif.title ?? "Notifications", icon: AlertTriangle, label: notif.type_low_stock ?? "Low stock",      description: notif.title ?? "Notifications", href: wl("/admin/notifications?tab=low_stock"),      keywords: ["low stock", "stock", "notification"] },
+    { id: "notif-out-of-stock",   group: notif.title ?? "Notifications", icon: PackageIcon,   label: notif.type_out_of_stock ?? "Out of stock", description: notif.title ?? "Notifications", href: wl("/admin/notifications?tab=out_of_stock"),   keywords: ["out of stock", "stock", "notification"] },
+
+    // Message filters
+    { id: "msg-new",      group: messages.title ?? "Messages", icon: Mail,       label: messages.filter_new ?? "New",      description: messages.title ?? "Messages", href: wl("/admin/messages?status=new"),      keywords: ["new", "messages", "contact"] },
+    { id: "msg-read",     group: messages.title ?? "Messages", icon: Mail,       label: messages.filter_read ?? "Read",    description: messages.title ?? "Messages", href: wl("/admin/messages?status=read"),     keywords: ["read", "messages", "contact"] },
+    { id: "msg-replied",  group: messages.title ?? "Messages", icon: Mail,       label: messages.filter_replied ?? "Replied", description: messages.title ?? "Messages", href: wl("/admin/messages?status=replied"),  keywords: ["replied", "messages", "contact"] },
+    { id: "msg-archived", group: messages.title ?? "Messages", icon: Mail,       label: messages.filter_archived ?? "Archived", description: messages.title ?? "Messages", href: wl("/admin/messages?status=archived"), keywords: ["archived", "messages", "contact"] },
   ];
 }
 

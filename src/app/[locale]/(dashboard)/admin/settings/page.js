@@ -176,10 +176,17 @@ function Field({ label, hint, children }) {
 const inputClass =
   "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-blue-600";
 
-function SectionHeader({ title, description }) {
+function SectionHeader({ title, description, icon }) {
   return (
     <div className="pb-4 mb-2 border-b border-zinc-100">
-      <h2 className="text-lg font-semibold text-zinc-900">{title}</h2>
+      <div className="flex items-center gap-2">
+        {icon && (
+          <span className="inline-flex shrink-0 items-center justify-center">
+            {icon}
+          </span>
+        )}
+        <h2 className="text-lg font-semibold text-zinc-900">{title}</h2>
+      </div>
       <p className="text-sm text-zinc-500 mt-1">{description}</p>
     </div>
   );
@@ -641,7 +648,15 @@ function NotificationsSection() {
 
       <div className="my-6 border-t border-zinc-100" />
 
-      <SectionHeader title={t.telegram_title ?? "Telegram Bot"} description={t.telegram_desc ?? "Send notifications to your configured Telegram bot."} />
+      <SectionHeader
+        title={t.telegram_title ?? "Telegram Bot"}
+        description={t.telegram_desc ?? "Send notifications to your configured Telegram bot."}
+        icon={
+          <svg viewBox="0 0 24 24" className="h-5 w-5 fill-blue-500" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/>
+          </svg>
+        }
+      />
       <Field label={t.telegram_enabled ?? "Enable Telegram notifications"}>
         <Toggle
           checked={telegramEnabled}

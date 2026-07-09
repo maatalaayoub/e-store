@@ -942,6 +942,7 @@ CREATE OR REPLACE TRIGGER admin_notifications_updated_at
 DO $$ BEGIN
   IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
     EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE admin_notifications';
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE contact_messages';
   END IF;
 END $$;
 

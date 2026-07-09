@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   Bell,
   Check,
@@ -93,14 +93,20 @@ function getNotificationLink(n, locale) {
 export default function AdminNotificationsPage() {
   const { locale } = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const dict = useDictionary();
   const t = dict?.admin?.notifications ?? {};
   const tNav = dict?.admin?.nav ?? {};
 
+  const initialTab = searchParams.get("tab") ?? "all";
+  const validInitialTab = TAB_KEYS.includes(initialTab) ? initialTab : "all";
+
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("all");
-  const [filterType, setFilterType] = useState("all");
+  const [activeTab, setActiveTab] = useState(validInitialTab);
+  const [filterType, setFilterType] = useState(
+    validInitialTab === "all" || validInitialTab === "unread" ? "all" : validInitialTab
+  );
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -252,7 +258,7 @@ export default function AdminNotificationsPage() {
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    setFilterType(tab);
+    setFilterType(tab === "all" || tab === "unread" ? "all" : tab);
     setOffset(0);
   };
 

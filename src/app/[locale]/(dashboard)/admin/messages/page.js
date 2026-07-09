@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
 import { toast } from "sonner";
@@ -18,12 +19,16 @@ import {
 const STATUS_FILTERS = ["all", "new", "read", "replied", "archived"];
 
 export default function AdminMessagesPage() {
+  const searchParams = useSearchParams();
+  const initialStatus = searchParams.get("status") ?? "all";
   const dict = useDictionary();
-  const t = dict?.admin?.messages ?? {};
+  const t = dict?.admin?.settings?.messages ?? {};
   const [messages, setMessages] = useState([]);
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState(
+    STATUS_FILTERS.includes(initialStatus) ? initialStatus : "all"
+  );
   const [expanded, setExpanded] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
 
@@ -50,9 +55,10 @@ export default function AdminMessagesPage() {
   };
 
   useEffect(() => {
+    if (!dict) return;
     fetchMessages();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
+  }, [dict, filter]);
 
   const updateStatus = async (id, status) => {
     try {
@@ -241,7 +247,12 @@ export default function AdminMessagesPage() {
 
               <div className="mt-3">
                 <button
-                  onClick={() => setExpanded(expanded === m.id ? null : m.id)}
+                  onClick={() => {
+                    if (m.status === "new" && expanded !== m.id) {
+                      updateStatus(m.id, "read");
+                    }
+                    setExpanded(expanded === m.id ? null : m.id);
+                  }}
                   className="flex items-center gap-1 text-xs font-medium text-zinc-500 hover:text-zinc-900"
                 >
                   {expanded === m.id ? (
