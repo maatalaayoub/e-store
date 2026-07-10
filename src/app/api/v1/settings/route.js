@@ -63,6 +63,8 @@ const ALLOWED_KEYS = [
   'telegram_notify_order_cancelled',
   'telegram_notify_low_stock',
   'telegram_notify_out_of_stock',
+  'store_logo_size',
+  'store_logo_height',
 ];
 
 // Per-key value size limits. Hero configs can hold long JSON (image URLs etc.).

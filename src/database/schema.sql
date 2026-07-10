@@ -958,7 +958,9 @@ VALUES
   ('telegram_notify_new_order', 'true'),
   ('telegram_notify_order_cancelled', 'true'),
   ('telegram_notify_low_stock', 'true'),
-  ('telegram_notify_out_of_stock', 'true')
+  ('telegram_notify_out_of_stock', 'true'),
+  ('store_logo_size', '160'),
+  ('store_logo_height', '40')
 ON CONFLICT (key) DO NOTHING;
 
 -- ========================================================================

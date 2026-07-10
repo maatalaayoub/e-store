@@ -120,7 +120,14 @@ export default function ShopFooter() {
         <div className={`mx-auto max-w-7xl grid gap-8 md:grid-cols-3 items-start mb-12 ${isRtl ? "text-right" : "text-left"}`}>
           <div>
             {settings?.store_logo_dark ? (
-              <Image src={settings.store_logo_dark} alt={storeName} width={180} height={45} className="h-6 w-auto object-contain mb-4" />
+              <Image
+                src={settings.store_logo_dark}
+                alt={storeName}
+                width={Math.min(Math.max(parseInt(settings?.store_logo_size || '160', 10) || 160, 80), 320)}
+                height={Math.min(Math.max(parseInt(settings?.store_logo_height || '40', 10) || 40, 20), 120)}
+                className="h-auto w-auto max-w-full object-contain mb-4"
+                style={{ maxHeight: `${Math.min(Math.max(parseInt(settings?.store_logo_height || '40', 10) || 40, 20), 120)}px` }}
+              />
             ) : (
               <div className="h-6 w-32 mb-4" />
             )}

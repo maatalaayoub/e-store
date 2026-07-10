@@ -51,6 +51,7 @@ export default function AdminShell({ children }) {
   const isRtl = isRtlLocale(locale);
   const logoutIconDirectionClass = isRtl ? "" : "-scale-x-100";
   const [logoUrl, setLogoUrl] = useState("");
+  const [logoSize, setLogoSize] = useState({ width: 160, height: 40 });
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
@@ -58,8 +59,12 @@ export default function AdminShell({ children }) {
     fetch("/api/v1/display-settings")
       .then((r) => r.json())
       .then((json) => {
-        if (json.success && json.data?.store_logo) {
-          setLogoUrl(json.data.store_logo);
+        if (json.success && json.data) {
+          if (json.data.store_logo) setLogoUrl(json.data.store_logo);
+          setLogoSize({
+            width: Math.min(Math.max(parseInt(json.data.store_logo_size || '160', 10) || 160, 80), 320),
+            height: Math.min(Math.max(parseInt(json.data.store_logo_height || '40', 10) || 40, 20), 120),
+          });
         }
       })
       .catch(() => {});
@@ -185,9 +190,10 @@ export default function AdminShell({ children }) {
               <Image
                 src={logoUrl}
                 alt="LaCérémonie"
-                width={160}
-                height={40}
-                className="h-5 w-auto object-contain"
+                width={logoSize.width}
+                height={logoSize.height}
+                className="h-auto w-auto max-w-full object-contain"
+                style={{ maxHeight: `${logoSize.height}px` }}
                 priority
               />
             </Link>

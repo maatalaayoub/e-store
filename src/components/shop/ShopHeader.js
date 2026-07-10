@@ -11,7 +11,7 @@ import { useOnClickOutside } from "@/hooks/useOnClickOutside";
 import ShopSidebarNav from "./ShopSidebarNav";
 
 function useStoreLogo() {
-  const [logo, setLogo] = useState({ default: null, dark: null });
+  const [logo, setLogo] = useState({ default: null, dark: null, size: '160', height: '40' });
   useEffect(() => {
     fetch("/api/v1/display-settings")
       .then((r) => r.json())
@@ -20,6 +20,8 @@ function useStoreLogo() {
           setLogo({
             default: json.data.store_logo ? json.data.store_logo : null,
             dark: json.data.store_logo_dark ? json.data.store_logo_dark : null,
+            size: json.data.store_logo_size ?? '160',
+            height: json.data.store_logo_height ?? '40',
           });
         }
       })
@@ -32,13 +34,16 @@ function HeaderLogo({ isLight }) {
   const logo = useStoreLogo();
   const src = isLight ? logo.default : logo.dark;
   if (!src) return <div className="h-5 w-32" />;
+  const width = Math.min(Math.max(parseInt(logo.size || '160', 10) || 160, 80), 320);
+  const maxHeight = Math.min(Math.max(parseInt(logo.height || '40', 10) || 40, 20), 120);
   return (
     <Image
       src={src}
       alt="LaCérémonie"
-      width={160}
-      height={40}
-      className="h-5 w-auto object-contain transition-all duration-500"
+      width={width}
+      height={maxHeight}
+      className="h-auto w-auto max-w-full object-contain transition-all duration-500"
+      style={{ maxHeight: `${maxHeight}px` }}
       priority
     />
   );

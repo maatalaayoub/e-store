@@ -225,6 +225,8 @@ function GeneralSection() {
             store_description: data.store_description ?? '',
             store_logo: data.store_logo ?? '',
             store_logo_dark: data.store_logo_dark ?? '',
+            store_logo_size: data.store_logo_size ?? '160',
+            store_logo_height: data.store_logo_height ?? '40',
             contact_email: data.contact_email ?? '',
             contact_phone: data.contact_phone ?? '',
             contact_whatsapp: data.contact_whatsapp ?? '',
@@ -312,9 +314,9 @@ function GeneralSection() {
       </Field>
       <Field label={t.store_logo ?? 'Store logo'} hint={t.store_logo_hint ?? 'Used in headers, footers, and emails. Upload a transparent PNG for best results.'}>
         <div className="flex flex-col sm:flex-row gap-4 items-start">
-          <div className="flex h-20 w-40 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50">
+          <div className="flex h-20 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50" style={{ width: `${Math.min(Math.max(parseInt(form.store_logo_size || '160', 10) || 160, 80), 320)}px` }}>
             {form.store_logo ? (
-              <img src={form.store_logo} alt="Store logo" className="max-h-full max-w-full object-contain p-2" />
+              <img src={form.store_logo} alt="Store logo" className="max-h-full max-w-full object-contain p-2" style={{ maxHeight: `${Math.min(Math.max(parseInt(form.store_logo_height || '40', 10) || 40, 20), 120)}px` }} />
             ) : (
               <span className="text-xs text-zinc-400">{t.no_logo ?? 'No logo'}</span>
             )}
@@ -335,6 +337,46 @@ function GeneralSection() {
               </button>
             )}
           </div>
+        </div>
+      </Field>
+      <Field label={t.logo_width ?? 'Logo width'} hint={t.logo_width_hint ?? 'Preview width in pixels (80-320).'}>
+        <div className="flex items-center gap-4">
+          <input
+            type="range"
+            min={80}
+            max={320}
+            value={form.store_logo_size}
+            onChange={handleChange('store_logo_size')}
+            className="flex-1 accent-blue-600"
+          />
+          <input
+            type="number"
+            min={80}
+            max={320}
+            value={form.store_logo_size}
+            onChange={handleChange('store_logo_size')}
+            className={`${inputClass} w-24 text-center`}
+          />
+        </div>
+      </Field>
+      <Field label={t.logo_height ?? 'Logo height'} hint={t.logo_height_hint ?? 'Maximum height in pixels (20-120).'}>
+        <div className="flex items-center gap-4">
+          <input
+            type="range"
+            min={20}
+            max={120}
+            value={form.store_logo_height}
+            onChange={handleChange('store_logo_height')}
+            className="flex-1 accent-blue-600"
+          />
+          <input
+            type="number"
+            min={20}
+            max={120}
+            value={form.store_logo_height}
+            onChange={handleChange('store_logo_height')}
+            className={`${inputClass} w-24 text-center`}
+          />
         </div>
       </Field>
       <Field label={t.store_logo_dark ?? 'Store logo (dark version)'} hint={t.store_logo_dark_hint ?? 'Used on dark backgrounds like the footer. Upload a white/light version.'}>

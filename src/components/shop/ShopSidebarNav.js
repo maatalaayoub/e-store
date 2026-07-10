@@ -37,14 +37,18 @@ export default function ShopSidebarNav({ isOpen, onClose }) {
   const supabase = createClient();
   const [user, setUser] = useState(null);
   const [userIsAdmin, setUserIsAdmin] = useState(false);
-  const [logoUrl, setLogoUrl] = useState("");
+  const [logo, setLogo] = useState({ url: "", size: "140", height: "35" });
 
   useEffect(() => {
     fetch("/api/v1/display-settings")
       .then((r) => r.json())
       .then((json) => {
-        if (json.success && json.data?.store_logo) {
-          setLogoUrl(json.data.store_logo);
+        if (json.success && json.data) {
+          setLogo({
+            url: json.data.store_logo ?? "",
+            size: json.data.store_logo_size ?? "140",
+            height: json.data.store_logo_height ?? "35",
+          });
         }
       })
       .catch(() => {});
@@ -127,8 +131,15 @@ export default function ShopSidebarNav({ isOpen, onClose }) {
           >
             <XIcon className="w-5 h-5" />
           </button>
-          {logoUrl ? (
-            <Image src={logoUrl} alt="LaCérémonie" width={140} height={35} className="h-5 w-auto object-contain" />
+          {logo.url ? (
+            <Image
+              src={logo.url}
+              alt="LaCérémonie"
+              width={Math.min(Math.max(parseInt(logo.size || '140', 10) || 140, 80), 320)}
+              height={Math.min(Math.max(parseInt(logo.height || '35', 10) || 35, 20), 120)}
+              className="h-auto w-auto max-w-full object-contain"
+              style={{ maxHeight: `${Math.min(Math.max(parseInt(logo.height || '35', 10) || 35, 20), 120)}px` }}
+            />
           ) : (
             <div className="h-5 w-32" />
           )}
