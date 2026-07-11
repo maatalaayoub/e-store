@@ -6,14 +6,16 @@
 
 import { NextResponse } from 'next/server';
 import { productSectionService } from '@/modules/product-sections/service';
+import { logger } from '@/lib/logger';
 
 export async function GET() {
   try {
     const sections = await productSectionService.getGlobalDefaults();
     return NextResponse.json({ success: true, data: sections });
   } catch (err) {
+    logger.error('GET /api/v1/product-sections', err);
     return NextResponse.json(
-      { success: false, error: err?.message ?? 'Failed to load sections' },
+      { success: false, error: 'Failed to load sections' },
       { status: 500 }
     );
   }

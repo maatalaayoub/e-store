@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { logger } from '@/lib/logger';
 
 /**
  * Maps geojs country name → ISO 4217 currency code.
@@ -79,36 +80,48 @@ const CURRENCY_SYMBOL = {
 };
 
 const SESSION_KEY = 'currency_data_v1';
-const SESSION_TTL = 30 * 60 * 1000; // 30 minutes
+const SESSION_TTL = 4 * 60 * 60 * 1000; // 4 hours
+const FX_STALE_MS = 60 * 60 * 1000;      // warn if cache older than 1 hour
 
 const CurrencyContext = createContext({
   currency: { code: 'MAD', sym: 'DH' },
+  stale: false,
   /** @param {number} madAmount */
   formatPrice: (madAmount) => `${Number(madAmount).toFixed(2)} DH`,
 });
 
+function readCachedCurrency() {
+  try {
+    const cached = sessionStorage.getItem(SESSION_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Date.now() - parsed.ts < SESSION_TTL) {
+        return {
+          currency: { code: parsed.code, sym: parsed.sym },
+          rate: parsed.rate,
+          stale: Date.now() - parsed.ts > FX_STALE_MS || parsed.stale === true,
+        };
+      }
+    }
+  } catch {/* ignore */}
+  return null;
+}
+
 export default function CurrencyProvider({ children }) {
-  const [currency, setCurrency] = useState({ code: 'MAD', sym: 'DH' });
+  const cached = typeof window !== 'undefined' ? readCachedCurrency() : null;
+  const [currency, setCurrency] = useState(() => cached?.currency ?? { code: 'MAD', sym: 'DH' });
   /** rate = 1 MAD → N currency units */
-  const [rate, setRate] = useState(1);
+  const [rate, setRate] = useState(() => cached?.rate ?? 1);
+  const [stale, setStale] = useState(() => cached?.stale ?? false);
+  const hasValidCache = Boolean(cached);
 
   useEffect(() => {
     const controller = new AbortController();
     const { signal } = controller;
     let cancelled = false;
 
-    // Try to restore from sessionStorage first
-    try {
-      const cached = sessionStorage.getItem(SESSION_KEY);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Date.now() - parsed.ts < SESSION_TTL) {
-          setCurrency({ code: parsed.code, sym: parsed.sym });
-          setRate(parsed.rate);
-          return () => controller.abort();
-        }
-      }
-    } catch {/* ignore */}
+    // If we already restored a valid cache, don't re-fetch until it expires.
+    if (hasValidCache) return () => controller.abort();
 
     // Helper: fetch with hard timeout so a hung third-party can't block
     // hydration indefinitely.
@@ -119,8 +132,8 @@ export default function CurrencyProvider({ children }) {
 
     const detect = async () => {
       try {
-        // 1. Detect country via IP
-        const geoRes = await fetchWithTimeout('https://get.geojs.io/v1/ip/geo.json', 5000);
+        // 1. Detect country via IP through our own proxy.
+        const geoRes = await fetchWithTimeout('/api/v1/ip-geo', 5000);
         const geoData = geoRes.ok ? await geoRes.json() : {};
         if (cancelled) return;
         const country = geoData?.country ?? 'Morocco';
@@ -128,28 +141,33 @@ export default function CurrencyProvider({ children }) {
         const code = COUNTRY_CURRENCY[country] ?? 'MAD';
         const sym  = CURRENCY_SYMBOL[code]    ?? code;
 
-        // 2. Fetch live exchange rate (base: MAD)
+        // 2. Fetch live exchange rate (base: MAD) through our own proxy.
         let detectedRate = 1;
+        let isStale = false;
         if (code !== 'MAD') {
-          const ratesRes = await fetchWithTimeout('https://open.er-api.com/v6/latest/MAD', 5000);
+          const ratesRes = await fetchWithTimeout(`/api/v1/exchange-rate?base=MAD&target=${code}`, 5000);
           const ratesData = ratesRes.ok ? await ratesRes.json() : {};
           if (cancelled) return;
-          detectedRate = ratesData?.rates?.[code] ?? 1;
+          detectedRate = ratesData?.success ? ratesData.rate : 1;
+          isStale = ratesData?.stale ?? false;
         }
 
         if (cancelled) return;
         setCurrency({ code, sym });
         setRate(detectedRate);
+        setStale(isStale);
 
         // Cache in sessionStorage
         try {
-          sessionStorage.setItem(SESSION_KEY, JSON.stringify({ code, sym, rate: detectedRate, ts: Date.now() }));
+          sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+            code, sym, rate: detectedRate, stale: isStale, ts: Date.now()
+          }));
         } catch {/* ignore */}
       } catch (err) {
         // Silently ignore abort errors (React Strict Mode / component unmount
         // or timeout). Fall back to MAD — already the default state.
-        if (err?.name !== 'AbortError' && process.env.NODE_ENV !== 'production') {
-          console.warn('[CurrencyProvider] detect failed:', err?.message ?? err);
+        if (err?.name !== 'AbortError') {
+          logger.logSwallowed('CurrencyProvider detect failed', err);
         }
       }
     };
@@ -159,18 +177,19 @@ export default function CurrencyProvider({ children }) {
       cancelled = true;
       controller.abort();
     };
-  }, []);
+  }, [hasValidCache]);
 
   const value = useMemo(() => ({
     currency,
     rate,
+    stale,
     formatPrice: (madAmount) => {
       if (madAmount == null) return '';
       const num = Number(String(madAmount).replace(/[^0-9.]/g, '')) || 0;
       const converted = num * rate;
       return `\u200E${converted.toFixed(2)} ${currency.sym}`;
     },
-  }), [currency, rate]);
+  }), [currency, rate, stale]);
 
   return (
     <CurrencyContext.Provider value={value}>
@@ -179,7 +198,7 @@ export default function CurrencyProvider({ children }) {
   );
 }
 
-/** Returns `{ currency, formatPrice }` */
+/** Returns `{ currency, rate, stale, formatPrice }` */
 export function useCurrency() {
   return useContext(CurrencyContext);
 }

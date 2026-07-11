@@ -32,7 +32,7 @@ BEGIN
   );
   RETURN new;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
@@ -61,6 +61,9 @@ CREATE TABLE IF NOT EXISTS products (
   -- Discount: set one or none. discount_price takes priority if both set.
   discount_price numeric(10, 2) CHECK (discount_price >= 0),
   discount_percentage numeric(5, 2) CHECK (discount_percentage >= 0 AND discount_percentage <= 100),
+  CONSTRAINT products_discount_exclusive CHECK (
+    discount_price IS NULL OR discount_percentage IS NULL
+  ),
   stock integer NOT NULL DEFAULT 0 CHECK (stock >= 0),
   status text CHECK (status IN ('active', 'draft', 'archived')) DEFAULT 'draft',
   is_featured boolean DEFAULT false,
@@ -103,8 +106,8 @@ CREATE TABLE IF NOT EXISTS orders (
   user_id uuid REFERENCES auth.users(id) ON DELETE RESTRICT,
   status text CHECK (status IN ('pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled')) DEFAULT 'pending',
   total_amount numeric(10, 2) NOT NULL,         -- always stored in MAD (base currency)
-  currency_code text DEFAULT 'MAD',             -- customer-facing currency at order time
-  exchange_rate numeric(12, 6) DEFAULT 1.0,     -- rate: 1 MAD → currency_code at order time
+  currency_code text DEFAULT 'MAD' CHECK (currency_code ~ '^[A-Z]{3}$'),
+  exchange_rate numeric(12, 6) DEFAULT 1.0 CHECK (exchange_rate > 0 AND exchange_rate <= 10000),
   shipping_address jsonb NOT NULL,              -- { full_name, phone, address, city, state, zip, country }
   cancelled_by text CHECK (cancelled_by IN ('customer', 'admin')) DEFAULT NULL,
   order_number BIGINT,                          -- 8-digit random app-generated ID shown to customers
@@ -113,7 +116,11 @@ CREATE TABLE IF NOT EXISTS orders (
 
 -- Run once to add columns to existing orders table (idempotent):
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS currency_code text DEFAULT 'MAD';
+ALTER TABLE orders ADD CONSTRAINT IF NOT EXISTS orders_currency_code_format
+  CHECK (currency_code ~ '^[A-Z]{3}$');
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS exchange_rate numeric(12, 6) DEFAULT 1.0;
+ALTER TABLE orders ADD CONSTRAINT IF NOT EXISTS orders_exchange_rate_range
+  CHECK (exchange_rate > 0 AND exchange_rate <= 10000);
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS cancelled_by text CHECK (cancelled_by IN ('customer', 'admin')) DEFAULT NULL;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_number BIGINT;
 -- Tracks whether stock has been decremented for this order.
@@ -126,6 +133,10 @@ ALTER TABLE orders ADD CONSTRAINT orders_status_check
 -- Backfill any NULL order_numbers and create unique index:
 UPDATE orders SET order_number = floor(random() * 90000000 + 10000000)::bigint WHERE order_number IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS orders_order_number_idx ON orders (order_number);
+-- Enforce the intended 8-digit numeric range for order numbers.
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_order_number_range;
+ALTER TABLE orders ADD CONSTRAINT orders_order_number_range
+  CHECK (order_number >= 10000000 AND order_number <= 99999999);
 
 -- Run once to add city column to existing users table (idempotent):
 ALTER TABLE users ADD COLUMN IF NOT EXISTS city text;
@@ -174,7 +185,10 @@ CREATE OR REPLACE TRIGGER products_updated_at
 -- ========================
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own profile" ON users FOR SELECT USING (auth.uid() = id);
-CREATE POLICY "Users can update own profile" ON users FOR UPDATE USING (auth.uid() = id);
+-- Users can update their own profile, but they cannot change their role.
+CREATE POLICY "Users can update own profile" ON users
+  FOR UPDATE USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id AND role = (SELECT role FROM users WHERE id = auth.uid()));
 CREATE POLICY "Users can insert own profile" ON users FOR INSERT WITH CHECK (auth.uid() = id);
 
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
@@ -233,7 +247,9 @@ ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 -- Authenticated users can view their own orders
 CREATE POLICY "Users view own orders" ON orders
   FOR SELECT USING (auth.uid() = user_id);
--- Anyone can place an order (guest checkout: user_id may be null)
+-- Anyone can place an order (guest checkout: user_id may be null).
+-- The application layer enforces stock/pricing/total validity; the policy
+-- only allows INSERT and deliberately does not permit UPDATE/DELETE.
 CREATE POLICY "Anyone can create orders" ON orders
   FOR INSERT WITH CHECK (true);
 -- Admins can do everything (read, update status, etc.)
@@ -246,7 +262,8 @@ CREATE POLICY "Users view own order items" ON order_items
   FOR SELECT USING (
     EXISTS (SELECT 1 FROM orders WHERE id = order_id AND user_id = auth.uid())
   );
--- Anyone can insert order items (mirrors the orders insert policy)
+-- Anyone can insert order items (mirrors the orders insert policy).
+-- Updates and deletes are not exposed to end users.
 CREATE POLICY "Anyone can insert order items" ON order_items
   FOR INSERT WITH CHECK (true);
 -- Admins can do everything
@@ -833,6 +850,81 @@ END;
 $$;
 
 -- ------------------------------------------------------------------------
+-- DURABLE RATE LIMITING (fallback when Upstash Redis is not configured)
+-- ------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.rate_limits (
+  key text PRIMARY KEY,
+  window_start bigint NOT NULL,
+  count integer NOT NULL DEFAULT 0,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- No RLS policies: this table is accessed only by the service role.
+ALTER TABLE public.rate_limits DISABLE ROW LEVEL SECURITY;
+
+CREATE INDEX IF NOT EXISTS rate_limits_updated_at_idx
+  ON public.rate_limits (updated_at);
+
+CREATE OR REPLACE FUNCTION public.rate_limit_hit(
+  p_key text,
+  p_window_ms bigint,
+  p_limit integer
+) RETURNS TABLE(success boolean, limit_val integer, remaining integer, reset_ms bigint)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_now_ms bigint;
+  v_current_window bigint;
+BEGIN
+  v_now_ms := (extract(epoch from now()) * 1000)::bigint;
+  v_current_window := (v_now_ms / p_window_ms) * p_window_ms;
+
+  INSERT INTO public.rate_limits (key, window_start, count)
+  VALUES (p_key, v_current_window, 1)
+  ON CONFLICT (key) DO UPDATE SET
+    window_start = CASE
+      WHEN public.rate_limits.window_start < v_current_window THEN v_current_window
+      ELSE public.rate_limits.window_start
+    END,
+    count = CASE
+      WHEN public.rate_limits.window_start < v_current_window THEN 1
+      ELSE public.rate_limits.count + 1
+    END,
+    updated_at = timezone('utc'::text, now());
+
+  RETURN QUERY
+  SELECT
+    (rl.count <= p_limit) AS success,
+    p_limit AS limit_val,
+    GREATEST(0, p_limit - rl.count) AS remaining,
+    (rl.window_start + p_window_ms) AS reset_ms
+  FROM public.rate_limits rl
+  WHERE rl.key = p_key;
+END;
+$$;
+
+-- Optional: clean up stale rate-limit rows once an hour.
+-- You can also schedule this via pg_cron if available.
+CREATE OR REPLACE FUNCTION public.rate_limit_cleanup(p_max_age_ms bigint DEFAULT 86400000)
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_cutoff timestamp with time zone;
+  v_deleted integer;
+BEGIN
+  v_cutoff := timezone('utc'::text, now()) - (p_max_age_ms || ' milliseconds')::interval;
+  DELETE FROM public.rate_limits WHERE updated_at < v_cutoff;
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  RETURN v_deleted;
+END;
+$$;
+
+-- ------------------------------------------------------------------------
 -- PERFORMANCE INDEXES on hot columns
 -- ------------------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS orders_user_id_idx          ON orders (user_id);
@@ -845,8 +937,11 @@ CREATE INDEX IF NOT EXISTS order_items_product_id_idx  ON order_items (product_i
 
 CREATE INDEX IF NOT EXISTS products_status_idx         ON products (status);
 CREATE INDEX IF NOT EXISTS products_status_featured_idx ON products (status, is_featured);
+CREATE INDEX IF NOT EXISTS products_category_idx        ON products (category_id);
 CREATE INDEX IF NOT EXISTS products_category_status_idx ON products (category_id, status);
 
+CREATE INDEX IF NOT EXISTS product_images_product_id_idx
+  ON product_images (product_id);
 CREATE INDEX IF NOT EXISTS product_images_product_main_idx
   ON product_images (product_id, is_main);
 

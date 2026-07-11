@@ -1,4 +1,5 @@
 import { createServiceClient } from '@/lib/supabase/service';
+import { logger } from '@/lib/logger';
 
 /**
  * In-memory cache for Telegram credentials.
@@ -92,10 +93,10 @@ export async function sendTelegramMessage(text, type) {
 
     if (!res.ok) {
       const body = await res.text();
-      console.warn('[Telegram] Failed to send message:', body);
+      logger.logSwallowed('sendTelegramMessage: HTTP error', new Error(body));
     }
   } catch (err) {
-    console.warn('[Telegram] Error sending message:', err?.message ?? err);
+    logger.logSwallowed('sendTelegramMessage', err);
   }
 }
 

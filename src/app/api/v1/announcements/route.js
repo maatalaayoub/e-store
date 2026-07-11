@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/v1/announcements
@@ -32,7 +33,8 @@ export async function GET() {
       { success: true, data: data ?? [] },
       { headers: { 'Cache-Control': 'no-store' } },
     );
-  } catch {
+  } catch (err) {
+    logger.error('GET /api/v1/announcements', err);
     return NextResponse.json({ success: false, data: [] });
   }
 }

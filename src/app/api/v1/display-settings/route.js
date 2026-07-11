@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/service';
+import { logger } from '@/lib/logger';
 
 const PUBLIC_KEYS = [
   'product_card_button_style', 'product_card_filled_bg', 'product_card_filled_text',
@@ -96,7 +97,8 @@ export async function GET() {
       // keeps the storefront snappy under burst load.
       headers: { 'Cache-Control': 'public, max-age=10, stale-while-revalidate=3600' },
     });
-  } catch {
+  } catch (err) {
+    logger.error('GET /api/v1/display-settings', err);
     return NextResponse.json({ success: true, data: { ...DEFAULTS } });
   }
 }

@@ -18,9 +18,10 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
  * @returns {NextResponse | null} A 403 response if the origin is foreign, else null.
  */
 export function assertSameOrigin(req) {
-  // Skip in test/development unless explicitly enforced so local tooling
-  // (curl, Postman, Storybook) still works.
-  if (process.env.NODE_ENV !== 'production' && process.env.ENFORCE_SAME_ORIGIN !== '1') {
+  // Same-origin checks are enforced by default in every environment.
+  // Set DISABLE_SAME_ORIGIN=1 only for local tooling (curl, Postman, Storybook).
+  // This prevents accidental CSRF exposure on preview/staging deployments.
+  if (process.env.DISABLE_SAME_ORIGIN === '1') {
     return null;
   }
 

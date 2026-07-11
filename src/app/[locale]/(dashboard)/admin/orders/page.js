@@ -359,7 +359,7 @@ export default function AdminOrdersPage() {
     try {
       const [ordersRes, ratesRes] = await Promise.all([
         fetch("/api/v1/orders"),
-        fetch("https://open.er-api.com/v6/latest/MAD"),
+        fetch("/api/v1/exchange-rate?base=MAD"),
       ]);
       const ordersJson = await ordersRes.json();
       const ratesJson  = await ratesRes.json().catch(() => ({}));

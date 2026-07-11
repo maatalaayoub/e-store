@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/service';
+import { logger } from '@/lib/logger';
 
 const HERO_CONFIG_KEYS = [
   'hero_type',
@@ -46,7 +47,11 @@ export async function GET() {
     let heroConfig = null;
     const configKey = `hero_${heroType}_config`;
     if (heroType !== 'slider' && settingsMap[configKey]) {
-      try { heroConfig = JSON.parse(settingsMap[configKey]); } catch { /* ignore */ }
+      try {
+        heroConfig = JSON.parse(settingsMap[configKey]);
+      } catch (err) {
+        logger.logSwallowed('GET /api/v1/hero-slides: invalid hero config JSON', err);
+      }
     }
 
     return NextResponse.json({
@@ -55,7 +60,8 @@ export async function GET() {
       config: heroConfig,
       data: slidesResult.data ?? [],
     });
-  } catch {
+  } catch (err) {
+    logger.error('GET /api/v1/hero-slides', err);
     return NextResponse.json({ success: false, hero_type: 'slider', config: null, data: [] });
   }
 }

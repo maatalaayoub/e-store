@@ -13,6 +13,7 @@
 
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { logger } from './lib/logger';
 
 // Inline — path aliases (@/) are not resolved in the Edge Runtime.
 // Keep in sync with src/i18n/config.js.
@@ -83,7 +84,7 @@ export async function proxy(request) {
     try {
       await supabase.auth.getUser();
     } catch (err) {
-      console.warn('[proxy] supabase.auth.getUser failed:', err?.message ?? err);
+      logger.logSwallowed('[proxy] supabase.auth.getUser failed', err);
     }
   }
 

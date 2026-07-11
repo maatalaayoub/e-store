@@ -12,6 +12,7 @@ import { isRtlLocale } from "@/config/constants";
 import { CartSkeleton } from "@/components/skeletons";
 import { parsePrice } from "@/lib/price";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { useLiveCartPrices } from "@/hooks/useLiveCartPrices";
 
 export default function CartSidebar({ isOpen, onClose }) {
   const { items, removeItem, updateQuantity } = useCartStore();
@@ -23,7 +24,8 @@ export default function CartSidebar({ isOpen, onClose }) {
   // Zustand persist hydrates async — track when store is ready
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => setHydrated(true), []);
-  const { formatPrice } = useCurrency();
+  const { formatPrice, stale: staleRate } = useCurrency();
+  const { mismatches, mismatchCount } = useLiveCartPrices(locale);
 
   // a11y — trap focus inside the drawer and close on Escape while open.
   const drawerRef = useRef(null);
@@ -126,6 +128,24 @@ export default function CartSidebar({ isOpen, onClose }) {
           </div>
         ) : (
           <>
+            {/* ── Price trust warnings ── */}
+            {(mismatchCount > 0 || staleRate) && (
+              <div className="mx-5 mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                {mismatchCount > 0 && (
+                  <p>
+                    {t.price_changed || "Some prices have changed since you added them."}
+                    {" "}
+                    {t.checkout_for_latest || "The latest prices will be used at checkout."}
+                  </p>
+                )}
+                {staleRate && (
+                  <p className={mismatchCount > 0 ? "mt-1" : ""}>
+                    {t.stale_rates || "Exchange rates may be outdated."}
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* ── Cart items list ── */}
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
               {items.map((item, index) => {
@@ -134,6 +154,7 @@ export default function CartSidebar({ isOpen, onClose }) {
                 const selectedSize = item.selectedSize ?? null;
                 const colorLabel = dict?.product?.color ?? "Color";
                 const sizeLabel = dict?.product?.size ?? "Size";
+                const mismatch = mismatches[lineKey];
                 return (
                 <div
                   key={lineKey}
@@ -180,7 +201,14 @@ export default function CartSidebar({ isOpen, onClose }) {
                         {item.category}
                       </p>
                     )}
-                    <p className="text-sm font-bold text-zinc-900">{formatPrice(parsePrice(item.effective_price ?? item.price))}</p>
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <p className="text-sm font-bold text-zinc-900">{formatPrice(parsePrice(item.effective_price ?? item.price))}</p>
+                      {mismatch && (
+                        <span className="inline-flex items-center rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                          {t.price_updated || "Price updated"}
+                        </span>
+                      )}
+                    </div>
 
                     {/* Qty + Remove row */}
                     <div className="mt-auto flex items-center justify-between pt-1">

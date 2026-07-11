@@ -21,19 +21,24 @@ export async function GET(req) {
     // Admins can filter by status (including 'all'); public only sees 'active'
     const statusParam = searchParams.get('status');
     const status = adminUser ? (statusParam ?? 'active') : 'active';
+    // Optional comma-separated list of product IDs (e.g. cart price reconciliation).
+    const idsParam = searchParams.get('ids');
+    const ids = idsParam ? idsParam.split(',').map((s) => s.trim()).filter(Boolean) : undefined;
 
-    const products = await productService.getProducts({ status, featured, limit, offset, locale });
+    const products = await productService.getProducts({ status, featured, limit, offset, locale, ids });
     return NextResponse.json({ success: true, data: products }, {
       headers: adminUser ? undefined : { 'Cache-Control': 'public, max-age=60, stale-while-revalidate=600' },
     });
   } catch (error) {
-    console.error('[api/products] GET failed:', error);
+    // Log detail server-side; never expose it to the client.
+    if (process.env.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
+      console.error('[api/products] GET failed:', error);
+    }
     return NextResponse.json(
       {
         success: false,
         error: 'Failed to fetch products',
-        detail: error?.message ?? String(error),
-        code: error?.code ?? null,
       },
       { status: 500 }
     );

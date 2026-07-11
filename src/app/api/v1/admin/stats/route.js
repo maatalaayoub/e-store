@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getAdminUser } from '@/middlewares/authGuard';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/v1/admin/stats
@@ -131,7 +132,7 @@ export async function GET() {
 
     return NextResponse.json({ success: true, data: { stats, recentProducts } });
   } catch (err) {
-    console.error('[GET /api/v1/admin/stats]', err?.message ?? err);
+    logger.error('GET /api/v1/admin/stats', err);
     return NextResponse.json({ success: false, error: 'Failed to fetch stats' }, { status: 500 });
   }
 }

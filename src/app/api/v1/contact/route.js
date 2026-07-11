@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
+import { logger } from '@/lib/logger';
 
 const MAX_NAME_LENGTH = 120;
 const MAX_EMAIL_LENGTH = 254;
@@ -75,9 +76,9 @@ export async function POST(req) {
       { status: 201 }
     );
   } catch (err) {
-    console.error('[POST /api/v1/contact]', err?.message ?? err);
+    logger.error('POST /api/v1/contact', err);
     return NextResponse.json(
-      { success: false, error: err?.message ?? 'Failed to send message' },
+      { success: false, error: 'Failed to send message' },
       { status: 500 }
     );
   }

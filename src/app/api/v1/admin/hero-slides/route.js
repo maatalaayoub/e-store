@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { getAdminUser } from '@/middlewares/authGuard';
 import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
+import { logger } from '@/lib/logger';
 
 /**
  * Allowed schemes for hero hrefs and image URLs.
@@ -96,7 +97,8 @@ export async function GET() {
     if (error) throw error;
     return NextResponse.json({ success: true, data: data ?? [] });
   } catch (err) {
-    return NextResponse.json({ success: false, error: err?.message ?? 'Failed' }, { status: 500 });
+    logger.error('GET /api/v1/admin/hero-slides', err);
+    return NextResponse.json({ success: false, error: 'Failed to fetch hero slides' }, { status: 500 });
   }
 }
 
@@ -164,9 +166,13 @@ export async function PUT(request) {
       }
 
       if (insError) {
-        // Best-effort rollback — ignore any error here.
+        // Best-effort rollback — log any error here but do not fail the request.
         if (Array.isArray(snapshot) && snapshot.length > 0) {
-          try { await db.from('hero_slides').insert(snapshot); } catch (_) {}
+          try {
+            await db.from('hero_slides').insert(snapshot);
+          } catch (restoreErr) {
+            logger.logSwallowed('PUT /api/v1/admin/hero-slides: rollback failed', restoreErr);
+          }
         }
         throw insError;
       }
@@ -174,6 +180,7 @@ export async function PUT(request) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    return NextResponse.json({ success: false, error: err?.message ?? 'Failed' }, { status: 500 });
+    logger.error('PUT /api/v1/admin/hero-slides', err);
+    return NextResponse.json({ success: false, error: 'Failed to save hero slides' }, { status: 500 });
   }
 }

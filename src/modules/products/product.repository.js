@@ -42,7 +42,7 @@ const PRODUCT_LIST_FALLBACK_SELECT = `
 `.trim();
 
 export class ProductRepository {
-  async findAll({ status, featured, limit, offset } = {}) {
+  async findAll({ status, featured, limit, offset, ids } = {}) {
     const supabase = await createClient();
     const runQuery = async (select) => {
       let query = supabase
@@ -53,6 +53,12 @@ export class ProductRepository {
 
       if (status && status !== 'all') query = query.eq('status', status);
       if (featured === true) query = query.eq('is_featured', true);
+
+      // Filter by a specific set of IDs (used for live cart price reconciliation).
+      const productIds = Array.isArray(ids) ? ids.filter(Boolean) : [];
+      if (productIds.length > 0) {
+        query = query.in('id', productIds.slice(0, 100));
+      }
 
       // Offset + limit translate to PostgREST `range(from, to)`; we apply
       // `limit` directly when no offset is provided to keep older callers

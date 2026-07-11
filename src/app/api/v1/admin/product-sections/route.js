@@ -15,6 +15,7 @@ import { getAdminUser } from '@/middlewares/authGuard';
 import { productSectionService } from '@/modules/product-sections/service';
 import { sanitizeSections } from '@/modules/product-sections/sanitize';
 import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
+import { logger } from '@/lib/logger';
 
 export async function GET() {
   try {
@@ -26,8 +27,9 @@ export async function GET() {
     const sections = await productSectionService.getGlobalDefaults();
     return NextResponse.json({ success: true, data: sections });
   } catch (err) {
+    logger.error('GET /api/v1/admin/product-sections', err);
     return NextResponse.json(
-      { success: false, error: err?.message ?? 'Failed to load defaults' },
+      { success: false, error: 'Failed to load defaults' },
       { status: 500 }
     );
   }
@@ -57,8 +59,9 @@ export async function PUT(request) {
     await productSectionService.setGlobalDefaults(sanitized);
     return NextResponse.json({ success: true, data: sanitized });
   } catch (err) {
+    logger.error('PUT /api/v1/admin/product-sections', err);
     return NextResponse.json(
-      { success: false, error: err?.message ?? 'Failed to save defaults' },
+      { success: false, error: 'Failed to save defaults' },
       { status: 500 }
     );
   }

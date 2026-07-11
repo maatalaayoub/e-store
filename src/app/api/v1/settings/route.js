@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase/service';
 import { requireAdmin } from '@/middlewares/authGuard';
 import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 import { invalidateTelegramConfig } from '@/lib/telegram';
+import { logger } from '@/lib/logger';
 
 const ALLOWED_KEYS = [
   'telegram_bot_token',
@@ -88,7 +89,7 @@ export async function GET() {
     const { data, error } = await supabase.from('store_settings').select('key, value');
     if (error) {
       // Table may not exist yet — return empty settings instead of 500
-      console.warn('[GET /api/v1/settings] DB error (table may not exist yet):', error.message);
+      logger.warn('GET /api/v1/settings: DB error (table may not exist yet)', error);
       const empty = Object.fromEntries(ALLOWED_KEYS.map((k) => [k, '']));
       return NextResponse.json({ success: true, data: empty });
     }
@@ -103,7 +104,7 @@ export async function GET() {
     if (err?.statusCode === 401 || err?.message?.toLowerCase().includes('unauthorized') || err?.message?.toLowerCase().includes('logged in')) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
-    console.error('[GET /api/v1/settings]', err?.message ?? err);
+    logger.error('GET /api/v1/settings', err);
     return NextResponse.json({ success: false, error: 'Failed to load settings' }, { status: 500 });
   }
 }
@@ -153,7 +154,7 @@ export async function PATCH(req) {
     if (err?.statusCode === 401 || err?.message?.toLowerCase().includes('unauthorized') || err?.message?.toLowerCase().includes('logged in')) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
-    console.error('[PATCH /api/v1/settings]', err?.message ?? err);
+    logger.error('PATCH /api/v1/settings', err);
     return NextResponse.json({ success: false, error: 'Failed to save settings' }, { status: 500 });
   }
 }

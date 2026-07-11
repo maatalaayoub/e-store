@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getAdminUser } from '@/middlewares/authGuard';
 import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
+import { logger } from '@/lib/logger';
 
 const MAX_LIMIT = 100;
 const DEFAULT_LIMIT = 25;
@@ -59,7 +60,7 @@ export async function GET(req) {
       },
     });
   } catch (err) {
-    console.error('[GET /api/v1/notifications]', err?.message ?? err);
+    logger.error('GET /api/v1/notifications', err);
     return NextResponse.json({ success: false, error: 'Failed to fetch notifications' }, { status: 500 });
   }
 }
@@ -99,7 +100,7 @@ export async function PATCH(req) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error('[PATCH /api/v1/notifications]', err?.message ?? err);
+    logger.error('PATCH /api/v1/notifications', err);
     return NextResponse.json({ success: false, error: 'Failed to update notifications' }, { status: 500 });
   }
 }
@@ -137,7 +138,7 @@ export async function DELETE(req) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error('[DELETE /api/v1/notifications]', err?.message ?? err);
+    logger.error('DELETE /api/v1/notifications', err);
     return NextResponse.json({ success: false, error: 'Failed to delete notifications' }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/v1/favorites
@@ -60,7 +61,7 @@ export async function GET(req) {
 
     return NextResponse.json({ success: true, data });
   } catch (err) {
-    console.error('[GET /api/v1/favorites]', err?.message ?? err);
+    logger.error('GET /api/v1/favorites', err);
     return NextResponse.json({ success: false, error: 'Failed to fetch favorites' }, { status: 500 });
   }
 }
@@ -109,7 +110,7 @@ export async function POST(req) {
 
     return NextResponse.json({ success: true, data }, { status: 201 });
   } catch (err) {
-    console.error('[POST /api/v1/favorites]', err?.message ?? err);
+    logger.error('POST /api/v1/favorites', err);
     return NextResponse.json({ success: false, error: 'Failed to add favorite' }, { status: 500 });
   }
 }
@@ -151,7 +152,7 @@ export async function DELETE(req) {
 
     return NextResponse.json({ success: true, data: null });
   } catch (err) {
-    console.error('[DELETE /api/v1/favorites]', err?.message ?? err);
+    logger.error('DELETE /api/v1/favorites', err);
     return NextResponse.json({ success: false, error: 'Failed to remove favorite' }, { status: 500 });
   }
 }

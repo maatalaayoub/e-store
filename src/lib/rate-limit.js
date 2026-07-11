@@ -23,9 +23,15 @@
  *     if (!success) return new Response('Too many requests', { status: 429 });
  */
 
+import { createServiceClient } from '@/lib/supabase/service';
+
 const hasUpstash =
   !!process.env.UPSTASH_REDIS_REST_URL &&
   !!process.env.UPSTASH_REDIS_REST_TOKEN;
+
+const hasSupabase =
+  !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
+  !!process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // Cache the limiter promise per (limit, windowMs) bucket so we don't
 // re-create the Upstash client on every request.
@@ -115,6 +121,44 @@ function memoryLimit(key, limit, windowMs) {
   };
 }
 
+/* ── Supabase fallback (durable across serverless instances) ───────────── */
+
+// Cache a single service client so we don't recreate it per request.
+let _supabaseClient = null;
+function getSupabaseClient() {
+  if (!_supabaseClient) _supabaseClient = createServiceClient();
+  return _supabaseClient;
+}
+
+async function supabaseLimit(key, limit, windowMs) {
+  try {
+    const db = getSupabaseClient();
+    const { data, error } = await db.rpc('rate_limit_hit', {
+      p_key: key,
+      p_window_ms: Math.floor(windowMs),
+      p_limit: Math.floor(limit),
+    });
+
+    if (error) throw error;
+
+    // RPC returns an array of result rows.
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) throw new Error('rate_limit_hit returned no row');
+
+    return {
+      success: row.success === true,
+      limit: row.limit_val ?? limit,
+      remaining: row.remaining ?? 0,
+      reset: Number(row.reset_ms ?? Date.now() + windowMs),
+    };
+  } catch (err) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('[rate-limit] Supabase error, falling back to memory:', err?.message ?? err);
+    }
+    return memoryLimit(key, limit, windowMs);
+  }
+}
+
 /**
  * Apply a rate limit check.
  *
@@ -140,12 +184,16 @@ export async function rateLimit(identifier, { limit, windowMs }) {
           reset: r.reset,
         };
       } catch (err) {
-        // Upstash transient failure — degrade to in-memory rather than 500.
+        // Upstash transient failure — degrade to durable Supabase if available.
         if (process.env.NODE_ENV !== 'production') {
-          console.warn('[rate-limit] Upstash error, falling back to memory:', err?.message ?? err);
+          console.warn('[rate-limit] Upstash error, trying Supabase fallback:', err?.message ?? err);
         }
       }
     }
+  }
+
+  if (hasSupabase) {
+    return supabaseLimit(identifier, limit, windowMs);
   }
 
   return memoryLimit(identifier, limit, windowMs);
@@ -153,10 +201,23 @@ export async function rateLimit(identifier, { limit, windowMs }) {
 
 /**
  * Extract the client IP from standard proxy headers.
- * Vercel / most reverse proxies set x-forwarded-for.
+ *
+ * Priority:
+ *   1. x-real-ip — set by the trusted edge proxy (Vercel, etc.).
+ *   2. Rightmost x-forwarded-for entry — the hop immediately before us,
+ *      much harder for a client to spoof than the leftmost value.
+ *   3. x-forwarded-for leftmost entry as a last resort.
  */
 export function getClientIp(req) {
+  const realIp = req.headers.get('x-real-ip');
+  if (realIp) return realIp.trim();
+
   const xff = req.headers.get('x-forwarded-for');
-  if (xff) return xff.split(',')[0].trim();
-  return req.headers.get('x-real-ip') ?? null;
+  if (xff) {
+    const hops = xff.split(',').map((s) => s.trim()).filter(Boolean);
+    if (hops.length > 1) return hops[hops.length - 1];
+    if (hops.length === 1) return hops[0];
+  }
+
+  return null;
 }

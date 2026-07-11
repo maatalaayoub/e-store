@@ -36,8 +36,8 @@ export function normalizeProduct(raw, locale) {
 
 export class ProductService {
   async getProducts(options = {}) {
-    const { locale, ...rest } = options;
-    const raw = await productRepository.findAll(rest);
+    const { locale, ids, ...rest } = options;
+    const raw = await productRepository.findAll({ ...rest, ids });
     return raw.map((r) => normalizeProduct(r, locale));
   }
 

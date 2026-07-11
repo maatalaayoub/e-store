@@ -10,18 +10,22 @@ import CartSidebar from "@/components/ui/CartSidebar";
 import { isRtlLocale } from "@/config/constants";
 
 function useStoreLogo() {
-  const [logoUrl, setLogoUrl] = useState("");
+  const [logo, setLogo] = useState({ url: "", size: "140", height: "35" });
   useEffect(() => {
     fetch("/api/v1/display-settings")
       .then((r) => r.json())
       .then((json) => {
-        if (json.success && json.data?.store_logo) {
-          setLogoUrl(json.data.store_logo);
+        if (json.success && json.data) {
+          setLogo({
+            url: json.data.store_logo ?? "",
+            size: json.data.store_logo_size ?? "140",
+            height: json.data.store_logo_height ?? "35",
+          });
         }
       })
       .catch(() => {});
   }, []);
-  return logoUrl;
+  return logo;
 }
 
 export default function ProductPageHeader() {
@@ -54,7 +58,7 @@ export default function ProductPageHeader() {
   const cartCount = cartItems.reduce((acc, i) => acc + i.quantity, 0);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-  const logoUrl = useStoreLogo();
+  const logo = useStoreLogo();
 
   /* ── Bump animation when cart count increases ── */
   const [bump, setBump] = useState(false);
@@ -91,14 +95,15 @@ export default function ProductPageHeader() {
           </button>
 
           {/* Center: store logo */}
-          {logoUrl ? (
+          {logo.url ? (
             <Link href={`/${locale}`} className="absolute left-1/2 -translate-x-1/2">
               <Image
-                src={logoUrl}
+                src={logo.url}
                 alt="LaCérémonie"
-                width={140}
-                height={35}
-                className="h-5 w-auto object-contain"
+                width={Math.min(Math.max(parseInt(logo.size || "140", 10) || 140, 80), 320)}
+                height={Math.min(Math.max(parseInt(logo.height || "35", 10) || 35, 20), 120)}
+                className="h-auto w-auto max-w-full object-contain"
+                style={{ maxHeight: `${Math.min(Math.max(parseInt(logo.height || "35", 10) || 35, 20), 120)}px` }}
                 priority
               />
             </Link>

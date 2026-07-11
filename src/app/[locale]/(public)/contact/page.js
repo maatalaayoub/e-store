@@ -9,13 +9,17 @@ import Image from "next/image";
 import { toast } from "sonner";
 
 function useStoreLogo() {
-  const [logo, setLogo] = useState({ url: null });
+  const [logo, setLogo] = useState({ url: null, size: "160", height: "40" });
   useEffect(() => {
     fetch("/api/v1/display-settings")
       .then((r) => r.json())
       .then((json) => {
         if (json.success && json.data) {
-          setLogo({ url: json.data.store_logo ? json.data.store_logo : null });
+          setLogo({
+            url: json.data.store_logo ? json.data.store_logo : null,
+            size: json.data.store_logo_size ?? "160",
+            height: json.data.store_logo_height ?? "40",
+          });
         }
       })
       .catch(() => {});
@@ -25,16 +29,19 @@ function useStoreLogo() {
 
 function ContactLogo() {
   const { locale } = useParams();
-  const { url } = useStoreLogo();
-  if (!url) return <div className="h-5 w-32" />;
+  const logo = useStoreLogo();
+  if (!logo.url) return <div className="h-5 w-32" />;
+  const width = Math.min(Math.max(parseInt(logo.size || "160", 10) || 160, 80), 320);
+  const maxHeight = Math.min(Math.max(parseInt(logo.height || "40", 10) || 40, 20), 120);
   return (
     <Link href={`/${locale}`} className="flex items-center">
       <Image
-        src={url}
+        src={logo.url}
         alt="LaCérémonie"
-        width={160}
-        height={40}
-        className="h-5 w-auto object-contain"
+        width={width}
+        height={maxHeight}
+        className="h-auto w-auto max-w-full object-contain"
+        style={{ maxHeight: `${maxHeight}px` }}
         priority
       />
     </Link>

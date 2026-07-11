@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { getAdminUser } from '@/middlewares/authGuard';
 import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
+import { logger } from '@/lib/logger';
 
 const ALLOWED_TYPES = ['promotion', 'shipping', 'limited', 'social', 'notification', 'marquee'];
 const ALLOWED_POSITIONS = ['top', 'bottom'];
@@ -182,7 +183,8 @@ export async function GET() {
     if (error) throw error;
     return NextResponse.json({ success: true, data: data ?? [] });
   } catch (err) {
-    return NextResponse.json({ success: false, error: err?.message ?? 'Failed' }, { status: 500 });
+    logger.error('GET /api/v1/admin/announcements', err);
+    return NextResponse.json({ success: false, error: 'Failed to fetch announcements' }, { status: 500 });
   }
 }
 
@@ -236,7 +238,11 @@ export async function PUT(request) {
       if (insError) {
         // Best-effort restore to avoid data loss on insert failure.
         if (Array.isArray(snapshot) && snapshot.length > 0) {
-          await db.from('announcements').insert(snapshot).catch(() => {});
+          try {
+            await db.from('announcements').insert(snapshot);
+          } catch (restoreErr) {
+            logger.logSwallowed('PUT /api/v1/admin/announcements: restore failed', restoreErr);
+          }
         }
         throw insError;
       }
@@ -244,6 +250,7 @@ export async function PUT(request) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    return NextResponse.json({ success: false, error: err?.message ?? 'Failed' }, { status: 500 });
+    logger.error('PUT /api/v1/admin/announcements', err);
+    return NextResponse.json({ success: false, error: 'Failed to save announcements' }, { status: 500 });
   }
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 const IS_DEV = process.env.NODE_ENV !== 'production';
 
@@ -8,8 +9,7 @@ export function withErrorHandler(handler) {
       return await handler(req, context);
     } catch (error) {
       // Logged unconditionally — server logs are non-public.
-      // In production wire this to Sentry/Datadog/Logflare.
-      if (IS_DEV) console.error(error);
+      logger.error('withErrorHandler', error);
 
       const statusCode = error.statusCode || 500;
       // Never leak internal error messages to clients unless explicitly marked

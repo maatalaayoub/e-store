@@ -11,6 +11,7 @@ import {
 import { getAdminUser } from '@/middlewares/authGuard';
 import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 import { computeEffectivePrice } from '@/lib/price';
+import { logger } from '@/lib/logger';
 import {
   createNewOrderNotification,
   createOrderCancelledNotification,
@@ -66,6 +67,28 @@ function safeExchangeRate(input) {
   return n;
 }
 
+function validateShipping(shipping) {
+  const required = ['full_name', 'phone', 'address', 'city', 'country'];
+  for (const key of required) {
+    const value = shipping?.[key];
+    if (typeof value !== 'string' || !value.trim()) {
+      return `Missing required shipping field: ${key}`;
+    }
+  }
+  const phone = String(shipping.phone).trim();
+  // Very loose international phone sanity check: at least 7 digits anywhere.
+  if (!/\d{7,}/.test(phone.replace(/\D/g, ''))) {
+    return 'Invalid phone number';
+  }
+  // Reject obvious script / HTML injection in free-text fields.
+  for (const key of required) {
+    if (/[<>\"'&]/.test(shipping[key])) {
+      return `Invalid characters in ${key}`;
+    }
+  }
+  return null;
+}
+
 /**
  * POST /api/v1/orders
  * Create a new order (available to anyone — supports guest checkout).
@@ -108,6 +131,15 @@ export async function POST(req) {
     if (items.length > 100) {
       return NextResponse.json(
         { success: false, error: 'Too many items in a single order' },
+        { status: 400 }
+      );
+    }
+
+    // Guest checkout hardening: validate shipping fields before any DB work.
+    const shippingError = validateShipping(shipping);
+    if (shippingError) {
+      return NextResponse.json(
+        { success: false, error: shippingError },
         { status: 400 }
       );
     }
@@ -193,8 +225,9 @@ export async function POST(req) {
     serverTotalMad = Math.round(serverTotalMad * 100) / 100;
 
     // Sanitize currency hints (display only; canonical accounting stays in MAD).
-    const safeCurrency = typeof currency_code === 'string' && /^[A-Z]{3}$/.test(currency_code)
-      ? currency_code : 'MAD';
+    // Lowercase codes are normalized to uppercase; invalid codes fall back to MAD.
+    const rawCurrency = typeof currency_code === 'string' ? currency_code.trim().toUpperCase() : '';
+    const safeCurrency = /^[A-Z]{3}$/.test(rawCurrency) ? rawCurrency : 'MAD';
     const safeRate = safeExchangeRate(exchange_rate);
 
     // ── 3. Insert the order + items. ─────────────────────────────────────
@@ -275,18 +308,22 @@ export async function POST(req) {
         currency: 'MAD',
       });
       await sendTelegramMessage(message, 'new_order');
-    } catch { /* notification errors must never surface */ }
+    } catch (err) {
+      logger.logSwallowed('POST /api/v1/orders: telegram notification', err);
+    }
 
     // ── 6. In-app admin notification (best-effort) ────────────────────────
     try {
       await createNewOrderNotification(order, shipping);
-    } catch { /* notification errors must never surface */ }
+    } catch (err) {
+      logger.logSwallowed('POST /api/v1/orders: in-app notification', err);
+    }
 
     const responsePayload = { success: true, data: { id: order.id, order_number: order.order_number } };
     if (idempotencyKey) rememberIdempotent(idempotencyKey, responsePayload);
     return NextResponse.json(responsePayload, { status: 201 });
   } catch (err) {
-    if (IS_DEV) console.error('[POST /api/v1/orders]', err?.message ?? err);
+    logger.error('POST /api/v1/orders', err);
     return NextResponse.json(
       { success: false, error: 'Failed to create order' },
       { status: 500 }
@@ -361,7 +398,7 @@ async function restoreStock(db, decremented) {
         }
       }
     } catch (e) {
-      if (IS_DEV) console.error('[restoreStock]', d, e?.message ?? e);
+      logger.logSwallowed(`restoreStock: product ${d.id}`, e);
     }
   }
 }
@@ -406,8 +443,8 @@ async function sendStockTelegramAlerts(db, items) {
         await sendTelegramMessage(msg, 'low_stock');
       }
     }
-  } catch {
-    /* notification errors must never surface */
+  } catch (err) {
+    logger.logSwallowed('sendStockTelegramAlerts', err);
   }
 }
 
@@ -567,6 +604,18 @@ export async function GET(req) {
  * Body: { id, status }
  */
 export async function PATCH(req) {
+  // CSRF defence: reject if Origin/Referer is foreign in production.
+  const originRejection = assertSameOrigin(req);
+  if (originRejection) return originRejection;
+
+  // Rate limit — 10 status updates per minute per IP.
+  const limited = await rateLimitOrReject(req, {
+    bucket: 'orders-patch',
+    limit: 10,
+    windowMs: 60_000,
+  });
+  if (limited) return limited;
+
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -632,7 +681,9 @@ export async function PATCH(req) {
       if (status === 'cancelled') {
         try {
           await createOrderCancelledNotification(currentOrder, 'admin');
-        } catch { /* notification errors must never surface */ }
+        } catch (err) {
+          logger.logSwallowed('PATCH /api/v1/orders: in-app cancel notification (admin)', err);
+        }
         try {
           const msg = buildOrderCancelledMessage({
             id: String(currentOrder.order_number ?? currentOrder.id ?? ''),
@@ -642,7 +693,9 @@ export async function PATCH(req) {
             currency: currentOrder.currency_code || 'MAD',
           });
           await sendTelegramMessage(msg, 'order_cancelled');
-        } catch { /* notification errors must never surface */ }
+        } catch (err) {
+          logger.logSwallowed('PATCH /api/v1/orders: telegram cancel notification (admin)', err);
+        }
       }
 
       return NextResponse.json({ success: true });
@@ -687,7 +740,9 @@ export async function PATCH(req) {
     // Notify admins when a customer cancels an order.
     try {
       await createOrderCancelledNotification(order, 'customer');
-    } catch { /* notification errors must never surface */ }
+    } catch (err) {
+      logger.logSwallowed('PATCH /api/v1/orders: in-app cancel notification (customer)', err);
+    }
     try {
       const msg = buildOrderCancelledMessage({
         id: String(order.order_number ?? order.id ?? ''),
@@ -697,11 +752,13 @@ export async function PATCH(req) {
         currency: order.currency_code || 'MAD',
       });
       await sendTelegramMessage(msg, 'order_cancelled');
-    } catch { /* notification errors must never surface */ }
+    } catch (err) {
+      logger.logSwallowed('PATCH /api/v1/orders: telegram cancel notification (customer)', err);
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error('[PATCH /api/v1/orders]', err?.message ?? err);
+    logger.error('PATCH /api/v1/orders', err);
     return NextResponse.json({ success: false, error: 'Failed to update order' }, { status: 500 });
   }
 }

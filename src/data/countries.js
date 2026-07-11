@@ -59,7 +59,7 @@ export const findCountryByIso = (iso) =>
  */
 export async function detectCountryFromIp(signal) {
   try {
-    const res = await fetch("https://get.geojs.io/v1/ip/geo.json", { signal });
+    const res = await fetch("/api/v1/ip-geo", { signal });
     if (!res.ok) return null;
     const data = await res.json();
     const code = data?.country_code;

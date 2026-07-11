@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { requireAdmin } from '@/middlewares/authGuard';
 import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
+import { logger } from '@/lib/logger';
 
 const VALID_STATUSES = ['new', 'read', 'replied', 'archived'];
 
@@ -56,9 +57,9 @@ export async function GET(req) {
     if (err?.statusCode === 401 || err?.message?.toLowerCase().includes('unauthorized')) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
-    console.error('[GET /api/v1/admin/contact-messages]', err?.message ?? err);
+    logger.error('GET /api/v1/admin/contact-messages', err);
     return NextResponse.json(
-      { success: false, error: err?.message ?? 'Failed to fetch messages' },
+      { success: false, error: 'Failed to fetch messages' },
       { status: 500 }
     );
   }
