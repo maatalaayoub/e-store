@@ -74,7 +74,8 @@ export async function GET() {
           price,
           status,
           stock,
-          categories ( name )
+          categories ( name ),
+          product_images ( url, is_main, display_order )
         `)
         .order('created_at', { ascending: false })
         .limit(5),
@@ -121,14 +122,23 @@ export async function GET() {
       },
     };
 
-    const recentProducts = (recentProductsRes.data ?? []).map((p) => ({
-      id: p.id,
-      name: p.name,
-      price: p.price,
-      stock: p.stock,
-      status: p.status,
-      category: p.categories?.name ?? null,
-    }));
+    const recentProducts = (recentProductsRes.data ?? []).map((p) => {
+      const images = Array.isArray(p.product_images) ? p.product_images : [];
+      const sortedImages = [...images].sort((a, b) => {
+        if (a.is_main !== b.is_main) return a.is_main ? -1 : 1;
+        return (a.display_order ?? 0) - (b.display_order ?? 0);
+      });
+      const mainImage = sortedImages[0]?.url ?? null;
+      return {
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        stock: p.stock,
+        status: p.status,
+        category: p.categories?.name ?? null,
+        image: mainImage,
+      };
+    });
 
     return NextResponse.json({ success: true, data: { stats, recentProducts } });
   } catch (err) {

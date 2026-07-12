@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Plus, Settings, MoreVertical } from "lucide-react";
+import { Plus, Settings, Package } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { AdminDashboardSkeleton } from "@/components/skeletons";
 
@@ -103,10 +103,13 @@ export default function AdminDashboard() {
         {loading && (
           <div className="divide-y divide-zinc-100 px-6">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="py-4 flex gap-4 animate-pulse">
-                <div className="h-4 w-40 bg-zinc-100 rounded" />
-                <div className="h-4 w-24 bg-zinc-100 rounded" />
-                <div className="h-4 w-16 bg-zinc-100 rounded ml-auto" />
+              <div key={i} className="py-4 flex items-center gap-4 animate-pulse">
+                <div className="h-10 w-10 rounded-lg bg-zinc-100" />
+                <div className="flex-1">
+                  <div className="h-4 w-40 bg-zinc-100 rounded" />
+                  <div className="h-3 w-24 bg-zinc-100 rounded mt-2" />
+                </div>
+                <div className="h-4 w-16 bg-zinc-100 rounded" />
               </div>
             ))}
           </div>
@@ -121,18 +124,30 @@ export default function AdminDashboard() {
 
         {/* MOBILE CARDS */}
         {!loading && recentProducts.length > 0 && (
-          <ul className="divide-y divide-zinc-200 sm:hidden">
+          <ul className="divide-y divide-zinc-100 sm:hidden">
             {recentProducts.map((product) => (
-              <li key={product.id} className="px-4 py-4 flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-medium text-zinc-900 text-sm truncate">{product.name}</p>
-                  <p className="text-xs text-zinc-500 mt-0.5">
-                    {product.category ?? "—"} · {Number(product.price ?? 0).toFixed(2)} DH
-                  </p>
-                </div>
-                <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${STATUS_STYLES[product.status]?.pill ?? "bg-zinc-100 text-zinc-600"}`}>
-                  {tProductForm[`status_${product.status}`] ?? product.status}
-                </span>
+              <li key={product.id} className="px-4 py-4">
+                <Link href={`/${locale}/admin/products`} className="flex items-center gap-3">
+                  <div className="h-14 w-14 shrink-0 rounded-xl overflow-hidden bg-zinc-100 border border-zinc-100">
+                    {product.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={product.image} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center">
+                        <Package className="h-5 w-5 text-zinc-300" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-zinc-900 text-sm truncate">{product.name}</p>
+                    <p className="text-xs text-zinc-500 mt-0.5">
+                      {product.category ?? "—"} · {Number(product.price ?? 0).toFixed(2)} DH
+                    </p>
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium mt-2 ${STATUS_STYLES[product.status]?.pill ?? "bg-zinc-100 text-zinc-600"}`}>
+                      {tProductForm[`status_${product.status}`] ?? product.status}
+                    </span>
+                  </div>
+                </Link>
               </li>
             ))}
           </ul>
@@ -154,7 +169,21 @@ export default function AdminDashboard() {
               <tbody className="divide-y divide-zinc-100">
                 {recentProducts.map((product) => (
                   <tr key={product.id} className="hover:bg-zinc-50/50">
-                    <td className="px-6 py-4 font-medium text-zinc-900">{product.name}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-zinc-100 border border-zinc-100">
+                          {product.image ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={product.image} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center">
+                              <Package className="h-4 w-4 text-zinc-300" />
+                            </div>
+                          )}
+                        </div>
+                        <span className="font-medium text-zinc-900">{product.name}</span>
+                      </div>
+                    </td>
                     <td className="px-6 py-4">{product.category ?? "—"}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{Number(product.price ?? 0).toFixed(2)} DH</td>
                     <td className="px-6 py-4">

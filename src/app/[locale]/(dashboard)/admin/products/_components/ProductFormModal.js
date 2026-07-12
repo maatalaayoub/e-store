@@ -197,6 +197,7 @@ export default function ProductFormModal({
 
   // Drive open/close animation state. `mounted` is set here so the modal
   // stays in the DOM long enough for the exit transition to finish.
+  /* eslint-disable react-hooks/set-state-in-effect -- modal lifecycle effect intentionally drives animation/form state */
   useEffect(() => {
     if (open) {
       setMounted(true);
@@ -207,7 +208,6 @@ export default function ProductFormModal({
     setAnimOpen(false);
     const t = setTimeout(() => setMounted(false), 300);
     return () => clearTimeout(t);
-    /* eslint-disable-next-line react-hooks/set-state-in-effect -- modal lifecycle effect intentionally drives animation state */
   }, [open]);
 
   // Sync form when product changes
@@ -227,8 +227,8 @@ export default function ProductFormModal({
     setError(null);
     setShowNewCat(false);
     setNewCategoryName("");
-    /* eslint-disable-next-line react-hooks/set-state-in-effect -- modal lifecycle effect intentionally resets form state */
   }, [open, product, locale]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleClose = useCallback(() => {
     setAnimOpen(false);
@@ -487,10 +487,13 @@ export default function ProductFormModal({
         });
       }
 
+      toast.success(isEdit ? (t.saved ?? "Product saved") : (t.created ?? "Product created"));
       onSaved?.(savedProduct);
       onClose();
     } catch (err) {
-      setError(err.message);
+      const message = err?.message || "Failed to save product";
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }

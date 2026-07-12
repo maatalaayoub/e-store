@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Star, Trash2, Upload, ImageIcon, Replace } from "lucide-react";
+import { toast } from "sonner";
 
 /**
  * ImageManager
@@ -48,10 +49,12 @@ export default function ImageManager({
     if (!file || !replaceTarget) return;
     if (replaceTarget.type === "existing" && onReplaceExisting) {
       onReplaceExisting(replaceTarget.id, file);
+      toast.success("Image replaced — click Save changes to persist.");
     } else if (replaceTarget.type === "pending" && onRemovePending) {
       // Replace a pending image by removing it and adding the new file.
       onRemovePending(replaceTarget.idx);
       onAddPending([file]);
+      toast.success("Image replaced — click Save changes to persist.");
     }
     setReplaceTarget(null);
   };
