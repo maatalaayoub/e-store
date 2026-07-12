@@ -339,6 +339,33 @@ function GeneralSection() {
           </div>
         </div>
       </Field>
+      <Field label={t.store_logo_dark ?? 'Store logo (dark version)'} hint={t.store_logo_dark_hint ?? 'Used on dark backgrounds like the footer. Upload a white/light version.'}>
+        <div className="flex flex-col sm:flex-row gap-4 items-start">
+          <div className="flex h-20 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-900" style={{ width: `${Math.min(Math.max(parseInt(form.store_logo_size || '160', 10) || 160, 80), 320)}px` }}>
+            {form.store_logo_dark ? (
+              <img src={form.store_logo_dark} alt="Store logo dark" className="max-h-full max-w-full object-contain p-2" style={{ maxHeight: `${Math.min(Math.max(parseInt(form.store_logo_height || '40', 10) || 40, 20), 120)}px` }} />
+            ) : (
+              <span className="text-xs text-zinc-500">{t.no_logo_dark ?? 'No dark logo'}</span>
+            )}
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
+              <Loader2 className={`h-4 w-4 ${uploadingLogo.store_logo_dark ? 'animate-spin' : 'hidden'}`} />
+              <span>{uploadingLogo.store_logo_dark ? (t.uploading ?? 'Uploading…') : (t.upload_logo_dark ?? 'Upload dark logo')}</span>
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => handleLogoUpload(e, 'store_logo_dark')} />
+            </label>
+            {form.store_logo_dark && (
+              <button
+                type="button"
+                onClick={() => setForm((prev) => ({ ...prev, store_logo_dark: '' }))}
+                className="text-xs text-red-600 hover:text-red-700 text-left"
+              >
+                {t.remove_logo ?? 'Remove logo'}
+              </button>
+            )}
+          </div>
+        </div>
+      </Field>
       <Field label={t.logo_width ?? 'Logo width'} hint={t.logo_width_hint ?? 'Preview width in pixels (80-320).'}>
         <div className="flex items-center gap-4">
           <input
@@ -377,33 +404,6 @@ function GeneralSection() {
             onChange={handleChange('store_logo_height')}
             className={`${inputClass} w-24 text-center`}
           />
-        </div>
-      </Field>
-      <Field label={t.store_logo_dark ?? 'Store logo (dark version)'} hint={t.store_logo_dark_hint ?? 'Used on dark backgrounds like the footer. Upload a white/light version.'}>
-        <div className="flex flex-col sm:flex-row gap-4 items-start">
-          <div className="flex h-20 w-40 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-900">
-            {form.store_logo_dark ? (
-              <img src={form.store_logo_dark} alt="Store logo dark" className="max-h-full max-w-full object-contain p-2" />
-            ) : (
-              <span className="text-xs text-zinc-500">{t.no_logo_dark ?? 'No dark logo'}</span>
-            )}
-          </div>
-          <div className="flex flex-col gap-2">
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
-              <Loader2 className={`h-4 w-4 ${uploadingLogo.store_logo_dark ? 'animate-spin' : 'hidden'}`} />
-              <span>{uploadingLogo.store_logo_dark ? (t.uploading ?? 'Uploading…') : (t.upload_logo_dark ?? 'Upload dark logo')}</span>
-              <input type="file" accept="image/*" className="hidden" onChange={(e) => handleLogoUpload(e, 'store_logo_dark')} />
-            </label>
-            {form.store_logo_dark && (
-              <button
-                type="button"
-                onClick={() => setForm((prev) => ({ ...prev, store_logo_dark: '' }))}
-                className="text-xs text-red-600 hover:text-red-700 text-left"
-              >
-                {t.remove_logo ?? 'Remove logo'}
-              </button>
-            )}
-          </div>
         </div>
       </Field>
       <Field label={t.description} hint={t.description_hint}>
@@ -2129,28 +2129,28 @@ function HeroSection() {
           <span className="text-sm">{t.uploading ?? 'Uploading…'}</span>
         </div>
       ) : imageUrl ? (
-        <>
+        <div className="w-full space-y-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={imageUrl} alt="" className="w-full h-40 object-cover rounded-xl" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-          <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-xl">
+          <div className="flex flex-wrap items-center gap-2">
             {onPreview && (
               <button type="button" onClick={(e) => { e.preventDefault(); onPreview(imageUrl); }}
-                className="flex items-center gap-1.5 rounded-lg bg-white/20 hover:bg-white/30 px-3 py-2 text-white text-sm font-medium backdrop-blur-sm">
+                className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-zinc-700 text-sm font-medium hover:bg-zinc-50">
                 <Maximize2 className="h-4 w-4" /> {t.preview_image ?? 'Preview'}
               </button>
             )}
-            <label className="flex items-center gap-1.5 rounded-lg bg-white/20 hover:bg-white/30 px-3 py-2 text-white text-sm font-medium backdrop-blur-sm cursor-pointer">
+            <label className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-zinc-700 text-sm font-medium hover:bg-zinc-50 cursor-pointer">
               <ImageIcon className="h-4 w-4" /> {t.change_image ?? 'Change'}
               <input type="file" accept="image/*" className="hidden" onChange={(e) => onUpload(e.target.files?.[0])} />
             </label>
             {onDelete && (
               <button type="button" onClick={(e) => { e.preventDefault(); onDelete(); }}
-                className="flex items-center gap-1.5 rounded-lg bg-red-500/80 hover:bg-red-600/80 px-3 py-2 text-white text-sm font-medium backdrop-blur-sm">
+                className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-600 text-sm font-medium hover:bg-red-100">
                 <Trash2 className="h-4 w-4" /> {t.remove_image ?? 'Remove'}
               </button>
             )}
           </div>
-        </>
+        </div>
       ) : (
         <label className="flex flex-col items-center gap-2 py-8 text-zinc-400 cursor-pointer w-full h-full justify-center">
           <ImageIcon className="h-8 w-8" />

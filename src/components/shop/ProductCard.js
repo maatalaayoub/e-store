@@ -491,13 +491,13 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
           )}
           {/* Product name */}
           <Link href={`/${locale}/product/${product.id}`}>
-            <h3 className={`line-clamp-2 min-h-[2.5em] leading-snug text-zinc-800 hover:text-zinc-600 transition-colors ${isArabicName ? "text-[13px] sm:text-sm font-medium font-[family-name:var(--font-cairo)]" : "text-[12px] sm:text-[13px] font-normal"}`}>
+            <h3 className={`line-clamp-2 min-h-[2.5em] leading-snug text-zinc-800 hover:text-zinc-600 transition-colors ${isArabicName ? "text-[13px] sm:text-sm font-bold font-[family-name:var(--font-cairo)]" : "text-[12px] sm:text-[13px] font-bold"}`}>
               {product.name}
             </h3>
           </Link>
           {/* Short description */}
           {shouldShowShortDescription && (
-            <p className="line-clamp-2 min-h-[2.5em] text-[10px] sm:text-[11px] leading-snug text-zinc-400">
+            <p className="line-clamp-2 min-h-[2.5em] -mt-1 text-[10px] sm:text-[11px] leading-snug text-zinc-400">
               {shortDescription}
             </p>
           )}
@@ -528,7 +528,7 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
             data-no-global-progress="true"
             onClick={handleAdd}
             disabled={isOutOfStock}
-            className={`mt-0.5 inline-flex w-fit items-center gap-1.5 rounded-[8px] px-3 sm:px-3.5 py-2 text-[11px] sm:text-xs font-semibold transition-all duration-200 active:scale-[0.97] ${
+            className={`mt-4 inline-flex w-fit items-center gap-1.5 rounded-[8px] px-3 sm:px-3.5 py-2 text-[11px] sm:text-xs font-semibold transition-all duration-200 active:scale-[0.97] ${
               isOutOfStock
                 ? 'cursor-not-allowed bg-zinc-100 text-zinc-400'
                 : added
