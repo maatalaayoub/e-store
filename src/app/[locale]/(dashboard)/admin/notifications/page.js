@@ -18,6 +18,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { useDictionary } from "@/components/providers/LocaleProvider";
+import { useAdminOrderView } from "@/components/providers/AdminOrderViewContext";
 import { AdminOrdersSkeleton } from "@/components/skeletons";
 
 const TYPE_META = {
@@ -77,12 +78,17 @@ function formatCurrency(amount, currency = "MAD") {
   return `${formatted} ${currency}`;
 }
 
+function getOrderNotificationId(n) {
+  if (n.type === "new_order" || n.type === "order_cancelled") {
+    return n.payload?.order_id ?? null;
+  }
+  return null;
+}
+
 function getNotificationLink(n, locale) {
   const type = n.type;
   if (type === "new_order" || type === "order_cancelled") {
-    const orderId = n.payload?.order_id;
-    if (!orderId) return null;
-    return `/${locale}/admin/orders?id=${orderId}`;
+    return `/${locale}/admin/orders`;
   }
   if (type === "low_stock" || type === "out_of_stock") {
     return `/${locale}/admin/products`;
@@ -94,6 +100,7 @@ export default function AdminNotificationsPage() {
   const { locale } = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { openOrder } = useAdminOrderView();
   const dict = useDictionary();
   const t = dict?.admin?.notifications ?? {};
   const tNav = dict?.admin?.nav ?? {};
@@ -416,18 +423,26 @@ export default function AdminNotificationsPage() {
               </div>
             );
 
+            const orderId = getOrderNotificationId(n);
+            const handleClick = () => {
+              markAsRead(n.id);
+              if (orderId) openOrder(orderId);
+            };
+
             return (
               <li key={n.id}>
                 {link ? (
                   <Link
                     href={link}
-                    onClick={() => markAsRead(n.id)}
+                    onClick={handleClick}
                     className="block outline-none focus-visible:bg-zinc-100"
                   >
                     {content}
                   </Link>
                 ) : (
-                  content
+                  <div onClick={handleClick} className="cursor-pointer">
+                    {content}
+                  </div>
                 )}
               </li>
             );

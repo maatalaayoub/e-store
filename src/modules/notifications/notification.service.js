@@ -35,8 +35,10 @@ export async function createNewOrderNotification(order, shipping) {
       order_number: String(order.order_number ?? ''),
       customer_name: shipping?.full_name || 'Guest',
       phone: shipping?.phone || '',
+      // total_amount is canonical MAD (store base currency). Display in MAD
+      // regardless of the customer's selected currency.
       total: Number(order.total_amount ?? 0),
-      currency: order.currency_code || 'MAD',
+      currency: 'MAD',
     },
   });
 }
@@ -53,8 +55,9 @@ export async function createOrderCancelledNotification(order, cancelledBy = 'cus
       order_number: String(order.order_number ?? ''),
       customer_name: order.shipping_address?.full_name || 'Guest',
       cancelled_by: cancelledBy,
+      // total_amount is canonical MAD (store base currency).
       total: Number(order.total_amount ?? 0),
-      currency: order.currency_code || 'MAD',
+      currency: 'MAD',
     },
   });
 }

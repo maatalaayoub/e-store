@@ -56,12 +56,25 @@ body {
 .pcard-btn-outline svg {
   color: var(--pcard-outline-icon, #18181b);
 }
+
+/* Hover: fill the outline button with the configured filled-button colours.
+   This never uses the outline border colour as the background, so a white
+   border setting cannot turn the button background white and hide it. */
 .pcard-btn-outline:hover {
-  background-color: var(--pcard-outline-border, #18181b);
+  background-color: var(--pcard-filled-bg, #18181b);
+  border-color: var(--pcard-filled-bg, #18181b);
   color: var(--pcard-filled-text, #ffffff);
 }
 .pcard-btn-outline:hover svg {
   color: var(--pcard-filled-text, #ffffff);
+}
+
+/* Press feedback on touch + desktop that never hides the button */
+.pcard-btn-outline:active {
+  opacity: 0.8;
+}
+.pcard-btn-filled:active {
+  opacity: 0.72;
 }
 
 /* ───────────────────────── Product section / checkout color CSS vars ───────────────────────── */

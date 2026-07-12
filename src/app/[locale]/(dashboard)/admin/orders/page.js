@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { Search, Filter, Download, ShoppingCart, RefreshCw, ChevronDown, Check, X, MapPin, Phone, User, Package, Calendar } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { AdminOrdersSkeleton } from "@/components/skeletons";
-import { useSearchParams } from "next/navigation";
+import { useAdminOrderView } from "@/components/providers/AdminOrderViewContext";
 
 const TAB_KEYS = ["all", "pending", "confirmed", "processing", "shipped", "delivered", "cancelled"];
 
@@ -342,16 +342,21 @@ export default function AdminOrdersPage() {
   const tStats = t.stats ?? {};
   const tTabs = t.tabs ?? {};
   const tH = t.headers ?? {};
-  const searchParams = useSearchParams();
+  const { pendingOrderId, clearPendingOrder } = useAdminOrderView();
 
-  /* ── Open order drawer from URL ?id=... (used by notifications) ── */
+  /* ── Open order drawer when another admin view requests it (e.g. a
+     notification was clicked). The id is passed through React context, never
+     the URL or storage, so closing + refreshing cannot reopen it. */
   useEffect(() => {
-    const orderId = searchParams.get("id");
-    if (!orderId || orders.length === 0) return;
-    const order = orders.find((o) => o.id === orderId);
+    if (!pendingOrderId || orders.length === 0) return;
+    const order = orders.find((o) => o.id === pendingOrderId);
     if (order) setSelectedOrder(order);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, orders]);
+  }, [pendingOrderId, orders]);
+
+  const closeOrderDrawer = useCallback(() => {
+    setSelectedOrder(null);
+    clearPendingOrder();
+  }, [clearPendingOrder]);
 
   /* ── Fetch orders + live MAD exchange rates in parallel ── */
   const loadData = useCallback(async () => {
@@ -490,7 +495,7 @@ export default function AdminOrdersPage() {
 
   return (
     <>
-      <OrderDrawer order={selectedOrder} onClose={() => setSelectedOrder(null)} />
+      <OrderDrawer order={selectedOrder} onClose={closeOrderDrawer} />
       <div className="flex flex-col items-start gap-4 mb-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900">{t.title ?? "Orders"}</h1>

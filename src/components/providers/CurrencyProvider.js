@@ -1,13 +1,13 @@
 'use client';
 
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { logger } from '@/lib/logger';
 
 /**
  * Maps geojs country name → ISO 4217 currency code.
  * Base currency for all stored prices is MAD.
  */
-const COUNTRY_CURRENCY = {
+export const COUNTRY_CURRENCY = {
   Morocco:              'MAD',
   'United States':      'USD',
   'United Kingdom':     'GBP',
@@ -85,9 +85,12 @@ const FX_STALE_MS = 60 * 60 * 1000;      // warn if cache older than 1 hour
 
 const CurrencyContext = createContext({
   currency: { code: 'MAD', sym: 'DH' },
+  rate: 1,
   stale: false,
   /** @param {number} madAmount */
   formatPrice: (madAmount) => `${Number(madAmount).toFixed(2)} DH`,
+  /** @param {string} country */
+  setCurrencyByCountry: () => {},
 });
 
 function readCachedCurrency() {
@@ -179,17 +182,54 @@ export default function CurrencyProvider({ children }) {
     };
   }, [hasValidCache]);
 
+  const setCurrencyByCountry = useCallback(async (country, opts = {}) => {
+    if (!country) return;
+    const code = COUNTRY_CURRENCY[country] ?? 'MAD';
+    if (code === currency.code) return;
+
+    const sym = CURRENCY_SYMBOL[code] ?? code;
+    let detectedRate = 1;
+    let isStale = false;
+
+    if (code !== 'MAD') {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), opts.timeout ?? 5000);
+        const res = await fetch(`/api/v1/exchange-rate?base=MAD&target=${code}`, {
+          signal: controller.signal,
+        }).finally(() => clearTimeout(timer));
+        const data = res.ok ? await res.json() : {};
+        detectedRate = data?.success ? data.rate : 1;
+        isStale = data?.stale ?? false;
+      } catch (err) {
+        if (err?.name !== 'AbortError') {
+          logger.logSwallowed('CurrencyProvider setCurrencyByCountry failed', err);
+        }
+      }
+    }
+
+    setCurrency({ code, sym });
+    setRate(detectedRate);
+    setStale(isStale);
+    try {
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+        code, sym, rate: detectedRate, stale: isStale, ts: Date.now(),
+      }));
+    } catch {/* ignore */}
+  }, [currency.code]);
+
   const value = useMemo(() => ({
     currency,
     rate,
     stale,
+    setCurrencyByCountry,
     formatPrice: (madAmount) => {
       if (madAmount == null) return '';
       const num = Number(String(madAmount).replace(/[^0-9.]/g, '')) || 0;
       const converted = num * rate;
       return `\u200E${converted.toFixed(2)} ${currency.sym}`;
     },
-  }), [currency, rate, stale]);
+  }), [currency, rate, stale, setCurrencyByCountry]);
 
   return (
     <CurrencyContext.Provider value={value}>

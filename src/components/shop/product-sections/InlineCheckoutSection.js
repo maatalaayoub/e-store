@@ -9,7 +9,7 @@
  * checkout page.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
@@ -23,7 +23,15 @@ import { useProductQtyStore } from "@/store/useProductQtyStore";
 
 export default function InlineCheckoutSection({ section, product, locale, dict, compact = false }) {
   const router = useRouter();
-  const { formatPrice, currency, rate } = useCurrency();
+  const { formatPrice, currency, rate, setCurrencyByCountry } = useCurrency();
+
+  // Update displayed currency to match the country the customer selects in the
+  // checkout form so prices are always shown in their chosen local currency.
+  useEffect(() => {
+    if (checkout.form.country) {
+      setCurrencyByCountry(checkout.form.country);
+    }
+  }, [checkout.form.country, setCurrencyByCountry]);
   const tCheckout = dict?.checkout ?? {};
   const tProduct = dict?.product ?? {};
 

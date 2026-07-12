@@ -44,7 +44,7 @@ export default function CheckoutClient({ locale, dict }) {
   const BackIcon = isRtl ? ArrowRight : ArrowLeft;
   const logo = useStoreLogo();
 
-  const { formatPrice, currency, rate } = useCurrency();
+  const { formatPrice, currency, rate, setCurrencyByCountry } = useCurrency();
 
   /** Base subtotal always stays in MAD (stored in DB as MAD). */
   const subtotal = items.reduce(
@@ -64,6 +64,14 @@ export default function CheckoutClient({ locale, dict }) {
       router.push(`/${locale}/order-confirmed?id=${orderId}`);
     },
   });
+
+  // Update displayed currency to match the country the customer selects in the
+  // checkout form so prices are always shown in their chosen local currency.
+  useEffect(() => {
+    if (checkout.form.country) {
+      setCurrencyByCountry(checkout.form.country);
+    }
+  }, [checkout.form.country, setCurrencyByCountry]);
 
   const [discount, setDiscount] = useState("");
 

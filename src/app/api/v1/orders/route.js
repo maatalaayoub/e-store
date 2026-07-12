@@ -690,7 +690,7 @@ export async function PATCH(req) {
             customerName: currentOrder.shipping_address?.full_name || 'Guest',
             cancelledBy: 'admin',
             total: Number(currentOrder.total_amount ?? 0),
-            currency: currentOrder.currency_code || 'MAD',
+            currency: 'MAD',
           });
           await sendTelegramMessage(msg, 'order_cancelled');
         } catch (err) {
@@ -749,7 +749,7 @@ export async function PATCH(req) {
         customerName: order.shipping_address?.full_name || 'Guest',
         cancelledBy: 'customer',
         total: Number(order.total_amount ?? 0),
-        currency: order.currency_code || 'MAD',
+        currency: 'MAD',
       });
       await sendTelegramMessage(msg, 'order_cancelled');
     } catch (err) {

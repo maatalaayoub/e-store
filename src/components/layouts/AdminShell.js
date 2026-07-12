@@ -27,6 +27,7 @@ import {
   Bell,
 } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
+import { AdminOrderViewProvider } from "@/components/providers/AdminOrderViewContext";
 import AdminSearch from "@/components/layouts/AdminSearch";
 import NotificationBell from "@/components/admin/NotificationBell";
 import { isRtlLocale } from "@/config/constants";
@@ -167,7 +168,8 @@ export default function AdminShell({ children }) {
   };
 
   return (
-    <div className="fixed inset-0 flex bg-white overflow-hidden">
+    <AdminOrderViewProvider>
+      <div className="fixed inset-0 flex bg-white overflow-hidden">
       {/* MOBILE SIDEBAR OVERLAY */}
       {isSidebarOpen && (
         <div
@@ -293,5 +295,6 @@ export default function AdminShell({ children }) {
         </div>
       </main>
     </div>
+    </AdminOrderViewProvider>
   );
 }

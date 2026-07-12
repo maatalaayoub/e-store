@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { useAdminOrderView } from "@/components/providers/AdminOrderViewContext";
 import {
   Bell,
   Check,
@@ -67,22 +68,26 @@ function formatCurrency(amount, currency = "MAD") {
   return `${formatted} ${currency}`;
 }
 
+function getOrderNotificationId(n) {
+  if (n.type === "new_order" || n.type === "order_cancelled") {
+    return n.payload?.order_id ?? null;
+  }
+  return null;
+}
+
 function getNotificationLink(n, locale) {
   const type = n.type;
   if (type === "new_order" || type === "order_cancelled") {
-    const orderId = n.payload?.order_id;
-    if (!orderId) return null;
-    return `/${locale}/admin/orders?id=${orderId}`;
+    return `/${locale}/admin/orders`;
   }
   if (type === "low_stock" || type === "out_of_stock") {
-    const productId = n.payload?.product_id;
-    if (!productId) return null;
     return `/${locale}/admin/products`;
   }
   return null;
 }
 
 function NotificationItem({ n, locale, t, onRead, onDelete, closeDropdown, onRequestDelete }) {
+  const { openOrder } = useAdminOrderView();
   const meta = TYPE_META[n.type] ?? TYPE_META.out_of_stock;
   const Icon = meta.icon;
   const link = getNotificationLink(n, locale);
@@ -168,14 +173,19 @@ function NotificationItem({ n, locale, t, onRead, onDelete, closeDropdown, onReq
     </div>
   );
 
+  const orderId = getOrderNotificationId(n);
+
+  const handleClick = () => {
+    onRead(n.id);
+    closeDropdown?.();
+    if (orderId) openOrder(orderId);
+  };
+
   if (link) {
     return (
       <Link
         href={link}
-        onClick={() => {
-          onRead(n.id);
-          closeDropdown?.();
-        }}
+        onClick={handleClick}
         className="block outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded-lg"
       >
         {body}
@@ -185,10 +195,7 @@ function NotificationItem({ n, locale, t, onRead, onDelete, closeDropdown, onReq
 
   return (
     <div
-      onClick={() => {
-        onRead(n.id);
-        closeDropdown?.();
-      }}
+      onClick={handleClick}
       className="cursor-pointer rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
     >
       {body}
@@ -208,6 +215,7 @@ export default function NotificationBell() {
   const panelRef = useRef(null);
   const { locale } = useParams();
   const router = useRouter();
+  const { openOrder } = useAdminOrderView();
   const dict = useDictionary();
   const t = dict?.admin?.notifications ?? {};
   const isRtl = isRtlLocale(locale);
@@ -281,8 +289,9 @@ export default function NotificationBell() {
             action: {
               label: t.view ?? "View",
               onClick: () => {
-                const link = getNotificationLink(n, locale);
-                if (link) router.push(link);
+                const id = getOrderNotificationId(n);
+                if (id) openOrder(id);
+                router.push(getNotificationLink(n, locale) ?? `/${locale}/admin/orders`);
               },
             },
           });

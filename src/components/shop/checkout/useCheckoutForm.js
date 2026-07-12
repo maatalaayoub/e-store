@@ -19,6 +19,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { findCountry, detectCountryFromIp } from "@/data/countries";
+import { COUNTRY_CURRENCY } from "@/components/providers/CurrencyProvider";
 import { resolveProductTranslation } from "@/lib/product-locale";
 import { parsePrice } from "@/lib/price";
 import { WHATSAPP_NUMBER } from "@/config/constants";
@@ -198,7 +199,10 @@ export function useCheckoutForm({
             selected_color: item.selectedColor ?? item.selected_color ?? null,
             selected_size:  item.selectedSize  ?? item.selected_size  ?? null,
           })),
-          currency_code: currency?.code,
+          // Record the customer's selected-country currency so the admin order
+          // list can display the converted amount. Fall back to the global
+          // currency if the country isn't in the mapping.
+          currency_code: COUNTRY_CURRENCY[form.country] ?? currency?.code ?? 'MAD',
           exchange_rate: rate,
         }),
       });
