@@ -67,7 +67,7 @@ export const PATCH = withErrorHandler(async (req) => {
   }
 
   // upsert: creates the row if it somehow doesn't exist, otherwise updates it
-  const { data, error } = await supabase
+  let result = await supabase
     .from('users')
     .upsert(
       { id: user.id, email: user.email, ...updates },
@@ -76,8 +76,21 @@ export const PATCH = withErrorHandler(async (req) => {
     .select(SELECT_FIELDS)
     .single();
 
-  if (error) throw error;
+  // If created_at/updated_at columns are missing, fall back to the legacy select
+  // so the page still works on older database schemas.
+  if (result.error && isMissingColumnError(result.error)) {
+    result = await supabase
+      .from('users')
+      .upsert(
+        { id: user.id, email: user.email, ...updates },
+        { onConflict: 'id' }
+      )
+      .select(FALLBACK_SELECT_FIELDS)
+      .single();
+  }
 
-  return NextResponse.json({ success: true, data });
+  if (result.error) throw result.error;
+
+  return NextResponse.json({ success: true, data: result.data });
 });
 
