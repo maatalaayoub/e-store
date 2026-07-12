@@ -21,6 +21,7 @@ const PRODUCT_LIST_SELECT = `
   status,
   stock,
   is_featured,
+  category_id,
   translations,
   colors,
   sizes,
@@ -36,6 +37,7 @@ const PRODUCT_LIST_FALLBACK_SELECT = `
   status,
   stock,
   is_featured,
+  category_id,
   created_at,
   categories (id, name, slug),
   product_images (id, url, is_main, display_order)

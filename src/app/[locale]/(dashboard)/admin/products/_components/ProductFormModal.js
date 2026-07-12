@@ -381,7 +381,7 @@ export default function ProductFormModal({
           primaryTrans.short_description?.trim() || fallbackTrans?.short_description?.trim() || null,
         description: primaryTrans.description?.trim() || fallbackTrans?.description?.trim() || null,
         translations: Object.keys(translationsData).length > 0 ? translationsData : null,
-        category_id: form.category_id || null,
+        category_id: form.category_id ? form.category_id.trim() : null,
         price: parseFloat(form.price),
         discount_price:
           form.discountType === "price" && form.discount_price
@@ -646,8 +646,7 @@ export default function ProductFormModal({
                     <button
                       key={cat.id}
                       type="button"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
+                      onClick={() => {
                         dispatch({ type: "set", field: "category_id", value: cat.id });
                         setCatOpen(false);
                       }}

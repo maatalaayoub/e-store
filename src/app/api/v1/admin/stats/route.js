@@ -74,7 +74,8 @@ export async function GET() {
           price,
           status,
           stock,
-          categories ( name ),
+          category_id,
+          categories!category_id ( id, name ),
           product_images ( url, is_main, display_order )
         `)
         .order('created_at', { ascending: false })
@@ -129,13 +130,16 @@ export async function GET() {
         return (a.display_order ?? 0) - (b.display_order ?? 0);
       });
       const mainImage = sortedImages[0]?.url ?? null;
+      // Supabase returns the embedded relation as an object for a one-to-one FK.
+      const categoryObj = Array.isArray(p.categories) ? p.categories[0] : p.categories;
+      const categoryName = categoryObj?.name ?? null;
       return {
         id: p.id,
         name: p.name,
         price: p.price,
         stock: p.stock,
         status: p.status,
-        category: p.categories?.name ?? null,
+        category: categoryName,
         image: mainImage,
       };
     });

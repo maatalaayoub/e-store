@@ -140,9 +140,12 @@ export default function AdminDashboard() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-zinc-900 text-sm truncate">{product.name}</p>
-                    <p className="text-xs text-zinc-500 mt-0.5">
-                      {product.category ?? "—"} · {Number(product.price ?? 0).toFixed(2)} DH
-                    </p>
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500 mt-1">
+                      <span className="font-medium text-zinc-700 bg-zinc-100 rounded-md px-1.5 py-0.5">
+                        {product.category ?? tH.category_none ?? "No category"}
+                      </span>
+                      <span>{Number(product.price ?? 0).toFixed(2)} DH</span>
+                    </div>
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium mt-2 ${STATUS_STYLES[product.status]?.pill ?? "bg-zinc-100 text-zinc-600"}`}>
                       {tProductForm[`status_${product.status}`] ?? product.status}
                     </span>

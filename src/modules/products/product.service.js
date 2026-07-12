@@ -24,7 +24,8 @@ export function normalizeProduct(raw, locale) {
     images: sortedImages,
     effective_price,
     badge,
-    category: raw.categories?.name ?? null,
+    category: raw.categories?.name ?? raw.category ?? null,
+    category_id: raw.category_id ?? null,
     use_default_sections: raw.use_default_sections !== false,
     sections_config: Array.isArray(raw.sections_config) ? raw.sections_config : null,
   };
