@@ -762,7 +762,17 @@
     "page_title": "Informations personnelles et d'expédition",
     "edit": "Modifier",
     "cancel": "Annuler",
-    "load_error": "Impossible de charger le profil."
+    "load_error": "Impossible de charger le profil.",
+    "orders": "Mes commandes",
+    "favorites": "Favoris",
+    "logout": "Déconnexion",
+    "personal_hint": "Comment vous contacter",
+    "email": "E-mail",
+    "email_readonly": "L'e-mail ne peut pas être modifié ici.",
+    "address_hint": "Utilisé pour le paiement et la livraison",
+    "security_title": "Sécurité du compte",
+    "security_text": "Vos informations sont stockées en toute sécurité et ne sont jamais partagées avec des tiers.",
+    "member_since": "Membre depuis"
   },
   "checkout": {
     "contact_info": "Coordonnées",

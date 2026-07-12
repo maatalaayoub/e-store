@@ -1,13 +1,48 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, ArrowRight, Loader2, Pencil } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Loader2,
+  Pencil,
+  User,
+  MapPin,
+  Package,
+  Heart,
+  Mail,
+  Shield,
+  LogOut,
+  Check,
+  X,
+  ChevronRight,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useDictionary, useLocale } from "@/components/providers/LocaleProvider";
 import { isRtlLocale } from "@/config/constants";
 import SearchableCombobox from "@/components/ui/SearchableCombobox";
 import { COUNTRIES, findCountry, detectCountryFromIp } from "@/data/countries";
+
+function useStoreLogo() {
+  const [logo, setLogo] = useState({ url: null, size: "160", height: "40" });
+  useEffect(() => {
+    fetch("/api/v1/display-settings")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success && json.data) {
+          setLogo({
+            url: json.data.store_logo ?? null,
+            size: json.data.store_logo_size ?? "160",
+            height: json.data.store_logo_height ?? "40",
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+  return logo;
+}
 
 // Module-level cache: persists across client-side navigations, cleared on hard refresh
 let _accountCache = null;
@@ -69,6 +104,7 @@ export default function AccountSettingsPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState(null);
   const [email, setEmail] = useState(() => _accountCache?.email ?? "");
+  const [createdAt, setCreatedAt] = useState(() => _accountCache?.createdAt ?? "");
   const [form, setForm] = useState(() => _accountCache?.form ?? {
     full_name: "",
     phone_number: "",
@@ -76,6 +112,8 @@ export default function AccountSettingsPage() {
     city: "",
     country: "",
   });
+
+  const logo = useStoreLogo();
 
   /* ── Cities powered by country-state-city (free, offline). The library
      is ~200 KB sync, so we lazy-import it once the user picks a country. ── */
@@ -86,7 +124,7 @@ export default function AccountSettingsPage() {
 
   const [cities, setCities] = useState([]);
   useEffect(() => {
-    if (!selectedIso) { setCities([]); return; }
+    if (!selectedIso) return;
     let cancelled = false;
     import("country-state-city").then(({ City }) => {
       if (cancelled) return;
@@ -108,8 +146,9 @@ export default function AccountSettingsPage() {
         const json = await res.json();
         if (!json.success) throw new Error(json.error);
 
-        const d = json.data;
+        const d = json.data ?? {};
         const emailVal = d.email ?? "";
+        const createdAtVal = d.created_at ?? "";
         const formVal = {
           full_name:    d.full_name    ?? "",
           phone_number: d.phone_number ?? "",
@@ -118,6 +157,7 @@ export default function AccountSettingsPage() {
           country:      d.country      ?? "",
         };
         setEmail(emailVal);
+        setCreatedAt(createdAtVal);
         setForm(formVal);
 
         /* Auto-detect from IP only when no country is saved.
@@ -129,7 +169,7 @@ export default function AccountSettingsPage() {
             setForm((f) => ({ ...f, country: detected }));
           }
         }
-        _accountCache = { email: emailVal, form: formVal };
+        _accountCache = { email: emailVal, createdAt: createdAtVal, form: formVal };
       } catch (err) {
         if (err?.name !== "AbortError")
           setError(tAccount.load_error ?? "Failed to load profile.");
@@ -168,7 +208,7 @@ export default function AccountSettingsPage() {
       const json = await res.json();
       if (!json.success) throw new Error(json.error);
       toast.success(tAccount.saved ?? "Changes saved!");
-      _accountCache = { email, form: { ...form } };
+      _accountCache = { email, createdAt, form: { ...form } };
       setEditing(false);
     } catch (err) {
       setError(err.message || (tAccount.save_error ?? "Failed to save changes."));
@@ -177,193 +217,330 @@ export default function AccountSettingsPage() {
     }
   };
 
+  const avatarInitial = useMemo(() => {
+    const name = form.full_name?.trim() || email?.trim() || "?";
+    return name.charAt(0).toUpperCase();
+  }, [form.full_name, email]);
+
+  const displayName = form.full_name?.trim() || tAccount.no_name || "Account";
+
+  const logoMaxHeight = useMemo(() => {
+    const h = parseInt(logo.height || "40", 10) || 40;
+    return Math.min(Math.max(h, 20), 120);
+  }, [logo.height]);
+
+  const navItems = [
+    { href: `/${locale}/account`, label: tAccount.title ?? "Account Settings", icon: User, active: true },
+    { href: `/${locale}/orders`, label: dict?.account?.orders ?? "My Orders", icon: Package, active: false },
+    { href: `/${locale}/favorites`, label: dict?.account?.favorites ?? "Favorites", icon: Heart, active: false },
+  ];
+
   const inputCls = editing
-    ? "w-full rounded-lg border border-zinc-200 bg-zinc-50/50 px-3 py-2.5 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-zinc-400 focus:bg-white transition-colors"
-    : "w-full rounded-lg border border-transparent bg-zinc-50 px-3 py-2.5 text-sm text-zinc-700 outline-none cursor-default select-none";
+    ? "w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all"
+    : "w-full rounded-xl border border-transparent bg-zinc-100/60 px-4 py-3 text-sm text-zinc-700 outline-none cursor-default select-none";
+
+  const labelCls = "block text-sm font-medium text-zinc-700 mb-2";
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* ── Top bar ── */}
-      <header style={{ top: 'var(--bar-height, 0px)' }} className="bg-white border-b border-zinc-100 sticky z-10">
-        <div className="mx-auto max-w-2xl px-4 sm:px-6 h-14 flex items-center gap-3">
+    <div className="min-h-screen bg-zinc-50/50" dir={dir}>
+      {/* ── Top bar — full width, no max-w ── */}
+      <header
+        style={{ top: 'var(--bar-height, 0px)' }}
+        className="sticky z-10 border-b border-zinc-100 bg-white/80 backdrop-blur-md"
+      >
+        <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
           <button
             onClick={() => router.back()}
             aria-label="Go back"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100 transition-colors"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-zinc-100"
           >
             <BackIcon className="h-5 w-5" />
           </button>
-          <span className="text-sm font-semibold tracking-wide uppercase text-zinc-800">
-            {tAccount.title ?? "Account Settings"}
-          </span>
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold uppercase tracking-wide text-zinc-900">
+              {tAccount.title ?? "Account Settings"}
+            </span>
+            <span className="hidden text-xs text-zinc-500 sm:block">
+              {tAccount.page_title ?? "Personal & Shipping Information"}
+            </span>
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl px-4 sm:px-6 py-10">
+      <main className="px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
         {loading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+          <div className="flex justify-center py-24">
+            <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
           </div>
         ) : (
-          <form onSubmit={handleSave} className="space-y-8" dir={dir}>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            {/* ── Sidebar ── */}
+            <aside className="lg:col-span-4 xl:col-span-3">
+              <div className="sticky top-[calc(var(--bar-height,0px)+5.5rem)] space-y-4">
+                {/* Profile card */}
+                <div className="overflow-hidden rounded-2xl border border-zinc-100 bg-white">
+                  <div className="h-20 bg-gradient-to-r from-blue-600 to-blue-500" />
+                  <div className="relative px-5 pb-5">
+                    <div className="-mt-10 mb-3 flex items-end justify-between">
+                      {logo.url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={logo.url}
+                          alt=""
+                          className="h-20 w-20 rounded-2xl border-4 border-white bg-white object-contain p-2"
+                          style={{ maxHeight: `${logoMaxHeight}px` }}
+                        />
+                      ) : (
+                        <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white bg-zinc-900 text-2xl font-bold text-white">
+                          {avatarInitial}
+                        </div>
+                      )}
+                      {!editing && (
+                        <button
+                          type="button"
+                          onClick={() => { setEditing(true); setSaved(false); }}
+                          className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-50"
+                        >
+                          <Pencil className="h-3 w-3" />
+                          {tAccount.edit ?? "Edit"}
+                        </button>
+                      )}
+                    </div>
+                    <h2 className="text-lg font-bold text-zinc-900">{displayName}</h2>
+                    <p className="flex items-center gap-1.5 text-sm text-zinc-500">
+                      <Mail className="h-3.5 w-3.5" />
+                      {email || "—"}
+                    </p>
+                    {createdAt && (
+                      <p className="mt-1 text-xs text-zinc-400">
+                        {dict?.account?.member_since ?? "Member since"}{" "}
+                        {new Date(createdAt).toLocaleDateString(locale, { year: "numeric", month: "long" })}
+                      </p>
+                    )}
+                  </div>
+                </div>
 
-            {/* Page title + Edit button */}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h1 className="text-lg font-bold text-zinc-900">
-                {tAccount.page_title ?? "Personal & Shipping Information"}
-              </h1>
-              {!editing && (
-                <button
-                  type="button"
-                  onClick={() => { setEditing(true); setSaved(false); }}
-                  className="self-start flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                  {tAccount.edit ?? "Edit"}
-                </button>
-              )}
-            </div>
-
-            <div className="border-t border-zinc-100" />
-
-            {/* Personal info */}
-            <section className="space-y-5">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-900">
-                {tAccount.personal_info ?? "Personal Information"}
-              </h2>
-
-              <div>
-                <label className="block text-sm text-zinc-700 mb-1.5">
-                  {tAccount.full_name ?? "Full Name"}
-                </label>
-                <input
-                  type="text"
-                  value={form.full_name}
-                  onChange={setField("full_name")}
-                  readOnly={!editing}
-                  placeholder={editing ? (tAccount.full_name_placeholder ?? "Your full name") : "—"}
-                  className={inputCls}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-zinc-700 mb-1.5">
-                  {tAccount.phone ?? "Phone Number"}
-                </label>
-                <input
-                  type="tel"
-                  value={form.phone_number}
-                  onChange={setField("phone_number")}
-                  readOnly={!editing}
-                  placeholder={editing ? (hint(form.country, "phone") || "+1 555 000 0000") : "—"}
-                  className={inputCls}
-                />
-              </div>
-            </section>
-
-            <div className="border-t border-zinc-100" />
-
-            {/* Address info */}
-            <section className="space-y-5">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-900">
-                {tAccount.address_info ?? "Address"}
-              </h2>
-
-              {/* Country — searchable combobox */}
-              <div>
-                <label className="block text-sm text-zinc-700 mb-1.5">
-                  {tAccount.country ?? "Country"}
-                </label>
-                {editing ? (
-                  <SearchableCombobox
-                    items={COUNTRIES}
-                    value={form.country}
-                    onChange={(val) => {
-                      setForm((f) => ({ ...f, country: val, city: "" }));
-                      setSaved(false);
-                      setError(null);
+                {/* Navigation */}
+                <nav className="rounded-2xl border border-zinc-100 bg-white p-2">
+                  {navItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                          item.active
+                            ? "bg-blue-50 text-blue-700"
+                            : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
+                        }`}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" />
+                        <span className="flex-1">{item.label}</span>
+                        <ChevronRight className="h-4 w-4 shrink-0 opacity-50" />
+                      </Link>
+                    );
+                  })}
+                  <div className="my-1.5 h-px bg-zinc-100" />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const { createClient } = await import("@/lib/supabase/client");
+                      const supabase = createClient();
+                      await supabase.auth.signOut();
+                      router.push(`/${locale}/login`);
                     }}
-                    placeholder={tAccount.country_placeholder ?? "Select your country"}
-                    disabledMsg="No countries available"
-                    searchPlaceholder="Search country..."
-                    isRtl={isRtl}
-                  />
-                ) : (
-                  <div className="rounded-lg bg-zinc-50 px-3 py-2.5 text-sm text-zinc-700">
-                    {COUNTRIES.find((c) => c.value === form.country)?.label || <span className="text-zinc-400">—</span>}
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+                  >
+                    <LogOut className="h-4 w-4 shrink-0" />
+                    <span className="flex-1 text-start">{dict?.account?.logout ?? "Sign out"}</span>
+                  </button>
+                </nav>
+              </div>
+            </aside>
+
+            {/* ── Main content ── */}
+            <div className="lg:col-span-8 xl:col-span-9">
+              <form onSubmit={handleSave} className="space-y-6">
+                {/* Personal info card */}
+                <section className="rounded-2xl border border-zinc-100 bg-white p-5 sm:p-6">
+                  <div className="mb-6 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                      <User className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-bold text-zinc-900">
+                        {tAccount.personal_info ?? "Personal Information"}
+                      </h2>
+                      <p className="text-xs text-zinc-500">
+                        {dict?.account?.personal_hint ?? "How we can reach you"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <div className="sm:col-span-2">
+                      <label className={labelCls}>{tAccount.full_name ?? "Full Name"}</label>
+                      <input
+                        type="text"
+                        value={form.full_name}
+                        onChange={setField("full_name")}
+                        readOnly={!editing}
+                        placeholder={editing ? (tAccount.full_name_placeholder ?? "Your full name") : "—"}
+                        className={inputCls}
+                      />
+                    </div>
+
+                    <div>
+                      <label className={labelCls}>{tAccount.phone ?? "Phone Number"}</label>
+                      <input
+                        type="tel"
+                        value={form.phone_number}
+                        onChange={setField("phone_number")}
+                        readOnly={!editing}
+                        placeholder={editing ? (hint(form.country, "phone") || "+1 555 000 0000") : "—"}
+                        className={inputCls}
+                      />
+                    </div>
+
+                    <div>
+                      <label className={labelCls}>{dict?.account?.email ?? "Email"}</label>
+                      <input
+                        type="email"
+                        value={email}
+                        readOnly
+                        className="w-full cursor-not-allowed rounded-xl border border-transparent bg-zinc-100/60 px-4 py-3 text-sm text-zinc-500 outline-none select-none"
+                      />
+                      <p className="mt-1.5 text-xs text-zinc-400">
+                        {dict?.account?.email_readonly ?? "Email cannot be changed here."}
+                      </p>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Address card */}
+                <section className="rounded-2xl border border-zinc-100 bg-white p-5 sm:p-6">
+                  <div className="mb-6 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                      <MapPin className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-bold text-zinc-900">
+                        {tAccount.address_info ?? "Shipping Address"}
+                      </h2>
+                      <p className="text-xs text-zinc-500">
+                        {dict?.account?.address_hint ?? "Used for checkout and deliveries"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <div>
+                      <label className={labelCls}>{tAccount.country ?? "Country"}</label>
+                      {editing ? (
+                        <SearchableCombobox
+                          items={COUNTRIES}
+                          value={form.country}
+                          onChange={(val) => {
+                            setForm((f) => ({ ...f, country: val, city: "" }));
+                            if (!val) setCities([]);
+                            setSaved(false);
+                            setError(null);
+                          }}
+                          placeholder={tAccount.country_placeholder ?? "Select your country"}
+                          disabledMsg="No countries available"
+                          searchPlaceholder="Search country..."
+                          isRtl={isRtl}
+                        />
+                      ) : (
+                        <div className={inputCls}>
+                          {COUNTRIES.find((c) => c.value === form.country)?.label || <span className="text-zinc-400">—</span>}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className={labelCls}>{tAccount.city ?? "City"}</label>
+                      {editing ? (
+                        <SearchableCombobox
+                          items={cities}
+                          value={form.city}
+                          onChange={handleCityChange}
+                          placeholder={tAccount.city_placeholder ?? "Select your city"}
+                          disabledMsg="Select a country first"
+                          searchPlaceholder="Search city..."
+                          isRtl={isRtl}
+                        />
+                      ) : (
+                        <div className={inputCls}>
+                          {form.city || <span className="text-zinc-400">—</span>}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className={labelCls}>{tAccount.address ?? "Street Address"}</label>
+                      <input
+                        type="text"
+                        value={form.address}
+                        onChange={setField("address")}
+                        readOnly={!editing}
+                        placeholder={editing ? (hint(form.country, "address") || (tAccount.address_placeholder ?? "123 Main St")) : "—"}
+                        className={inputCls}
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                {/* Security note */}
+                {!editing && (
+                  <section className="flex items-start gap-3 rounded-2xl border border-zinc-100 bg-white p-5">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-600">
+                      <Shield className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-bold text-zinc-900">{dict?.account?.security_title ?? "Account Security"}</h2>
+                      <p className="mt-1 text-sm text-zinc-500">
+                        {dict?.account?.security_text ?? "Your information is stored securely and never shared with third parties."}
+                      </p>
+                    </div>
+                  </section>
+                )}
+
+                {/* Error */}
+                {error && (
+                  <div className="flex items-start gap-2 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                    <X className="h-4 w-4 mt-0.5 shrink-0" />
+                    <span>{error}</span>
                   </div>
                 )}
-              </div>
 
-              {/* City — searchable combobox powered by country-state-city */}
-              <div>
-                <label className="block text-sm text-zinc-700 mb-1.5">
-                  {tAccount.city ?? "City"}
-                </label>
-                {editing ? (
-                  <SearchableCombobox
-                    items={cities}
-                    value={form.city}
-                    onChange={handleCityChange}
-                    placeholder={tAccount.city_placeholder ?? "Select your city"}
-                    disabledMsg="Select a country first"
-                    searchPlaceholder="Search city..."
-                    isRtl={isRtl}
-                  />
-                ) : (
-                  <div className="rounded-lg bg-zinc-50 px-3 py-2.5 text-sm text-zinc-700">
-                    {form.city || <span className="text-zinc-400">—</span>}
+                {/* Save / Cancel */}
+                {editing && (
+                  <div className="flex flex-col gap-3 sm:flex-row-reverse">
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98] disabled:opacity-60"
+                    >
+                      {saving ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Check className="h-4 w-4" />
+                      )}
+                      {tAccount.save ?? "Save Changes"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setEditing(false); setError(null); setSaved(false); }}
+                      className="flex-1 rounded-xl border border-zinc-200 bg-white px-6 py-3 text-sm font-semibold text-zinc-700 shadow-sm transition-all hover:bg-zinc-50 active:scale-[0.98]"
+                    >
+                      {tAccount.cancel ?? "Cancel"}
+                    </button>
                   </div>
                 )}
-              </div>
-
-              {/* Street address */}
-              <div>
-                <label className="block text-sm text-zinc-700 mb-1.5">
-                  {tAccount.address ?? "Street Address"}
-                </label>
-                <input
-                  type="text"
-                  value={form.address}
-                  onChange={setField("address")}
-                  readOnly={!editing}
-                  placeholder={editing ? (hint(form.country, "address") || (tAccount.address_placeholder ?? "123 Main St")) : "—"}
-                  className={inputCls}
-                />
-              </div>
-            </section>
-
-            {/* Error */}
-            {error && (
-              <p className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
-                {error}
-              </p>
-            )}
-
-            {/* Save / Cancel — only shown when editing */}
-            {editing && (
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => { setEditing(false); setError(null); setSaved(false); }}
-                  className="flex-1 rounded-xl border border-zinc-200 py-3 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 active:scale-[0.98] transition-all"
-                >
-                  {tAccount.cancel ?? "Cancel"}
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-zinc-900 py-3 text-sm font-semibold text-white hover:bg-zinc-700 active:scale-[0.98] transition-all disabled:opacity-60"
-                >
-                  {saving ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    tAccount.save ?? "Save Changes"
-                  )}
-                </button>
-              </div>
-            )}
-          </form>
+              </form>
+            </div>
+          </div>
         )}
       </main>
     </div>

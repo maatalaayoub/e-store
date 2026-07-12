@@ -3,7 +3,7 @@ import { requireAuth } from '@/middlewares/authGuard';
 import { withErrorHandler } from '@/middlewares/errorHandler';
 import { createClient } from '@/lib/supabase/server';
 
-const SELECT_FIELDS = 'id, full_name, email, phone_number, address, city, country';
+const SELECT_FIELDS = 'id, full_name, email, phone_number, address, city, country, created_at, updated_at';
 const ALLOWED_FIELDS = ['full_name', 'phone_number', 'address', 'city', 'country'];
 
 export const GET = withErrorHandler(async () => {
@@ -28,6 +28,8 @@ export const GET = withErrorHandler(async () => {
     address: '',
     city: '',
     country: '',
+    created_at: user.created_at ?? '',
+    updated_at: user.updated_at ?? '',
   };
 
   return NextResponse.json({ success: true, data: profile });

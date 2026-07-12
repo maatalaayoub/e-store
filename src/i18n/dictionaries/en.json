@@ -760,7 +760,17 @@
     "page_title": "Personal & Shipping Information",
     "edit": "Edit",
     "cancel": "Cancel",
-    "load_error": "Failed to load profile."
+    "load_error": "Failed to load profile.",
+    "orders": "My Orders",
+    "favorites": "Favorites",
+    "logout": "Sign out",
+    "personal_hint": "How we can reach you",
+    "email": "Email",
+    "email_readonly": "Email cannot be changed here.",
+    "address_hint": "Used for checkout and deliveries",
+    "security_title": "Account Security",
+    "security_text": "Your information is stored securely and never shared with third parties.",
+    "member_since": "Member since"
   },
   "checkout": {
     "phone_label": "Phone Number",
