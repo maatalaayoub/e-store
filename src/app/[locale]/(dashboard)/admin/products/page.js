@@ -227,26 +227,21 @@ export default function AdminProductsPage() {
   const tFp = t.filter_panel ?? {};
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadProducts() {
-      setProducts(null);
-      try {
-        const status = activeTab === "all" ? "all" : activeTab;
-        const res = await fetch(`/api/v1/products?status=${status}`);
-        const json = await res.json();
-        if (!cancelled) {
-          setProducts(Array.isArray(json.data) ? json.data : []);
-        }
-      } catch {
-        if (!cancelled) setProducts([]);
-      }
+  const fetchProducts = useCallback(async () => {
+    setProducts(null);
+    try {
+      const status = activeTab === "all" ? "all" : activeTab;
+      const res = await fetch(`/api/v1/products?status=${status}`);
+      const json = await res.json();
+      setProducts(Array.isArray(json.data) ? json.data : []);
+    } catch {
+      setProducts([]);
     }
-
-    loadProducts();
-    return () => { cancelled = true; };
   }, [activeTab]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   useEffect(() => {
     let cancelled = false;
