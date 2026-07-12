@@ -207,6 +207,7 @@
       "banner":           { "label": "Banner / Promo",         "desc": "Full-width promotional banner with CTA." },
       "related_products": { "label": "Related Products",       "desc": "Grid of related/similar products." },
       "checkout":         { "label": "Inline Checkout",        "desc": "On-page order form so customers can buy without leaving the product page." },
+      "ingredients":      { "label": "Ingredients",            "desc": "List of ingredients plus essential product information such as certifications." },
       "custom":           { "label": "Custom Section",         "desc": "Fully custom block with title, body, image and CTA." }
     },
     "nav": {

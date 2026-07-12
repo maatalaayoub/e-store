@@ -11,11 +11,11 @@
 import Link from 'next/link';
 import {
   Truck, RotateCcw, Shield, ShieldCheck, Package, Clock, Check,
-  Star, Megaphone, Sparkles, ChevronDown,
+  Star, Megaphone, Sparkles, ChevronDown, Leaf,
 } from 'lucide-react';
 
 const ICONS = {
-  Truck, RotateCcw, Shield, ShieldCheck, Package, Clock, Check, Star, Megaphone, Sparkles,
+  Truck, RotateCcw, Shield, ShieldCheck, Package, Clock, Check, Star, Megaphone, Sparkles, Leaf,
 };
 
 function Icon({ name, className }) {
@@ -298,6 +298,77 @@ export function BannerSection({ section }) {
           </Link>
         )}
       </div>
+    </div>
+  );
+}
+
+// ── INGREDIENTS ──────────────────────────────────────────────────────────────
+export function IngredientsSection({ section }) {
+  const items = Array.isArray(section.content?.items) ? section.content.items : [];
+  const essentials = Array.isArray(section.content?.essentials) ? section.content.essentials : [];
+  const cfg = section.config ?? {};
+  const layout = cfg.layout ?? 'card';
+  const showIcons = cfg.show_icons !== false;
+  const showEssentials = cfg.show_essentials !== false;
+  const cols = Math.min(Math.max(cfg.columns ?? 3, 2), 6);
+
+  if (items.length === 0 && essentials.length === 0) return null;
+
+  const cardWrapper =
+    'rounded-xl border border-zinc-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md';
+  const ingredientName = 'text-sm font-semibold text-zinc-900';
+  const ingredientNote = 'text-xs text-zinc-500 mt-0.5';
+
+  return (
+    <div>
+      <SectionTitle section={section} fallback="Ingredients" />
+      {section.content?.subtitle && (
+        <p className="text-sm text-zinc-600 leading-relaxed mb-4">{section.content.subtitle}</p>
+      )}
+
+      {items.length > 0 && (
+        <div
+          className={`gap-3 ${
+            layout === 'grid'
+              ? 'grid'
+              : layout === 'list'
+              ? 'flex flex-col'
+              : 'grid sm:grid-cols-2 lg:grid-cols-3'
+          }`}
+          style={layout === 'grid' ? { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` } : undefined}
+        >
+          {items.map((it, i) => (
+            <div
+              key={i}
+              className={`flex items-start gap-3 ${layout === 'card' ? cardWrapper : 'py-2 border-b border-zinc-100 last:border-0'}`}
+            >
+              {showIcons && (
+                <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${it.highlight ? 'bg-emerald-100 text-emerald-700' : 'bg-zinc-100 text-zinc-500'}`}>
+                  <Leaf className="h-4 w-4" />
+                </span>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className={ingredientName}>{it.name}</p>
+                {it.note && <p className={ingredientNote}>{it.note}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showEssentials && essentials.length > 0 && (
+        <div className={`mt-5 ${items.length > 0 ? 'pt-5 border-t border-zinc-100' : ''}`}>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-3">{section.content?.essentials_title ?? 'Essential Information'}</h3>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {essentials.map((info, i) => (
+              <div key={i} className="flex items-center justify-between gap-2 rounded-lg bg-zinc-50 px-3 py-2">
+                <span className="text-sm font-medium text-zinc-700">{info.label}</span>
+                <span className="text-sm text-zinc-900">{info.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

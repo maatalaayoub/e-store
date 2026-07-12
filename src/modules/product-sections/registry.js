@@ -27,6 +27,7 @@ export const SECTION_TYPES = Object.freeze({
   BANNER: 'banner',
   RELATED_PRODUCTS: 'related_products',
   CHECKOUT: 'checkout',
+  INGREDIENTS: 'ingredients',
   CUSTOM: 'custom',
 });
 
@@ -220,6 +221,34 @@ export const SECTION_REGISTRY = Object.freeze({
       },
     }),
     translatableFields: ['title', 'subtitle'],
+  },
+  [SECTION_TYPES.INGREDIENTS]: {
+    label: 'Ingredients',
+    description: 'List of ingredients plus essential product information such as certifications.',
+    icon: 'Leaf',
+    defaults: () => ({
+      config: {
+        ...baseConfig(),
+        layout: 'card', // 'card' | 'grid' | 'list'
+        columns: 3,
+        show_icons: true,
+        show_essentials: true,
+      },
+      content: {
+        title: 'Ingredients',
+        subtitle: 'Carefully selected ingredients for this product.',
+        essentials_title: 'Essential Information',
+        items: [
+          { name: 'Aloe Vera', note: 'Organic extract', highlight: true },
+          { name: 'Vitamin E', note: 'Antioxidant', highlight: false },
+        ],
+        essentials: [
+          { label: 'Vegan', value: 'Yes' },
+          { label: 'Cruelty-free', value: 'Certified' },
+        ],
+      },
+    }),
+    translatableFields: ['title', 'subtitle', 'essentials_title', 'items', 'essentials'],
   },
   [SECTION_TYPES.CUSTOM]: {
     label: 'Custom Section',

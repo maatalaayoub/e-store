@@ -347,6 +347,40 @@ const TYPE_HANDLERS = {
     };
   },
 
+  ingredients: (raw, base) => ({
+    config: {
+      ...base.config,
+      layout: pickEnum(raw.config?.layout, ['card', 'grid', 'list'], 'card'),
+      columns: safeInt(raw.config?.columns, { min: 2, max: 6, fallback: 3 }),
+      show_icons: safeBool(raw.config?.show_icons, true),
+      show_essentials: safeBool(raw.config?.show_essentials, true),
+    },
+    content: {
+      title: safeStr(raw.content?.title, 200) ?? base.content.title,
+      subtitle: safeStr(raw.content?.subtitle, 500) ?? '',
+      essentials_title: safeStr(raw.content?.essentials_title, 200) ?? base.content.essentials_title,
+      items: Array.isArray(raw.content?.items)
+        ? raw.content.items
+            .map((it) => ({
+              name: safeStr(it?.name, 200),
+              note: safeStr(it?.note, 300),
+              highlight: safeBool(it?.highlight, false),
+            }))
+            .filter((it) => it.name)
+            .slice(0, 100)
+        : [],
+      essentials: Array.isArray(raw.content?.essentials)
+        ? raw.content.essentials
+            .map((it) => ({
+              label: safeStr(it?.label, 200),
+              value: safeStr(it?.value, 200),
+            }))
+            .filter((it) => it.label)
+            .slice(0, 20)
+        : [],
+    },
+  }),
+
   custom: (raw, base) => ({
     config: { ...base.config, align: pickEnum(raw.config?.align, ['start', 'center', 'end'], 'start'), icon: safeStr(raw.config?.icon, 60) },
     content: {

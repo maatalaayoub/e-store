@@ -207,6 +207,7 @@
       "banner":           { "label": "Bannière / Promo",         "desc": "Bannière promotionnelle pleine largeur avec CTA." },
       "related_products": { "label": "Produits associés",        "desc": "Grille de produits similaires." },
       "checkout":         { "label": "Commande intégrée",        "desc": "Formulaire de commande intégré à la page produit." },
+      "ingredients":      { "label": "Ingrédients",              "desc": "Liste des ingrédients et informations essentielles du produit." },
       "custom":           { "label": "Section personnalisée",    "desc": "Bloc entièrement personnalisé avec titre, corps, image et CTA." }
     },
     "nav": {

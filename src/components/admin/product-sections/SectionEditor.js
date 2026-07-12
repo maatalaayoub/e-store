@@ -181,6 +181,60 @@ function CommonConfigBlock({ section, onChange }) {
 }
 
 // ── per-type editor blocks ───────────────────────────────────────────────────
+function IngredientsListEditor({ items, onChange }) {
+  const setItem = (idx, patch) => {
+    const next = items.map((it, i) => (i === idx ? { ...it, ...patch } : it));
+    onChange(next);
+  };
+  const remove = (idx) => onChange(items.filter((_, i) => i !== idx));
+  const add = () => onChange([...items, { name: "", note: "", highlight: false }]);
+  return (
+    <div className="space-y-2">
+      {items.map((it, idx) => (
+        <div key={idx} className="flex gap-2 items-start">
+          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <input
+              className={inputClass}
+              placeholder="Ingredient name"
+              value={it.name ?? ""}
+              onChange={(e) => setItem(idx, { name: e.target.value })}
+            />
+            <input
+              className={inputClass}
+              placeholder="Note (optional)"
+              value={it.note ?? ""}
+              onChange={(e) => setItem(idx, { note: e.target.value })}
+            />
+          </div>
+          <label className="flex items-center gap-1.5 px-2 py-2 rounded-lg border border-zinc-200 bg-white cursor-pointer shrink-0">
+            <input
+              type="checkbox"
+              checked={!!it.highlight}
+              onChange={(e) => setItem(idx, { highlight: e.target.checked })}
+              className="h-4 w-4 rounded accent-blue-600"
+            />
+            <span className="text-xs text-zinc-600">Highlight</span>
+          </label>
+          <button
+            type="button"
+            onClick={() => remove(idx)}
+            className="rounded-lg border border-zinc-200 p-2 text-zinc-400 hover:text-red-500 hover:border-red-200"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={add}
+        className="flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700"
+      >
+        <Plus className="h-3.5 w-3.5" /> Add ingredient
+      </button>
+    </div>
+  );
+}
+
 function ItemsList({ items, onChange, columns }) {
   const setItem = (idx, patch) => {
     const next = items.map((it, i) => (i === idx ? { ...it, ...patch } : it));
@@ -534,6 +588,60 @@ export default function SectionEditor({ section, onChange }) {
               />
             </Field>
           </div>
+        </>
+      )}
+
+      {section.type === "ingredients" && (
+        <>
+          <Field label="Title">
+            <input className={inputClass} dir={isRTL ? "rtl" : "ltr"} value={get("title")} onChange={(e) => setContent("title", e.target.value)} />
+          </Field>
+          <Field label="Subtitle">
+            <input className={inputClass} dir={isRTL ? "rtl" : "ltr"} value={get("subtitle")} onChange={(e) => setContent("subtitle", e.target.value)} />
+          </Field>
+          <Field label="Layout">
+            <Select
+              value={section.config?.layout ?? "card"}
+              onChange={(v) => setConfig("layout", v)}
+              options={[
+                { value: "card", label: "Cards" },
+                { value: "grid", label: "Compact grid" },
+                { value: "list", label: "List" },
+              ]}
+            />
+          </Field>
+          {section.config?.layout === "grid" && (
+            <Field label="Columns">
+              <input
+                type="number" min={2} max={6} className={inputClass}
+                value={section.config?.columns ?? 3}
+                onChange={(e) => setConfig("columns", Number.parseInt(e.target.value, 10) || 3)}
+              />
+            </Field>
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            <Toggle label="Show leaf icons" value={section.config?.show_icons !== false} onChange={(v) => setConfig("show_icons", v)} />
+            <Toggle label="Show essentials" value={section.config?.show_essentials !== false} onChange={(v) => setConfig("show_essentials", v)} />
+          </div>
+          <Field label="Ingredients">
+            <IngredientsListEditor
+              items={section.content?.items ?? []}
+              onChange={setItems("items")}
+            />
+          </Field>
+          <Field label="Essentials heading">
+            <input className={inputClass} dir={isRTL ? "rtl" : "ltr"} value={get("essentials_title")} onChange={(e) => setContent("essentials_title", e.target.value)} />
+          </Field>
+          <Field label="Essential Information">
+            <ItemsList
+              items={section.content?.essentials ?? []}
+              onChange={setItems("essentials")}
+              columns={[
+                { key: "label", label: "Label (e.g. Vegan)" },
+                { key: "value", label: "Value (e.g. Yes)" },
+              ]}
+            />
+          </Field>
         </>
       )}
 

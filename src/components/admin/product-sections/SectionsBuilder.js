@@ -35,6 +35,7 @@ import {
   PackageOpen,
   RotateCcw,
   ShoppingBag,
+  Leaf,
 } from "lucide-react";
 import {
   SECTION_REGISTRY,
@@ -49,7 +50,7 @@ import SectionEditor from "./SectionEditor";
 
 const TYPE_ICONS = {
   AlignLeft, Images, Truck, MessageSquareQuote, Star, List, HelpCircle, Type,
-  LayoutPanelLeft, Video, Megaphone, PackageOpen, Sparkles, ShoppingBag,
+  LayoutPanelLeft, Video, Megaphone, PackageOpen, Sparkles, ShoppingBag, Leaf,
 };
 
 function TypeIcon({ name, className }) {

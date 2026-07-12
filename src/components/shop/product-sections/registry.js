@@ -21,6 +21,7 @@ import {
   VideoSection,
   BannerSection,
   RelatedProductsSection,
+  IngredientsSection,
   CustomSection,
 } from './section-components';
 import InlineCheckoutSection from './InlineCheckoutSection';
@@ -39,6 +40,7 @@ export const SECTION_COMPONENTS = {
   [SECTION_TYPES.BANNER]: BannerSection,
   [SECTION_TYPES.RELATED_PRODUCTS]: RelatedProductsSection,
   [SECTION_TYPES.CHECKOUT]: InlineCheckoutSection,
+  [SECTION_TYPES.INGREDIENTS]: IngredientsSection,
   [SECTION_TYPES.CUSTOM]: CustomSection,
 };
 
