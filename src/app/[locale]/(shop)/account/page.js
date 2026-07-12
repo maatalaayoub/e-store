@@ -144,7 +144,7 @@ export default function AccountSettingsPage() {
         const res = await fetch("/api/v1/users/me", { signal: controller.signal });
         if (res.status === 401) { router.push(`/${locale}/login`); return; }
         const json = await res.json();
-        if (!json.success) throw new Error(json.error);
+        if (!res.ok || !json.success) throw new Error(json.error || `HTTP ${res.status}`);
 
         const d = json.data ?? {};
         const emailVal = d.email ?? "";
@@ -171,8 +171,9 @@ export default function AccountSettingsPage() {
         }
         _accountCache = { email: emailVal, createdAt: createdAtVal, form: formVal };
       } catch (err) {
-        if (err?.name !== "AbortError")
-          setError(tAccount.load_error ?? "Failed to load profile.");
+        if (err?.name !== "AbortError") {
+          setError(err?.message || (tAccount.load_error ?? "Failed to load profile."));
+        }
       } finally {
         setLoading(false);
       }
@@ -236,13 +237,13 @@ export default function AccountSettingsPage() {
   ];
 
   const inputCls = editing
-    ? "w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all"
-    : "w-full rounded-xl border border-transparent bg-zinc-100/60 px-4 py-3 text-sm text-zinc-700 outline-none cursor-default select-none";
+    ? "w-full rounded-[5px] border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all"
+    : "w-full rounded-[5px] border border-transparent bg-zinc-100/60 px-4 py-3 text-sm text-zinc-700 outline-none cursor-default select-none";
 
   const labelCls = "block text-sm font-medium text-zinc-700 mb-2";
 
   return (
-    <div className="min-h-screen bg-zinc-50/50" dir={dir}>
+    <div className="min-h-screen bg-white" dir={dir}>
       {/* ── Top bar — full width, no max-w ── */}
       <header
         style={{ top: 'var(--bar-height, 0px)' }}
@@ -252,7 +253,7 @@ export default function AccountSettingsPage() {
           <button
             onClick={() => router.back()}
             aria-label="Go back"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-zinc-100"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[5px] text-zinc-500 transition-colors hover:bg-zinc-100"
           >
             <BackIcon className="h-5 w-5" />
           </button>
@@ -278,57 +279,39 @@ export default function AccountSettingsPage() {
             <aside className="lg:col-span-4 xl:col-span-3">
               <div className="sticky top-[calc(var(--bar-height,0px)+5.5rem)] space-y-4">
                 {/* Profile card */}
-                <div className="overflow-hidden rounded-2xl border border-zinc-100 bg-white">
-                  <div className="h-20 bg-gradient-to-r from-blue-600 to-blue-500" />
-                  <div className="relative px-5 pb-5">
-                    <div className="-mt-10 mb-3 flex items-end justify-between">
-                      {logo.url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={logo.url}
-                          alt=""
-                          className="h-20 w-20 rounded-2xl border-4 border-white bg-white object-contain p-2"
-                          style={{ maxHeight: `${logoMaxHeight}px` }}
-                        />
-                      ) : (
-                        <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white bg-zinc-900 text-2xl font-bold text-white">
-                          {avatarInitial}
-                        </div>
-                      )}
-                      {!editing && (
-                        <button
-                          type="button"
-                          onClick={() => { setEditing(true); setSaved(false); }}
-                          className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-50"
-                        >
-                          <Pencil className="h-3 w-3" />
-                          {tAccount.edit ?? "Edit"}
-                        </button>
+                <div className="overflow-hidden rounded-[5px] border border-zinc-100 bg-white">
+                  <div className="flex items-center justify-between px-5 py-5">
+                    <div>
+                      <h2 className="text-lg font-bold text-zinc-900">{displayName}</h2>
+                      {createdAt && (
+                        <p className="mt-1 text-xs text-zinc-400">
+                          {dict?.account?.member_since ?? "Member since"}{" "}
+                          {new Date(createdAt).toLocaleDateString(locale, { year: "numeric", month: "long" })}
+                        </p>
                       )}
                     </div>
-                    <h2 className="text-lg font-bold text-zinc-900">{displayName}</h2>
-                    <p className="flex items-center gap-1.5 text-sm text-zinc-500">
-                      <Mail className="h-3.5 w-3.5" />
-                      {email || "—"}
-                    </p>
-                    {createdAt && (
-                      <p className="mt-1 text-xs text-zinc-400">
-                        {dict?.account?.member_since ?? "Member since"}{" "}
-                        {new Date(createdAt).toLocaleDateString(locale, { year: "numeric", month: "long" })}
-                      </p>
+                    {!editing && (
+                      <button
+                        type="button"
+                        onClick={() => { setEditing(true); setSaved(false); }}
+                        className="flex items-center gap-1.5 rounded-[5px] border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-50"
+                      >
+                        <Pencil className="h-3 w-3" />
+                        {tAccount.edit ?? "Edit"}
+                      </button>
                     )}
                   </div>
                 </div>
 
                 {/* Navigation */}
-                <nav className="rounded-2xl border border-zinc-100 bg-white p-2">
+                <nav className="rounded-[5px] border border-zinc-100 bg-white p-2">
                   {navItems.map((item) => {
                     const Icon = item.icon;
                     return (
                       <Link
                         key={item.href}
                         href={item.href}
-                        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                        className={`flex items-center gap-3 rounded-[5px] px-3 py-2.5 text-sm font-medium transition-colors ${
                           item.active
                             ? "bg-blue-50 text-blue-700"
                             : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
@@ -349,7 +332,7 @@ export default function AccountSettingsPage() {
                       await supabase.auth.signOut();
                       router.push(`/${locale}/login`);
                     }}
-                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+                    className="flex w-full items-center gap-3 rounded-[5px] px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
                   >
                     <LogOut className="h-4 w-4 shrink-0" />
                     <span className="flex-1 text-start">{dict?.account?.logout ?? "Sign out"}</span>
@@ -362,9 +345,9 @@ export default function AccountSettingsPage() {
             <div className="lg:col-span-8 xl:col-span-9">
               <form onSubmit={handleSave} className="space-y-6">
                 {/* Personal info card */}
-                <section className="rounded-2xl border border-zinc-100 bg-white p-5 sm:p-6">
+                <section className="rounded-[5px] border border-zinc-100 bg-white p-5 sm:p-6">
                   <div className="mb-6 flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-[5px] bg-blue-50 text-blue-600">
                       <User className="h-5 w-5" />
                     </div>
                     <div>
@@ -390,7 +373,7 @@ export default function AccountSettingsPage() {
                       />
                     </div>
 
-                    <div>
+                    <div className="sm:col-span-2">
                       <label className={labelCls}>{tAccount.phone ?? "Phone Number"}</label>
                       <input
                         type="tel"
@@ -401,26 +384,13 @@ export default function AccountSettingsPage() {
                         className={inputCls}
                       />
                     </div>
-
-                    <div>
-                      <label className={labelCls}>{dict?.account?.email ?? "Email"}</label>
-                      <input
-                        type="email"
-                        value={email}
-                        readOnly
-                        className="w-full cursor-not-allowed rounded-xl border border-transparent bg-zinc-100/60 px-4 py-3 text-sm text-zinc-500 outline-none select-none"
-                      />
-                      <p className="mt-1.5 text-xs text-zinc-400">
-                        {dict?.account?.email_readonly ?? "Email cannot be changed here."}
-                      </p>
-                    </div>
                   </div>
                 </section>
 
                 {/* Address card */}
-                <section className="rounded-2xl border border-zinc-100 bg-white p-5 sm:p-6">
+                <section className="rounded-[5px] border border-zinc-100 bg-white p-5 sm:p-6">
                   <div className="mb-6 flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-[5px] bg-emerald-50 text-emerald-600">
                       <MapPin className="h-5 w-5" />
                     </div>
                     <div>
@@ -493,8 +463,8 @@ export default function AccountSettingsPage() {
 
                 {/* Security note */}
                 {!editing && (
-                  <section className="flex items-start gap-3 rounded-2xl border border-zinc-100 bg-white p-5">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-600">
+                  <section className="flex items-start gap-3 rounded-[5px] border border-zinc-100 bg-white p-5">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[5px] bg-zinc-100 text-zinc-600">
                       <Shield className="h-5 w-5" />
                     </div>
                     <div>
@@ -508,7 +478,7 @@ export default function AccountSettingsPage() {
 
                 {/* Error */}
                 {error && (
-                  <div className="flex items-start gap-2 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                  <div className="flex items-start gap-2 rounded-[5px] bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
                     <X className="h-4 w-4 mt-0.5 shrink-0" />
                     <span>{error}</span>
                   </div>
@@ -516,25 +486,24 @@ export default function AccountSettingsPage() {
 
                 {/* Save / Cancel */}
                 {editing && (
-                  <div className="flex flex-col gap-3 sm:flex-row-reverse">
+                  <div className="flex items-center justify-end gap-3 border-t border-zinc-100 pt-6">
+                    <button
+                      type="button"
+                      onClick={() => { setEditing(false); setError(null); setSaved(false); }}
+                      className="rounded-[5px] border border-zinc-200 bg-white px-5 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-50"
+                    >
+                      {tAccount.cancel ?? "Cancel"}
+                    </button>
                     <button
                       type="submit"
                       disabled={saving}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98] disabled:opacity-60"
+                      className="rounded-[5px] bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-60"
                     >
                       {saving ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        <Check className="h-4 w-4" />
+                        tAccount.save ?? "Save Changes"
                       )}
-                      {tAccount.save ?? "Save Changes"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setEditing(false); setError(null); setSaved(false); }}
-                      className="flex-1 rounded-xl border border-zinc-200 bg-white px-6 py-3 text-sm font-semibold text-zinc-700 shadow-sm transition-all hover:bg-zinc-50 active:scale-[0.98]"
-                    >
-                      {tAccount.cancel ?? "Cancel"}
                     </button>
                   </div>
                 )}

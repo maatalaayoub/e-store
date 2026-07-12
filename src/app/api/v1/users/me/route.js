@@ -4,23 +4,34 @@ import { withErrorHandler } from '@/middlewares/errorHandler';
 import { createClient } from '@/lib/supabase/server';
 
 const SELECT_FIELDS = 'id, full_name, email, phone_number, address, city, country, created_at, updated_at';
+const FALLBACK_SELECT_FIELDS = 'id, full_name, email, phone_number, address, city, country';
 const ALLOWED_FIELDS = ['full_name', 'phone_number', 'address', 'city', 'country'];
 
 export const GET = withErrorHandler(async () => {
   const user = await requireAuth();
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  let result = await supabase
     .from('users')
     .select(SELECT_FIELDS)
     .eq('id', user.id)
     .maybeSingle(); // returns null instead of throwing when row doesn't exist
 
-  if (error) throw error;
+  // If created_at/updated_at columns are missing, fall back to the legacy select
+  // so the page still works on older database schemas.
+  if (result.error && isMissingColumnError(result.error)) {
+    result = await supabase
+      .from('users')
+      .select(FALLBACK_SELECT_FIELDS)
+      .eq('id', user.id)
+      .maybeSingle();
+  }
+
+  if (result.error) throw result.error;
 
   // Row may not exist yet (trigger failure or first login edge case)
   // Fall back to auth data so the page still renders
-  const profile = data ?? {
+  const profile = result.data ?? {
     id: user.id,
     full_name: user.user_metadata?.full_name ?? '',
     email: user.email ?? '',
@@ -28,12 +39,16 @@ export const GET = withErrorHandler(async () => {
     address: '',
     city: '',
     country: '',
-    created_at: user.created_at ?? '',
-    updated_at: user.updated_at ?? '',
+    created_at: '',
+    updated_at: '',
   };
 
   return NextResponse.json({ success: true, data: profile });
 });
+
+function isMissingColumnError(error) {
+  return error?.code === '42703' || /column .* does not exist/i.test(error?.message ?? '');
+}
 
 export const PATCH = withErrorHandler(async (req) => {
   const user = await requireAuth();
