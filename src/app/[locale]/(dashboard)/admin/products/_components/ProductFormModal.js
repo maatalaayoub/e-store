@@ -195,32 +195,40 @@ export default function ProductFormModal({
     dispatch({ type: "set", field: "use_default_sections", value: checked });
   }
 
-  // Sync form when product changes + drive animation
+  // Drive open/close animation state. `mounted` is set here so the modal
+  // stays in the DOM long enough for the exit transition to finish.
   useEffect(() => {
     if (open) {
       setMounted(true);
-      setActiveLang(locale);
-      dispatch({ type: "reset", payload: product ? productToForm(product) : {} });
-      setExistingImages(
-        product?.images
-          ? [...product.images].sort((a, b) => {
-              if (a.is_main !== b.is_main) return a.is_main ? -1 : 1;
-              return (a.display_order ?? 0) - (b.display_order ?? 0);
-            })
-          : []
-      );
-      setPendingImages([]);
-      setError(null);
-      setShowNewCat(false);
-      setNewCategoryName("");
-      // Trigger open transition after mount
-      requestAnimationFrame(() => requestAnimationFrame(() => setAnimOpen(true)));
-    } else {
-      setAnimOpen(false);
-      const t = setTimeout(() => setMounted(false), 300);
-      return () => clearTimeout(t);
+      const raf = requestAnimationFrame(() =>
+        requestAnimationFrame(() => setAnimOpen(true)));
+      return () => cancelAnimationFrame(raf);
     }
-  }, [open, product]);
+    setAnimOpen(false);
+    const t = setTimeout(() => setMounted(false), 300);
+    return () => clearTimeout(t);
+    /* eslint-disable-next-line react-hooks/set-state-in-effect -- modal lifecycle effect intentionally drives animation state */
+  }, [open]);
+
+  // Sync form when product changes
+  useEffect(() => {
+    if (!open || !product) return;
+    setActiveLang(locale);
+    dispatch({ type: "reset", payload: productToForm(product) });
+    setExistingImages(
+      product.images
+        ? [...product.images].sort((a, b) => {
+            if (a.is_main !== b.is_main) return a.is_main ? -1 : 1;
+            return (a.display_order ?? 0) - (b.display_order ?? 0);
+          })
+        : []
+    );
+    setPendingImages([]);
+    setError(null);
+    setShowNewCat(false);
+    setNewCategoryName("");
+    /* eslint-disable-next-line react-hooks/set-state-in-effect -- modal lifecycle effect intentionally resets form state */
+  }, [open, product, locale]);
 
   const handleClose = useCallback(() => {
     setAnimOpen(false);
@@ -282,6 +290,15 @@ export default function ProductFormModal({
       prev.map((img) => ({ ...img, is_main: img.id === imageId }))
     );
     setPendingImages((prev) => prev.map((img) => ({ ...img, isMain: false })));
+  }
+
+  async function handleReplaceExisting(imageId, file) {
+    // Mark the existing image for replacement; the actual storage swap happens on save.
+    setExistingImages((prev) =>
+      prev.map((img) =>
+        img.id === imageId ? { ...img, _replacementFile: file, _replacementPreview: URL.createObjectURL(file) } : img
+      )
+    );
   }
 
   // ── category dropdown open/close ───────────────────────────────────────────
@@ -438,7 +455,20 @@ export default function ProductFormModal({
         }
       }
 
-      // 4. Upload pending images
+      // 4. Replace existing images marked for replacement
+      if (isEdit) {
+        const toReplace = existingImages.filter((img) => img._replacementFile);
+        for (const img of toReplace) {
+          const storagePath = await uploadToStorage(supabase, productId, img._replacementFile, `replace_${img.id}`);
+          await fetch(`/api/v1/products/${productId}/images/${img.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ storagePath }),
+          });
+        }
+      }
+
+      // 5. Upload pending images
       let pendingMainIndex = pendingImages.findIndex((img) => img.isMain);
       const hasExistingMain =
         existingImages.some((img) => img.is_main) ||
@@ -832,6 +862,7 @@ export default function ProductFormModal({
               onSetPendingMain={handleSetPendingMain}
               onRemoveExisting={handleRemoveExisting}
               onSetExistingMain={handleSetExistingMain}
+              onReplaceExisting={handleReplaceExisting}
             />
           </section>
 

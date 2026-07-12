@@ -209,6 +209,7 @@ export default function AdminProductsPage() {
   const [categories, setCategories] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [loadingEditProductId, setLoadingEditProductId] = useState(null);
   const [actioningId, setActioningId] = useState(null);
   const [confirmModal, setConfirmModal] = useState(null);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -226,35 +227,45 @@ export default function AdminProductsPage() {
   const tFp = t.filter_panel ?? {};
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
-  const fetchProducts = useCallback(async () => {
-    setProducts(null);
-    try {
-      const status = activeTab === "all" ? "all" : activeTab;
-      const res = await fetch(`/api/v1/products?status=${status}`);
-      const json = await res.json();
-      setProducts(Array.isArray(json.data) ? json.data : []);
-    } catch {
-      setProducts([]);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadProducts() {
+      setProducts(null);
+      try {
+        const status = activeTab === "all" ? "all" : activeTab;
+        const res = await fetch(`/api/v1/products?status=${status}`);
+        const json = await res.json();
+        if (!cancelled) {
+          setProducts(Array.isArray(json.data) ? json.data : []);
+        }
+      } catch {
+        if (!cancelled) setProducts([]);
+      }
     }
+
+    loadProducts();
+    return () => { cancelled = true; };
   }, [activeTab]);
 
-  const fetchCategories = useCallback(async () => {
-    try {
-      const res = await fetch("/api/v1/categories");
-      const json = await res.json();
-      if (json.success) setCategories(json.data);
-    } catch {
-      // ignore
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCategories() {
+      try {
+        const res = await fetch("/api/v1/categories");
+        const json = await res.json();
+        if (!cancelled && json.success) {
+          setCategories(json.data);
+        }
+      } catch {
+        // ignore
+      }
     }
+
+    loadCategories();
+    return () => { cancelled = true; };
   }, []);
-
-  useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
-
-  useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
 
   // ── Actions ────────────────────────────────────────────────────────────────
   function openCreate() {
@@ -262,9 +273,22 @@ export default function AdminProductsPage() {
     setModalOpen(true);
   }
 
-  function openEdit(product) {
-    setEditingProduct(product);
-    setModalOpen(true);
+  async function openEdit(product) {
+    setLoadingEditProductId(product.id);
+    try {
+      const res = await fetch(`/api/v1/products/${product.id}`);
+      const json = await res.json();
+      if (json.success && json.data) {
+        setEditingProduct(json.data);
+        setModalOpen(true);
+      } else {
+        toast.error("Failed to load product details.");
+      }
+    } catch {
+      toast.error("Failed to load product details.");
+    } finally {
+      setLoadingEditProductId(null);
+    }
   }
 
   async function handleDelete(product) {
@@ -656,7 +680,7 @@ export default function AdminProductsPage() {
                       </span>
                       <ActionMenu
                         product={p}
-                        disabled={actioningId === p.id}
+                        disabled={actioningId === p.id || loadingEditProductId === p.id}
                         onEdit={() => openEdit(p)}
                         onDelete={() => handleDelete(p)}
                         onSetStatus={(status) => handleSetStatus(p, status)}
@@ -750,7 +774,7 @@ export default function AdminProductsPage() {
                       <div className="flex items-center justify-end">
                         <ActionMenu
                           product={p}
-                          disabled={actioningId === p.id}
+                          disabled={actioningId === p.id || loadingEditProductId === p.id}
                           onEdit={() => openEdit(p)}
                           onDelete={() => handleDelete(p)}
                           onSetStatus={(status) => handleSetStatus(p, status)}

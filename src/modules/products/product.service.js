@@ -73,6 +73,10 @@ export class ProductService {
     return productRepository.setMainImage(productId, imageId);
   }
 
+  async replaceImage(productId, imageId, { url, storagePath }) {
+    return productRepository.replaceImage(productId, imageId, { url, storagePath });
+  }
+
   async deleteImage(productId, imageId) {
     return productRepository.deleteImage(productId, imageId);
   }

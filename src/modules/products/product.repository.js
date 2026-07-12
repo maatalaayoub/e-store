@@ -167,6 +167,34 @@ export class ProductRepository {
     return data;
   }
 
+  async replaceImage(productId, imageId, { url, storagePath }) {
+    const supabase = await createClient();
+
+    // Fetch old image to delete its storage file after DB update
+    const { data: oldImg, error: fetchErr } = await supabase
+      .from('product_images')
+      .select('storage_path, is_main')
+      .eq('id', imageId)
+      .eq('product_id', productId)
+      .single();
+    if (fetchErr) throw fetchErr;
+
+    const { data, error } = await supabase
+      .from('product_images')
+      .update({ url, storage_path: storagePath })
+      .eq('id', imageId)
+      .eq('product_id', productId)
+      .select()
+      .single();
+    if (error) throw error;
+
+    if (oldImg?.storage_path && oldImg.storage_path !== storagePath) {
+      await supabase.storage.from('product-images').remove([oldImg.storage_path]);
+    }
+
+    return data;
+  }
+
   async deleteImage(productId, imageId) {
     const supabase = await createClient();
     const { data: img, error: fetchErr } = await supabase
