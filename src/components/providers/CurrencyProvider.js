@@ -100,7 +100,7 @@ const CURRENCY_SYMBOL = {
   XOF: 'CFA',
 };
 
-const SESSION_KEY = 'currency_data_v2';
+const SESSION_KEY = 'currency_data_v3';
 const SESSION_TTL = 4 * 60 * 60 * 1000; // 4 hours
 const FX_STALE_MS = 60 * 60 * 1000;      // warn if cache older than 1 hour
 
