@@ -49,10 +49,12 @@ export const findCountry = (value) =>
 export const findCountryByIso = (iso) =>
   COUNTRIES.find((c) => c.isoCode === iso) ?? null;
 
+export const DEFAULT_COUNTRY = "Morocco";
+
 /**
  * Detect user country via IP geolocation.
- * Returns the country `value` (e.g. "Morocco") or null if detection failed
- * or the country isn't in our supported list.
+ * Returns the country `value` (e.g. "Morocco") or the DEFAULT_COUNTRY fallback
+ * if detection failed or the country isn't in our supported list.
  *
  * Uses `country_code` (ISO alpha-2) — far more reliable than matching the
  * full country name string returned by the API.
@@ -60,11 +62,11 @@ export const findCountryByIso = (iso) =>
 export async function detectCountryFromIp(signal) {
   try {
     const res = await fetch("/api/v1/ip-geo", { signal });
-    if (!res.ok) return null;
+    if (!res.ok) return DEFAULT_COUNTRY;
     const data = await res.json();
     const code = data?.country_code;
-    return findCountryByIso(code)?.value ?? null;
+    return findCountryByIso(code)?.value ?? DEFAULT_COUNTRY;
   } catch {
-    return null;
+    return DEFAULT_COUNTRY;
   }
 }

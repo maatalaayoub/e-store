@@ -83,6 +83,7 @@ export default function CheckoutFields({
             set("phone")({ target: { value: raw } });
           }}
           placeholder={hint(form.country, "phone") || "+212 600 000 000"}
+          dir={isRtl ? "rtl" : "ltr"}
           className={inputCls("phone", errors)}
         />
         {errors.phone && <p className="mt-1 text-xs text-red-500">{errors.phone}</p>}

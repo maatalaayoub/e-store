@@ -18,7 +18,7 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { findCountry, detectCountryFromIp } from "@/data/countries";
+import { findCountry, detectCountryFromIp, DEFAULT_COUNTRY } from "@/data/countries";
 import { COUNTRY_CURRENCY } from "@/components/providers/CurrencyProvider";
 import { resolveProductTranslation } from "@/lib/product-locale";
 import { parsePrice } from "@/lib/price";
@@ -31,7 +31,7 @@ const INITIAL_FORM = {
   city: "",
   state: "",
   zip: "",
-  country: "Morocco",
+  country: DEFAULT_COUNTRY,
 };
 
 /**
@@ -68,7 +68,7 @@ export function useCheckoutForm({
     const fetchCountry = async () => {
       try {
         const detected = await detectCountryFromIp(controller.signal);
-        if (mounted && detected) setForm((f) => ({ ...f, country: detected }));
+        if (mounted) setForm((f) => ({ ...f, country: detected || DEFAULT_COUNTRY }));
       } catch (err) {
         if (err?.name !== "AbortError") { /* ignore */ }
       }
@@ -135,7 +135,7 @@ export function useCheckoutForm({
   // picks a country so it never lands in the initial bundle.
   const [cities, setCities] = useState([]);
   useEffect(() => {
-    if (!selectedIso) { setCities([]); return; }
+    if (!selectedIso) return;
     let cancelled = false;
     import("country-state-city").then(({ City }) => {
       if (cancelled) return;
@@ -149,7 +149,7 @@ export function useCheckoutForm({
   // `requiredFields` lets the inline checkout opt out of validating fields
   // that the admin has hidden (e.g. hide state/zip in a Morocco-only flow).
   const validate = useCallback(() => {
-    const moroccoOptional = form.country === "Morocco" ? ["zip", "state"] : [];
+    const moroccoOptional = form.country === DEFAULT_COUNTRY ? ["zip", "state"] : [];
     const required = Array.isArray(requiredFields) && requiredFields.length > 0
       ? requiredFields
       : ["phone", "fullName", "address", "city", "country"];

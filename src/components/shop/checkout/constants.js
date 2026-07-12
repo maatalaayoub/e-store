@@ -18,7 +18,7 @@ export const COUNTRY_HINTS = {
   "Sweden":         { phone: "+46 8 000 0000", city: "Stockholm",       address: "Kungsgatan 12, 2 tr",         zip: "111 43", state: "Stockholm" },
 };
 
-export const hint = (country, field) => COUNTRY_HINTS[country]?.[field] ?? "";
+export const hint = (country, field) => COUNTRY_HINTS[country]?.[field] ?? COUNTRY_HINTS["Morocco"]?.[field] ?? "";
 
 /** Canonical field order + the full set of supported fields. */
 export const ALL_FIELDS = ["phone", "fullName", "country", "city", "state", "zip", "address"];

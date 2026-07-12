@@ -84,7 +84,7 @@ const SESSION_TTL = 4 * 60 * 60 * 1000; // 4 hours
 const FX_STALE_MS = 60 * 60 * 1000;      // warn if cache older than 1 hour
 
 const CurrencyContext = createContext({
-  currency: { code: 'MAD', sym: 'DH' },
+  currency: DEFAULT_CURRENCY,
   rate: 1,
   stale: false,
   /** @param {number} madAmount */
@@ -92,6 +92,9 @@ const CurrencyContext = createContext({
   /** @param {string} country */
   setCurrencyByCountry: () => {},
 });
+
+export const DEFAULT_COUNTRY = 'Morocco';
+export const DEFAULT_CURRENCY = { code: 'MAD', sym: 'DH' };
 
 function readCachedCurrency() {
   try {
@@ -112,10 +115,11 @@ function readCachedCurrency() {
 
 export default function CurrencyProvider({ children }) {
   const cached = typeof window !== 'undefined' ? readCachedCurrency() : null;
-  const [currency, setCurrency] = useState(() => cached?.currency ?? { code: 'MAD', sym: 'DH' });
+  const [currency, setCurrency] = useState(() => cached?.currency ?? DEFAULT_CURRENCY);
   /** rate = 1 MAD → N currency units */
   const [rate, setRate] = useState(() => cached?.rate ?? 1);
   const [stale, setStale] = useState(() => cached?.stale ?? false);
+  const [detectedCountry, setDetectedCountry] = useState(null);
   const hasValidCache = Boolean(cached);
 
   useEffect(() => {
@@ -139,15 +143,15 @@ export default function CurrencyProvider({ children }) {
         const geoRes = await fetchWithTimeout('/api/v1/ip-geo', 5000);
         const geoData = geoRes.ok ? await geoRes.json() : {};
         if (cancelled) return;
-        const country = geoData?.country ?? 'Morocco';
+        const country = geoData?.country ?? DEFAULT_COUNTRY;
 
-        const code = COUNTRY_CURRENCY[country] ?? 'MAD';
+        const code = COUNTRY_CURRENCY[country] ?? DEFAULT_CURRENCY.code;
         const sym  = CURRENCY_SYMBOL[code]    ?? code;
 
         // 2. Fetch live exchange rate (base: MAD) through our own proxy.
         let detectedRate = 1;
         let isStale = false;
-        if (code !== 'MAD') {
+        if (code !== DEFAULT_CURRENCY.code) {
           const ratesRes = await fetchWithTimeout(`/api/v1/exchange-rate?base=MAD&target=${code}`, 5000);
           const ratesData = ratesRes.ok ? await ratesRes.json() : {};
           if (cancelled) return;
@@ -156,6 +160,7 @@ export default function CurrencyProvider({ children }) {
         }
 
         if (cancelled) return;
+        setDetectedCountry(country);
         setCurrency({ code, sym });
         setRate(detectedRate);
         setStale(isStale);
@@ -167,8 +172,15 @@ export default function CurrencyProvider({ children }) {
           }));
         } catch {/* ignore */}
       } catch (err) {
-        // Silently ignore abort errors (React Strict Mode / component unmount
-        // or timeout). Fall back to MAD — already the default state.
+        // On any failure (timeout, API error, network unavailable), explicitly
+        // fall back to Morocco / MAD so the storefront never shows USD by
+        // accident.
+        if (!cancelled) {
+          setDetectedCountry(DEFAULT_COUNTRY);
+          setCurrency(DEFAULT_CURRENCY);
+          setRate(1);
+          setStale(false);
+        }
         if (err?.name !== 'AbortError') {
           logger.logSwallowed('CurrencyProvider detect failed', err);
         }
@@ -183,15 +195,15 @@ export default function CurrencyProvider({ children }) {
   }, [hasValidCache]);
 
   const setCurrencyByCountry = useCallback(async (country, opts = {}) => {
-    if (!country) return;
-    const code = COUNTRY_CURRENCY[country] ?? 'MAD';
-    if (code === currency.code) return;
+    const targetCountry = country || DEFAULT_COUNTRY;
+    const code = COUNTRY_CURRENCY[targetCountry] ?? DEFAULT_CURRENCY.code;
+    if (code === currency.code && targetCountry === detectedCountry) return;
 
     const sym = CURRENCY_SYMBOL[code] ?? code;
     let detectedRate = 1;
     let isStale = false;
 
-    if (code !== 'MAD') {
+    if (code !== DEFAULT_CURRENCY.code) {
       try {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), opts.timeout ?? 5000);
@@ -205,9 +217,12 @@ export default function CurrencyProvider({ children }) {
         if (err?.name !== 'AbortError') {
           logger.logSwallowed('CurrencyProvider setCurrencyByCountry failed', err);
         }
+        detectedRate = 1;
+        isStale = false;
       }
     }
 
+    setDetectedCountry(targetCountry);
     setCurrency({ code, sym });
     setRate(detectedRate);
     setStale(isStale);
@@ -216,12 +231,13 @@ export default function CurrencyProvider({ children }) {
         code, sym, rate: detectedRate, stale: isStale, ts: Date.now(),
       }));
     } catch {/* ignore */}
-  }, [currency.code]);
+  }, [currency.code, detectedCountry]);
 
   const value = useMemo(() => ({
     currency,
     rate,
     stale,
+    detectedCountry,
     setCurrencyByCountry,
     formatPrice: (madAmount) => {
       if (madAmount == null) return '';
@@ -229,7 +245,7 @@ export default function CurrencyProvider({ children }) {
       const converted = num * rate;
       return `\u200E${converted.toFixed(2)} ${currency.sym}`;
     },
-  }), [currency, rate, stale, setCurrencyByCountry]);
+  }), [currency, rate, stale, detectedCountry, setCurrencyByCountry]);
 
   return (
     <CurrencyContext.Provider value={value}>
