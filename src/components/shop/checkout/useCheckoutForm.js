@@ -66,37 +66,40 @@ export function useCheckoutForm({
     const controller = new AbortController();
 
     const bootstrap = async () => {
-      let detectedCountry = DEFAULT_COUNTRY;
-      try {
-        detectedCountry = (await detectCountryFromIp(controller.signal)) || DEFAULT_COUNTRY;
-      } catch (err) {
-        if (err?.name !== "AbortError") { /* ignore */ }
-      }
-
-      if (mounted) {
-        // Country must be deterministic across app pages: IP detection wins,
-        // and detectCountryFromIp already falls back to Morocco on failure.
-        setForm((f) => ({ ...f, country: detectedCountry }));
-      }
-
+      // 1. For logged-in users, the saved profile always wins so a country
+      //    change in Account Settings is reflected here immediately.
+      // 2. Guests / users without a saved country fall back to IP detection.
+      // 3. If IP detection fails, fall back to Morocco (DEFAULT_COUNTRY).
+      let countryFromProfile = null;
       try {
         const res = await fetch("/api/v1/users/me", { signal: controller.signal });
         if (res.ok) {
           const json = await res.json();
           if (mounted && json.success) {
             const d = json.data;
+            countryFromProfile = d.country || null;
             setForm((f) => ({
               ...f,
               fullName: d.full_name || f.fullName,
               phone: d.phone_number || f.phone,
               address: d.address || f.address,
               city: d.city || f.city,
-              country: detectedCountry,
+              country: d.country || f.country,
             }));
           }
         }
       } catch (err) {
         if (err?.name !== "AbortError") { /* ignore — guest checkout still works */ }
+      }
+
+      // No saved country (or not logged in): detect from IP.
+      if (!countryFromProfile) {
+        try {
+          const detected = await detectCountryFromIp(controller.signal);
+          if (mounted) setForm((f) => ({ ...f, country: detected }));
+        } catch (err) {
+          if (err?.name !== "AbortError") { /* ignore */ }
+        }
       }
     };
 
