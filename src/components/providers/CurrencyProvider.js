@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { logger } from '@/lib/logger';
+import { detectCountryFromIp, DEFAULT_COUNTRY as DETECT_DEFAULT_COUNTRY } from '@/data/countries';
 
 /**
  * Maps geojs country name → ISO 4217 currency code.
@@ -44,6 +45,18 @@ export const COUNTRY_CURRENCY = {
   'New Zealand':        'NZD',
   Algeria:              'DZD',
   Tunisia:              'TND',
+  Libya:                'LYD',
+  Finland:              'EUR',
+  Poland:               'PLN',
+  'Czech Republic':     'CZK',
+  Romania:              'RON',
+  Hungary:              'HUF',
+  Ireland:              'EUR',
+  Croatia:              'EUR',
+  Slovakia:             'EUR',
+  Bulgaria:             'BGN',
+  Serbia:               'RSD',
+  Ukraine:              'UAH',
   Senegal:              'XOF',
 };
 
@@ -76,12 +89,23 @@ const CURRENCY_SYMBOL = {
   NZD: 'NZ$',
   DZD: 'DZD',
   TND: 'TND',
+  LYD: 'LYD',
+  PLN: 'zł',
+  CZK: 'Kč',
+  RON: 'RON',
+  HUF: 'Ft',
+  BGN: 'лв',
+  RSD: 'RSD',
+  UAH: '₴',
   XOF: 'CFA',
 };
 
-const SESSION_KEY = 'currency_data_v1';
+const SESSION_KEY = 'currency_data_v2';
 const SESSION_TTL = 4 * 60 * 60 * 1000; // 4 hours
 const FX_STALE_MS = 60 * 60 * 1000;      // warn if cache older than 1 hour
+
+export const DEFAULT_COUNTRY = DETECT_DEFAULT_COUNTRY;
+export const DEFAULT_CURRENCY = { code: 'MAD', sym: 'DH' };
 
 const CurrencyContext = createContext({
   currency: DEFAULT_CURRENCY,
@@ -93,19 +117,19 @@ const CurrencyContext = createContext({
   setCurrencyByCountry: () => {},
 });
 
-export const DEFAULT_COUNTRY = 'Morocco';
-export const DEFAULT_CURRENCY = { code: 'MAD', sym: 'DH' };
-
 function readCachedCurrency() {
   try {
     const cached = sessionStorage.getItem(SESSION_KEY);
     if (cached) {
       const parsed = JSON.parse(cached);
       if (Date.now() - parsed.ts < SESSION_TTL) {
+        const code = String(parsed.code ?? '').toUpperCase();
+        if (!code || !/^[A-Z]{3}$/.test(code)) return null;
         return {
-          currency: { code: parsed.code, sym: parsed.sym },
-          rate: parsed.rate,
+          currency: { code, sym: parsed.sym || CURRENCY_SYMBOL[code] || code },
+          rate: Number(parsed.rate) || 1,
           stale: Date.now() - parsed.ts > FX_STALE_MS || parsed.stale === true,
+          country: typeof parsed.country === 'string' && parsed.country.trim() ? parsed.country.trim() : null,
         };
       }
     }
@@ -119,7 +143,7 @@ export default function CurrencyProvider({ children }) {
   /** rate = 1 MAD → N currency units */
   const [rate, setRate] = useState(() => cached?.rate ?? 1);
   const [stale, setStale] = useState(() => cached?.stale ?? false);
-  const [detectedCountry, setDetectedCountry] = useState(null);
+  const [detectedCountry, setDetectedCountry] = useState(() => cached?.country ?? null);
   const hasValidCache = Boolean(cached);
 
   useEffect(() => {
@@ -139,11 +163,9 @@ export default function CurrencyProvider({ children }) {
 
     const detect = async () => {
       try {
-        // 1. Detect country via IP through our own proxy.
-        const geoRes = await fetchWithTimeout('/api/v1/ip-geo', 5000);
-        const geoData = geoRes.ok ? await geoRes.json() : {};
+        // 1. Detect country via IP (ISO country code path with Morocco fallback).
+        const country = await detectCountryFromIp(signal);
         if (cancelled) return;
-        const country = geoData?.country ?? DEFAULT_COUNTRY;
 
         const code = COUNTRY_CURRENCY[country] ?? DEFAULT_CURRENCY.code;
         const sym  = CURRENCY_SYMBOL[code]    ?? code;
@@ -168,7 +190,12 @@ export default function CurrencyProvider({ children }) {
         // Cache in sessionStorage
         try {
           sessionStorage.setItem(SESSION_KEY, JSON.stringify({
-            code, sym, rate: detectedRate, stale: isStale, ts: Date.now()
+            country,
+            code,
+            sym,
+            rate: detectedRate,
+            stale: isStale,
+            ts: Date.now(),
           }));
         } catch {/* ignore */}
       } catch (err) {
@@ -228,7 +255,12 @@ export default function CurrencyProvider({ children }) {
     setStale(isStale);
     try {
       sessionStorage.setItem(SESSION_KEY, JSON.stringify({
-        code, sym, rate: detectedRate, stale: isStale, ts: Date.now(),
+        country: targetCountry,
+        code,
+        sym,
+        rate: detectedRate,
+        stale: isStale,
+        ts: Date.now(),
       }));
     } catch {/* ignore */}
   }, [currency.code, detectedCountry]);

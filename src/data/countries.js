@@ -47,7 +47,7 @@ export const findCountry = (value) =>
 
 /** Find country meta by ISO 3166-1 alpha-2 code (e.g. "MA"). */
 export const findCountryByIso = (iso) =>
-  COUNTRIES.find((c) => c.isoCode === iso) ?? null;
+  COUNTRIES.find((c) => c.isoCode === String(iso ?? "").trim().toUpperCase()) ?? null;
 
 export const DEFAULT_COUNTRY = "Morocco";
 
@@ -64,7 +64,7 @@ export async function detectCountryFromIp(signal) {
     const res = await fetch("/api/v1/ip-geo", { signal });
     if (!res.ok) return DEFAULT_COUNTRY;
     const data = await res.json();
-    const code = data?.country_code;
+    const code = String(data?.country_code ?? "").trim().toUpperCase();
     return findCountryByIso(code)?.value ?? DEFAULT_COUNTRY;
   } catch {
     return DEFAULT_COUNTRY;

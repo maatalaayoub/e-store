@@ -65,16 +65,20 @@ export function useCheckoutForm({
     let mounted = true;
     const controller = new AbortController();
 
-    const fetchCountry = async () => {
+    const bootstrap = async () => {
+      let detectedCountry = DEFAULT_COUNTRY;
       try {
-        const detected = await detectCountryFromIp(controller.signal);
-        if (mounted) setForm((f) => ({ ...f, country: detected || DEFAULT_COUNTRY }));
+        detectedCountry = (await detectCountryFromIp(controller.signal)) || DEFAULT_COUNTRY;
       } catch (err) {
         if (err?.name !== "AbortError") { /* ignore */ }
       }
-    };
 
-    const fetchProfile = async () => {
+      if (mounted) {
+        // Country must be deterministic across app pages: IP detection wins,
+        // and detectCountryFromIp already falls back to Morocco on failure.
+        setForm((f) => ({ ...f, country: detectedCountry }));
+      }
+
       try {
         const res = await fetch("/api/v1/users/me", { signal: controller.signal });
         if (res.ok) {
@@ -87,7 +91,7 @@ export function useCheckoutForm({
               phone: d.phone_number || f.phone,
               address: d.address || f.address,
               city: d.city || f.city,
-              country: d.country || f.country,
+              country: detectedCountry,
             }));
           }
         }
@@ -97,8 +101,7 @@ export function useCheckoutForm({
     };
 
     setHydrated(true);
-    fetchCountry();
-    fetchProfile();
+    bootstrap();
     return () => {
       mounted = false;
       controller.abort();
