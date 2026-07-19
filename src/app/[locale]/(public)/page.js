@@ -9,7 +9,7 @@ import FeaturedProducts from "@/components/shop/FeaturedProducts";
 import ShopPerks from "@/components/shop/ShopPerks";
 import ShopFooter from "@/components/shop/ShopFooter";
 import { useBfcacheReload } from "@/hooks/useBfcacheReload";
-import { HeroCarouselSkeleton, HeroIherbSkeleton } from "@/components/skeletons";
+import { HeroSkeleton } from "@/components/skeletons";
 
 // Module-level cache: persists across client-side navigations, cleared on hard refresh
 const _heroCache = new Map();
@@ -70,11 +70,7 @@ export default function HomePage() {
 
       <main className="flex-1">
         {heroLoading ? (
-          heroData?.type === 'iherb' ? (
-            <HeroIherbSkeleton />
-          ) : (
-            <HeroCarouselSkeleton />
-          )
+          <HeroSkeleton type={heroData?.type ?? "slider"} />
         ) : (
           <HeroRenderer
             heroType={heroData?.type ?? "slider"}

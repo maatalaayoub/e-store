@@ -75,7 +75,7 @@ const VALUE_MAX = {
   hero_multi_config:     4000,
   hero_video_config:     6000,
   hero_countdown_config: 5000,
-  hero_iherb_config:     8000,
+  hero_iherb_config:     60000,
 };
 const DEFAULT_VALUE_MAX = 1000;
 

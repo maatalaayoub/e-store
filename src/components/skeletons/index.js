@@ -1,20 +1,29 @@
 import { SkeletonImage, SkeletonText, SkeletonButton } from "./primitives";
 
-// Mirrors iHerb-style hero — main banner + optional side cards (mobile + desktop)
+// Mirrors iHerb-style hero — mobile: single banner + dots; desktop: main + side cards.
 export function HeroIherbSkeleton({ hasSideCards = true } = {}) {
   return (
     <section
       className="w-full lg:px-8 xl:px-12 lg:pt-[calc(var(--iherb-offset)+1rem)]"
       style={{ '--iherb-offset': 'calc(var(--bar-height, 0px) + var(--header-height, 3.5rem))' }}
     >
-      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
-        {/* Main banner shimmer */}
-        <SkeletonImage className="w-full aspect-[16/9] lg:rounded-xl" />
-        {/* Side card shimmers — 2-col grid on mobile, stacked column on desktop */}
+      {/* Mobile: single full-width banner + pagination dots */}
+      <div className="lg:hidden">
+        <SkeletonImage className="w-full aspect-[16/9]" />
+        <div className="flex items-center justify-center gap-2 py-3">
+          <div className="h-2 w-5 rounded-full bg-zinc-300" />
+          <div className="h-2 w-2 rounded-full bg-zinc-200" />
+          <div className="h-2 w-2 rounded-full bg-zinc-200" />
+        </div>
+      </div>
+
+      {/* Desktop: main banner + side cards column */}
+      <div className="hidden lg:grid lg:grid-cols-[2fr_1fr] gap-4">
+        <SkeletonImage className="w-full aspect-[16/9] rounded-xl" />
         {hasSideCards && (
-          <div className="grid grid-cols-2 gap-4 lg:flex lg:flex-col">
-            <SkeletonImage className="min-h-[140px] sm:min-h-[180px] lg:flex-1 lg:min-h-0 rounded-xl" />
-            <SkeletonImage className="min-h-[140px] sm:min-h-[180px] lg:flex-1 lg:min-h-0 rounded-xl" />
+          <div className="flex flex-col gap-4">
+            <SkeletonImage className="flex-1 min-h-[160px] rounded-xl" />
+            <SkeletonImage className="flex-1 min-h-[160px] rounded-xl" />
           </div>
         )}
       </div>
@@ -22,31 +31,133 @@ export function HeroIherbSkeleton({ hasSideCards = true } = {}) {
   );
 }
 
-// Mirrors HeroCarousel — full-viewport shimmer with centered text + button + dot indicators
-export function HeroCarouselSkeleton() {
+// Shared full-viewport hero shell used by slider/single/multi/video/countdown.
+// Reproduces the real heroes' -mt-[1px], 100svh height and dark overlay so the
+// swap to the loaded hero is seamless.
+function HeroFullShell({ children, contentClassName = "" }) {
   return (
-    <section className="relative h-[100svh] w-full overflow-hidden -mt-[1px] bg-zinc-300 animate-pulse">
-      {/* dark overlay like the real hero */}
-      <div className="absolute inset-0 bg-black/30" />
-
-      {/* centered content placeholder */}
-      <div className="relative z-10 flex h-full w-full flex-col items-center justify-center px-6 gap-10">
-        {/* title placeholder — matches large uppercase heading */}
-        <div className="flex flex-col items-center gap-4 w-full max-w-xl">
-          <div className="h-12 sm:h-16 md:h-20 w-4/5 rounded bg-white/20" />
-        </div>
-        {/* CTA button placeholder — matches border button */}
-        <div className="h-11 w-44 rounded bg-white/20" />
-      </div>
-
-      {/* dot/progress indicators at bottom center */}
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-3">
-        <div className="h-[2px] w-12 rounded bg-white/40" />
-        <div className="h-[2px] w-6 rounded bg-white/20" />
-        <div className="h-[2px] w-6 rounded bg-white/20" />
+    <section className="relative h-[100svh] w-full overflow-hidden -mt-[1px]">
+      <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-zinc-300 via-zinc-200 to-zinc-300" />
+      <div className="absolute inset-0 bg-black/25" />
+      <div className={`relative z-10 flex h-full w-full flex-col items-center justify-center gap-8 px-6 ${contentClassName}`}>
+        {children}
       </div>
     </section>
   );
+}
+
+// Slider-progress / dot indicators pinned to the bottom center.
+// Rendered inside a HeroFullShell so its absolute positioning resolves to the section.
+function HeroDots() {
+  return (
+    <div className="absolute bottom-10 left-1/2 z-10 -translate-x-1/2 flex items-center gap-3">
+      <div className="h-[2px] w-12 rounded bg-white/50" />
+      <div className="h-[2px] w-6 rounded bg-white/25" />
+      <div className="h-[2px] w-6 rounded bg-white/25" />
+    </div>
+  );
+}
+
+// Mirrors HeroCarousel (slider) — centered heading + CTA + slide indicators.
+export function HeroCarouselSkeleton() {
+  return (
+    <HeroFullShell>
+      <div className="flex w-full max-w-xl flex-col items-center gap-4">
+        <div className="h-12 w-4/5 rounded bg-white/20 sm:h-16 md:h-20" />
+        <div className="h-4 w-2/3 rounded bg-white/15" />
+      </div>
+      <div className="h-11 w-44 rounded bg-white/20" />
+      <HeroDots />
+    </HeroFullShell>
+  );
+}
+
+// Mirrors HeroSingleImage — a single static image with a large centered title + CTA.
+export function HeroSingleSkeleton() {
+  return (
+    <HeroFullShell>
+      <div className="flex w-full max-w-3xl flex-col items-center gap-4">
+        <div className="h-10 w-3/4 rounded bg-white/20 sm:h-14 md:h-16" />
+        <div className="h-4 w-1/2 rounded bg-white/15" />
+      </div>
+      <div className="h-11 w-52 rounded bg-white/20" />
+    </HeroFullShell>
+  );
+}
+
+// Mirrors HeroMultiImage — rotating gallery with centered content + rotation dots.
+export function HeroMultiSkeleton() {
+  return (
+    <HeroFullShell>
+      <div className="flex w-full max-w-xl flex-col items-center gap-4">
+        <div className="h-12 w-4/5 rounded bg-white/20 sm:h-16 md:h-20" />
+        <div className="h-4 w-2/3 rounded bg-white/15" />
+      </div>
+      <div className="h-11 w-44 rounded bg-white/20" />
+      <div className="absolute bottom-10 left-1/2 z-10 -translate-x-1/2 flex items-center gap-2.5">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className={`h-2.5 rounded-full ${i === 0 ? "w-6 bg-white/60" : "w-2.5 bg-white/30"}`} />
+        ))}
+      </div>
+    </HeroFullShell>
+  );
+}
+
+// Mirrors HeroVideo — full-screen video with a centered play affordance + content.
+export function HeroVideoSkeleton() {
+  return (
+    <HeroFullShell>
+      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/25 sm:h-20 sm:w-20">
+        <div className="ml-1 h-0 w-0 border-y-[10px] border-l-[16px] border-y-transparent border-l-white/70 sm:border-y-[13px] sm:border-l-[20px]" />
+      </div>
+      <div className="flex w-full max-w-xl flex-col items-center gap-4">
+        <div className="h-10 w-3/4 rounded bg-white/20 sm:h-14" />
+        <div className="h-4 w-1/2 rounded bg-white/15" />
+      </div>
+      <div className="h-11 w-44 rounded bg-white/20" />
+    </HeroFullShell>
+  );
+}
+
+// Mirrors HeroCountdown — centered heading, countdown blocks and CTA.
+export function HeroCountdownSkeleton() {
+  return (
+    <HeroFullShell>
+      <div className="flex w-full max-w-xl flex-col items-center gap-4">
+        <div className="h-10 w-3/4 rounded bg-white/20 sm:h-14" />
+        <div className="h-4 w-1/2 rounded bg-white/15" />
+      </div>
+      <div className="flex items-center gap-3 sm:gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="flex flex-col items-center gap-2">
+            <div className="h-16 w-16 rounded-lg bg-white/20 sm:h-20 sm:w-20" />
+            <div className="h-2.5 w-10 rounded bg-white/15" />
+          </div>
+        ))}
+      </div>
+      <div className="h-11 w-44 rounded bg-white/20" />
+    </HeroFullShell>
+  );
+}
+
+// Dispatcher: returns the skeleton matching the configured hero type so the
+// loading placeholder matches whatever hero will render.
+export function HeroSkeleton({ type = "slider", hasSideCards = true } = {}) {
+  switch (type) {
+    case "iherb":
+      return <HeroIherbSkeleton hasSideCards={hasSideCards} />;
+    case "single":
+      return <HeroSingleSkeleton />;
+    case "multi":
+      return <HeroMultiSkeleton />;
+    case "video":
+      return <HeroVideoSkeleton />;
+    case "countdown":
+      return <HeroCountdownSkeleton />;
+    case "slider":
+    default:
+      return <HeroCarouselSkeleton />;
+  }
 }
 
 // Mirrors ProductCard.js exactly:
