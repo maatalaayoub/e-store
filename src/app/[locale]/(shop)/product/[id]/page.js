@@ -9,6 +9,7 @@ import ProductPrice from "./_components/ProductPrice";
 import ProductSections from "@/components/shop/product-sections/ProductSections";
 import { productSectionService } from "@/modules/product-sections/service";
 import { getSectionComponent } from "@/components/shop/product-sections/registry";
+import ShopPerks from "@/components/shop/ShopPerks";
 import ShopFooter from "@/components/shop/ShopFooter";
 
 export default async function ProductDetailsPage({ params }) {
@@ -127,6 +128,9 @@ export default async function ProductDetailsPage({ params }) {
           dict={dict}
           excludeTypes={excludedSectionTypes}
         />
+
+        {/* Trust / shipping perks */}
+        <ShopPerks compact />
       </main>
 
       <ShopFooter />

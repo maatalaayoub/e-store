@@ -3,7 +3,7 @@
 import { Headset, RefreshCcw, Truck, Rocket } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 
-export default function ShopPerks() {
+export default function ShopPerks({ compact = false }) {
   const dict = useDictionary();
   const tPerks = dict?.perks ?? {};
 
@@ -15,16 +15,20 @@ export default function ShopPerks() {
   ];
 
   return (
-    <section className="px-6 py-16 bg-white">
-      <div className="mx-auto max-w-7xl rounded-xl border border-zinc-100 bg-white p-8">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+    <section className={`bg-white ${compact ? "py-6" : "px-6 py-16"}`}>
+      <div className={`mx-auto ${compact ? "" : "max-w-7xl rounded-xl border border-zinc-100 bg-white p-6 sm:p-8"}`}>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4">
           {perks.map(({ Icon, title, desc }) => (
-            <div key={title} className="flex items-start gap-4">
-              <Icon className="w-8 h-8 text-blue-600 shrink-0" strokeWidth={1} />
-              <div>
-                <h3 className="text-base font-medium text-zinc-900">{title}</h3>
-                <p className="text-sm text-zinc-500 mt-1">{desc}</p>
+            <div key={title} className="flex flex-col items-center text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-zinc-800">
+                <Icon className="h-7 w-7" strokeWidth={1.25} />
               </div>
+              <h3 className="mt-3 text-xs font-semibold uppercase tracking-wide text-zinc-900">
+                {title}
+              </h3>
+              <p className="mt-1 text-xs leading-relaxed text-zinc-500 max-w-[160px]">
+                {desc}
+              </p>
             </div>
           ))}
         </div>
