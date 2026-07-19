@@ -1938,7 +1938,7 @@ function HeroSection() {
   const [slides, setSlides]             = useState([]);
   const [singleCfg, setSingleCfg]       = useState({ image_url: '', overlay_opacity: 40, text_align: 'center', cta_href: '/shop', translations: mkTrans() });
   const [multiCfg, setMultiCfg]         = useState({ auto_rotate: true, rotation_interval: 4000, overlay_opacity: 40, cta_href: '/shop', translations: mkTrans() });
-  const [iherbCfg, setIherbCfg]         = useState({ main_image_url: '', main_cta_href: '/shop', text_align: 'left', overlay_opacity: 0, side_cards: [], mobile_position: 'behind', translations: mkTrans() });
+  const [iherbCfg, setIherbCfg]         = useState({ main_image_url: '', main_cta_href: '/shop', text_align: 'left', overlay_opacity: 0, side_cards: [], mobile_position: 'behind', autoplay: false, autoplay_interval: 5, translations: mkTrans() });
   const [videoCfg, setVideoCfg]         = useState({ video_url: '', autoplay: true, loop: true, muted: true, poster_url: '', overlay_opacity: 40, cta_href: '/shop', translations: mkTrans() });
   const [countdownCfg, setCountdownCfg] = useState({ background_type: 'image', background_url: '', countdown_end: '', expired_behavior: 'hide', overlay_opacity: 40, cta_href: '/shop', translations: mkTrans() });
   const [loading, setLoading]           = useState(true);
@@ -2485,6 +2485,31 @@ function HeroSection() {
             <p className="text-[11px] text-zinc-400 mt-1">Choose how the hero sits relative to the fixed header on mobile only. Desktop always shows below header.</p>
           </div>
 
+          <div>
+            <label className="flex items-center gap-2 text-sm text-zinc-700">
+              <input
+                type="checkbox"
+                checked={!!iherbCfg.autoplay}
+                onChange={(e) => setIherbCfg((p) => ({ ...p, autoplay: e.target.checked }))}
+                className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
+              />
+              Auto-move slides
+            </label>
+            {iherbCfg.autoplay && (
+              <div className="mt-2 flex items-center gap-2">
+                <span className="text-xs text-zinc-500">Time between slides</span>
+                <input
+                  type="number" min={1} max={30} step={1}
+                  value={iherbCfg.autoplay_interval ?? 5}
+                  onChange={(e) => setIherbCfg((p) => ({ ...p, autoplay_interval: Math.max(1, Math.min(30, Number(e.target.value) || 5)) }))}
+                  className="w-20 rounded-lg border border-zinc-200 px-2 py-1 text-sm"
+                />
+                <span className="text-xs text-zinc-500">seconds</span>
+              </div>
+            )}
+            <p className="text-[11px] text-zinc-400 mt-1">Automatically advance to the next slide/set. Applies to both mobile and desktop.</p>
+          </div>
+
           <LocaleTabBar />
           <input className={inputClass} dir={inputDir} placeholder="Title (optional, overlaid on banner)"
             value={getTxt(iherbCfg, 'title')} onChange={setTxt(setIherbCfg, 'title')} />
@@ -2506,7 +2531,7 @@ function HeroSection() {
           <div className="pt-4 border-t border-zinc-100 space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-zinc-700">Side Promo Cards</p>
-              <span className="text-xs text-zinc-400">{(iherbCfg.side_cards ?? []).length}/2</span>
+              <span className="text-xs text-zinc-400">{(iherbCfg.side_cards ?? []).length}</span>
             </div>
             {(iherbCfg.side_cards ?? []).length === 0 && (
               <p className="text-sm text-zinc-400 text-center py-4">No side cards. Add one to show the desktop side layout.</p>
@@ -2533,11 +2558,9 @@ function HeroSection() {
                   onChange={(e) => updateCard(idx, 'href', e.target.value)} />
               </div>
             ))}
-            {(iherbCfg.side_cards ?? []).length < 2 && (
-              <button onClick={addCard} className="flex items-center gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
-                <Plus className="h-4 w-4" /> Add Side Card
-              </button>
-            )}
+            <button onClick={addCard} className="flex items-center gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
+              <Plus className="h-4 w-4" /> Add Side Card
+            </button>
           </div>
         </div>
       )}
