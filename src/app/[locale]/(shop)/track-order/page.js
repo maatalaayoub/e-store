@@ -14,6 +14,7 @@ import {
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { isRtlLocale } from "@/config/constants";
 import { downloadInvoicePdf } from "@/lib/invoice-pdf";
+import { getMainImage } from "@/lib/product-image";
 import PageHeader from "@/components/ui/PageHeader";
 import { TRACK_ORDER_STATUS_CONFIG as STATUS_CONFIG } from "@/lib/order-status";
 import { toast } from "sonner";
@@ -185,14 +186,28 @@ export default function TrackOrderPage() {
               <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400 mb-3">
                 {t.items ?? "Items"}
               </p>
-              <ul className="flex flex-col gap-2">
+              <ul className="flex flex-col gap-3">
                 {items.map((item, i) => {
                   const unit = Number(item.unit_price) * rate;
                   const colorName = item.selected_color?.name ?? null;
                   const colorHex = item.selected_color?.hex ?? null;
                   const sizeLabel = item.selected_size ?? null;
+                  const imageUrl = getMainImage(item.products);
                   return (
-                    <li key={i} className="flex items-start justify-between gap-3 text-sm">
+                    <li key={i} className="flex items-center gap-3 text-sm">
+                      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-zinc-100 bg-zinc-50">
+                        {imageUrl ? (
+                          <img
+                            src={imageUrl}
+                            alt={item.products?.name ?? ""}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-zinc-300">
+                            <Package className="h-6 w-6" />
+                          </div>
+                        )}
+                      </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-zinc-800 truncate">
                           {item.products?.name ?? "Product"}
@@ -217,7 +232,7 @@ export default function TrackOrderPage() {
                           </div>
                         )}
                       </div>
-                      <span className="text-zinc-500 mx-3 shrink-0">× {item.quantity}</span>
+                      <span className="text-zinc-500 mx-2 shrink-0">× {item.quantity}</span>
                       <span className="font-medium text-zinc-900 shrink-0">
                         {(unit * item.quantity).toFixed(2)} {currency}
                       </span>

@@ -9,6 +9,7 @@ import ProductPrice from "./_components/ProductPrice";
 import ProductSections from "@/components/shop/product-sections/ProductSections";
 import { productSectionService } from "@/modules/product-sections/service";
 import { getSectionComponent } from "@/components/shop/product-sections/registry";
+import ShopFooter from "@/components/shop/ShopFooter";
 
 export default async function ProductDetailsPage({ params }) {
   const { locale, id } = await params;
@@ -127,6 +128,8 @@ export default async function ProductDetailsPage({ params }) {
           excludeTypes={excludedSectionTypes}
         />
       </main>
+
+      <ShopFooter />
     </div>
   );
 }
