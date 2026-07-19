@@ -1,5 +1,27 @@
 import { SkeletonImage, SkeletonText, SkeletonButton } from "./primitives";
 
+// Mirrors iHerb-style hero — main banner + optional side cards (mobile + desktop)
+export function HeroIherbSkeleton({ hasSideCards = true } = {}) {
+  return (
+    <section
+      className="w-full lg:px-8 xl:px-12 lg:pt-[calc(var(--iherb-offset)+1rem)]"
+      style={{ '--iherb-offset': 'calc(var(--bar-height, 0px) + var(--header-height, 3.5rem))' }}
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
+        {/* Main banner shimmer */}
+        <SkeletonImage className="w-full aspect-[16/9] lg:rounded-xl" />
+        {/* Side card shimmers — 2-col grid on mobile, stacked column on desktop */}
+        {hasSideCards && (
+          <div className="grid grid-cols-2 gap-4 lg:flex lg:flex-col">
+            <SkeletonImage className="min-h-[140px] sm:min-h-[180px] lg:flex-1 lg:min-h-0 rounded-xl" />
+            <SkeletonImage className="min-h-[140px] sm:min-h-[180px] lg:flex-1 lg:min-h-0 rounded-xl" />
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 // Mirrors HeroCarousel — full-viewport shimmer with centered text + button + dot indicators
 export function HeroCarouselSkeleton() {
   return (

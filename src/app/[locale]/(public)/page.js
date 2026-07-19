@@ -9,7 +9,7 @@ import FeaturedProducts from "@/components/shop/FeaturedProducts";
 import ShopPerks from "@/components/shop/ShopPerks";
 import ShopFooter from "@/components/shop/ShopFooter";
 import { useBfcacheReload } from "@/hooks/useBfcacheReload";
-import { HeroCarouselSkeleton } from "@/components/skeletons";
+import { HeroCarouselSkeleton, HeroIherbSkeleton } from "@/components/skeletons";
 
 // Module-level cache: persists across client-side navigations, cleared on hard refresh
 const _heroCache = new Map();
@@ -51,11 +51,30 @@ export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col bg-white text-zinc-900">
       <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-      <ShopHeader onOpenCart={() => setIsCartOpen(true)} fixed={heroData?.type !== 'iherb'} />
+      {/*
+        Hero layout mode for the header:
+        - 'behind' (default for slider/single/multi/video/countdown and iHerb mobile behind):
+          header is fixed + dark on mobile, static + light on desktop.
+        - 'below' (iHerb mobile below):
+          header stays fixed + light on all screens.
+      */}
+      <ShopHeader
+        onOpenCart={() => setIsCartOpen(true)}
+        fixedBelow={(() => {
+          const mode = heroData?.type === 'iherb'
+            ? (heroData?.config?.mobile_position || 'behind')
+            : 'behind';
+          return mode === 'behind' ? 'lg' : 'all';
+        })()}
+      />
 
       <main className="flex-1">
         {heroLoading ? (
-          <HeroCarouselSkeleton />
+          heroData?.type === 'iherb' ? (
+            <HeroIherbSkeleton />
+          ) : (
+            <HeroCarouselSkeleton />
+          )
         ) : (
           <HeroRenderer
             heroType={heroData?.type ?? "slider"}

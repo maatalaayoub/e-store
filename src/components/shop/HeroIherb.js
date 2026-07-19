@@ -29,6 +29,7 @@ export default function HeroIherb({ config = {}, locale = 'en' }) {
     text_align = 'left',
     overlay_opacity = 0,
     side_cards = [],
+    mobile_position = 'behind',
     translations = {},
   } = config;
 
@@ -59,8 +60,18 @@ export default function HeroIherb({ config = {}, locale = 'en' }) {
 
   const mainHref = resolveHref(main_cta_href);
 
+  const isMobileBelow = mobile_position === 'below';
+
+  // Offset that clears the fixed header (+ optional announcement bar).
+  const headerOffset = 'calc(var(--bar-height, 0px) + var(--header-height, 3.5rem))';
+
   return (
-    <section className="w-full lg:px-8 xl:px-12 lg:pt-4">
+    <section
+      className={`w-full lg:px-8 xl:px-12 ${
+        isMobileBelow ? 'pt-[var(--iherb-offset)]' : ''
+      } lg:pt-[calc(var(--iherb-offset)+1rem)]`}
+      style={{ '--iherb-offset': headerOffset }}
+    >
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
         {/* Main hero */}
         <HeroLink
@@ -72,7 +83,7 @@ export default function HeroIherb({ config = {}, locale = 'en' }) {
             src={main_image_url}
             alt={title || 'Hero banner'}
             className="w-full h-auto block transition-transform duration-700 ease-out group-hover:scale-[1.02]"
-            fetchpriority="high"
+            fetchPriority="high"
             loading="eager"
             decoding="async"
           />
@@ -104,7 +115,7 @@ export default function HeroIherb({ config = {}, locale = 'en' }) {
 
         {/* Side cards */}
         {side_cards.length > 0 && (
-          <div className="flex flex-col gap-4">
+          <div className={side_cards.length > 1 ? 'grid grid-cols-2 gap-4 lg:flex lg:flex-col' : 'flex flex-col gap-4'}>
             {side_cards.map((card, idx) => {
               if (!card?.image_url) return null;
               const ct = card.translations?.[locale] || card.translations?.en || {};
@@ -114,7 +125,7 @@ export default function HeroIherb({ config = {}, locale = 'en' }) {
                 <HeroLink
                   key={idx}
                   href={cardHref}
-                  className="group relative flex-1 overflow-hidden lg:rounded-xl bg-zinc-100 min-h-[160px] lg:min-h-0"
+                  className="group relative flex-1 overflow-hidden lg:rounded-xl bg-zinc-100 min-h-[140px] sm:min-h-[180px] lg:min-h-0"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img

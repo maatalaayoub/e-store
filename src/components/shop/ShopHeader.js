@@ -30,32 +30,63 @@ function useStoreLogo() {
   return logo;
 }
 
-function HeaderLogo({ isLight }) {
+function HeaderLogo({ mode = 'light' }) {
   const logo = useStoreLogo();
-  const src = isLight ? logo.default : logo.dark;
-  if (!src) return <div className="h-5 w-32" />;
   const width = Math.min(Math.max(parseInt(logo.size || '160', 10) || 160, 80), 320);
   const maxHeight = Math.min(Math.max(parseInt(logo.height || '40', 10) || 40, 20), 120);
-  return (
+
+  const renderImg = (src, extraClass = '') => (
     <Image
       src={src}
       alt="LaCérémonie"
       width={width}
       height={maxHeight}
-      className="h-auto w-auto max-w-full object-contain transition-all duration-500"
+      className={`h-auto w-auto max-w-full object-contain transition-all duration-500 ${extraClass}`}
       style={{ maxHeight: `${maxHeight}px` }}
       priority
     />
   );
+
+  // Responsive: dark-bg logo on mobile (over hero image), light-bg logo on desktop.
+  if (mode === 'responsive' && logo.dark && logo.default) {
+    return (
+      <>
+        {renderImg(logo.dark, 'block lg:hidden')}
+        {renderImg(logo.default, 'hidden lg:block')}
+      </>
+    );
+  }
+
+  const src = mode === 'dark' ? (logo.dark || logo.default) : (logo.default || logo.dark);
+  if (!src) return <div className="h-5 w-32" />;
+  return renderImg(src);
 }
 
-export default function ShopHeader({ onOpenCart, fixed = true }) {
+export default function ShopHeader({ onOpenCart, fixed = true, fixedBelow = null }) {
   const params = useParams();
   const locale = params?.locale || "en";
   const dict = useDictionary();
   const isScrolled = useIsScrolled();
   const [isHovered, setIsHovered] = useState(false);
-  const isLight = isScrolled || isHovered || !fixed;
+  // fixedBelow='lg'  → hero is behind header: dark/transparent until scroll/hover on mobile,
+  //                      solid light style on desktop (lg+).
+  // fixedBelow='all' → hero is below header: fixed with normal light style everywhere.
+  const isMobileBehindHero = fixedBelow === 'lg';
+  const isAlwaysLight = fixedBelow === 'all';
+  // forceLight: fully light (white bg, dark icons) on every breakpoint.
+  const forceLight = isScrolled || isHovered || isAlwaysLight;
+  // behindResponsive: transparent + white icons on mobile, light on desktop (lg+).
+  const behindResponsive = isMobileBehindHero && !forceLight;
+  const logoMode = forceLight ? 'light' : behindResponsive ? 'responsive' : 'dark';
+  // Class helpers reused by the icon buttons so the mobile/desktop split stays consistent.
+  const btnClass = (light, dark) => {
+    if (forceLight) return light;
+    if (behindResponsive) {
+      const lgLight = light.split(' ').filter(Boolean).map((c) => `lg:${c}`).join(' ');
+      return `${dark} ${lgLight}`;
+    }
+    return dark;
+  };
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -99,6 +130,18 @@ export default function ShopHeader({ onOpenCart, fixed = true }) {
     isSearchOpen
   );
 
+  // Publish the header's rendered height so below-hero layouts can offset correctly.
+  useEffect(() => {
+    const el = headerRef.current;
+    const root = document.documentElement;
+    if (!el) return;
+    const setHeight = () => root.style.setProperty('--header-height', `${el.offsetHeight}px`);
+    setHeight();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(setHeight) : null;
+    ro?.observe(el);
+    return () => { ro?.disconnect(); root.style.removeProperty('--header-height'); };
+  }, []);
+
   return (
     <>
       <ShopSidebarNav
@@ -110,24 +153,25 @@ export default function ShopHeader({ onOpenCart, fixed = true }) {
         ref={headerRef}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        style={fixed ? { top: 'var(--bar-height, 0px)' } : undefined}
-        className={`${fixed ? 'fixed inset-x-0 z-50' : 'relative'} transition-colors duration-500 ease-in-out ${
-          isScrolled || !fixed
+        style={{ top: 'var(--bar-height, 0px)' }}
+        className={`fixed inset-x-0 z-50 transition-colors duration-500 ease-in-out ${
+          forceLight
             ? "bg-white border-b border-zinc-200"
-            : "bg-transparent border-b border-transparent"
+            : behindResponsive
+              ? "bg-transparent border-b border-transparent lg:bg-white lg:border-zinc-200"
+              : "bg-transparent border-b border-transparent"
         }`}
       >
-        {/* Hover backdrop: wipes down from top with blur */}
-        <div
-          aria-hidden="true"
-          className={`pointer-events-none absolute inset-x-0 top-0 transition-all duration-500 ease-in-out origin-top ${
-            !isScrolled && isHovered
-              ? "opacity-100 scale-y-100 backdrop-blur-md bg-white/95 shadow-sm"
-              : "opacity-0 scale-y-0 backdrop-blur-none bg-transparent"
-          }`}
-          style={{ height: "100%", zIndex: -1 }}
-        />
         <div className="relative mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+          {/* Hover backdrop: only used for the transparent mobile behind-hero state. */}
+          <div
+            aria-hidden="true"
+            className={`pointer-events-none absolute inset-0 -z-10 transition-all duration-500 ease-in-out origin-top ${
+              !isScrolled && isHovered
+                ? "opacity-100 scale-y-100 backdrop-blur-md bg-white/95 shadow-sm"
+                : "opacity-0 scale-y-0 backdrop-blur-none bg-transparent"
+            } ${isAlwaysLight ? 'opacity-0 scale-y-0' : ''} ${isMobileBehindHero ? 'lg:opacity-0 lg:scale-y-0' : ''}`}
+          />
           {/* Left: menu + logo */}
           <div
             className={`flex items-center gap-4 transition-opacity duration-200 ${
@@ -137,11 +181,10 @@ export default function ShopHeader({ onOpenCart, fixed = true }) {
             }`}
           >
             <button
-              className={`p-2 -ms-2 rounded-full hover:scale-110 active:scale-95 transition-all duration-200 ${
-                isLight
-                  ? "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
-                  : "text-white hover:bg-white/10"
-              }`}
+              className={`p-2 -ms-2 rounded-full hover:scale-110 active:scale-95 transition-all duration-200 ${btnClass(
+                "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900",
+                "text-white hover:bg-white/10"
+              )}`}
               aria-label="Open sidebar"
               onClick={() => setIsSidebarOpen(true)}
             >
@@ -150,7 +193,7 @@ export default function ShopHeader({ onOpenCart, fixed = true }) {
               </svg>
             </button>
             <Link href={`/${locale}`} className="flex items-center">
-              <HeaderLogo isLight={isLight} />
+              <HeaderLogo mode={logoMode} />
             </Link>
           </div>
 
@@ -166,11 +209,10 @@ export default function ShopHeader({ onOpenCart, fixed = true }) {
               onClick={() => setIsSearchOpen((v) => !v)}
               className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
                 isSearchOpen ? "opacity-0 pointer-events-none" : ""
-              } ${
-                isLight
-                  ? "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
-                  : "text-white hover:bg-white/10"
-              }`}
+              } ${btnClass(
+                "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900",
+                "text-white hover:bg-white/10"
+              )}`}
               aria-label="Open search"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="h-5 w-5">
@@ -179,11 +221,10 @@ export default function ShopHeader({ onOpenCart, fixed = true }) {
             </button>
             <button
               onClick={onOpenCart}
-              className={`relative p-2 rounded-full transition-colors ${
-                isLight
-                  ? "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100"
-                  : "text-white hover:bg-white/10"
-              }`}
+              className={`relative p-2 rounded-full transition-colors ${btnClass(
+                "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100",
+                "text-white hover:bg-white/10"
+              )}`}
               aria-label="Open cart"
             >
               {/* Ripple ring on add-to-cart */}
@@ -191,7 +232,7 @@ export default function ShopHeader({ onOpenCart, fixed = true }) {
                 <span
                   aria-hidden="true"
                   className={`pointer-events-none absolute inset-0 rounded-full animate-cart-ring ${
-                    isLight ? "bg-zinc-900/20" : "bg-white/30"
+                    forceLight ? "bg-zinc-900/20" : behindResponsive ? "bg-white/30 lg:bg-zinc-900/20" : "bg-white/30"
                   }`}
                 />
               )}
