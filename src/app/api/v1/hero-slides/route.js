@@ -8,6 +8,7 @@ const HERO_CONFIG_KEYS = [
   'hero_multi_config',
   'hero_video_config',
   'hero_countdown_config',
+  'hero_iherb_config',
 ];
 
 /**

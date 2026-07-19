@@ -5,6 +5,7 @@ import HeroSingleImage from "./HeroSingleImage";
 import HeroMultiImage from "./HeroMultiImage";
 import HeroVideo from "./HeroVideo";
 import HeroCountdown from "./HeroCountdown";
+import HeroIherb from "./HeroIherb";
 
 /**
  * HeroRenderer
@@ -13,7 +14,7 @@ import HeroCountdown from "./HeroCountdown";
  * stores continue working with zero migration.
  *
  * Props:
- *   heroType  — 'slider' | 'single' | 'multi' | 'video' | 'countdown'
+ *   heroType  — 'slider' | 'single' | 'multi' | 'video' | 'countdown' | 'iherb'
  *   slides    — mapped slide array ({ image, title, cta, href })
  *   heroConfig — parsed JSON object from store_settings (null for slider type)
  */
@@ -30,6 +31,9 @@ export default function HeroRenderer({ heroType = "slider", slides = [], heroCon
 
     case "countdown":
       return <HeroCountdown config={heroConfig ?? {}} locale={locale} />;
+
+    case "iherb":
+      return <HeroIherb config={heroConfig ?? {}} locale={locale} />;
 
     case "slider":
     default:

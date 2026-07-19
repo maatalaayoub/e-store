@@ -34,6 +34,7 @@ const ALLOWED_KEYS = [
   'hero_multi_config',
   'hero_video_config',
   'hero_countdown_config',
+  'hero_iherb_config',
   // Contact section
   'contact_email',
   'contact_phone',
@@ -74,6 +75,7 @@ const VALUE_MAX = {
   hero_multi_config:     4000,
   hero_video_config:     6000,
   hero_countdown_config: 5000,
+  hero_iherb_config:     8000,
 };
 const DEFAULT_VALUE_MAX = 1000;
 

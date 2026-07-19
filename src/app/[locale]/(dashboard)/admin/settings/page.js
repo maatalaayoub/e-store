@@ -33,6 +33,7 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  LayoutTemplate,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { invalidateBarCache, MarqueePreview, Countdown, SwapStack } from "@/components/shop/AnnouncementBar";
@@ -1920,11 +1921,12 @@ function LocalizationSection() {
 const mkTrans = () => Object.fromEntries(Object.keys(localeMetadata).map((l) => [l, {}]));
 
 const HERO_TYPES = [
-  { value: 'slider',    label: 'Slider',       icon: Layers,     desc: 'Multi-slide cinematic carousel' },
-  { value: 'single',   label: 'Single Image',  icon: ImageIcon,  desc: 'Static full-viewport image' },
-  { value: 'multi',    label: 'Multi-Image',   icon: LayoutGrid, desc: 'Gallery with auto-rotation' },
-  { value: 'video',    label: 'Video Hero',    icon: Film,       desc: 'Full-screen video background' },
-  { value: 'countdown',label: 'Countdown',     icon: Timer,      desc: 'Animated countdown timer' },
+  { value: 'slider',    label: 'Slider',       icon: Layers,         desc: 'Multi-slide cinematic carousel' },
+  { value: 'single',   label: 'Single Image',  icon: ImageIcon,      desc: 'Static full-viewport image' },
+  { value: 'multi',    label: 'Multi-Image',   icon: LayoutGrid,     desc: 'Gallery with auto-rotation' },
+  { value: 'iherb',    label: 'iHerb Style',   icon: LayoutTemplate, desc: 'Responsive hero + side promo cards' },
+  { value: 'video',    label: 'Video Hero',    icon: Film,           desc: 'Full-screen video background' },
+  { value: 'countdown',label: 'Countdown',     icon: Timer,          desc: 'Animated countdown timer' },
 ];
 
 function HeroSection() {
@@ -1936,6 +1938,7 @@ function HeroSection() {
   const [slides, setSlides]             = useState([]);
   const [singleCfg, setSingleCfg]       = useState({ image_url: '', overlay_opacity: 40, text_align: 'center', cta_href: '/shop', translations: mkTrans() });
   const [multiCfg, setMultiCfg]         = useState({ auto_rotate: true, rotation_interval: 4000, overlay_opacity: 40, cta_href: '/shop', translations: mkTrans() });
+  const [iherbCfg, setIherbCfg]         = useState({ main_image_url: '', main_cta_href: '/shop', text_align: 'left', overlay_opacity: 0, side_cards: [], translations: mkTrans() });
   const [videoCfg, setVideoCfg]         = useState({ video_url: '', autoplay: true, loop: true, muted: true, poster_url: '', overlay_opacity: 40, cta_href: '/shop', translations: mkTrans() });
   const [countdownCfg, setCountdownCfg] = useState({ background_type: 'image', background_url: '', countdown_end: '', expired_behavior: 'hide', overlay_opacity: 40, cta_href: '/shop', translations: mkTrans() });
   const [loading, setLoading]           = useState(true);
@@ -1981,6 +1984,7 @@ function HeroSection() {
         };
         tryParse('hero_single_config',    setSingleCfg);
         tryParse('hero_multi_config',     setMultiCfg);
+        tryParse('hero_iherb_config',     setIherbCfg);
         tryParse('hero_video_config',     setVideoCfg);
         tryParse('hero_countdown_config', setCountdownCfg);
       }
@@ -2067,6 +2071,48 @@ function HeroSection() {
       }
     }));
 
+  // ── iHerb side-card helpers ───────────────────────────────────────────
+  const getCardTxt = (card, field) => card?.translations?.[activeLang]?.[field] ?? '';
+  const setCardTxt = (idx, field) => (e) =>
+    setIherbCfg(prev => ({
+      ...prev,
+      side_cards: prev.side_cards.map((c, i) => i !== idx ? c : {
+        ...c,
+        translations: {
+          ...mkTrans(),
+          ...(c.translations ?? {}),
+          [activeLang]: { ...(c.translations?.[activeLang] ?? {}), [field]: e.target.value }
+        }
+      })
+    }));
+  const updateCard = (idx, field, value) =>
+    setIherbCfg(prev => ({
+      ...prev,
+      side_cards: prev.side_cards.map((c, i) => i !== idx ? c : { ...c, [field]: value })
+    }));
+  const addCard = () =>
+    setIherbCfg(prev => ({
+      ...prev,
+      side_cards: [...(prev.side_cards ?? []), { image_url: '', href: '/shop', translations: mkTrans() }]
+    }));
+  const removeCard = (idx) =>
+    setIherbCfg(prev => ({
+      ...prev,
+      side_cards: prev.side_cards.filter((_, i) => i !== idx)
+    }));
+  const handleCardImageUpload = async (idx, file) => {
+    if (!file) return;
+    setUploadingKey((prev) => ({ ...prev, [`iherb_card_${idx}`]: true }));
+    try {
+      const url = await uploadFile(file, 'hero/iherb');
+      updateCard(idx, 'image_url', url);
+    } catch (err) {
+      toast.error((t.upload_error ?? 'Upload failed') + ': ' + (err?.message ?? ''));
+    } finally {
+      setUploadingKey((prev) => ({ ...prev, [`iherb_card_${idx}`]: false }));
+    }
+  };
+
   // ── Save ─────────────────────────────────────────────────────────────
   const save = async () => {
     setSaving(true);
@@ -2074,6 +2120,7 @@ function HeroSection() {
       const configMap = {
         single:    ['hero_single_config',    singleCfg],
         multi:     ['hero_multi_config',     multiCfg],
+        iherb:     ['hero_iherb_config',     iherbCfg],
         video:     ['hero_video_config',     videoCfg],
         countdown: ['hero_countdown_config', countdownCfg],
       };
@@ -2214,7 +2261,7 @@ function HeroSection() {
       {/* ── Type selector ────────────────────────────────────────────── */}
       <div className="mb-6">
         <p className="text-sm font-medium text-zinc-700 mb-3">Hero Type</p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {HERO_TYPES.map((ht) => {
             const Icon = ht.icon;
             const active = heroType === ht.value;
@@ -2405,6 +2452,80 @@ function HeroSection() {
             )}
           </div>
           <OverlaySlider value={multiCfg.overlay_opacity} onChange={(v) => setMultiCfg((p) => ({ ...p, overlay_opacity: v }))} />
+        </div>
+      )}
+
+      {/* ── iHerb-style hero settings ─────────────────────────────────── */}
+      {heroType === 'iherb' && (
+        <div className="space-y-4 border border-zinc-200 rounded-xl p-4 mb-4">
+          <p className="text-sm font-semibold text-zinc-700">iHerb Style Hero</p>
+          <p className="text-xs text-zinc-500">
+            Upload a main banner (mobile + desktop) and up to two side promo cards. The hero height is set by the main banner&apos;s aspect ratio so the whole image is always visible.
+          </p>
+
+          <ImageTile
+            imageUrl={iherbCfg.main_image_url}
+            isUploading={uploadingKey.iherb_main}
+            onUpload={(f) => handleSpecialUpload('iherb_main', setIherbCfg, 'main_image_url', f, 'hero/iherb')}
+            onDelete={() => setIherbCfg((p) => ({ ...p, main_image_url: '' }))}
+            onPreview={setPreviewImage}
+            hint="Upload main hero banner"
+          />
+
+          <LocaleTabBar />
+          <input className={inputClass} dir={inputDir} placeholder="Title (optional, overlaid on banner)"
+            value={getTxt(iherbCfg, 'title')} onChange={setTxt(setIherbCfg, 'title')} />
+          <textarea className={`${inputClass} resize-none`} dir={inputDir} rows={2} placeholder="Description (optional, overlaid on banner)"
+            value={getTxt(iherbCfg, 'description')} onChange={setTxt(setIherbCfg, 'description')} />
+          <div className="grid grid-cols-2 gap-3">
+            <input className={inputClass} dir={inputDir} placeholder="CTA text"
+              value={getTxt(iherbCfg, 'cta_text')} onChange={setTxt(setIherbCfg, 'cta_text')} />
+            <input className={inputClass} placeholder="CTA link (e.g. /shop)" value={iherbCfg.main_cta_href}
+              onChange={(e) => setIherbCfg((p) => ({ ...p, main_cta_href: e.target.value }))} />
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-zinc-700 shrink-0">Text align</span>
+            <AlignPicker value={iherbCfg.text_align} onChange={(v) => setIherbCfg((p) => ({ ...p, text_align: v }))} />
+          </div>
+          <OverlaySlider value={iherbCfg.overlay_opacity} onChange={(v) => setIherbCfg((p) => ({ ...p, overlay_opacity: v }))} />
+
+          {/* Side cards */}
+          <div className="pt-4 border-t border-zinc-100 space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-zinc-700">Side Promo Cards</p>
+              <span className="text-xs text-zinc-400">{(iherbCfg.side_cards ?? []).length}/2</span>
+            </div>
+            {(iherbCfg.side_cards ?? []).length === 0 && (
+              <p className="text-sm text-zinc-400 text-center py-4">No side cards. Add one to show the desktop side layout.</p>
+            )}
+            {(iherbCfg.side_cards ?? []).map((card, idx) => (
+              <div key={idx} className="border border-zinc-200 rounded-xl p-3 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Card {idx + 1}</span>
+                  <button onClick={() => removeCard(idx)} className="p-1 rounded text-red-400 hover:text-red-600">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+                <ImageTile
+                  imageUrl={card.image_url}
+                  isUploading={uploadingKey[`iherb_card_${idx}`]}
+                  onUpload={(f) => handleCardImageUpload(idx, f)}
+                  onDelete={() => updateCard(idx, 'image_url', '')}
+                  onPreview={setPreviewImage}
+                  hint="Upload promo card image"
+                />
+                <input className={inputClass} dir={inputDir} placeholder="Card title (optional)"
+                  value={getCardTxt(card, 'title')} onChange={setCardTxt(idx, 'title')} />
+                <input className={inputClass} placeholder="Card link (e.g. /shop)" value={card.href}
+                  onChange={(e) => updateCard(idx, 'href', e.target.value)} />
+              </div>
+            ))}
+            {(iherbCfg.side_cards ?? []).length < 2 && (
+              <button onClick={addCard} className="flex items-center gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
+                <Plus className="h-4 w-4" /> Add Side Card
+              </button>
+            )}
+          </div>
         </div>
       )}
 
