@@ -7,13 +7,13 @@ export function HeroIherbSkeleton({ hasSideCards = true } = {}) {
       className="w-full lg:px-8 xl:px-12 lg:pt-[calc(var(--iherb-offset)+1rem)]"
       style={{ '--iherb-offset': 'calc(var(--bar-height, 0px) + var(--header-height, 3.5rem))' }}
     >
-      {/* Mobile: single full-width banner + pagination dots */}
-      <div className="lg:hidden">
+      {/* Mobile: single full-width banner with overlaid pagination dots */}
+      <div className="relative lg:hidden">
         <SkeletonImage className="w-full aspect-[16/9]" />
-        <div className="flex items-center justify-center gap-2 py-3">
-          <div className="h-2 w-5 rounded-full bg-zinc-300" />
-          <div className="h-2 w-2 rounded-full bg-zinc-200" />
-          <div className="h-2 w-2 rounded-full bg-zinc-200" />
+        <div className="absolute inset-x-0 bottom-3 flex items-center justify-center gap-2">
+          <div className="h-2 w-5 rounded-full bg-white/80" />
+          <div className="h-2 w-2 rounded-full bg-white/50" />
+          <div className="h-2 w-2 rounded-full bg-white/50" />
         </div>
       </div>
 

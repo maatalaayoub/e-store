@@ -178,7 +178,7 @@ export default function HeroIherb({ config = {}, locale = 'en' }) {
       style={{ '--iherb-offset': headerOffset }}
     >
       {/* ───────── Mobile: swipeable full-width banner carousel ───────── */}
-      <div className="lg:hidden">
+      <div className="relative lg:hidden">
         <div
           ref={trackRef}
           onScroll={onScroll}
@@ -204,17 +204,17 @@ export default function HeroIherb({ config = {}, locale = 'en' }) {
           ))}
         </div>
 
-        {/* Pagination dots */}
+        {/* Pagination dots — overlaid at the bottom of the banner */}
         {slides.length > 1 && (
-          <div className="flex items-center justify-center gap-2 py-3">
+          <div className="pointer-events-none absolute inset-x-0 bottom-3 z-10 flex items-center justify-center gap-2">
             {slides.map((s, i) => (
               <button
                 key={s.key}
                 type="button"
                 aria-label={`Go to slide ${i + 1}`}
                 onClick={() => goTo(i)}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  i === active ? 'w-5 bg-zinc-800' : 'w-2 bg-zinc-300'
+                className={`pointer-events-auto h-2 rounded-full shadow-sm ring-1 ring-black/10 transition-all duration-300 ${
+                  i === active ? 'w-5 bg-white' : 'w-2 bg-white/60'
                 }`}
               />
             ))}

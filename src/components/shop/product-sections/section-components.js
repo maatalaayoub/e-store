@@ -315,9 +315,21 @@ export function IngredientsSection({ section }) {
   if (items.length === 0 && essentials.length === 0) return null;
 
   const cardWrapper =
-    'rounded-xl border border-zinc-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md';
+    'rounded-xl border border-zinc-200 bg-white p-4 transition-colors';
   const ingredientName = 'text-sm font-semibold text-zinc-900';
   const ingredientNote = 'text-xs text-zinc-500 mt-0.5';
+
+  // Responsive column sizing:
+  // - list  → single column
+  // - grid  → admin-picked columns (capped), but never exceeds 2 cols on mobile
+  // - card  → 1 column on mobile, 2 on sm, 3 on lg
+  const gridStyle =
+    layout === 'grid'
+      ? {
+          display: 'grid',
+          gridTemplateColumns: `repeat(min(${cols}, 6), minmax(0, 1fr))`,
+        }
+      : undefined;
 
   return (
     <div>
@@ -329,13 +341,11 @@ export function IngredientsSection({ section }) {
       {items.length > 0 && (
         <div
           className={`gap-3 ${
-            layout === 'grid'
-              ? 'grid'
-              : layout === 'list'
+            layout === 'list'
               ? 'flex flex-col'
-              : 'grid sm:grid-cols-2 lg:grid-cols-3'
+              : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
           }`}
-          style={layout === 'grid' ? { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` } : undefined}
+          style={gridStyle}
         >
           {items.map((it, i) => (
             <div
