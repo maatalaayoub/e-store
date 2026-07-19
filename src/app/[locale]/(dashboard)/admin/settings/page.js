@@ -1938,7 +1938,7 @@ function HeroSection() {
   const [slides, setSlides]             = useState([]);
   const [singleCfg, setSingleCfg]       = useState({ image_url: '', overlay_opacity: 40, text_align: 'center', cta_href: '/shop', translations: mkTrans() });
   const [multiCfg, setMultiCfg]         = useState({ auto_rotate: true, rotation_interval: 4000, overlay_opacity: 40, cta_href: '/shop', translations: mkTrans() });
-  const [iherbCfg, setIherbCfg]         = useState({ main_image_url: '', main_cta_href: '/shop', text_align: 'left', overlay_opacity: 0, side_cards: [], translations: mkTrans() });
+  const [iherbCfg, setIherbCfg]         = useState({ main_image_url: '', main_cta_href: '/shop', text_align: 'left', overlay_opacity: 0, side_cards: [], mobile_position: 'behind', translations: mkTrans() });
   const [videoCfg, setVideoCfg]         = useState({ video_url: '', autoplay: true, loop: true, muted: true, poster_url: '', overlay_opacity: 40, cta_href: '/shop', translations: mkTrans() });
   const [countdownCfg, setCountdownCfg] = useState({ background_type: 'image', background_url: '', countdown_end: '', expired_behavior: 'hide', overlay_opacity: 40, cta_href: '/shop', translations: mkTrans() });
   const [loading, setLoading]           = useState(true);
@@ -2471,6 +2471,19 @@ function HeroSection() {
             onPreview={setPreviewImage}
             hint="Upload main hero banner"
           />
+
+          <div>
+            <label className="text-xs text-zinc-500 mb-2 block">Mobile position</label>
+            <div className="flex items-center gap-3">
+              {[['behind', 'Behind header'], ['below', 'Below header']].map(([val, lbl]) => (
+                <button key={val} type="button" onClick={() => setIherbCfg((p) => ({ ...p, mobile_position: val }))}
+                  className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${iherbCfg.mobile_position === val ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-zinc-200 text-zinc-600 hover:border-zinc-300'}`}>
+                  {lbl}
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] text-zinc-400 mt-1">Choose how the hero sits relative to the fixed header on mobile only. Desktop always shows below header.</p>
+          </div>
 
           <LocaleTabBar />
           <input className={inputClass} dir={inputDir} placeholder="Title (optional, overlaid on banner)"
