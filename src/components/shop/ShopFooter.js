@@ -25,7 +25,7 @@ function SocialIcon({ platform, href, children }) {
     whatsapp: "hover:bg-green-600",
     instagram: "hover:bg-pink-600",
     facebook: "hover:bg-blue-600",
-    tiktok: "hover:bg-black hover:ring-1 hover:ring-white/30",
+    tiktok: "hover:bg-zinc-900 hover:ring-1 hover:ring-white/30",
   };
   return (
     <a
@@ -100,23 +100,9 @@ export default function ShopFooter() {
 
   return (
     <footer className="relative bg-zinc-950 text-zinc-100">
-      {/* ── Wave divider ── */}
-      <div className="w-full overflow-hidden leading-none" aria-hidden="true">
-        <svg
-          viewBox="0 0 1440 64"
-          xmlns="http://www.w3.org/2000/svg"
-          preserveAspectRatio="none"
-          className="w-full h-12 md:h-16 block"
-        >
-          <path
-            d="M0,32 C240,64 480,0 720,32 C960,64 1200,0 1440,32 L1440,0 L0,0 Z"
-            fill="white"
-          />
-        </svg>
-      </div>
 
       {/* ── Footer content ── */}
-      <div className="px-6 pb-12 pt-4">
+      <div className="px-6 pb-12 pt-10">
         <div className={`mx-auto max-w-7xl grid gap-8 md:grid-cols-3 items-start mb-12 ${isRtl ? "text-right" : "text-left"}`}>
           <div>
             {settings?.store_logo_dark ? (
