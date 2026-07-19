@@ -338,7 +338,10 @@ export default function ProductCarousel({
   speed           = 500,
 }) {
   const wrapperRef = useRef(null);
-  const chunkSize = Math.max(1, productsPerRow | 0);
+  // A row must hold at least as many products as the largest "visible cards"
+  // setting, otherwise the track can't fill the viewport or slide. This keeps
+  // the storefront sane even if "products per row" is set very low (e.g. 1).
+  const chunkSize = Math.max(1, productsPerRow | 0, itemsMobile | 0, itemsTablet | 0, itemsDesktop | 0);
   const [numVisible, setNumVisible] = useState(() => Math.max(1, Math.min(itemsDesktop | 0, chunkSize)));
 
   useLayoutEffect(() => {

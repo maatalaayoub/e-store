@@ -84,7 +84,7 @@ export default function ProductPageHeader() {
           visible ? "translate-y-0" : "-translate-y-full"
         }`}
       >
-        <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+        <div className="mx-auto px-3 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
           {/* Left: back button */}
           <button
             onClick={() => router.back()}

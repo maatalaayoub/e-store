@@ -1042,6 +1042,8 @@ function LayoutMiniPreview({ value }) {
 
 // ── Carousel Section ──────────────────────────────────────────────────────────
 function CarouselSection() {
+  const dict = useDictionary();
+  const t = dict?.admin?.settings?.carousel ?? {};
   const [itemsMobile,  setItemsMobile]  = useState(2);
   const [itemsTablet,  setItemsTablet]  = useState(3);
   const [itemsDesktop, setItemsDesktop] = useState(4);
@@ -1142,40 +1144,40 @@ function CarouselSection() {
   return (
     <>
       <SectionHeader
-        title="Product Carousel"
-        description="Control how the featured products carousel behaves on your storefront."
+        title={t.title ?? "Product Carousel"}
+        description={t.description ?? "Control how the featured products carousel behaves on your storefront."}
       />
       <div className="space-y-3">
 
         {/* Products per row */}
-        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Row chunking</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">{t.row_chunking ?? "Row chunking"}</p>
         <NumStepper
-          label="Products per row"
-          hint="Total products assigned to each row before chunking into a new row"
+          label={t.products_per_row ?? "Products per row"}
+          hint={t.products_per_row_hint ?? "Total products assigned to each row before chunking into a new row"}
           value={productsPerRow}
           onChange={setProductsPerRow}
           min={1} max={24}
         />
 
         {/* Items per row */}
-        <p className="pt-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">Visible cards per row</p>
+        <p className="pt-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">{t.visible_cards ?? "Visible cards per row"}</p>
         <NumStepper
-          label="Mobile"
-          hint="Screens narrower than 640 px"
+          label={t.mobile ?? "Mobile"}
+          hint={t.mobile_hint ?? "Screens narrower than 640 px"}
           value={itemsMobile}
           onChange={setItemsMobile}
           min={1} max={4}
         />
         <NumStepper
-          label="Tablet"
-          hint="640 px – 1023 px"
+          label={t.tablet ?? "Tablet"}
+          hint={t.tablet_hint ?? "640 px – 1023 px"}
           value={itemsTablet}
           onChange={setItemsTablet}
           min={1} max={5}
         />
         <NumStepper
-          label="Desktop"
-          hint="1024 px and wider"
+          label={t.desktop ?? "Desktop"}
+          hint={t.desktop_hint ?? "1024 px and wider"}
           value={itemsDesktop}
           onChange={setItemsDesktop}
           min={1} max={6}
@@ -1184,18 +1186,18 @@ function CarouselSection() {
         {/* Autoplay toggle */}
         <div className="mt-2 flex items-center justify-between gap-4 rounded-xl border border-zinc-200 bg-white px-4 py-3.5">
           <div>
-            <p className="text-sm font-medium text-zinc-900">Autoplay</p>
-            <p className="mt-0.5 text-xs text-zinc-500">Automatically advance slides</p>
+            <p className="text-sm font-medium text-zinc-900">{t.autoplay ?? "Autoplay"}</p>
+            <p className="mt-0.5 text-xs text-zinc-500">{t.autoplay_desc ?? "Automatically advance slides"}</p>
           </div>
           <button
             type="button"
             role="switch"
             aria-checked={autoplay}
             onClick={() => setAutoplay(!autoplay)}
-            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${autoplay ? 'bg-blue-600' : 'bg-zinc-200'}`}
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${autoplay ? 'bg-blue-600' : 'bg-zinc-200'}`}
           >
             <span
-              className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 ${autoplay ? 'translate-x-5' : 'translate-x-0'}`}
+              className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 ${autoplay ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0'}`}
             />
           </button>
         </div>
@@ -1203,7 +1205,7 @@ function CarouselSection() {
         {/* Interval slider */}
         <div className={`rounded-xl border border-zinc-200 bg-white px-4 py-3.5 transition-opacity ${!autoplay ? 'opacity-40 pointer-events-none' : ''}`}>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-medium text-zinc-900">Autoplay interval</p>
+            <p className="text-sm font-medium text-zinc-900">{t.autoplay_interval ?? "Autoplay interval"}</p>
             <span className="text-xs font-semibold text-zinc-700 tabular-nums bg-zinc-100 px-2 py-0.5 rounded-md">{(interval / 1000).toFixed(1)}s</span>
           </div>
           <input
@@ -1221,7 +1223,7 @@ function CarouselSection() {
         {/* Speed slider */}
         <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3.5">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-medium text-zinc-900">Transition speed</p>
+            <p className="text-sm font-medium text-zinc-900">{t.transition_speed ?? "Transition speed"}</p>
             <span className="text-xs font-semibold text-zinc-700 tabular-nums bg-zinc-100 px-2 py-0.5 rounded-md">{speed} ms</span>
           </div>
           <input
@@ -2213,7 +2215,7 @@ function HeroSection() {
   const OverlaySlider = ({ value, onChange }) => (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-zinc-700">Overlay opacity</span>
+        <span className="text-sm text-zinc-700">{t.lbl_overlay_opacity ?? 'Overlay opacity'}</span>
         <span className="text-xs font-semibold text-zinc-500 tabular-nums w-12 text-right">{value}%</span>
       </div>
       <input type="range" min={0} max={90} step={5} value={value}
@@ -2254,24 +2256,26 @@ function HeroSection() {
   return (
     <>
       <SectionHeader
-        title="Hero Section"
-        description="Choose a hero type and configure it. Slides are shared between Slider and Multi-Image heroes."
+        title={t.section_title ?? "Hero Section"}
+        description={t.section_desc ?? "Choose a hero type and configure it. Slides are shared between Slider and Multi-Image heroes."}
       />
 
       {/* ── Type selector ────────────────────────────────────────────── */}
       <div className="mb-6">
-        <p className="text-sm font-medium text-zinc-700 mb-3">Hero Type</p>
+        <p className="text-sm font-medium text-zinc-700 mb-3">{t.type_label ?? "Hero Type"}</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {HERO_TYPES.map((ht) => {
             const Icon = ht.icon;
             const active = heroType === ht.value;
+            const label = t[`type_${ht.value}`] ?? ht.label;
+            const desc  = t[`type_${ht.value}_desc`] ?? ht.desc;
             return (
               <button key={ht.value} type="button" onClick={() => setHeroType(ht.value)}
                 className={`flex flex-col items-start gap-2 rounded-xl border-2 p-3 text-left transition-all ${active ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-200' : 'border-zinc-200 bg-white hover:border-zinc-300'}`}>
                 <Icon className={`h-5 w-5 ${active ? 'text-blue-600' : 'text-zinc-400'}`} />
                 <div>
-                  <p className={`text-xs font-semibold leading-tight ${active ? 'text-blue-700' : 'text-zinc-800'}`}>{ht.label}</p>
-                  <p className="text-[11px] text-zinc-400 leading-snug mt-0.5 hidden sm:block">{ht.desc}</p>
+                  <p className={`text-xs font-semibold leading-tight ${active ? 'text-blue-700' : 'text-zinc-800'}`}>{label}</p>
+                  <p className="text-[11px] text-zinc-400 leading-snug mt-0.5 hidden sm:block">{desc}</p>
                 </div>
               </button>
             );
@@ -2282,7 +2286,7 @@ function HeroSection() {
       {/* ── Single Image settings ─────────────────────────────────────── */}
       {heroType === 'single' && (
         <div className="space-y-4 border border-zinc-200 rounded-xl p-4 mb-4">
-          <p className="text-sm font-semibold text-zinc-700">Single Image Hero</p>
+          <p className="text-sm font-semibold text-zinc-700">{t.panel_single ?? "Single Image Hero"}</p>
           <ImageTile
             imageUrl={singleCfg.image_url}
             isUploading={uploadingKey.single_img}
@@ -2291,18 +2295,18 @@ function HeroSection() {
             onPreview={setPreviewImage}
           />
           <LocaleTabBar />
-          <input className={inputClass} dir={inputDir} placeholder="Title (optional, uppercase)"
+          <input className={inputClass} dir={inputDir} placeholder={t.ph_title_uppercase ?? "Title (optional, uppercase)"}
             value={getTxt(singleCfg, 'title')} onChange={setTxt(setSingleCfg, 'title')} />
-          <textarea className={`${inputClass} resize-none`} dir={inputDir} rows={2} placeholder="Description (optional)"
+          <textarea className={`${inputClass} resize-none`} dir={inputDir} rows={2} placeholder={t.ph_desc_optional ?? "Description (optional)"}
             value={getTxt(singleCfg, 'description')} onChange={setTxt(setSingleCfg, 'description')} />
           <div className="grid grid-cols-2 gap-3">
-            <input className={inputClass} dir={inputDir} placeholder="CTA text (e.g. SHOP NOW)"
+            <input className={inputClass} dir={inputDir} placeholder={t.ph_cta_text_shop ?? "CTA text (e.g. SHOP NOW)"}
               value={getTxt(singleCfg, 'cta_text')} onChange={setTxt(setSingleCfg, 'cta_text')} />
-            <input className={inputClass} placeholder="CTA link (e.g. /shop)" value={singleCfg.cta_href}
+            <input className={inputClass} placeholder={t.ph_cta_link ?? "CTA link (e.g. /shop)"} value={singleCfg.cta_href}
               onChange={(e) => setSingleCfg((p) => ({ ...p, cta_href: e.target.value }))} />
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-zinc-700 shrink-0">Text align</span>
+            <span className="text-sm text-zinc-700 shrink-0">{t.lbl_text_align ?? "Text align"}</span>
             <AlignPicker value={singleCfg.text_align} onChange={(v) => setSingleCfg((p) => ({ ...p, text_align: v }))} />
           </div>
           <OverlaySlider value={singleCfg.overlay_opacity} onChange={(v) => setSingleCfg((p) => ({ ...p, overlay_opacity: v }))} />
@@ -2312,40 +2316,40 @@ function HeroSection() {
       {/* ── Video Hero settings ───────────────────────────────────────── */}
       {heroType === 'video' && (
         <div className="space-y-4 border border-zinc-200 rounded-xl p-4 mb-4">
-          <p className="text-sm font-semibold text-zinc-700">Video Hero</p>
+          <p className="text-sm font-semibold text-zinc-700">{t.panel_video ?? "Video Hero"}</p>
           <div>
-            <label className="text-xs text-zinc-500 mb-1 block">Video URL (Supabase storage)</label>
+            <label className="text-xs text-zinc-500 mb-1 block">{t.video_url_label ?? "Video URL (Supabase storage)"}</label>
             <div className="flex items-center gap-2">
               <Film className="h-4 w-4 text-zinc-400 shrink-0" />
               <input className={inputClass} placeholder="https://…/video.mp4" value={videoCfg.video_url}
                 onChange={(e) => setVideoCfg((p) => ({ ...p, video_url: e.target.value }))} />
             </div>
-            <p className="text-[11px] text-zinc-400 mt-1">Upload your video via the Supabase Storage dashboard, then paste its public URL here.</p>
+            <p className="text-[11px] text-zinc-400 mt-1">{t.video_url_hint ?? "Upload your video via the Supabase Storage dashboard, then paste its public URL here."}</p>
           </div>
           <div>
-            <label className="text-xs text-zinc-500 mb-1 block">Poster image (shown while video loads)</label>
+            <label className="text-xs text-zinc-500 mb-1 block">{t.poster_label ?? "Poster image (shown while video loads)"}</label>
             <ImageTile
               imageUrl={videoCfg.poster_url}
               isUploading={uploadingKey.poster}
               onUpload={(f) => handleSpecialUpload('poster', setVideoCfg, 'poster_url', f, 'hero/posters')}
               onDelete={() => setVideoCfg((p) => ({ ...p, poster_url: '' }))}
               onPreview={setPreviewImage}
-              hint="Upload poster image"
+              hint={t.poster_hint ?? "Upload poster image"}
             />
           </div>
           <LocaleTabBar />
-          <input className={inputClass} dir={inputDir} placeholder="Title (optional)"
+          <input className={inputClass} dir={inputDir} placeholder={t.ph_title_optional ?? "Title (optional)"}
             value={getTxt(videoCfg, 'title')} onChange={setTxt(setVideoCfg, 'title')} />
-          <textarea className={`${inputClass} resize-none`} dir={inputDir} rows={2} placeholder="Description (optional)"
+          <textarea className={`${inputClass} resize-none`} dir={inputDir} rows={2} placeholder={t.ph_desc_optional ?? "Description (optional)"}
             value={getTxt(videoCfg, 'description')} onChange={setTxt(setVideoCfg, 'description')} />
           <div className="grid grid-cols-2 gap-3">
-            <input className={inputClass} dir={inputDir} placeholder="CTA text"
+            <input className={inputClass} dir={inputDir} placeholder={t.ph_cta_text ?? "CTA text"}
               value={getTxt(videoCfg, 'cta_text')} onChange={setTxt(setVideoCfg, 'cta_text')} />
-            <input className={inputClass} placeholder="CTA link (e.g. /shop)" value={videoCfg.cta_href}
+            <input className={inputClass} placeholder={t.ph_cta_link ?? "CTA link (e.g. /shop)"} value={videoCfg.cta_href}
               onChange={(e) => setVideoCfg((p) => ({ ...p, cta_href: e.target.value }))} />
           </div>
           <div className="flex flex-wrap items-center gap-6 text-sm text-zinc-700">
-            {[['autoplay', 'Autoplay'], ['loop', 'Loop'], ['muted', 'Muted']].map(([field, label]) => (
+            {[['autoplay', t.lbl_autoplay ?? 'Autoplay'], ['loop', t.lbl_loop ?? 'Loop'], ['muted', t.lbl_muted ?? 'Muted']].map(([field, label]) => (
               <label key={field} className="flex items-center gap-2 cursor-pointer select-none">
                 <Toggle checked={videoCfg[field]} onChange={(v) => setVideoCfg((p) => ({ ...p, [field]: v }))} />
                 {label}
@@ -2359,11 +2363,11 @@ function HeroSection() {
       {/* ── Countdown Hero settings ───────────────────────────────────── */}
       {heroType === 'countdown' && (
         <div className="space-y-4 border border-zinc-200 rounded-xl p-4 mb-4">
-          <p className="text-sm font-semibold text-zinc-700">Countdown Hero</p>
+          <p className="text-sm font-semibold text-zinc-700">{t.panel_countdown ?? "Countdown Hero"}</p>
           <div>
-            <label className="text-xs text-zinc-500 mb-2 block">Background type</label>
+            <label className="text-xs text-zinc-500 mb-2 block">{t.cd_bg_type ?? "Background type"}</label>
             <div className="flex items-center gap-3">
-              {[['image', 'Image', ImageIcon], ['video', 'Video URL', Film]].map(([val, lbl, Icon]) => (
+              {[['image', t.cd_bg_image ?? 'Image', ImageIcon], ['video', t.cd_bg_video ?? 'Video URL', Film]].map(([val, lbl, Icon]) => (
                 <button key={val} type="button" onClick={() => setCountdownCfg((p) => ({ ...p, background_type: val }))}
                   className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${countdownCfg.background_type === val ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-zinc-200 text-zinc-600 hover:border-zinc-300'}`}>
                   <Icon className="h-4 w-4" /> {lbl}
@@ -2378,43 +2382,43 @@ function HeroSection() {
               onUpload={(f) => handleSpecialUpload('countdown_bg', setCountdownCfg, 'background_url', f, 'hero/countdown')}
               onDelete={() => setCountdownCfg((p) => ({ ...p, background_url: '' }))}
               onPreview={setPreviewImage}
-              hint="Upload background image"
+              hint={t.cd_bg_image_hint ?? "Upload background image"}
             />
           ) : (
             <div>
-              <label className="text-xs text-zinc-500 mb-1 block">Video background URL</label>
+              <label className="text-xs text-zinc-500 mb-1 block">{t.cd_bg_video_label ?? "Video background URL"}</label>
               <input className={inputClass} placeholder="https://…/bg-video.mp4" value={countdownCfg.background_url}
                 onChange={(e) => setCountdownCfg((p) => ({ ...p, background_url: e.target.value }))} />
             </div>
           )}
           <LocaleTabBar />
-          <input className={inputClass} dir={inputDir} placeholder="Title (optional)"
+          <input className={inputClass} dir={inputDir} placeholder={t.ph_title_optional ?? "Title (optional)"}
             value={getTxt(countdownCfg, 'title')} onChange={setTxt(setCountdownCfg, 'title')} />
-          <textarea className={`${inputClass} resize-none`} dir={inputDir} rows={2} placeholder="Description (optional)"
+          <textarea className={`${inputClass} resize-none`} dir={inputDir} rows={2} placeholder={t.ph_desc_optional ?? "Description (optional)"}
             value={getTxt(countdownCfg, 'description')} onChange={setTxt(setCountdownCfg, 'description')} />
           <div>
-            <label className="text-xs text-zinc-500 mb-1 block">Countdown end date/time</label>
+            <label className="text-xs text-zinc-500 mb-1 block">{t.cd_end_label ?? "Countdown end date/time"}</label>
             <input type="datetime-local" className={inputClass}
               value={countdownCfg.countdown_end ? countdownCfg.countdown_end.slice(0, 16) : ''}
               onChange={(e) => setCountdownCfg((p) => ({ ...p, countdown_end: e.target.value ? new Date(e.target.value).toISOString() : '' }))} />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <input className={inputClass} dir={inputDir} placeholder="CTA text"
+            <input className={inputClass} dir={inputDir} placeholder={t.ph_cta_text ?? "CTA text"}
               value={getTxt(countdownCfg, 'cta_text')} onChange={setTxt(setCountdownCfg, 'cta_text')} />
-            <input className={inputClass} placeholder="CTA link (e.g. /shop)" value={countdownCfg.cta_href}
+            <input className={inputClass} placeholder={t.ph_cta_link ?? "CTA link (e.g. /shop)"} value={countdownCfg.cta_href}
               onChange={(e) => setCountdownCfg((p) => ({ ...p, cta_href: e.target.value }))} />
           </div>
           <div>
-            <label className="text-xs text-zinc-500 mb-2 block">When countdown expires</label>
+            <label className="text-xs text-zinc-500 mb-2 block">{t.cd_expire_label ?? "When countdown expires"}</label>
             <select className={inputClass} value={countdownCfg.expired_behavior}
               onChange={(e) => setCountdownCfg((p) => ({ ...p, expired_behavior: e.target.value }))}>
-              <option value="hide">Hide hero</option>
-              <option value="show_message">Show expired message</option>
-              <option value="show_hero">Show hero without timer</option>
+              <option value="hide">{t.cd_expire_hide ?? "Hide hero"}</option>
+              <option value="show_message">{t.cd_expire_message ?? "Show expired message"}</option>
+              <option value="show_hero">{t.cd_expire_hero ?? "Show hero without timer"}</option>
             </select>
           </div>
           {countdownCfg.expired_behavior === 'show_message' && (
-            <input className={inputClass} dir={inputDir} placeholder="Expired message (e.g. The event has ended)"
+            <input className={inputClass} dir={inputDir} placeholder={t.cd_expired_ph ?? "Expired message (e.g. The event has ended)"}
               value={getTxt(countdownCfg, 'expired_message')} onChange={setTxt(setCountdownCfg, 'expired_message')} />
           )}
           <OverlaySlider value={countdownCfg.overlay_opacity} onChange={(v) => setCountdownCfg((p) => ({ ...p, overlay_opacity: v }))} />
@@ -2424,26 +2428,26 @@ function HeroSection() {
       {/* ── Multi-Image global config ─────────────────────────────────── */}
       {heroType === 'multi' && (
         <div className="space-y-4 border border-zinc-200 rounded-xl p-4 mb-4">
-          <p className="text-sm font-semibold text-zinc-700">Global Settings</p>
+          <p className="text-sm font-semibold text-zinc-700">{t.multi_global ?? "Global Settings"}</p>
           <LocaleTabBar />
-          <input className={inputClass} dir={inputDir} placeholder="Title (optional, overlaid on all images)"
+          <input className={inputClass} dir={inputDir} placeholder={t.ph_title_all_images ?? "Title (optional, overlaid on all images)"}
             value={getTxt(multiCfg, 'title')} onChange={setTxt(setMultiCfg, 'title')} />
-          <textarea className={`${inputClass} resize-none`} dir={inputDir} rows={2} placeholder="Description (optional)"
+          <textarea className={`${inputClass} resize-none`} dir={inputDir} rows={2} placeholder={t.ph_desc_optional ?? "Description (optional)"}
             value={getTxt(multiCfg, 'description')} onChange={setTxt(setMultiCfg, 'description')} />
           <div className="grid grid-cols-2 gap-3">
-            <input className={inputClass} dir={inputDir} placeholder="CTA text"
+            <input className={inputClass} dir={inputDir} placeholder={t.ph_cta_text ?? "CTA text"}
               value={getTxt(multiCfg, 'cta_text')} onChange={setTxt(setMultiCfg, 'cta_text')} />
-            <input className={inputClass} placeholder="CTA link" value={multiCfg.cta_href}
+            <input className={inputClass} placeholder={t.ph_cta_link ?? "CTA link"} value={multiCfg.cta_href}
               onChange={(e) => setMultiCfg((p) => ({ ...p, cta_href: e.target.value }))} />
           </div>
           <div className="flex flex-wrap items-center gap-4">
             <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-zinc-700">
               <Toggle checked={multiCfg.auto_rotate} onChange={(v) => setMultiCfg((p) => ({ ...p, auto_rotate: v }))} />
-              Auto-rotate
+              {t.lbl_auto_rotate ?? "Auto-rotate"}
             </label>
             {multiCfg.auto_rotate && (
               <div className="flex items-center gap-2">
-                <span className="text-sm text-zinc-500 shrink-0">Interval</span>
+                <span className="text-sm text-zinc-500 shrink-0">{t.lbl_interval ?? "Interval"}</span>
                 <input type="number" min={1000} max={15000} step={500} className={`${inputClass} w-28`}
                   value={multiCfg.rotation_interval}
                   onChange={(e) => setMultiCfg((p) => ({ ...p, rotation_interval: Number(e.target.value) }))} />
@@ -2458,9 +2462,9 @@ function HeroSection() {
       {/* ── iHerb-style hero settings ─────────────────────────────────── */}
       {heroType === 'iherb' && (
         <div className="space-y-4 border border-zinc-200 rounded-xl p-4 mb-4">
-          <p className="text-sm font-semibold text-zinc-700">iHerb Style Hero</p>
+          <p className="text-sm font-semibold text-zinc-700">{t.panel_iherb ?? "iHerb Style Hero"}</p>
           <p className="text-xs text-zinc-500">
-            Upload a main banner (mobile + desktop) and up to two side promo cards. The hero height is set by the main banner&apos;s aspect ratio so the whole image is always visible.
+            {t.panel_iherb_desc ?? "Upload a main banner (mobile + desktop) and up to two side promo cards. The hero height is set by the main banner's aspect ratio so the whole image is always visible."}
           </p>
 
           <ImageTile
@@ -2469,20 +2473,20 @@ function HeroSection() {
             onUpload={(f) => handleSpecialUpload('iherb_main', setIherbCfg, 'main_image_url', f, 'hero/iherb')}
             onDelete={() => setIherbCfg((p) => ({ ...p, main_image_url: '' }))}
             onPreview={setPreviewImage}
-            hint="Upload main hero banner"
+            hint={t.iherb_main_hint ?? "Upload main hero banner"}
           />
 
           <div>
-            <label className="text-xs text-zinc-500 mb-2 block">Mobile position</label>
+            <label className="text-xs text-zinc-500 mb-2 block">{t.mobile_position ?? "Mobile position"}</label>
             <div className="flex items-center gap-3">
-              {[['behind', 'Behind header'], ['below', 'Below header']].map(([val, lbl]) => (
+              {[['behind', t.pos_behind ?? 'Behind header'], ['below', t.pos_below ?? 'Below header']].map(([val, lbl]) => (
                 <button key={val} type="button" onClick={() => setIherbCfg((p) => ({ ...p, mobile_position: val }))}
                   className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${iherbCfg.mobile_position === val ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-zinc-200 text-zinc-600 hover:border-zinc-300'}`}>
                   {lbl}
                 </button>
               ))}
             </div>
-            <p className="text-[11px] text-zinc-400 mt-1">Choose how the hero sits relative to the fixed header on mobile only. Desktop always shows below header.</p>
+            <p className="text-[11px] text-zinc-400 mt-1">{t.mobile_position_hint ?? "Choose how the hero sits relative to the fixed header on mobile only. Desktop always shows below header."}</p>
           </div>
 
           <div>
@@ -2493,36 +2497,36 @@ function HeroSection() {
                 onChange={(e) => setIherbCfg((p) => ({ ...p, autoplay: e.target.checked }))}
                 className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
               />
-              Auto-move slides
+              {t.auto_move ?? "Auto-move slides"}
             </label>
             {iherbCfg.autoplay && (
               <div className="mt-2 flex items-center gap-2">
-                <span className="text-xs text-zinc-500">Time between slides</span>
+                <span className="text-xs text-zinc-500">{t.time_between ?? "Time between slides"}</span>
                 <input
                   type="number" min={1} max={30} step={1}
                   value={iherbCfg.autoplay_interval ?? 5}
                   onChange={(e) => setIherbCfg((p) => ({ ...p, autoplay_interval: Math.max(1, Math.min(30, Number(e.target.value) || 5)) }))}
                   className="w-20 rounded-lg border border-zinc-200 px-2 py-1 text-sm"
                 />
-                <span className="text-xs text-zinc-500">seconds</span>
+                <span className="text-xs text-zinc-500">{t.seconds ?? "seconds"}</span>
               </div>
             )}
-            <p className="text-[11px] text-zinc-400 mt-1">Automatically advance to the next slide/set. Applies to both mobile and desktop.</p>
+            <p className="text-[11px] text-zinc-400 mt-1">{t.auto_move_hint ?? "Automatically advance to the next slide/set. Applies to both mobile and desktop."}</p>
           </div>
 
           <LocaleTabBar />
-          <input className={inputClass} dir={inputDir} placeholder="Title (optional, overlaid on banner)"
+          <input className={inputClass} dir={inputDir} placeholder={t.ph_title_banner ?? "Title (optional, overlaid on banner)"}
             value={getTxt(iherbCfg, 'title')} onChange={setTxt(setIherbCfg, 'title')} />
-          <textarea className={`${inputClass} resize-none`} dir={inputDir} rows={2} placeholder="Description (optional, overlaid on banner)"
+          <textarea className={`${inputClass} resize-none`} dir={inputDir} rows={2} placeholder={t.ph_desc_banner ?? "Description (optional, overlaid on banner)"}
             value={getTxt(iherbCfg, 'description')} onChange={setTxt(setIherbCfg, 'description')} />
           <div className="grid grid-cols-2 gap-3">
-            <input className={inputClass} dir={inputDir} placeholder="CTA text"
+            <input className={inputClass} dir={inputDir} placeholder={t.ph_cta_text ?? "CTA text"}
               value={getTxt(iherbCfg, 'cta_text')} onChange={setTxt(setIherbCfg, 'cta_text')} />
-            <input className={inputClass} placeholder="CTA link (e.g. /shop)" value={iherbCfg.main_cta_href}
+            <input className={inputClass} placeholder={t.ph_cta_link ?? "CTA link (e.g. /shop)"} value={iherbCfg.main_cta_href}
               onChange={(e) => setIherbCfg((p) => ({ ...p, main_cta_href: e.target.value }))} />
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-zinc-700 shrink-0">Text align</span>
+            <span className="text-sm text-zinc-700 shrink-0">{t.lbl_text_align ?? "Text align"}</span>
             <AlignPicker value={iherbCfg.text_align} onChange={(v) => setIherbCfg((p) => ({ ...p, text_align: v }))} />
           </div>
           <OverlaySlider value={iherbCfg.overlay_opacity} onChange={(v) => setIherbCfg((p) => ({ ...p, overlay_opacity: v }))} />
@@ -2530,16 +2534,16 @@ function HeroSection() {
           {/* Side cards */}
           <div className="pt-4 border-t border-zinc-100 space-y-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-zinc-700">Side Promo Cards</p>
+              <p className="text-sm font-semibold text-zinc-700">{t.side_cards_title ?? "Side Promo Cards"}</p>
               <span className="text-xs text-zinc-400">{(iherbCfg.side_cards ?? []).length}</span>
             </div>
             {(iherbCfg.side_cards ?? []).length === 0 && (
-              <p className="text-sm text-zinc-400 text-center py-4">No side cards. Add one to show the desktop side layout.</p>
+              <p className="text-sm text-zinc-400 text-center py-4">{t.side_cards_empty ?? "No side cards. Add one to show the desktop side layout."}</p>
             )}
             {(iherbCfg.side_cards ?? []).map((card, idx) => (
               <div key={idx} className="border border-zinc-200 rounded-xl p-3 flex flex-col gap-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Card {idx + 1}</span>
+                  <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">{t.card ?? "Card"} {idx + 1}</span>
                   <button onClick={() => removeCard(idx)} className="p-1 rounded text-red-400 hover:text-red-600">
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -2550,16 +2554,16 @@ function HeroSection() {
                   onUpload={(f) => handleCardImageUpload(idx, f)}
                   onDelete={() => updateCard(idx, 'image_url', '')}
                   onPreview={setPreviewImage}
-                  hint="Upload promo card image"
+                  hint={t.card_image_hint ?? "Upload promo card image"}
                 />
-                <input className={inputClass} dir={inputDir} placeholder="Card title (optional)"
+                <input className={inputClass} dir={inputDir} placeholder={t.card_title_ph ?? "Card title (optional)"}
                   value={getCardTxt(card, 'title')} onChange={setCardTxt(idx, 'title')} />
-                <input className={inputClass} placeholder="Card link (e.g. /shop)" value={card.href}
+                <input className={inputClass} placeholder={t.card_link_ph ?? "Card link (e.g. /shop)"} value={card.href}
                   onChange={(e) => updateCard(idx, 'href', e.target.value)} />
               </div>
             ))}
             <button onClick={addCard} className="flex items-center gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
-              <Plus className="h-4 w-4" /> Add Side Card
+              <Plus className="h-4 w-4" /> {t.add_side_card ?? "Add Side Card"}
             </button>
           </div>
         </div>
@@ -2627,7 +2631,7 @@ function HeroSection() {
         <button onClick={save} disabled={saving}
           className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60">
           <Save className="h-4 w-4" />
-          {saving ? (t.saving ?? 'Saving…') : (t.save ?? 'Save Hero Settings')}
+          {saving ? (t.saving ?? 'Saving…') : (t.save_hero ?? 'Save Hero Settings')}
         </button>
       </div>
 

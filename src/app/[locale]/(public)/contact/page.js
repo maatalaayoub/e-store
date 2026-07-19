@@ -117,7 +117,7 @@ export default function ContactPage() {
     <div className="min-h-screen flex flex-col bg-white text-zinc-900">
       {/* Simple header */}
       <header className="border-b border-zinc-100">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 h-16 flex items-center justify-between">
+        <div className="mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link
             href={`/${locale}`}
             className="flex items-center gap-2 text-sm font-medium text-zinc-600 hover:text-zinc-900"

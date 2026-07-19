@@ -85,7 +85,7 @@ export default function FeaturedProducts({ onItemAdded }) {
       id="featured"
       className="bg-white px-4 py-16 sm:px-6 sm:py-24"
     >
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto max-w-7xl lg:max-w-none">
         <div className="mb-10 flex flex-col gap-5 sm:mb-14 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
           <div className="min-w-0">
             <p className="mb-2.5 flex items-center gap-2.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-400 sm:mb-3">

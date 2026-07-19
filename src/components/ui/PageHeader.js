@@ -66,7 +66,7 @@ export default function PageHeader({ title, showCart = false }) {
           visible ? "translate-y-0" : "-translate-y-full"
         }`}
       >
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
+        <div className="mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.back()}

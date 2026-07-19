@@ -81,7 +81,7 @@ export default function CheckoutClient({ locale, dict }) {
     <div className="min-h-screen bg-white">
       {/* ── Top bar ── */}
       <header className="bg-white border-b border-zinc-100">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 h-14 flex items-center justify-between">
+        <div className="mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.back()}

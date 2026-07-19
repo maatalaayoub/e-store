@@ -448,8 +448,7 @@ export async function RelatedProductsSection({ section, product, locale }) {
     <div>
       <SectionTitle section={section} fallback="You may also like" />
       <div
-        className="grid gap-4"
-        style={{ gridTemplateColumns: `repeat(${Math.min(Math.max(cols, 2), 6)}, minmax(0, 1fr))` }}
+        className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
       >
         {items.map((p) => (
           <ProductCard key={p.id} product={p} locale={locale} buttonStyle={section.config?.button_style} filledBg={filledBg} filledText={filledText} outlineBorder={outlineBorder} outlineText={outlineText} outlineIcon={outlineIcon} outlineBg={outlineBg} buttonFontSize={buttonFontSize} layout={layout} showShortDescription={showShortDescription} hideButtons={hideButtons} />
