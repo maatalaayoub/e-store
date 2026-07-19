@@ -49,13 +49,13 @@ function HeaderLogo({ isLight }) {
   );
 }
 
-export default function ShopHeader({ onOpenCart }) {
+export default function ShopHeader({ onOpenCart, fixed = true }) {
   const params = useParams();
   const locale = params?.locale || "en";
   const dict = useDictionary();
   const isScrolled = useIsScrolled();
   const [isHovered, setIsHovered] = useState(false);
-  const isLight = isScrolled || isHovered;
+  const isLight = isScrolled || isHovered || !fixed;
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -67,6 +67,7 @@ export default function ShopHeader({ onOpenCart }) {
 
   // Hydration-safe cart badge: don't render server-side (cart starts empty on SSR)
   const [mounted, setMounted] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
 
   // ── Cart-icon bump animation when cart count increases ──
@@ -109,9 +110,9 @@ export default function ShopHeader({ onOpenCart }) {
         ref={headerRef}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        style={{ top: 'var(--bar-height, 0px)' }}
-        className={`fixed inset-x-0 z-50 transition-colors duration-500 ease-in-out ${
-          isScrolled
+        style={fixed ? { top: 'var(--bar-height, 0px)' } : undefined}
+        className={`${fixed ? 'fixed inset-x-0 z-50' : 'relative'} transition-colors duration-500 ease-in-out ${
+          isScrolled || !fixed
             ? "bg-white border-b border-zinc-200"
             : "bg-transparent border-b border-transparent"
         }`}

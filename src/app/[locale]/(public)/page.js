@@ -51,7 +51,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col bg-white text-zinc-900">
       <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-      <ShopHeader onOpenCart={() => setIsCartOpen(true)} />
+      <ShopHeader onOpenCart={() => setIsCartOpen(true)} fixed={heroData?.type !== 'iherb'} />
 
       <main className="flex-1">
         {heroLoading ? (

@@ -60,7 +60,7 @@ export default function HeroIherb({ config = {}, locale = 'en' }) {
   const mainHref = resolveHref(main_cta_href);
 
   return (
-    <section className="w-full">
+    <section className="w-full lg:px-8 xl:px-12 lg:pt-4">
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
         {/* Main hero */}
         <HeroLink
