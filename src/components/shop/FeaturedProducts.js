@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
+import { isRtlLocale } from "@/config/constants";
 import { fetchFeaturedProducts } from "@/services/productsService";
 import { FeaturedProductsSkeleton } from "@/components/skeletons";
 import ProductCarousel from "./ProductCarousel";
@@ -75,27 +77,34 @@ export default function FeaturedProducts({ onItemAdded }) {
   if (!products) return <FeaturedProductsSkeleton />;
   if (products.length === 0) return null;
 
+  const isRtl = isRtlLocale(locale);
+  const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
+
   return (
     <section
       id="featured"
-      className="bg-white px-4 py-20 sm:px-6 sm:py-24"
+      className="bg-white px-4 py-16 sm:px-6 sm:py-24"
     >
       <div className="mx-auto max-w-7xl">
-        <div className="mb-14 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400 mb-3">
+        <div className="mb-10 flex flex-col gap-5 sm:mb-14 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+          <div className="min-w-0">
+            <p className="mb-2.5 flex items-center gap-2.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-400 sm:mb-3">
+              <span className="inline-block h-px w-6 bg-zinc-300" aria-hidden="true" />
               {tHome.featured_kicker}
             </p>
-            <h2 className="text-3xl font-bold tracking-tight uppercase sm:text-4xl md:text-5xl">
+            <h2 className="text-[1.75rem] font-bold leading-[1.1] tracking-tight text-zinc-900 uppercase sm:text-4xl md:text-5xl">
               {tHome.featured_title}
             </h2>
           </div>
           <Link
             href={`/${locale}/shop`}
-            className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-zinc-900 border-b border-zinc-900 pb-0.5 hover:border-zinc-400 hover:text-zinc-500 transition-colors self-start sm:self-auto"
+            className="group inline-flex shrink-0 items-center gap-2 self-start rounded-full border border-zinc-200 bg-white px-5 py-2.5 text-xs font-semibold uppercase tracking-widest text-zinc-900 transition-colors hover:border-zinc-900 hover:bg-zinc-900 hover:text-white sm:self-auto"
           >
             <span>{dict?.common?.view_all}</span>
-            <span aria-hidden="true">→</span>
+            <ArrowIcon
+              aria-hidden="true"
+              className="h-4 w-4 transition-transform group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5"
+            />
           </Link>
         </div>
 

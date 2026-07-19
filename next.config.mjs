@@ -7,7 +7,7 @@ const isProd = process.env.NODE_ENV === 'production';
 // 'unsafe-eval' but keep 'unsafe-inline' (Next still emits inline bootstrap).
 const CSP = [
   "default-src 'self'",
-  "img-src 'self' data: blob: https://*.supabase.co",
+  "img-src 'self' data: blob: https://*.supabase.co https://picsum.photos https://fastly.picsum.photos",
   "media-src 'self' blob: https://*.supabase.co",
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
@@ -45,6 +45,15 @@ const nextConfig = {
         protocol: 'https',
         hostname: '*.supabase.co',
         pathname: '/storage/v1/object/public/**',
+      },
+      // Test/seed product images (see src/database/seed-test-data.sql)
+      {
+        protocol: 'https',
+        hostname: 'picsum.photos',
+      },
+      {
+        protocol: 'https',
+        hostname: 'fastly.picsum.photos',
       },
     ],
   },

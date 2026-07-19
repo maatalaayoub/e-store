@@ -497,7 +497,7 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
           </Link>
           {/* Short description */}
           {shouldShowShortDescription && (
-            <p className="line-clamp-2 min-h-[2.5em] -mt-1 text-[10px] sm:text-[11px] leading-snug text-zinc-400">
+            <p className="line-clamp-2 min-h-[2.5em] -mt-3 text-[10px] sm:text-[11px] leading-snug text-zinc-400">
               {shortDescription}
             </p>
           )}
