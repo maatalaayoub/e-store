@@ -412,7 +412,39 @@
         "theme_desc": "الألوان اللي كيتطبّقو على القائمة الجانبية.",
         "save": "حفظ التغييرات",
         "saving": "كيتحفط…",
-        "saved": "تحفطو الإعدادات"
+        "saved": "تحفطو الإعدادات",
+        "cart_icons": {
+          "classic": "كلاسيك",
+          "cart": "شاريو",
+          "bag": "ساك",
+          "basket": "سلة",
+          "handbag": "ساك ديال اليد",
+          "briefcase": "ساك خدمة",
+          "package": "طرد",
+          "gift": "هدية",
+          "store": "متجر"
+        },
+        "menu_icons": {
+          "menu": "خطوط",
+          "grid": "شبكة",
+          "align": "سطور",
+          "panel": "لوحة ليسر",
+          "panel-right": "لوحة ليمن",
+          "square": "قائمة مربعة",
+          "list": "قائمة",
+          "layers": "طبقات"
+        },
+        "themes": {
+          "minimal":  { "label": "بسيط",   "description": "أبيض نقي — التصميم ديفولت" },
+          "dark":     { "label": "لّيل",    "description": "خلفية كحلة عميقة بإيقونات بيضة" },
+          "slate":    { "label": "رمادي",  "description": "رمادي بارد وأنيق" },
+          "elegant":  { "label": "شيك",    "description": "خلفية كريم مع لمسات ذهبية" },
+          "vibrant":  { "label": "بحر",    "description": "تدرج أزرق ناعم بلمسات مشرقة" },
+          "emerald":  { "label": "زمرد",   "description": "أخضر طبيعي — منسب للمنتجات البيو" },
+          "rose":     { "label": "وردي",   "description": "وردي دافئ — منسب للجمال والموضة" },
+          "sunset":   { "label": "غروب",   "description": "تدرج كهرماني دافئ بلمسات برتقالية" },
+          "royal":    { "label": "ملكي",   "description": "أزرق نيلي عميق بلمسات بنفسجية فاخرة" }
+        }
       },
       "carousel": {
         "title": "عرض المنتجات (كاروسيل)",

@@ -19,7 +19,7 @@ import {
   AlignJustify,
   PanelLeft,
   PanelRight,
-  Sidebar,
+  SquareMenu,
   List,
   Layers,
 } from "lucide-react";
@@ -64,7 +64,7 @@ export const HEADER_MENU_ICONS = {
   align:         { label: "Justify",     Icon: AlignJustify },
   panel:         { label: "Panel Left",  Icon: PanelLeft },
   "panel-right": { label: "Panel Right", Icon: PanelRight },
-  sidebar:       { label: "Sidebar",     Icon: Sidebar },
+  square:        { label: "Square Menu", Icon: SquareMenu },
   list:          { label: "List",        Icon: List },
   layers:        { label: "Layers",      Icon: Layers },
 };

@@ -772,31 +772,42 @@ function StorefrontSection() {
   const tabs = t.storefront_tabs ?? {};
   const [tab, setTab] = useState('hero');
 
+  const TAB_ITEMS = [
+    { key: 'hero',     label: tabs.hero     ?? 'Hero Carousel',    Icon: Film },
+    { key: 'header',   label: tabs.header   ?? 'Header & Sidebar', Icon: LayoutTemplate },
+    { key: 'display',  label: tabs.display  ?? 'Button Display',   Icon: ShoppingCart },
+    { key: 'layout',   label: tabs.layout   ?? 'Card Layout',      Icon: LayoutGrid },
+    { key: 'carousel', label: tabs.carousel ?? 'Carousel',         Icon: Blocks },
+  ];
+
   return (
     <>
-      <div className="mb-6 rounded-xl border border-zinc-200 bg-zinc-50 p-1 flex gap-1" role="tablist" aria-label="Storefront Tabs">
-        {[
-          { key: 'hero',    label: tabs.hero     ?? 'Hero Carousel' },
-          { key: 'header',  label: tabs.header   ?? 'Header & Sidebar' },
-          { key: 'display', label: tabs.display  ?? 'Button Display' },
-          { key: 'layout',  label: tabs.layout   ?? 'Card Layout' },
-          { key: 'carousel',label: tabs.carousel ?? 'Carousel' },
-        ].map(({ key, label }) => (
-          <button
-            key={key}
-            type="button"
-            role="tab"
-            aria-selected={tab === key}
-            onClick={() => setTab(key)}
-            className={`flex-1 min-w-0 truncate rounded-lg py-2 px-2 sm:px-4 text-xs sm:text-sm font-medium transition-all duration-200 ${
-              tab === key
-                ? 'bg-white text-blue-600 shadow-sm border border-zinc-200'
-                : 'text-zinc-500 hover:text-zinc-800'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+      {/* Segmented tab bar — icons + full labels, wraps onto multiple rows when needed */}
+      <div
+        role="tablist"
+        aria-label="Storefront Tabs"
+        className="mb-6 flex flex-wrap gap-2"
+      >
+        {TAB_ITEMS.map(({ key, label, Icon }) => {
+          const active = tab === key;
+          return (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setTab(key)}
+              className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-200 border ${
+                active
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/25'
+                  : 'bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300 hover:text-zinc-900 hover:bg-zinc-50'
+              }`}
+            >
+              <Icon className={`h-4 w-4 shrink-0 ${active ? 'text-white' : 'text-zinc-400'}`} strokeWidth={1.75} />
+              <span>{label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {tab === 'hero' && <HeroSection />}
@@ -879,6 +890,7 @@ function HeaderSidebarSection() {
         <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
           {Object.entries(HEADER_CART_ICONS).map(([key, { label, Icon }]) => {
             const active = cartIcon === key;
+            const displayLabel = t.cart_icons?.[key] ?? label;
             return (
               <button
                 key={key}
@@ -892,7 +904,7 @@ function HeaderSidebarSection() {
                 aria-pressed={active}
               >
                 <Icon className="h-7 w-7" strokeWidth={1.5} />
-                <span className="text-xs font-medium">{label}</span>
+                <span className="text-xs font-medium text-center">{displayLabel}</span>
               </button>
             );
           })}
@@ -906,6 +918,7 @@ function HeaderSidebarSection() {
         <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
           {Object.entries(HEADER_MENU_ICONS).map(([key, { label, Icon }]) => {
             const active = menuIcon === key;
+            const displayLabel = t.menu_icons?.[key] ?? label;
             return (
               <button
                 key={key}
@@ -919,7 +932,7 @@ function HeaderSidebarSection() {
                 aria-pressed={active}
               >
                 <Icon className="h-7 w-7" strokeWidth={1.5} />
-                <span className="text-xs font-medium">{label}</span>
+                <span className="text-xs font-medium text-center">{displayLabel}</span>
               </button>
             );
           })}
@@ -934,6 +947,9 @@ function HeaderSidebarSection() {
           {Object.entries(SIDEBAR_THEMES).map(([key, entry]) => {
             const active = theme === key;
             const [bg, accent] = entry.swatch;
+            const themeI18n = t.themes?.[key] ?? {};
+            const themeLabel = themeI18n.label ?? entry.label;
+            const themeDesc = themeI18n.description ?? entry.description;
             return (
               <button
                 key={key}
@@ -956,8 +972,8 @@ function HeaderSidebarSection() {
                   />
                 </span>
                 <span className="flex-1 min-w-0">
-                  <span className="block text-sm font-semibold text-zinc-900">{entry.label}</span>
-                  <span className="block text-xs text-zinc-500 mt-0.5">{entry.description}</span>
+                  <span className="block text-sm font-semibold text-zinc-900">{themeLabel}</span>
+                  <span className="block text-xs text-zinc-500 mt-0.5">{themeDesc}</span>
                 </span>
               </button>
             );

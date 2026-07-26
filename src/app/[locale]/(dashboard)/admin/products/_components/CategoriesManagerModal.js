@@ -452,11 +452,9 @@ export default function CategoriesManagerModal({ open, onClose, onChanged }) {
               <span>{tc.add ?? "Add"}</span>
             </button>
           </div>
-          {/* Language tabs — pick which language the input above is editing.
-              Underline for the active tab; an inline dot next to the label
-              signals which languages already have a value. */}
+          {/* Language tabs — same pill design as the product translation tabs. */}
           <div
-            className="flex items-center gap-1 border-b border-zinc-200 self-stretch"
+            className="flex flex-wrap gap-2 self-stretch"
             role="tablist"
             aria-label={tc.language ?? "Language"}
           >
@@ -470,17 +468,18 @@ export default function CategoriesManagerModal({ open, onClose, onChanged }) {
                   role="tab"
                   aria-selected={isActive}
                   onClick={() => setNewLang(lang)}
-                  className={`relative -mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
+                  className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-200 border ${
                     isActive
-                      ? "border-blue-600 text-blue-700"
-                      : "border-transparent text-zinc-500 hover:text-zinc-800"
+                      ? "bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/25"
+                      : "bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300 hover:text-zinc-900 hover:bg-zinc-50"
                   }`}
                 >
                   {LANG_LABELS[lang]}
                   {hasContent && (
-                    <span
+                    <Check
                       aria-hidden="true"
-                      className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-blue-600" : "bg-emerald-500"}`}
+                      strokeWidth={3}
+                      className={`h-3 w-3 shrink-0 ${isActive ? "text-white" : "text-emerald-500"}`}
                     />
                   )}
                 </button>
@@ -575,11 +574,9 @@ export default function CategoriesManagerModal({ open, onClose, onChanged }) {
                     <div className="flex-1 min-w-0">
                       {isEditing ? (
                         <div className="flex flex-col gap-1.5">
-                          {/* Compact underline tabs (row-scoped). Inline dot
-                              signals filled languages — no more overlapping
-                              corner glyphs at tiny sizes. */}
+                          {/* Compact pill tabs (row-scoped) matching the rest of the app. */}
                           <div
-                            className="flex items-center gap-0.5 border-b border-zinc-200 self-stretch"
+                            className="flex flex-wrap gap-1.5 self-stretch"
                             role="tablist"
                           >
                             {SUPPORTED_LANGS.map((lang) => {
@@ -592,17 +589,18 @@ export default function CategoriesManagerModal({ open, onClose, onChanged }) {
                                   role="tab"
                                   aria-selected={isActive}
                                   onClick={() => setEditingLang(lang)}
-                                  className={`relative -mb-px inline-flex items-center gap-1 border-b-2 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide transition-colors ${
+                                  className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide transition-all duration-200 border ${
                                     isActive
-                                      ? "border-blue-600 text-blue-700"
-                                      : "border-transparent text-zinc-500 hover:text-zinc-800"
+                                      ? "bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/25"
+                                      : "bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300 hover:text-zinc-900 hover:bg-zinc-50"
                                   }`}
                                 >
                                   {LANG_LABELS[lang]}
                                   {hasContent && (
-                                    <span
+                                    <Check
                                       aria-hidden="true"
-                                      className={`h-1 w-1 rounded-full ${isActive ? "bg-blue-600" : "bg-emerald-500"}`}
+                                      strokeWidth={3}
+                                      className={`h-2.5 w-2.5 shrink-0 ${isActive ? "text-white" : "text-emerald-500"}`}
                                     />
                                   )}
                                 </button>

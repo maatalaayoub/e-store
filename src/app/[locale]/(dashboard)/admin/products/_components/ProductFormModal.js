@@ -691,9 +691,9 @@ export default function ProductFormModal({
               {t.section_details ?? "Product Details"}
             </h3>
 
-            {/* Language tab switcher — underline style, inline "filled" dot */}
+            {/* Language tab switcher — same pill design as the storefront tabs */}
             <div
-              className="flex items-center gap-1 border-b border-zinc-200"
+              className="flex flex-wrap gap-2"
               role="tablist"
               aria-label={t.section_details ?? "Product Details"}
             >
@@ -708,17 +708,18 @@ export default function ProductFormModal({
                     aria-selected={isActive}
                     onClick={() => setActiveLang(lang)}
                     dir={RTL_LANGS.has(lang) ? "rtl" : "ltr"}
-                    className={`relative -mb-px inline-flex flex-1 items-center justify-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+                    className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 border ${
                       isActive
-                        ? "border-blue-600 text-blue-700"
-                        : "border-transparent text-zinc-500 hover:text-zinc-800"
+                        ? "bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/25"
+                        : "bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300 hover:text-zinc-900 hover:bg-zinc-50"
                     }`}
                   >
-                    <span className="truncate">{LANG_LABELS[lang]}</span>
+                    <span>{LANG_LABELS[lang]}</span>
                     {hasContent && (
-                      <span
+                      <Check
                         aria-hidden="true"
-                        className={`h-1.5 w-1.5 shrink-0 rounded-full ${isActive ? "bg-blue-600" : "bg-emerald-500"}`}
+                        strokeWidth={3}
+                        className={`h-3.5 w-3.5 shrink-0 ${isActive ? "text-white" : "text-emerald-500"}`}
                       />
                     )}
                   </button>
@@ -883,10 +884,9 @@ export default function ProductFormModal({
                       {addingCategory ? "..." : (t.category_add ?? "Add")}
                     </button>
                   </div>
-                  {/* Language tabs — same underline style as the Manage
-                      Categories modal. Inline dot marks filled languages. */}
+                  {/* Language tabs — same pill design as the product translation tabs. */}
                   <div
-                    className="flex items-center gap-1 border-b border-zinc-200"
+                    className="flex flex-wrap gap-2"
                     role="tablist"
                     aria-label={tc.language ?? "Language"}
                   >
@@ -900,17 +900,18 @@ export default function ProductFormModal({
                           role="tab"
                           aria-selected={isActive}
                           onClick={() => setNewCategoryLang(lang)}
-                          className={`relative -mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
+                          className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all duration-200 border ${
                             isActive
-                              ? "border-blue-600 text-blue-700"
-                              : "border-transparent text-zinc-500 hover:text-zinc-800"
+                              ? "bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/25"
+                              : "bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300 hover:text-zinc-900 hover:bg-zinc-50"
                           }`}
                         >
                           {CATEGORY_LANG_LABELS[lang]}
                           {hasContent && (
-                            <span
+                            <Check
                               aria-hidden="true"
-                              className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-blue-600" : "bg-emerald-500"}`}
+                              strokeWidth={3}
+                              className={`h-3 w-3 shrink-0 ${isActive ? "text-white" : "text-emerald-500"}`}
                             />
                           )}
                         </button>

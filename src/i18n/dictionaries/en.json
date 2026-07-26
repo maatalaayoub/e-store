@@ -409,7 +409,39 @@
         "theme_desc": "Color palette applied to the sidebar drawer.",
         "save": "Save changes",
         "saving": "Saving…",
-        "saved": "Header & sidebar saved"
+        "saved": "Header & sidebar saved",
+        "cart_icons": {
+          "classic": "Classic",
+          "cart": "Cart",
+          "bag": "Bag",
+          "basket": "Basket",
+          "handbag": "Handbag",
+          "briefcase": "Briefcase",
+          "package": "Package",
+          "gift": "Gift",
+          "store": "Store"
+        },
+        "menu_icons": {
+          "menu": "Lines",
+          "grid": "Grid",
+          "align": "Justify",
+          "panel": "Panel Left",
+          "panel-right": "Panel Right",
+          "square": "Square Menu",
+          "list": "List",
+          "layers": "Layers"
+        },
+        "themes": {
+          "minimal":  { "label": "Minimal",  "description": "Clean white — the classic default" },
+          "dark":     { "label": "Midnight", "description": "Deep dark background with white icons" },
+          "slate":    { "label": "Slate",    "description": "Cool, professional grey tones" },
+          "elegant":  { "label": "Elegant",  "description": "Cream background with warm gold accents" },
+          "vibrant":  { "label": "Ocean",    "description": "Soft blue gradient with vivid accents" },
+          "emerald":  { "label": "Emerald",  "description": "Fresh, natural green — pairs well with organic brands" },
+          "rose":     { "label": "Rose",     "description": "Warm pink pastel — beauty and fashion friendly" },
+          "sunset":   { "label": "Sunset",   "description": "Warm amber gradient with orange accents" },
+          "royal":    { "label": "Royal",    "description": "Deep indigo with luxurious violet accents" }
+        }
       },
       "carousel": {
         "title": "Product Carousel",

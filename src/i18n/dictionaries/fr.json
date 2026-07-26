@@ -412,7 +412,39 @@
         "theme_desc": "Palette de couleurs appliquée au menu latéral.",
         "save": "Enregistrer",
         "saving": "Enregistrement…",
-        "saved": "En-tête et menu enregistrés"
+        "saved": "En-tête et menu enregistrés",
+        "cart_icons": {
+          "classic": "Classique",
+          "cart": "Chariot",
+          "bag": "Sac",
+          "basket": "Panier",
+          "handbag": "Sac à main",
+          "briefcase": "Mallette",
+          "package": "Colis",
+          "gift": "Cadeau",
+          "store": "Boutique"
+        },
+        "menu_icons": {
+          "menu": "Lignes",
+          "grid": "Grille",
+          "align": "Justifié",
+          "panel": "Panneau gauche",
+          "panel-right": "Panneau droit",
+          "square": "Menu carré",
+          "list": "Liste",
+          "layers": "Calques"
+        },
+        "themes": {
+          "minimal":  { "label": "Minimal",  "description": "Blanc épuré — le style par défaut" },
+          "dark":     { "label": "Minuit",   "description": "Fond très sombre avec icônes blanches" },
+          "slate":    { "label": "Ardoise",  "description": "Gris professionnel et discret" },
+          "elegant":  { "label": "Élégant",  "description": "Fond crème avec accents dorés chauds" },
+          "vibrant":  { "label": "Océan",    "description": "Dégradé bleu doux avec accents vifs" },
+          "emerald":  { "label": "Émeraude", "description": "Vert naturel — idéal pour les marques bio" },
+          "rose":     { "label": "Rose",     "description": "Rose pastel chaleureux — beauté et mode" },
+          "sunset":   { "label": "Coucher de soleil", "description": "Dégradé ambré avec accents orange" },
+          "royal":    { "label": "Royal",    "description": "Indigo profond avec accents violets luxueux" }
+        }
       },
       "carousel": {
         "title": "Carrousel de produits",
