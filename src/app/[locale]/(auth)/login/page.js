@@ -43,6 +43,20 @@ export default function LoginPage() {
       setError(signInError.message);
       setLoading(false);
     } else {
+      // Fire-and-forget: link this browser's device_id to the signed-in user
+      // so admins can ban this device later if needed. If the response comes
+      // back with `banned: true`, the account has been suspended — sign out
+      // and surface an error instead of routing into the app.
+      try {
+        const res = await fetch('/api/v1/users/track-device', { method: 'POST' });
+        if (res.status === 403) {
+          await supabase.auth.signOut();
+          setError(dict?.auth?.login?.banned ?? 'Your account has been suspended.');
+          setLoading(false);
+          return;
+        }
+      } catch { /* best-effort */ }
+
       const user = data?.user;
       const role = user?.user_metadata?.role || user?.app_metadata?.role;
       router.push(role === "admin" ? `/${locale}/admin` : `/${locale}`);

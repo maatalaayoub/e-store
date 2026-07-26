@@ -1,5 +1,7 @@
 // Authentication Guard / Checker Middleware
 import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
+import { getRequestDeviceId } from '@/lib/device-id';
 import { UnauthorizedError } from '@/common/errors/AppError';
 
 /**
@@ -17,12 +19,45 @@ export async function isAdmin(userId) {
   return data?.role === 'admin';
 }
 
+/**
+ * Verifies an incoming request has an authenticated Supabase session AND
+ * that neither the user nor their current device has been banned by an admin.
+ *
+ * Admins are exempt from the ban check so a self-ban never locks them out.
+ */
 export async function requireAuth() {
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
 
   if (error || !user) {
     throw new UnauthorizedError('You must be logged in to access this resource');
+  }
+
+  // Ban checks — use the service role so RLS on `users`/`banned_devices`
+  // doesn't hide the flag. If the caller is an admin we skip the checks so
+  // an admin can never accidentally lock themselves out.
+  const service = createServiceClient();
+  const { data: profile } = await service
+    .from('users')
+    .select('role, is_banned')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (profile?.role !== 'admin') {
+    if (profile?.is_banned) {
+      throw new UnauthorizedError('Your account has been suspended');
+    }
+    const deviceId = await getRequestDeviceId();
+    if (deviceId) {
+      const { data: banned } = await service
+        .from('banned_devices')
+        .select('device_id')
+        .eq('device_id', deviceId)
+        .maybeSingle();
+      if (banned) {
+        throw new UnauthorizedError('This device has been blocked');
+      }
+    }
   }
 
   return user;

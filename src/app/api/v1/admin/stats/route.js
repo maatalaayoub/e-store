@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import { getAdminUser } from '@/middlewares/authGuard';
 import { logger } from '@/lib/logger';
 
@@ -64,9 +65,11 @@ export async function GET() {
         .lt('created_at', startOfThisMonth),
 
       supabase.from('products').select('id', { count: 'exact', head: true }),
-      supabase.from('users')
+      // Use service-role for the customer count: `users` RLS only lets each
+      // session read its own row, so a session-scoped count would always be 1.
+      createServiceClient().from('users')
         .select('id', { count: 'exact', head: true })
-        .eq('role', 'customer'),
+        .or('role.is.null,role.neq.admin'),
       supabase.from('products')
         .select(`
           id,
