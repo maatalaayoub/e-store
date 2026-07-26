@@ -3,8 +3,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
+import { useDisplaySettings } from "@/components/providers/DisplaySettingsProvider";
 import { useCartStore } from "@/store/useCartStore";
 import { useIsScrolled } from "@/hooks/useIsScrolled";
 import { useOnClickOutside } from "@/hooks/useOnClickOutside";
@@ -17,15 +18,30 @@ import {
 } from "@/lib/storefront-ui";
 
 function useStoreLogo() {
-  const [logo, setLogo] = useState({
-    default: null,
-    dark: null,
-    size: '160',
-    height: '40',
-    cartIcon: DEFAULT_HEADER_CART_ICON,
-    menuIcon: DEFAULT_HEADER_MENU_ICON,
-  });
+  // Prefer the settings hydrated by the server (via `DisplaySettingsProvider`
+  // in the locale layout). This gives the header the correct icons on the
+  // first paint — no fallback-to-default flicker on refresh.
+  const hydrated = useDisplaySettings();
+  const initial = useMemo(
+    () => ({
+      default: hydrated?.store_logo || null,
+      dark: hydrated?.store_logo_dark || null,
+      size: hydrated?.store_logo_size ?? '160',
+      height: hydrated?.store_logo_height ?? '40',
+      cartIcon: hydrated?.header_cart_icon ?? DEFAULT_HEADER_CART_ICON,
+      menuIcon: hydrated?.header_menu_icon ?? DEFAULT_HEADER_MENU_ICON,
+    }),
+    [hydrated],
+  );
+
+  const [logo, setLogo] = useState(initial);
+
   useEffect(() => {
+    // Provider already supplied a value — nothing to fetch on mount.
+    if (hydrated) {
+      setLogo(initial);
+      return;
+    }
     fetch("/api/v1/display-settings")
       .then((r) => r.json())
       .then((json) => {
@@ -41,7 +57,7 @@ function useStoreLogo() {
         }
       })
       .catch(() => {});
-  }, []);
+  }, [hydrated, initial]);
   return logo;
 }
 

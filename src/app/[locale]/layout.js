@@ -11,9 +11,11 @@
 import { notFound } from 'next/navigation';
 import { locales } from '@/i18n/config';
 import { getDictionary } from '@/i18n/getDictionary';
+import { getDisplaySettings } from '@/lib/display-settings';
 import LocaleProvider from '@/components/providers/LocaleProvider';
 import CurrencyProvider from '@/components/providers/CurrencyProvider';
 import CartAuthSync from '@/components/providers/CartAuthSync';
+import DisplaySettingsProvider from '@/components/providers/DisplaySettingsProvider';
 import AnnouncementBar from '@/components/shop/AnnouncementBar';
 import { Toaster } from 'sonner';
 
@@ -30,18 +32,23 @@ export default async function LocaleLayout({ children, params }) {
 
   if (!locales.includes(locale)) notFound();
 
-  const dictionary = await getDictionary(locale);
+  const [dictionary, displaySettings] = await Promise.all([
+    getDictionary(locale),
+    getDisplaySettings(),
+  ]);
 
   return (
     <LocaleProvider locale={locale} dictionary={dictionary}>
-      <CurrencyProvider>
-        <CartAuthSync />
-        <AnnouncementBar />
-        <div style={{ paddingTop: 'var(--bar-height, 0px)' }}>
-          {children}
-        </div>
-        <Toaster position="bottom-center" richColors />
-      </CurrencyProvider>
+      <DisplaySettingsProvider initial={displaySettings}>
+        <CurrencyProvider>
+          <CartAuthSync />
+          <AnnouncementBar />
+          <div style={{ paddingTop: 'var(--bar-height, 0px)' }}>
+            {children}
+          </div>
+          <Toaster position="bottom-center" richColors />
+        </CurrencyProvider>
+      </DisplaySettingsProvider>
     </LocaleProvider>
   );
 }
