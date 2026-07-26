@@ -301,6 +301,7 @@
       "empty_title": "لا توجد منتجات بعد",
       "empty_desc": "أضف منتجك الأول لتبدأ البيع.",
       "filter_panel": { "category": "الفئة", "all": "الكل", "featured_only": "المميزة فقط", "has_discount": "لديها خصم", "clear": "مسح الفلاتر" },
+      "detail": { "title": "المنتج", "close": "إغلاق", "edit": "تعديل", "view_public": "عرض الصفحة العامة", "price": "السعر", "stock": "المخزون", "stock_ok": "متوفر", "stock_low": "مخزون منخفض", "stock_out": "نفد المخزون", "category": "الفئة", "colors": "الألوان", "sizes": "المقاسات", "short_description": "ملخص", "description": "الوصف", "no_description": "لا يوجد وصف.", "loading": "جارٍ التحميل…", "id": "المعرّف", "created_at": "تم الإنشاء", "updated_at": "تم التحديث" },
       "form": {
         "add_title": "إضافة منتج",
         "edit_title": "تعديل المنتج",
@@ -365,7 +366,7 @@
       "empty_title": "لا توجد طلبات بعد",
       "empty_desc": "ستظهر الطلبات هنا عند شراء العملاء.",
       "filter_panel": { "date_range": "نطاق التاريخ", "all_time": "كل الأوقات", "today": "اليوم", "last_7": "آخر 7 أيام", "last_30": "آخر 30 يومًا", "cancelled_by": "ألغاه", "any": "الكل", "customer": "العميل", "admin_cancel": "المشرف", "clear": "مسح الفلاتر" },
-      "drawer": { "items": "المنتجات", "qty": "الكمية", "no_items": "لا توجد منتجات." }
+      "drawer": { "items": "المنتجات", "qty": "الكمية", "color": "اللون", "size": "المقاس", "no_items": "لا توجد منتجات.", "cancel": "إلغاء", "confirm": "تأكيد الطلب", "change_status": "تغيير الحالة", "status_updated": "تم تحديث الطلب", "cancelled_note": "تم إلغاء هذا الطلب.", "cancel_confirm_title": "هل تريد إلغاء هذا الطلب؟", "cancel_confirm_desc": "سيتم إرجاع المخزون المحجوز لهذا الطلب. لا يمكن التراجع عن هذا الإجراء.", "cancel_confirm_yes": "إلغاء الطلب", "cancel_confirm_no": "الاحتفاظ بالطلب" }
     },
     "customers": {
       "title": "العملاء",

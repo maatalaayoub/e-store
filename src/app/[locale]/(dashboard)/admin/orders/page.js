@@ -2,10 +2,15 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Search, Filter, Download, ShoppingCart, RefreshCw, ChevronDown, Check, X, MapPin, Phone, User, Package, Calendar } from "lucide-react";
+import { useParams } from "next/navigation";
+import { Search, Filter, Download, ShoppingCart, RefreshCw, ChevronDown, Check, X, MapPin, Phone, User, Package, Calendar, CheckCircle2, XCircle, Loader2, RotateCw, Tag } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { AdminOrdersSkeleton } from "@/components/skeletons";
 import { useAdminOrderView } from "@/components/providers/AdminOrderViewContext";
+import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
+import { toast } from "sonner";
+import { resolveCategoryName } from "@/lib/category-locale";
+import { resolveProductTranslation } from "@/lib/product-locale";
 
 const TAB_KEYS = ["all", "pending", "confirmed", "processing", "shipped", "delivered", "cancelled"];
 
@@ -112,16 +117,23 @@ const DATE_RANGE_OPTIONS = ["all", "today", "week", "month"];
 const CANCELLED_BY_OPTIONS = ["any", "customer", "admin"];
 
 /* ── Order detail drawer ──────────────────────────────────────────────────── */
-function OrderDrawer({ order, onClose }) {
+function OrderDrawer({ order, onClose, onStatusChanged }) {
   const [open, setOpen] = useState(false);
   const [snapshot, setSnapshot] = useState(null);   // basic header info (available instantly)
   const [detail, setDetail] = useState(null);        // full detail including items
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [pendingCancel, setPendingCancel] = useState(false);
+  const [changeMenuOpen, setChangeMenuOpen] = useState(false);
+  const [changeCoords, setChangeCoords] = useState({ top: 0, left: 0, width: 0 });
+  const changeBtnRef = useRef(null);
 
   const dict = useDictionary();
   const tD = dict?.admin?.orders?.drawer ?? {};
   const tH = dict?.admin?.orders?.headers ?? {};
   const tTabs = dict?.admin?.orders?.tabs ?? {};
+  const params = useParams();
+  const locale = params?.locale || "en";
 
   // Open immediately when order is set; fetch full detail in background
   useEffect(() => {
@@ -148,6 +160,70 @@ function OrderDrawer({ order, onClose }) {
     setOpen(false);
     setTimeout(onClose, 300);
   }, [onClose]);
+
+  /**
+   * PATCH the order to a new status. Optimistically updates the local drawer
+   * view and delegates to `onStatusChanged` so the parent list stays in sync.
+   * Toasts on failure; the parent handles list refresh on success.
+   */
+  const handleUpdateStatus = useCallback(async (nextStatus) => {
+    const target = snapshot;
+    if (!target || submitting) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/v1/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: target.id, status: nextStatus }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.success) {
+        throw new Error(json?.error || "Failed to update order");
+      }
+      const patched = {
+        status: nextStatus,
+        cancelled_by: nextStatus === "cancelled" ? "admin" : null,
+      };
+      setSnapshot((prev) => (prev ? { ...prev, ...patched } : prev));
+      setDetail((prev) => (prev ? { ...prev, ...patched } : prev));
+      onStatusChanged?.(target.id, nextStatus, patched);
+      toast.success(tD.status_updated ?? "Order updated");
+    } catch (err) {
+      toast.error(err?.message || "Failed to update order");
+    } finally {
+      setSubmitting(false);
+      setPendingCancel(false);
+      setChangeMenuOpen(false);
+    }
+  }, [snapshot, submitting, onStatusChanged, tD.status_updated]);
+
+  // Close the "Change status" popover on outside click.
+  useEffect(() => {
+    if (!changeMenuOpen) return;
+    const handler = (e) => {
+      if (changeBtnRef.current && !changeBtnRef.current.contains(e.target)) {
+        setChangeMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [changeMenuOpen]);
+
+  const openChangeMenu = () => {
+    const rect = changeBtnRef.current?.getBoundingClientRect();
+    if (!rect) { setChangeMenuOpen((v) => !v); return; }
+    const GAP = 8;
+    const PANEL_W = 200;
+    const PANEL_H = 220;
+    const isRtl = document.documentElement.dir === "rtl";
+    const left = isRtl
+      ? Math.max(8, rect.left)
+      : Math.max(8, rect.right - PANEL_W);
+    // Always flip above the footer button (footer sits at the bottom).
+    const top = Math.max(8, rect.top - PANEL_H - GAP);
+    setChangeCoords({ top, left, width: PANEL_W });
+    setChangeMenuOpen(true);
+  };
 
   // Close on Escape
   useEffect(() => {
@@ -268,19 +344,46 @@ function OrderDrawer({ order, onClose }) {
             ) : (
               <ul className="flex flex-col gap-2">
                 {items.map((item, i) => {
-                  const name = item.products?.name ?? `Product #${i + 1}`;
+                  const rawProduct = item.products ?? null;
+                  const localized = rawProduct ? resolveProductTranslation(rawProduct, locale) : null;
+                  const name = localized?.name ?? `Product #${i + 1}`;
+                  const categoryName = rawProduct?.categories
+                    ? resolveCategoryName(rawProduct.categories, locale)
+                    : null;
+                  // Pick the main image, else the lowest display_order, else any.
+                  const images = Array.isArray(rawProduct?.product_images) ? rawProduct.product_images : [];
+                  const mainImage = images.find((img) => img?.is_main)
+                    ?? [...images].sort((a, b) => (a?.display_order ?? 0) - (b?.display_order ?? 0))[0]
+                    ?? null;
+                  const imageUrl = mainImage?.url ?? null;
                   const subtotal = (Number(item.unit_price ?? 0) * Number(item.quantity ?? 1)).toFixed(2);
                   const colorName = item.selected_color?.name ?? null;
                   const colorHex  = item.selected_color?.hex ?? null;
                   const sizeLabel = item.selected_size ?? null;
                   return (
-                    <li key={i} className="flex items-start justify-between gap-3 rounded-xl bg-zinc-50 px-4 py-3">
-                      <div className="flex items-start gap-2.5 min-w-0">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-zinc-200 text-zinc-500">
-                          <Package className="h-3.5 w-3.5" />
-                        </div>
+                    <li key={i} className="flex items-start justify-between gap-3 rounded-xl bg-zinc-50 px-3 py-3">
+                      <div className="flex items-start gap-3 min-w-0">
+                        {imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={imageUrl}
+                            alt=""
+                            loading="lazy"
+                            className="h-12 w-12 shrink-0 rounded-lg object-cover bg-zinc-200"
+                          />
+                        ) : (
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-zinc-200 text-zinc-500">
+                            <Package className="h-5 w-5" />
+                          </div>
+                        )}
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-zinc-900 truncate">{name}</p>
+                          {categoryName && (
+                            <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-zinc-500">
+                              <Tag className="h-3 w-3 text-zinc-400" />
+                              <span className="truncate">{categoryName}</span>
+                            </p>
+                          )}
                           <p className="text-xs text-zinc-400 mt-0.5">{tD.qty ?? "Qty"}: {item.quantity} &times; {Number(item.unit_price ?? 0).toFixed(2)} DH</p>
                           {(colorName || sizeLabel) && (
                             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-600">
@@ -293,11 +396,11 @@ function OrderDrawer({ order, onClose }) {
                                       style={{ backgroundColor: colorHex }}
                                     />
                                   )}
-                                  <span>Color: <span className="font-medium text-zinc-800">{colorName}</span></span>
+                                  <span>{tD.color ?? "Color"}: <span className="font-medium text-zinc-800">{colorName}</span></span>
                                 </span>
                               )}
                               {sizeLabel && (
-                                <span>Size: <span className="font-medium text-zinc-800">{sizeLabel}</span></span>
+                                <span>{tD.size ?? "Size"}: <span className="font-medium text-zinc-800">{sizeLabel}</span></span>
                               )}
                             </div>
                           )}
@@ -312,12 +415,125 @@ function OrderDrawer({ order, onClose }) {
           </div>
         </div>
 
-        {/* Footer: total */}
-        <div className="px-5 py-4 border-t border-zinc-100 bg-zinc-50 flex items-center justify-between">
-          <span className="text-sm font-medium text-zinc-500">{tH.total ?? "Total"}</span>
-          <span className="text-lg font-bold text-zinc-900">{total} DH</span>
+        {/* Footer: total + status actions */}
+        <div className="border-t border-zinc-100 bg-zinc-50">
+          <div className="px-5 py-3 flex items-center justify-between">
+            <span className="text-sm font-medium text-zinc-500">{tH.total ?? "Total"}</span>
+            <span className="text-lg font-bold text-zinc-900">{total} DH</span>
+          </div>
+          {(() => {
+            const status = data.status;
+            if (status === "cancelled") {
+              return (
+                <div className="px-5 pb-4">
+                  <div className="flex items-center gap-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-700">
+                    <XCircle className="h-4 w-4 shrink-0" />
+                    <span>
+                      {tD.cancelled_note ?? "This order has been cancelled."}
+                      {data.cancelled_by ? ` (${data.cancelled_by})` : ""}
+                    </span>
+                  </div>
+                </div>
+              );
+            }
+            if (status === "pending") {
+              return (
+                <div className="px-5 pb-4 pt-1 flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => setPendingCancel(true)}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <XCircle className="h-4 w-4" />
+                    <span>{tD.cancel ?? "Cancel"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => handleUpdateStatus("confirmed")}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {submitting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4" />
+                    )}
+                    <span>{tD.confirm ?? "Confirm order"}</span>
+                  </button>
+                </div>
+              );
+            }
+            return (
+              <div className="px-5 pb-4 pt-1 flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => setPendingCancel(true)}
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <XCircle className="h-4 w-4" />
+                  <span>{tD.cancel ?? "Cancel"}</span>
+                </button>
+                <button
+                  ref={changeBtnRef}
+                  type="button"
+                  disabled={submitting}
+                  onClick={openChangeMenu}
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                >
+                  {submitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RotateCw className="h-4 w-4" />
+                  )}
+                  <span>{tD.change_status ?? "Change status"}</span>
+                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${changeMenuOpen ? "rotate-180" : ""}`} />
+                </button>
+              </div>
+            );
+          })()}
         </div>
       </div>
+
+      {/* Change-status popover (portal) */}
+      {changeMenuOpen && !submitting && createPortal(
+        <div
+          style={{ position: "fixed", top: changeCoords.top, left: changeCoords.left, width: changeCoords.width, zIndex: 10003 }}
+          className="rounded-xl border border-zinc-100 bg-white shadow-xl py-1.5"
+        >
+          {STATUS_OPTIONS
+            .filter((s) => s !== data.status && s !== "cancelled")
+            .map((s) => {
+              const st = STATUS_STYLES[s] ?? { dot: "bg-zinc-400" };
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); handleUpdateStatus(s); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+                >
+                  <span className={`h-2 w-2 rounded-full shrink-0 ${st.dot}`} />
+                  <span className="flex-1 text-left">{tTabs[s] ?? s}</span>
+                </button>
+              );
+            })}
+        </div>,
+        document.body,
+      )}
+
+      {/* Cancel confirmation */}
+      <ConfirmationDialog
+        isOpen={pendingCancel}
+        title={tD.cancel_confirm_title ?? "Cancel this order?"}
+        description={tD.cancel_confirm_desc ?? "Stock committed for this order will be restored. This action cannot be undone."}
+        confirmText={tD.cancel_confirm_yes ?? "Cancel order"}
+        cancelText={tD.cancel_confirm_no ?? "Keep order"}
+        isDangerous
+        isLoading={submitting}
+        onConfirm={() => handleUpdateStatus("cancelled")}
+        onCancel={() => setPendingCancel(false)}
+      />
     </>,
     document.body
   );
@@ -357,6 +573,17 @@ export default function AdminOrdersPage() {
     setSelectedOrder(null);
     clearPendingOrder();
   }, [clearPendingOrder]);
+
+  /**
+   * Called by the drawer after a successful status PATCH. Keeps the underlying
+   * list in sync so the row's inline pill/tabs reflect the change without a
+   * full refetch.
+   */
+  const handleDrawerStatusChanged = useCallback((orderId, nextStatus, patch) => {
+    setOrders((prev) =>
+      prev.map((o) => (o.id === orderId ? { ...o, ...patch, status: nextStatus } : o))
+    );
+  }, []);
 
   /* ── Fetch orders + live MAD exchange rates in parallel ── */
   const loadData = useCallback(async () => {
@@ -495,7 +722,7 @@ export default function AdminOrdersPage() {
 
   return (
     <>
-      <OrderDrawer order={selectedOrder} onClose={closeOrderDrawer} />
+      <OrderDrawer order={selectedOrder} onClose={closeOrderDrawer} onStatusChanged={handleDrawerStatusChanged} />
       <div className="flex flex-col items-start gap-4 mb-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900">{t.title ?? "Orders"}</h1>

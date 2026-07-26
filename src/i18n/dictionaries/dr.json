@@ -301,6 +301,7 @@
       "empty_title": "ما كاينش منتجات",
       "empty_desc": "زيد أول منتج باش تبدا تبيع.",
       "filter_panel": { "category": "الفئة", "all": "الكل", "featured_only": "المميزة فقط", "has_discount": "عندها سولد", "clear": "مسح الفلاتر" },
+      "detail": { "title": "المنتوج", "close": "سدّ", "edit": "بدّل", "view_public": "شوف الصفحة", "price": "التمن", "stock": "الستوك", "stock_ok": "كاين", "stock_low": "قليل فالستوك", "stock_out": "خلا الستوك", "category": "الفئة", "colors": "الألوان", "sizes": "القياسات", "short_description": "ملخص", "description": "الوصف", "no_description": "ماكاين حتّى وصف.", "loading": "كايتهزّ...", "id": "المعرّف", "created_at": "تصناع ف", "updated_at": "تبدل ف" },
       "form": {
         "add_title": "زيد منتج",
         "edit_title": "عدّل المنتج",
@@ -365,7 +366,7 @@
       "empty_title": "ما كاينش طلبات",
       "empty_desc": "الطلبات غادي يبانو هنا منين العملاء يشريو.",
       "filter_panel": { "date_range": "نطاق التاريخ", "all_time": "كل الأوقات", "today": "اليوم", "last_7": "آخر 7 أيام", "last_30": "آخر 30 يوم", "cancelled_by": "لغاه", "any": "الكل", "customer": "العميل", "admin_cancel": "الأدمين", "clear": "مسح الفلاتر" },
-      "drawer": { "items": "المنتجات", "qty": "الكمية", "no_items": "ما كاين اشي." }
+      "drawer": { "items": "المنتجات", "qty": "الكمية", "color": "اللون", "size": "القياس", "no_items": "ما كاين اشي.", "cancel": "إلغاء", "confirm": "أكّد الطلب", "change_status": "بدّل الحالة", "status_updated": "الطلب تحدّث", "cancelled_note": "هاد الطلب تلغى.", "cancel_confirm_title": "واش بغيتي تلغي هاد الطلب؟", "cancel_confirm_desc": "السطوك اللي تحجز لهاد الطلب غادي يرجع. هاد الفعل ما يتراجعش.", "cancel_confirm_yes": "لغي الطلب", "cancel_confirm_no": "خلّي الطلب" }
     },
     "customers": {
       "title": "العملاء",

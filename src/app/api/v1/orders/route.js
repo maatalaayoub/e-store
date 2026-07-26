@@ -516,7 +516,13 @@ export async function GET(req) {
         unit_price,
         selected_color,
         selected_size,
-        products ( name )
+        products (
+          id,
+          name,
+          translations,
+          categories ( id, name, translations ),
+          product_images ( url, is_main, display_order )
+        )
       )
     `;
 

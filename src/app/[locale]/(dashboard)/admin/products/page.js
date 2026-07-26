@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useSearchParams } from "next/navigation";
 import {
   Plus,
   Search,
@@ -24,6 +25,7 @@ import { useDictionary } from "@/components/providers/LocaleProvider";
 import { AdminProductsSkeleton } from "@/components/skeletons";
 import ProductFormModal from "./_components/ProductFormModal";
 import CategoriesManagerModal from "./_components/CategoriesManagerModal";
+import ProductDetailDrawer from "./_components/ProductDetailDrawer";
 
 // ── Custom confirm modal ────────────────────────────────────────────────────
 function ConfirmModal({ open, title, message, orders, confirmLabel = "Confirm", confirmVariant = "red", cancelLabel = "Cancel", onConfirm, onCancel }) {
@@ -190,6 +192,28 @@ const STATUS_STYLES = {
   archived: "bg-amber-50 text-amber-700",
 };
 
+// Highlight products that are running out. Tune LOW_STOCK_THRESHOLD as needed.
+const LOW_STOCK_THRESHOLD = 5;
+
+function getStockLevel(stock) {
+  const n = Number(stock);
+  if (!Number.isFinite(n) || n <= 0) return "out";
+  if (n <= LOW_STOCK_THRESHOLD) return "low";
+  return "ok";
+}
+
+const STOCK_ROW_STYLES = {
+  out: "bg-red-50 hover:bg-red-100",
+  low: "bg-amber-50 hover:bg-amber-100",
+  ok: "hover:bg-zinc-50",
+};
+
+const STOCK_TEXT_STYLES = {
+  out: "text-red-700 font-semibold",
+  low: "text-amber-700 font-semibold",
+  ok: "text-zinc-600",
+};
+
 function formatPrice(price, effectivePrice) {
   if (price == null) return "—";
   const fmt = (n) => `${Number(n).toFixed(2)} DH`;
@@ -223,6 +247,14 @@ export default function AdminProductsPage() {
   const filterBtnRef = useRef(null);
   const filterPanelRef = useRef(null);
 
+  // ── Deep-link from notifications: scroll to & highlight a specific product ─
+  const searchParams = useSearchParams();
+  const highlightProductId = searchParams.get("product");
+  const [pulseProductId, setPulseProductId] = useState(null);
+
+  // ── Detail drawer state ────────────────────────────────────────────────────
+  const [viewingProduct, setViewingProduct] = useState(null);
+
   const dict = useDictionary();
   const t = dict?.admin?.products ?? {};
   const tTabs = t.tabs ?? {};
@@ -245,6 +277,38 @@ export default function AdminProductsPage() {
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
+
+  // When arriving with ?product=<id> from a notification, scroll the matching
+  // row into view and briefly highlight it once the list has finished loading.
+  useEffect(() => {
+    if (!highlightProductId) return;
+    if (!products || products.length === 0) return;
+    const target = products.find(
+      (p) => String(p.id) === String(highlightProductId)
+    );
+    if (!target) return;
+    // Defer to next frame so the rows are actually mounted after this render.
+    const raf = requestAnimationFrame(() => {
+      const selector = `[data-product-id="${CSS.escape(String(target.id))}"]`;
+      // Both the mobile <ul> and the desktop <table> render simultaneously
+      // (one is display:none via Tailwind's sm:hidden / hidden sm:block).
+      // Pick the row that is actually visible so scrollIntoView has an effect.
+      const candidates = Array.from(document.querySelectorAll(selector));
+      const el =
+        candidates.find((node) => node.offsetParent !== null) ??
+        candidates[0] ??
+        null;
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      setPulseProductId(String(target.id));
+    });
+    const timer = setTimeout(() => setPulseProductId(null), 2600);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+    };
+  }, [highlightProductId, products]);
 
   useEffect(() => {
     let cancelled = false;
@@ -511,6 +575,14 @@ export default function AdminProductsPage() {
         onClose={() => setCategoriesModalOpen(false)}
         onChanged={handleCategoriesChanged}
       />
+      <ProductDetailDrawer
+        product={viewingProduct}
+        onClose={() => setViewingProduct(null)}
+        onEdit={(p) => {
+          setViewingProduct(null);
+          openEdit(p);
+        }}
+      />
 
       {/* HEADER */}
       <div className="flex flex-col items-start gap-4 mb-8 sm:flex-row sm:items-center sm:justify-between">
@@ -688,8 +760,26 @@ export default function AdminProductsPage() {
         {/* MOBILE CARDS */}
         {filtered.length > 0 && (
           <ul className="divide-y divide-zinc-100 sm:hidden">
-            {filtered.map((p) => (
-              <li key={p.id} className="px-4 py-4 flex items-start gap-3">
+            {filtered.map((p) => {
+              const stockLevel = getStockLevel(p.stock);
+              const isPulsing = pulseProductId === String(p.id);
+              return (
+              <li
+                key={p.id}
+                data-product-id={p.id}
+                onClick={() => setViewingProduct(p)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setViewingProduct(p);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                className={`px-4 py-4 flex items-start gap-3 transition-colors cursor-pointer ${STOCK_ROW_STYLES[stockLevel]} ${
+                  isPulsing ? "ring-2 ring-blue-500 ring-inset animate-pulse" : ""
+                }`}
+              >
                 {/* Thumbnail */}
                 <div className="h-14 w-14 shrink-0 rounded-lg overflow-hidden bg-zinc-100">
                   {p.main_image ? (
@@ -713,7 +803,10 @@ export default function AdminProductsPage() {
                         <Star className="inline h-3 w-3 text-yellow-400 fill-yellow-400 ms-1" />
                       )}
                     </span>
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div
+                      className="flex items-center gap-1 shrink-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <span
                         className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                           STATUS_STYLES[p.status] ?? "bg-zinc-100 text-zinc-500"
@@ -741,7 +834,7 @@ export default function AdminProductsPage() {
                       <span className="block font-medium text-zinc-400 uppercase tracking-wide mb-0.5">
                         {tH.stock}
                       </span>
-                      {p.stock}
+                      <span className={STOCK_TEXT_STYLES[stockLevel]}>{p.stock}</span>
                     </div>
                     <div>
                       <span className="block font-medium text-zinc-400 uppercase tracking-wide mb-0.5">
@@ -752,7 +845,8 @@ export default function AdminProductsPage() {
                   </div>
                 </div>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
 
@@ -773,8 +867,18 @@ export default function AdminProductsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">
-                {filtered.map((p) => (
-                  <tr key={p.id} className="hover:bg-zinc-50">
+                {filtered.map((p) => {
+                  const stockLevel = getStockLevel(p.stock);
+                  const isPulsing = pulseProductId === String(p.id);
+                  return (
+                  <tr
+                    key={p.id}
+                    data-product-id={p.id}
+                    onClick={() => setViewingProduct(p)}
+                    className={`transition-colors cursor-pointer ${STOCK_ROW_STYLES[stockLevel]} ${
+                      isPulsing ? "ring-2 ring-blue-500 ring-inset animate-pulse" : ""
+                    }`}
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-zinc-100">
@@ -800,7 +904,9 @@ export default function AdminProductsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">{p.category ?? "—"}</td>
-                    <td className="px-6 py-4">{p.stock}</td>
+                    <td className={`px-6 py-4 ${STOCK_TEXT_STYLES[stockLevel]}`}>
+                      {p.stock}
+                    </td>
                     <td className="px-6 py-4">
                       {formatPrice(p.price, p.effective_price)}
                     </td>
@@ -813,7 +919,7 @@ export default function AdminProductsPage() {
                         {p.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end">
                         <ActionMenu
                           product={p}
@@ -825,7 +931,8 @@ export default function AdminProductsPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

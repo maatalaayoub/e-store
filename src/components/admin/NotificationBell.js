@@ -81,7 +81,10 @@ function getNotificationLink(n, locale) {
     return `/${locale}/admin/orders`;
   }
   if (type === "low_stock" || type === "out_of_stock") {
-    return `/${locale}/admin/products`;
+    const productId = n.payload?.product_id;
+    return productId
+      ? `/${locale}/admin/products?product=${encodeURIComponent(productId)}`
+      : `/${locale}/admin/products`;
   }
   return null;
 }

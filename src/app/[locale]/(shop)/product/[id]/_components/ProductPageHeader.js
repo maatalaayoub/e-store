@@ -87,7 +87,25 @@ export default function ProductPageHeader() {
         <div className="mx-auto px-3 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
           {/* Left: back button */}
           <button
-            onClick={() => router.back()}
+            onClick={() => {
+              // In a freshly-opened tab (e.g. via target="_blank") there is
+              // no previous history, so router.back() is a no-op. Fall back
+              // to the shop home so the button always leads somewhere useful.
+              if (typeof window === "undefined") {
+                router.push(`/${locale}`);
+                return;
+              }
+              const hasHistory = window.history.length > 1;
+              const sameOriginReferrer =
+                typeof document !== "undefined" &&
+                document.referrer &&
+                document.referrer.startsWith(window.location.origin);
+              if (hasHistory && sameOriginReferrer) {
+                router.back();
+              } else {
+                router.push(`/${locale}`);
+              }
+            }}
             aria-label="Go back"
             className="flex h-10 w-10 items-center justify-center rounded-full text-zinc-700 hover:bg-zinc-100 transition-colors"
           >

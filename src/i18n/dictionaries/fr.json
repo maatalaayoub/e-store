@@ -301,6 +301,7 @@
       "empty_title": "Aucun produit",
       "empty_desc": "Ajoutez votre premier produit pour commencer à vendre.",
       "filter_panel": { "category": "Catégorie", "all": "Tous", "featured_only": "En vedette uniquement", "has_discount": "Avec remise", "clear": "Effacer les filtres" },
+      "detail": { "title": "Produit", "close": "Fermer", "edit": "Modifier", "view_public": "Voir la page publique", "price": "Prix", "stock": "Stock", "stock_ok": "En stock", "stock_low": "Stock bas", "stock_out": "Rupture de stock", "category": "Catégorie", "colors": "Couleurs", "sizes": "Tailles", "short_description": "Résumé", "description": "Description", "no_description": "Aucune description fournie.", "loading": "Chargement…", "id": "ID", "created_at": "Créé le", "updated_at": "Mis à jour le" },
       "form": {
         "add_title": "Ajouter un produit",
         "edit_title": "Modifier le produit",
@@ -365,7 +366,7 @@
       "empty_title": "Aucune commande",
       "empty_desc": "Les commandes apparaîtront ici lors des achats.",
       "filter_panel": { "date_range": "Période", "all_time": "Toujours", "today": "Aujourd'hui", "last_7": "7 derniers jours", "last_30": "30 derniers jours", "cancelled_by": "Annulé par", "any": "Tous", "customer": "Client", "admin_cancel": "Admin", "clear": "Effacer les filtres" },
-      "drawer": { "items": "Articles", "qty": "Qté", "no_items": "Aucun article trouvé." }
+      "drawer": { "items": "Articles", "qty": "Qté", "color": "Couleur", "size": "Taille", "no_items": "Aucun article trouvé.", "cancel": "Annuler", "confirm": "Confirmer la commande", "change_status": "Changer le statut", "status_updated": "Commande mise à jour", "cancelled_note": "Cette commande a été annulée.", "cancel_confirm_title": "Annuler cette commande ?", "cancel_confirm_desc": "Le stock réservé pour cette commande sera restauré. Cette action est irréversible.", "cancel_confirm_yes": "Annuler la commande", "cancel_confirm_no": "Conserver la commande" }
     },
     "customers": {
       "title": "Clients",

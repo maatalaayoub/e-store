@@ -55,12 +55,27 @@ export default async function ProductDetailsPage({ params }) {
         </nav>
 
         <div className="lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16">
-          <div className="relative pb-24 lg:pb-0">
+          {/*
+            On small screens, show the product name first — above the image —
+            so shoppers see what they're viewing before scrolling. On lg+ the
+            heading stays inside the info column (right of the gallery).
+            Elements with `hidden` / `lg:hidden` are `display:none` and are
+            therefore ignored by the grid layout on the other breakpoint.
+          */}
+          <h1 className="lg:hidden text-2xl font-bold tracking-tight text-zinc-900 mb-4">
+            {product.name}
+          </h1>
+
+          <div
+            className={`relative lg:self-start ${
+              (product.images?.length ?? 0) > 1 ? "pb-24 lg:pb-0" : ""
+            }`}
+          >
             <ProductGallery images={product.images} productName={product.name} productId={product.id} />
           </div>
 
           <div className="mt-4 lg:mt-0">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">
+            <h1 className="hidden lg:block text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">
               {product.name}
             </h1>
 

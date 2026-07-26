@@ -52,7 +52,7 @@ export default function ConfirmationDialog({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 px-4"
+      className="fixed inset-0 z-[10100] flex items-center justify-center bg-black/50 px-4"
       onClick={isLoading ? undefined : onCancel}
       role="dialog"
       aria-modal="true"
