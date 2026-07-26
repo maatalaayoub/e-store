@@ -62,7 +62,7 @@ export default async function ProductDetailsPage({ params }) {
             Elements with `hidden` / `lg:hidden` are `display:none` and are
             therefore ignored by the grid layout on the other breakpoint.
           */}
-          <h1 className="lg:hidden text-2xl font-bold tracking-tight text-zinc-900 mb-4">
+          <h1 className="lg:hidden text-2xl font-bold tracking-tight text-zinc-900 mb-6">
             {product.name}
           </h1>
 
@@ -74,7 +74,7 @@ export default async function ProductDetailsPage({ params }) {
             <ProductGallery images={product.images} productName={product.name} productId={product.id} />
           </div>
 
-          <div className="mt-4 lg:mt-0">
+          <div className="mt-6 lg:mt-0">
             <h1 className="hidden lg:block text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">
               {product.name}
             </h1>
