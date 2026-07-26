@@ -47,12 +47,14 @@ CREATE TABLE IF NOT EXISTS categories (
   slug text NOT NULL UNIQUE,
   image_url  text,  -- public URL of the category icon / photo (nullable)
   image_path text,  -- storage bucket path so we can delete/replace the file
+  translations jsonb NOT NULL DEFAULT '{}'::jsonb, -- { en: {name}, fr: {name}, ar: {name}, dr: {name} }
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- Migration for existing installs (idempotent):
 ALTER TABLE categories ADD COLUMN IF NOT EXISTS image_url  text;
 ALTER TABLE categories ADD COLUMN IF NOT EXISTS image_path text;
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS translations jsonb NOT NULL DEFAULT '{}'::jsonb;
 
 -- ========================
 -- PRODUCTS

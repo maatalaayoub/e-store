@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 // where the client needs every column and every image.
 const PRODUCT_SELECT = `
   *,
-  categories (id, name, slug),
+  categories (id, name, slug, translations),
   product_images (id, url, storage_path, is_main, display_order)
 `.trim();
 
@@ -26,7 +26,7 @@ const PRODUCT_LIST_SELECT = `
   colors,
   sizes,
   created_at,
-  categories (id, name, slug),
+  categories (id, name, slug, translations),
   product_images (id, url, is_main, display_order)
 `.trim();
 
@@ -39,7 +39,7 @@ const PRODUCT_LIST_FALLBACK_SELECT = `
   is_featured,
   category_id,
   created_at,
-  categories (id, name, slug),
+  categories (id, name, slug, translations),
   product_images (id, url, is_main, display_order)
 `.trim();
 

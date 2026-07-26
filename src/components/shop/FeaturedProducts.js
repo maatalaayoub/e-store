@@ -8,6 +8,7 @@ import { useDictionary } from "@/components/providers/LocaleProvider";
 import { isRtlLocale } from "@/config/constants";
 import { fetchFeaturedProducts } from "@/services/productsService";
 import { FeaturedProductsSkeleton } from "@/components/skeletons";
+import { resolveCategoryName } from "@/lib/category-locale";
 import ProductCarousel from "./ProductCarousel";
 
 // Module-level caches — keyed by locale for products, singleton for settings
@@ -33,35 +34,49 @@ function fetchCategoriesList() {
  * Groups products into category buckets while preserving first-seen order.
  * Products without a category are collected into a trailing "other" bucket so
  * they still render, just after the named categories. `categoriesMeta` (an
- * array of `{ name, image_url }`) is used to attach an optional icon to each
- * group without a second lookup pass.
+ * array of full category rows including `translations` + `image_url`) is used
+ * to attach the localized display name and optional icon to each group.
+ *
+ * Grouping is keyed by `category_id` (stable across locales) rather than by
+ * the localized name string — otherwise the same category would split into
+ * multiple buckets when the language changes mid-render.
  */
-function groupByCategory(products, otherLabel, categoriesMeta = []) {
-  const iconByName = new Map();
+function groupByCategory(products, otherLabel, categoriesMeta = [], locale) {
+  const metaById = new Map();
   for (const c of categoriesMeta) {
-    if (c?.name) iconByName.set(c.name, c.image_url ?? null);
+    if (c?.id) metaById.set(c.id, c);
   }
 
-  const map = new Map();
+  const map = new Map(); // category_id -> { name, image_url, items }
   const uncategorized = [];
 
   for (const product of products) {
-    const name = typeof product?.category === "string" ? product.category.trim() : "";
-    if (!name) {
+    const catId = product?.category_id ?? null;
+    if (!catId) {
       uncategorized.push(product);
       continue;
     }
-    if (!map.has(name)) map.set(name, []);
-    map.get(name).push(product);
+    if (!map.has(catId)) {
+      const meta = metaById.get(catId);
+      const displayName =
+        (meta && resolveCategoryName(meta, locale)) ||
+        // Fallback to the product's already-normalised `category` string in
+        // case the categories list hasn't loaded yet.
+        (typeof product.category === "string" ? product.category : "") ||
+        "";
+      map.set(catId, {
+        id: catId,
+        name: displayName,
+        image_url: meta?.image_url ?? null,
+        items: [],
+      });
+    }
+    map.get(catId).items.push(product);
   }
 
-  const groups = Array.from(map, ([name, items]) => ({
-    name,
-    items,
-    image_url: iconByName.get(name) ?? null,
-  }));
+  const groups = Array.from(map.values());
   if (uncategorized.length) {
-    groups.push({ name: otherLabel, items: uncategorized, image_url: null });
+    groups.push({ id: "__other__", name: otherLabel, items: uncategorized, image_url: null });
   }
   return groups;
 }
@@ -133,6 +148,7 @@ export default function FeaturedProducts({ onItemAdded }) {
     products,
     tHome.category_other ?? "More products",
     categoriesMeta,
+    locale,
   );
 
   const carouselProps = {
@@ -187,7 +203,7 @@ export default function FeaturedProducts({ onItemAdded }) {
 
         <div className="flex flex-col gap-14 sm:gap-20">
           {categoryGroups.map((group) => (
-            <div key={group.name}>
+            <div key={group.id}>
               {/* Professional category separator */}
               <div className="mb-7 flex items-center gap-4 sm:mb-9 sm:gap-5">
                 <div className="flex min-w-0 items-center gap-3">

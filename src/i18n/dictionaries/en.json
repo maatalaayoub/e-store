@@ -292,7 +292,8 @@
         "image_upload_failed": "Failed to upload image",
         "image_invalid_type": "Unsupported image type",
         "image_too_large": "Image is too large (max 3 MB)",
-        "image_selected": "Image ready to upload"
+        "image_selected": "Image ready to upload",
+        "language": "Language"
       },
       "tabs": { "all": "All", "active": "Active", "draft": "Draft", "archived": "Archived" },
       "search": "Search products...",

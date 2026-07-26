@@ -1,5 +1,6 @@
 import { productRepository } from './product.repository';
 import { resolveProductTranslation } from '@/lib/product-locale';
+import { resolveCategoryName } from '@/lib/category-locale';
 import { computeDiscountInfo } from '@/lib/price';
 
 /** Compute derived fields so every layer works with a consistent shape. */
@@ -24,7 +25,13 @@ export function normalizeProduct(raw, locale) {
     images: sortedImages,
     effective_price,
     badge,
-    category: raw.categories?.name ?? raw.category ?? null,
+    // Resolve the localized category name at normalize time so consumers
+    // (product cards, admin table, filters) can render it without a second
+    // lookup. Falls back to the canonical category name when no locale is
+    // passed (e.g. admin write paths).
+    category: raw.categories
+      ? (resolveCategoryName(raw.categories, locale) ?? raw.categories.name)
+      : (raw.category ?? null),
     category_id: raw.category_id ?? null,
     use_default_sections: raw.use_default_sections !== false,
     sections_config: Array.isArray(raw.sections_config) ? raw.sections_config : null,

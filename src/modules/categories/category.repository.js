@@ -42,11 +42,13 @@ export class CategoryRepository {
     return data;
   }
 
-  async create({ name, slug, image_url = null, image_path = null }) {
+  async create({ name, slug, image_url = null, image_path = null, translations = null }) {
     const supabase = await createClient();
+    const row = { name, slug, image_url, image_path };
+    if (translations != null) row.translations = translations;
     const { data, error } = await supabase
       .from('categories')
-      .insert({ name, slug, image_url, image_path })
+      .insert(row)
       .select()
       .single();
     if (error) throw error;

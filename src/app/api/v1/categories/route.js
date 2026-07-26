@@ -61,11 +61,12 @@ export async function POST(req) {
       const category = await categoryService.createCategory({
         name: raw,
         image_path: typeof body?.image_path === 'string' ? body.image_path : null,
+        translations: body?.translations ?? null,
       });
       return NextResponse.json({ success: true, data: category }, { status: 201 });
     } catch (err) {
-      // Surface validation errors from sanitizeImagePath as 400.
-      if (/invalid image_path|image_path must|unsupported image type/i.test(err?.message ?? '')) {
+      // Surface validation errors from sanitizeImagePath / sanitizeTranslations as 400.
+      if (/invalid image_path|image_path must|unsupported image type|translations/i.test(err?.message ?? '')) {
         return NextResponse.json({ success: false, error: err.message }, { status: 400 });
       }
       throw err;
@@ -73,7 +74,13 @@ export async function POST(req) {
   } catch (err) {
     logger.error('POST /api/v1/categories', err);
     return NextResponse.json(
-      { success: false, error: 'Failed to create category' },
+      {
+        success: false,
+        error: 'Failed to create category',
+        ...(process.env.NODE_ENV !== 'production'
+          ? { debug: { message: err?.message, code: err?.code, details: err?.details, hint: err?.hint } }
+          : {}),
+      },
       { status: 500 }
     );
   }

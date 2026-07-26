@@ -292,7 +292,8 @@
         "image_upload_failed": "Échec du téléversement",
         "image_invalid_type": "Type d’image non pris en charge",
         "image_too_large": "Image trop volumineuse (max 3 Mo)",
-        "image_selected": "Image prête à téléverser"
+        "image_selected": "Image prête à téléverser",
+        "language": "Langue"
       },
       "tabs": { "all": "Tous", "active": "Actifs", "draft": "Brouillons", "archived": "Archivés" },
       "search": "Rechercher des produits...",

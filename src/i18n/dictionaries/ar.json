@@ -292,7 +292,8 @@
         "image_upload_failed": "فشل في رفع الصورة",
         "image_invalid_type": "نوع صورة غير مدعوم",
         "image_too_large": "الصورة كبيرة جدًا (الحد الأقصى 3 م.ب)",
-        "image_selected": "الصورة جاهزة للرفع"
+        "image_selected": "الصورة جاهزة للرفع",
+        "language": "اللغة"
       },
       "tabs": { "all": "الكل", "active": "نشط", "draft": "مسودة", "archived": "مؤرشف" },
       "search": "ابحث في المنتجات...",

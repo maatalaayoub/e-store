@@ -292,7 +292,8 @@
         "image_upload_failed": "ما ترفعتش الصورة",
         "image_invalid_type": "نوع الصورة ماشي مدعوم",
         "image_too_large": "الصورة كبيرة بزاف (الحد 3 ميكا)",
-        "image_selected": "الصورة واجدة باش تترفع"
+        "image_selected": "الصورة واجدة باش تترفع",
+        "language": "اللغة"
       },
       "tabs": { "all": "الكل", "active": "نشيط", "draft": "مسوّدة", "archived": "مأرشف" },
       "search": "قلّب على منتج...",

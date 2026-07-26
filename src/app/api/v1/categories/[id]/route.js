@@ -50,6 +50,11 @@ export async function PATCH(req, { params }) {
       patch.image_path = body.image_path == null ? null : String(body.image_path);
     }
 
+    if ('translations' in body) {
+      // Whole-value replace. Pass the raw value through; the service validates.
+      patch.translations = body.translations;
+    }
+
     if (Object.keys(patch).length === 0) {
       return NextResponse.json(
         { success: false, error: 'nothing to update' },
@@ -61,7 +66,7 @@ export async function PATCH(req, { params }) {
       const category = await categoryService.updateCategory(id, patch);
       return NextResponse.json({ success: true, data: category });
     } catch (err) {
-      if (/invalid image_path|image_path must|unsupported image type|Category not found/i.test(err?.message ?? '')) {
+      if (/invalid image_path|image_path must|unsupported image type|translations|Category not found/i.test(err?.message ?? '')) {
         const status = /Category not found/i.test(err.message) ? 404 : 400;
         return NextResponse.json({ success: false, error: err.message }, { status });
       }

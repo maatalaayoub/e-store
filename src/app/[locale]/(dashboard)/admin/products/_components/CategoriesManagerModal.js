@@ -17,30 +17,52 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useDictionary } from "@/components/providers/LocaleProvider";
+import { useParams } from "next/navigation";
+import { RTL_LOCALES } from "@/config/constants";
+import {
+  resolveCategoryName,
+  CATEGORY_SUPPORTED_LANGS as SUPPORTED_LANGS,
+  emptyCategoryNames,
+  canonicalCategoryName as canonicalNameFrom,
+  categoryTranslationsPayload as translationsPayload,
+  categoryNamesFromRow as initNamesFromCategory,
+  categoryNamesEqual as namesEqual,
+} from "@/lib/category-locale";
 import {
   ACCEPTED_CATEGORY_IMAGE_TYPES as ACCEPTED_IMAGE_TYPES,
   MAX_CATEGORY_IMAGE_BYTES as MAX_IMAGE_BYTES,
   uploadCategoryImage,
 } from "./categoryImageUpload";
 
+// Display labels for the language tabs (short pills fit the compact editor UI).
+const LANG_LABELS = { en: "EN", fr: "FR", ar: "AR", dr: "DR" };
+const RTL_LANGS = new Set(RTL_LOCALES);
+
 /**
  * CategoriesManagerModal
  *
  * Admin-only side panel that lists all product categories with their product
- * counts and lets the admin add, rename, delete, and set/change/remove an
- * icon or photo per category. Mirrors the animation and layout of
+ * counts and lets the admin add, rename (per language), delete, and set /
+ * change / remove an icon per category. Mirrors the animation and layout of
  * ProductFormModal so the two feel like siblings.
  */
 export default function CategoriesManagerModal({ open, onClose, onChanged }) {
   const [animOpen, setAnimOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [categories, setCategories] = useState(null); // null = loading
-  const [newName, setNewName] = useState("");
+
+  // Per-language name maps for the Add form. Active tab controls which
+  // language the visible input edits; other languages retain their values.
+  const emptyNames = emptyCategoryNames();
+  const [newNames, setNewNames] = useState(emptyNames);
+  const [newLang, setNewLang] = useState("en");
   const [newImageFile, setNewImageFile] = useState(null);
   const [newImagePreview, setNewImagePreview] = useState(null);
   const [adding, setAdding] = useState(false);
+
   const [editingId, setEditingId] = useState(null);
-  const [editingName, setEditingName] = useState("");
+  const [editingNames, setEditingNames] = useState(emptyNames);
+  const [editingLang, setEditingLang] = useState("en");
   const [savingId, setSavingId] = useState(null);
   const [uploadingId, setUploadingId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -51,6 +73,8 @@ export default function CategoriesManagerModal({ open, onClose, onChanged }) {
 
   const dict = useDictionary();
   const tc = dict?.admin?.products?.categories_manager ?? {};
+  const params = useParams();
+  const currentLocale = params?.locale || "en";
 
   /* eslint-disable react-hooks/set-state-in-effect -- modal lifecycle animation */
   useEffect(() => {
@@ -89,9 +113,11 @@ export default function CategoriesManagerModal({ open, onClose, onChanged }) {
   useEffect(() => {
     if (!open) return;
     fetchCategories();
-    setNewName("");
+    setNewNames(emptyNames);
+    setNewLang(SUPPORTED_LANGS.includes(currentLocale) ? currentLocale : "en");
     setEditingId(null);
-    setEditingName("");
+    setEditingNames(emptyNames);
+    setEditingLang("en");
     setDeleteTarget(null);
     if (newImagePreview) URL.revokeObjectURL(newImagePreview);
     setNewImageFile(null);
@@ -134,7 +160,7 @@ export default function CategoriesManagerModal({ open, onClose, onChanged }) {
 
   async function handleAdd(e) {
     e?.preventDefault?.();
-    const name = newName.trim();
+    const name = canonicalNameFrom(newNames);
     if (!name || adding) return;
     setAdding(true);
     try {
@@ -145,10 +171,18 @@ export default function CategoriesManagerModal({ open, onClose, onChanged }) {
       const res = await fetch("/api/v1/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, image_path }),
+        body: JSON.stringify({
+          name,
+          image_path,
+          translations: translationsPayload(newNames),
+        }),
       });
       const json = await res.json();
       if (!res.ok || !json?.success) {
+        if (json?.debug) {
+          // eslint-disable-next-line no-console
+          console.error("[CategoriesManagerModal] add failed:", json.debug);
+        }
         throw new Error(json?.error || (tc.add_failed ?? "Failed to add category"));
       }
       setCategories((prev) => {
@@ -156,7 +190,7 @@ export default function CategoriesManagerModal({ open, onClose, onChanged }) {
         next.sort((a, b) => a.name.localeCompare(b.name));
         return next;
       });
-      setNewName("");
+      setNewNames(emptyNames);
       clearNewImage();
       newInputRef.current?.focus();
       toast.success(tc.added ?? "Category added");
@@ -170,17 +204,28 @@ export default function CategoriesManagerModal({ open, onClose, onChanged }) {
 
   function startEdit(cat) {
     setEditingId(cat.id);
-    setEditingName(cat.name);
+    setEditingNames(initNamesFromCategory(cat));
+    // Open the tab that already has a value for the current locale (nicer for
+    // admins who work primarily in one language); otherwise fall back to `en`.
+    const localeLang = SUPPORTED_LANGS.includes(currentLocale) ? currentLocale : "en";
+    setEditingLang(localeLang);
   }
 
   function cancelEdit() {
     setEditingId(null);
-    setEditingName("");
+    setEditingNames(emptyNames);
+    setEditingLang("en");
   }
 
   async function handleRename(cat) {
-    const name = editingName.trim();
-    if (!name || name === cat.name) {
+    const name = canonicalNameFrom(editingNames);
+    if (!name) {
+      cancelEdit();
+      return;
+    }
+    // Skip the round-trip when nothing actually changed.
+    const before = initNamesFromCategory(cat);
+    if (name === cat.name && namesEqual(before, editingNames)) {
       cancelEdit();
       return;
     }
@@ -189,7 +234,10 @@ export default function CategoriesManagerModal({ open, onClose, onChanged }) {
       const res = await fetch(`/api/v1/categories/${cat.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({
+          name,
+          translations: translationsPayload(editingNames),
+        }),
       });
       const json = await res.json();
       if (!res.ok || !json?.success) {
@@ -381,8 +429,11 @@ export default function CategoriesManagerModal({ open, onClose, onChanged }) {
               <input
                 ref={newInputRef}
                 type="text"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
+                value={newNames[newLang] ?? ""}
+                onChange={(e) =>
+                  setNewNames((prev) => ({ ...prev, [newLang]: e.target.value }))
+                }
+                dir={RTL_LANGS.has(newLang) ? "rtl" : "ltr"}
                 maxLength={80}
                 placeholder={tc.new_placeholder ?? "New category name"}
                 className="w-full rounded-lg border border-zinc-200 bg-white pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
@@ -390,7 +441,7 @@ export default function CategoriesManagerModal({ open, onClose, onChanged }) {
             </div>
             <button
               type="submit"
-              disabled={!newName.trim() || adding}
+              disabled={!canonicalNameFrom(newNames) || adding}
               className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {adding ? (
@@ -400,6 +451,41 @@ export default function CategoriesManagerModal({ open, onClose, onChanged }) {
               )}
               <span>{tc.add ?? "Add"}</span>
             </button>
+          </div>
+          {/* Language tabs — pick which language the input above is editing.
+              Underline for the active tab; an inline dot next to the label
+              signals which languages already have a value. */}
+          <div
+            className="flex items-center gap-1 border-b border-zinc-200 self-stretch"
+            role="tablist"
+            aria-label={tc.language ?? "Language"}
+          >
+            {SUPPORTED_LANGS.map((lang) => {
+              const hasContent = !!newNames[lang]?.trim();
+              const isActive = newLang === lang;
+              return (
+                <button
+                  key={lang}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => setNewLang(lang)}
+                  className={`relative -mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
+                    isActive
+                      ? "border-blue-600 text-blue-700"
+                      : "border-transparent text-zinc-500 hover:text-zinc-800"
+                  }`}
+                >
+                  {LANG_LABELS[lang]}
+                  {hasContent && (
+                    <span
+                      aria-hidden="true"
+                      className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-blue-600" : "bg-emerald-500"}`}
+                    />
+                  )}
+                </button>
+              );
+            })}
           </div>
           {newImagePreview && (
             <div className="flex items-center justify-between rounded-lg bg-zinc-50 px-3 py-1.5 text-xs text-zinc-600">
@@ -488,21 +574,62 @@ export default function CategoriesManagerModal({ open, onClose, onChanged }) {
 
                     <div className="flex-1 min-w-0">
                       {isEditing ? (
-                        <input
-                          type="text"
-                          autoFocus
-                          value={editingName}
-                          onChange={(e) => setEditingName(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") { e.preventDefault(); handleRename(cat); }
-                            else if (e.key === "Escape") { e.preventDefault(); cancelEdit(); }
-                          }}
-                          maxLength={80}
-                          className="w-full rounded-md border border-blue-300 bg-white px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
-                        />
+                        <div className="flex flex-col gap-1.5">
+                          {/* Compact underline tabs (row-scoped). Inline dot
+                              signals filled languages — no more overlapping
+                              corner glyphs at tiny sizes. */}
+                          <div
+                            className="flex items-center gap-0.5 border-b border-zinc-200 self-stretch"
+                            role="tablist"
+                          >
+                            {SUPPORTED_LANGS.map((lang) => {
+                              const hasContent = !!editingNames[lang]?.trim();
+                              const isActive = editingLang === lang;
+                              return (
+                                <button
+                                  key={lang}
+                                  type="button"
+                                  role="tab"
+                                  aria-selected={isActive}
+                                  onClick={() => setEditingLang(lang)}
+                                  className={`relative -mb-px inline-flex items-center gap-1 border-b-2 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide transition-colors ${
+                                    isActive
+                                      ? "border-blue-600 text-blue-700"
+                                      : "border-transparent text-zinc-500 hover:text-zinc-800"
+                                  }`}
+                                >
+                                  {LANG_LABELS[lang]}
+                                  {hasContent && (
+                                    <span
+                                      aria-hidden="true"
+                                      className={`h-1 w-1 rounded-full ${isActive ? "bg-blue-600" : "bg-emerald-500"}`}
+                                    />
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <input
+                            type="text"
+                            autoFocus
+                            value={editingNames[editingLang] ?? ""}
+                            onChange={(e) =>
+                              setEditingNames((prev) => ({ ...prev, [editingLang]: e.target.value }))
+                            }
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") { e.preventDefault(); handleRename(cat); }
+                              else if (e.key === "Escape") { e.preventDefault(); cancelEdit(); }
+                            }}
+                            dir={RTL_LANGS.has(editingLang) ? "rtl" : "ltr"}
+                            maxLength={80}
+                            className="w-full rounded-md border border-blue-300 bg-white px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
+                          />
+                        </div>
                       ) : (
                         <>
-                          <p className="text-sm font-medium text-zinc-900 truncate">{cat.name}</p>
+                          <p className="text-sm font-medium text-zinc-900 truncate">
+                            {resolveCategoryName(cat, currentLocale) ?? cat.name}
+                          </p>
                           <p className="flex items-center gap-1 text-xs text-zinc-500 mt-0.5">
                             <Package className="h-3 w-3" />
                             {cat.product_count === 1
@@ -518,7 +645,7 @@ export default function CategoriesManagerModal({ open, onClose, onChanged }) {
                           <button
                             type="button"
                             onClick={() => handleRename(cat)}
-                            disabled={isSaving || !editingName.trim()}
+                            disabled={isSaving || !canonicalNameFrom(editingNames)}
                             className="rounded-md p-1.5 text-emerald-600 hover:bg-emerald-50 disabled:opacity-40"
                             aria-label={tc.save ?? "Save"}
                           >

@@ -15,10 +15,18 @@ import {
   uploadCategoryImage,
   validateCategoryImage,
 } from "./categoryImageUpload";
+import {
+  resolveCategoryName,
+  CATEGORY_SUPPORTED_LANGS,
+  emptyCategoryNames,
+  canonicalCategoryName,
+  categoryTranslationsPayload,
+} from "@/lib/category-locale";
 
 // ── helpers ─────────────────────────────────────────────────────────────────────
 const SUPPORTED_LANGS = ["en", "fr", "ar", "dr"];
 const LANG_LABELS = { en: "English", fr: "Français", ar: "العربية", dr: "الدارجة" };
+const CATEGORY_LANG_LABELS = { en: "EN", fr: "FR", ar: "AR", dr: "DR" };
 const RTL_LANGS = new Set(RTL_LOCALES);
 
 /**
@@ -162,7 +170,8 @@ export default function ProductFormModal({
   const [existingImages, setExistingImages] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryNames, setNewCategoryNames] = useState(() => emptyCategoryNames());
+  const [newCategoryLang, setNewCategoryLang] = useState("en");
   const [newCategoryImageFile, setNewCategoryImageFile] = useState(null);
   const [newCategoryImagePreview, setNewCategoryImagePreview] = useState(null);
   const [addingCategory, setAddingCategory] = useState(false);
@@ -263,7 +272,8 @@ export default function ProductFormModal({
     setPendingImages([]);
     setError(null);
     setShowNewCat(false);
-    setNewCategoryName("");
+    setNewCategoryNames(emptyCategoryNames());
+    setNewCategoryLang(CATEGORY_SUPPORTED_LANGS.includes(locale) ? locale : "en");
     // Reset the inline new-category image picker (revoke the previous preview
     // URL if there was one so it doesn't leak).
     if (newCategoryImagePreview) URL.revokeObjectURL(newCategoryImagePreview);
@@ -424,7 +434,8 @@ export default function ProductFormModal({
   }, [newCategoryImagePreview]);
 
   async function handleCreateCategory() {
-    if (!newCategoryName.trim()) return;
+    const canonical = canonicalCategoryName(newCategoryNames);
+    if (!canonical) return;
     setAddingCategory(true);
     try {
       let image_path = null;
@@ -440,13 +451,17 @@ export default function ProductFormModal({
       const res = await fetch("/api/v1/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newCategoryName.trim(), image_path }),
+        body: JSON.stringify({
+          name: canonical,
+          image_path,
+          translations: categoryTranslationsPayload(newCategoryNames),
+        }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to create category");
       onCategoryCreated?.(json.data);
       dispatch({ type: "set", field: "category_id", value: json.data.id });
-      setNewCategoryName("");
+      setNewCategoryNames(emptyCategoryNames());
       clearNewCategoryImage();
       setShowNewCat(false);
     } catch (err) {
@@ -676,24 +691,35 @@ export default function ProductFormModal({
               {t.section_details ?? "Product Details"}
             </h3>
 
-            {/* Language tab switcher */}
-            <div className="flex gap-1 p-1 bg-zinc-100 rounded-xl">
+            {/* Language tab switcher — underline style, inline "filled" dot */}
+            <div
+              className="flex items-center gap-1 border-b border-zinc-200"
+              role="tablist"
+              aria-label={t.section_details ?? "Product Details"}
+            >
               {SUPPORTED_LANGS.map((lang) => {
-                const hasContent = form.translations[lang]?.name?.trim();
+                const hasContent = !!form.translations[lang]?.name?.trim();
+                const isActive = activeLang === lang;
                 return (
                   <button
                     key={lang}
                     type="button"
+                    role="tab"
+                    aria-selected={isActive}
                     onClick={() => setActiveLang(lang)}
-                    className={`relative flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                      activeLang === lang
-                        ? "bg-white text-zinc-900 shadow-sm"
-                        : "text-zinc-500 hover:text-zinc-700"
+                    dir={RTL_LANGS.has(lang) ? "rtl" : "ltr"}
+                    className={`relative -mb-px inline-flex flex-1 items-center justify-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+                      isActive
+                        ? "border-blue-600 text-blue-700"
+                        : "border-transparent text-zinc-500 hover:text-zinc-800"
                     }`}
                   >
-                    {LANG_LABELS[lang]}
+                    <span className="truncate">{LANG_LABELS[lang]}</span>
                     {hasContent && (
-                      <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      <span
+                        aria-hidden="true"
+                        className={`h-1.5 w-1.5 shrink-0 rounded-full ${isActive ? "bg-blue-600" : "bg-emerald-500"}`}
+                      />
                     )}
                   </button>
                 );
@@ -734,11 +760,14 @@ export default function ProductFormModal({
                     const selected = form.category_id
                       ? categories.find((c) => c.id === form.category_id)
                       : null;
+                    const selectedLabel = selected
+                      ? (resolveCategoryName(selected, locale) ?? selected.name)
+                      : null;
                     return (
                       <>
-                        <CategoryThumb src={selected?.image_url ?? null} name={selected?.name} />
+                        <CategoryThumb src={selected?.image_url ?? null} name={selectedLabel} />
                         <span className={`flex-1 truncate ${selected ? "text-zinc-900" : "text-zinc-400"}`}>
-                          {selected?.name ?? (t.category_none ?? "No category")}
+                          {selectedLabel ?? (t.category_none ?? "No category")}
                         </span>
                         <ChevronDown className={`h-4 w-4 text-zinc-400 shrink-0 transition-transform ${catOpen ? "rotate-180" : ""}`} />
                       </>
@@ -761,88 +790,133 @@ export default function ProductFormModal({
                   style={{ position: "fixed", top: catCoords.top, left: catCoords.left, width: catCoords.width, zIndex: 9999 }}
                   className="rounded-xl border border-zinc-100 bg-white shadow-xl py-1.5 overflow-hidden max-h-80 overflow-y-auto"
                 >
-                  {[{ id: "", name: t.category_none ?? "No category", image_url: null }, ...categories].map((cat) => (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => {
-                        dispatch({ type: "set", field: "category_id", value: cat.id });
-                        setCatOpen(false);
-                      }}
-                      className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-start transition-colors hover:bg-zinc-50 ${
-                        form.category_id === cat.id ? "text-zinc-900 font-medium" : "text-zinc-600"
-                      }`}
-                    >
-                      <CategoryThumb src={cat.image_url} name={cat.name} />
-                      <span className="flex-1 truncate">{cat.name}</span>
-                      {form.category_id === cat.id && <Check className="h-3.5 w-3.5 text-blue-500 shrink-0" />}
-                    </button>
-                  ))}
+                  {[{ id: "", name: t.category_none ?? "No category", image_url: null }, ...categories].map((cat) => {
+                    const label = cat.id
+                      ? (resolveCategoryName(cat, locale) ?? cat.name)
+                      : cat.name;
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => {
+                          dispatch({ type: "set", field: "category_id", value: cat.id });
+                          setCatOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-start transition-colors hover:bg-zinc-50 ${
+                          form.category_id === cat.id ? "text-zinc-900 font-medium" : "text-zinc-600"
+                        }`}
+                      >
+                        <CategoryThumb src={cat.image_url} name={label} />
+                        <span className="flex-1 truncate">{label}</span>
+                        {form.category_id === cat.id && <Check className="h-3.5 w-3.5 text-blue-500 shrink-0" />}
+                      </button>
+                    );
+                  })}
                 </div>,
                 document.body
               )}
 
               {showNewCat && (
-                <div className="mt-2 flex items-center gap-2">
-                  <input
-                    ref={newCategoryFileInputRef}
-                    type="file"
-                    accept={ACCEPTED_CATEGORY_IMAGE_TYPES}
-                    onChange={handleNewCategoryImagePick}
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => newCategoryFileInputRef.current?.click()}
-                    aria-label={
-                      newCategoryImagePreview
-                        ? (tc.image_change ?? "Change image")
-                        : (tc.image_pick ?? "Add image")
-                    }
-                    title={
-                      newCategoryImagePreview
-                        ? (tc.image_change ?? "Change image")
-                        : (tc.image_pick ?? "Add image")
-                    }
-                    className="relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-400 hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {newCategoryImagePreview ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={newCategoryImagePreview}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <ImagePlus className="h-4 w-4" />
-                    )}
-                  </button>
-                  {newCategoryImagePreview && (
+                <div className="mt-2 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={newCategoryFileInputRef}
+                      type="file"
+                      accept={ACCEPTED_CATEGORY_IMAGE_TYPES}
+                      onChange={handleNewCategoryImagePick}
+                      className="hidden"
+                    />
                     <button
                       type="button"
-                      onClick={clearNewCategoryImage}
-                      aria-label={tc.image_remove ?? "Remove image"}
-                      title={tc.image_remove ?? "Remove image"}
-                      className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-zinc-200 text-zinc-500 hover:bg-zinc-50"
+                      onClick={() => newCategoryFileInputRef.current?.click()}
+                      aria-label={
+                        newCategoryImagePreview
+                          ? (tc.image_change ?? "Change image")
+                          : (tc.image_pick ?? "Add image")
+                      }
+                      title={
+                        newCategoryImagePreview
+                          ? (tc.image_change ?? "Change image")
+                          : (tc.image_pick ?? "Add image")
+                      }
+                      className="relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-400 hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                      <ImageOff className="h-4 w-4" />
+                      {newCategoryImagePreview ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={newCategoryImagePreview}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <ImagePlus className="h-4 w-4" />
+                      )}
                     </button>
-                  )}
-                  <input
-                    type="text"
-                    value={newCategoryName}
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    placeholder={t.category_name_placeholder ?? "Category name"}
-                    className="flex-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleCreateCategory}
-                    disabled={addingCategory || !newCategoryName.trim()}
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                    {newCategoryImagePreview && (
+                      <button
+                        type="button"
+                        onClick={clearNewCategoryImage}
+                        aria-label={tc.image_remove ?? "Remove image"}
+                        title={tc.image_remove ?? "Remove image"}
+                        className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-zinc-200 text-zinc-500 hover:bg-zinc-50"
+                      >
+                        <ImageOff className="h-4 w-4" />
+                      </button>
+                    )}
+                    <input
+                      type="text"
+                      value={newCategoryNames[newCategoryLang] ?? ""}
+                      onChange={(e) =>
+                        setNewCategoryNames((prev) => ({ ...prev, [newCategoryLang]: e.target.value }))
+                      }
+                      dir={RTL_LANGS.has(newCategoryLang) ? "rtl" : "ltr"}
+                      maxLength={80}
+                      placeholder={t.category_name_placeholder ?? "Category name"}
+                      className="flex-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCreateCategory}
+                      disabled={addingCategory || !canonicalCategoryName(newCategoryNames)}
+                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {addingCategory ? "..." : (t.category_add ?? "Add")}
+                    </button>
+                  </div>
+                  {/* Language tabs — same underline style as the Manage
+                      Categories modal. Inline dot marks filled languages. */}
+                  <div
+                    className="flex items-center gap-1 border-b border-zinc-200"
+                    role="tablist"
+                    aria-label={tc.language ?? "Language"}
                   >
-                    {addingCategory ? "..." : (t.category_add ?? "Add")}
-                  </button>
+                    {CATEGORY_SUPPORTED_LANGS.map((lang) => {
+                      const hasContent = !!newCategoryNames[lang]?.trim();
+                      const isActive = newCategoryLang === lang;
+                      return (
+                        <button
+                          key={lang}
+                          type="button"
+                          role="tab"
+                          aria-selected={isActive}
+                          onClick={() => setNewCategoryLang(lang)}
+                          className={`relative -mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
+                            isActive
+                              ? "border-blue-600 text-blue-700"
+                              : "border-transparent text-zinc-500 hover:text-zinc-800"
+                          }`}
+                        >
+                          {CATEGORY_LANG_LABELS[lang]}
+                          {hasContent && (
+                            <span
+                              aria-hidden="true"
+                              className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-blue-600" : "bg-emerald-500"}`}
+                            />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>

@@ -1,6 +1,9 @@
 import { categoryRepository, CATEGORY_IMAGE_BUCKET } from './category.repository';
 import { createClient } from '@/lib/supabase/server';
 
+const SUPPORTED_LOCALES = ['en', 'fr', 'ar', 'dr'];
+const MAX_NAME_LEN = 80;
+
 function toSlug(name) {
   return name
     .toLowerCase()
@@ -8,6 +11,37 @@ function toSlug(name) {
     .replace(/[^\w\s-]/g, '')
     .replace(/[\s_]+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Validate + normalise the per-locale translations map.
+ *
+ * Accepts `null` / `undefined` (caller doesn't want to touch the field), an
+ * object shaped like `{ en: { name }, fr: { name }, ... }`, or an empty object
+ * (which clears translations). Locales outside `SUPPORTED_LOCALES` are silently
+ * dropped; empty / whitespace-only names are stripped so we never persist noise.
+ * Throws on malformed input so route handlers can surface a 400.
+ */
+function sanitizeTranslations(input) {
+  if (input == null) return undefined; // "leave the DB value alone"
+  if (typeof input !== 'object' || Array.isArray(input)) {
+    throw new Error('translations must be an object');
+  }
+  const out = {};
+  for (const locale of SUPPORTED_LOCALES) {
+    const entry = input[locale];
+    if (entry == null) continue;
+    if (typeof entry !== 'object' || Array.isArray(entry)) {
+      throw new Error(`translations.${locale} must be an object`);
+    }
+    const raw = typeof entry.name === 'string' ? entry.name.trim() : '';
+    if (!raw) continue;
+    if (raw.length > MAX_NAME_LEN) {
+      throw new Error(`translations.${locale}.name is too long (max ${MAX_NAME_LEN})`);
+    }
+    out[locale] = { name: raw };
+  }
+  return out;
 }
 
 /**
@@ -51,15 +85,22 @@ export class CategoryService {
     return categoryRepository.findAllWithCounts();
   }
 
-  async createCategory({ name, image_path = null }) {
+  async createCategory({ name, image_path = null, translations = null }) {
     if (!name?.trim()) throw new Error('Category name is required');
     const cleanedPath = sanitizeImagePath(image_path);
     const image_url = await publicUrlFor(cleanedPath);
+    const cleanedTranslations = sanitizeTranslations(translations);
+    // Slug from the canonical name. If the name contains only non-Latin script
+    // (e.g. Arabic-only), toSlug returns an empty string — fall back to a random
+    // suffix so the UNIQUE constraint doesn't collide on empty slugs.
+    let slug = toSlug(name);
+    if (!slug) slug = `category-${crypto.randomUUID().slice(0, 8)}`;
     return categoryRepository.create({
       name: name.trim(),
-      slug: toSlug(name),
+      slug,
       image_url,
       image_path: cleanedPath,
+      translations: cleanedTranslations ?? {},
     });
   }
 
@@ -68,6 +109,7 @@ export class CategoryService {
    *   - name: string        → renames + reslugs
    *   - image_path: string  → replaces the icon (also derives image_url)
    *   - image_path: null    → clears the icon
+   *   - translations: object → replaces the per-locale name map (whole-value)
    */
   async updateCategory(id, patch) {
     if (!id) throw new Error('Category id is required');
@@ -82,7 +124,16 @@ export class CategoryService {
       const name = patch.name?.trim();
       if (!name) throw new Error('Category name is required');
       dbPatch.name = name;
-      dbPatch.slug = toSlug(name);
+      let slug = toSlug(name);
+      if (!slug) slug = `category-${crypto.randomUUID().slice(0, 8)}`;
+      dbPatch.slug = slug;
+    }
+
+    if ('translations' in patch) {
+      const cleaned = sanitizeTranslations(patch.translations);
+      // Explicit whole-value replace (undefined means "not touched"; empty
+      // object means "clear all translations").
+      dbPatch.translations = cleaned ?? {};
     }
 
     let oldImagePathToDelete = null;
