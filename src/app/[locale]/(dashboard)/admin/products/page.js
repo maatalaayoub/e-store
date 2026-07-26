@@ -16,12 +16,14 @@ import {
   Check,
   AlertTriangle,
   MoreVertical,
+  Tag,
 } from "lucide-react";
 
 import { toast } from "sonner";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { AdminProductsSkeleton } from "@/components/skeletons";
 import ProductFormModal from "./_components/ProductFormModal";
+import CategoriesManagerModal from "./_components/CategoriesManagerModal";
 
 // ── Custom confirm modal ────────────────────────────────────────────────────
 function ConfirmModal({ open, title, message, orders, confirmLabel = "Confirm", confirmVariant = "red", cancelLabel = "Cancel", onConfirm, onCancel }) {
@@ -208,6 +210,7 @@ export default function AdminProductsPage() {
   const [products, setProducts] = useState(null); // null = loading
   const [categories, setCategories] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
+  const [categoriesModalOpen, setCategoriesModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [loadingEditProductId, setLoadingEditProductId] = useState(null);
   const [actioningId, setActioningId] = useState(null);
@@ -399,6 +402,37 @@ export default function AdminProductsPage() {
     setCategories((prev) => [...prev, cat]);
   }
 
+  /**
+   * Called by CategoriesManagerModal whenever a category is created / renamed /
+   * deleted. We update the local list optimistically so filters and the product
+   * form dropdown stay in sync, and refetch products when a rename or delete
+   * could have changed the visible category names.
+   */
+  function handleCategoriesChanged({ type, category }) {
+    if (!category) return;
+    setCategories((prev) => {
+      if (type === "deleted") return prev.filter((c) => c.id !== category.id);
+      if (type === "updated") {
+        return prev
+          .map((c) => (c.id === category.id ? { ...c, ...category } : c))
+          .sort((a, b) => a.name.localeCompare(b.name));
+      }
+      if (type === "created") {
+        if (prev.some((c) => c.id === category.id)) return prev;
+        return [...prev, category].sort((a, b) => a.name.localeCompare(b.name));
+      }
+      return prev;
+    });
+    // Products carry category *names* in their normalized shape — rename/delete
+    // requires a refetch so the products table reflects the new labels.
+    if (type === "updated" || type === "deleted") {
+      if (filterCategory && category.name && filterCategory === category.name) {
+        setFilterCategory(type === "deleted" ? "" : category.name);
+      }
+      fetchProducts();
+    }
+  }
+
   // ── Filter panel ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (!filterOpen) return;
@@ -472,6 +506,11 @@ export default function AdminProductsPage() {
         onSaved={handleSaved}
         onCategoryCreated={handleCategoryCreated}
       />
+      <CategoriesManagerModal
+        open={categoriesModalOpen}
+        onClose={() => setCategoriesModalOpen(false)}
+        onChanged={handleCategoriesChanged}
+      />
 
       {/* HEADER */}
       <div className="flex flex-col items-start gap-4 mb-8 sm:flex-row sm:items-center sm:justify-between">
@@ -479,13 +518,22 @@ export default function AdminProductsPage() {
           <h1 className="text-2xl font-bold text-zinc-900">{t.title}</h1>
           <p className="text-sm text-zinc-500 mt-1">{t.subtitle}</p>
         </div>
-        <button
-          onClick={openCreate}
-          className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          <Plus className="h-4 w-4" />
-          {t.add}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setCategoriesModalOpen(true)}
+            className="flex items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+          >
+            <Tag className="h-4 w-4" />
+            {t.manage_categories ?? "Manage Categories"}
+          </button>
+          <button
+            onClick={openCreate}
+            className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4" />
+            {t.add}
+          </button>
+        </div>
       </div>
 
       {/* CARD */}

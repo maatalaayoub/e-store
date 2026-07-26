@@ -13,12 +13,57 @@ import ProductCarousel from "./ProductCarousel";
 // Module-level caches — keyed by locale for products, singleton for settings
 const _cache = new Map();
 let _dsCache = null;
+let _categoriesCache = null;
 
 function fetchDisplaySettings() {
   return fetch("/api/v1/display-settings")
     .then((r) => r.json())
     .then((json) => (json.success ? json.data : {}))
     .catch(() => ({}));
+}
+
+function fetchCategoriesList() {
+  return fetch("/api/v1/categories")
+    .then((r) => r.json())
+    .then((json) => (json?.success && Array.isArray(json.data) ? json.data : []))
+    .catch(() => []);
+}
+
+/**
+ * Groups products into category buckets while preserving first-seen order.
+ * Products without a category are collected into a trailing "other" bucket so
+ * they still render, just after the named categories. `categoriesMeta` (an
+ * array of `{ name, image_url }`) is used to attach an optional icon to each
+ * group without a second lookup pass.
+ */
+function groupByCategory(products, otherLabel, categoriesMeta = []) {
+  const iconByName = new Map();
+  for (const c of categoriesMeta) {
+    if (c?.name) iconByName.set(c.name, c.image_url ?? null);
+  }
+
+  const map = new Map();
+  const uncategorized = [];
+
+  for (const product of products) {
+    const name = typeof product?.category === "string" ? product.category.trim() : "";
+    if (!name) {
+      uncategorized.push(product);
+      continue;
+    }
+    if (!map.has(name)) map.set(name, []);
+    map.get(name).push(product);
+  }
+
+  const groups = Array.from(map, ([name, items]) => ({
+    name,
+    items,
+    image_url: iconByName.get(name) ?? null,
+  }));
+  if (uncategorized.length) {
+    groups.push({ name: otherLabel, items: uncategorized, image_url: null });
+  }
+  return groups;
 }
 
 function deriveSettings(ds) {
@@ -53,6 +98,7 @@ export default function FeaturedProducts({ onItemAdded }) {
   // Collapse 18 useState calls into a single settings object \u2014 re-renders
   // only when the server response changes, not per individual field.
   const [settings, setSettings] = useState(() => deriveSettings(_dsCache));
+  const [categoriesMeta, setCategoriesMeta] = useState(() => _categoriesCache ?? []);
 
   useEffect(() => {
     let mounted = true;
@@ -61,14 +107,17 @@ export default function FeaturedProducts({ onItemAdded }) {
     Promise.all([
       fetchFeaturedProducts({ signal: controller.signal, locale }),
       fetchDisplaySettings(),
-    ]).then(([data, ds]) => {
+      fetchCategoriesList(),
+    ]).then(([data, ds, cats]) => {
       if (!mounted) return;
       if (Array.isArray(data) && data.length > 0) {
         _cache.set(locale, data);
       }
       _dsCache = ds;
+      _categoriesCache = cats;
       setProducts(data);
       setSettings(deriveSettings(ds));
+      setCategoriesMeta(cats);
     }).catch(() => {});
 
     return () => { mounted = false; controller.abort(); };
@@ -79,6 +128,34 @@ export default function FeaturedProducts({ onItemAdded }) {
 
   const isRtl = isRtlLocale(locale);
   const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
+
+  const categoryGroups = groupByCategory(
+    products,
+    tHome.category_other ?? "More products",
+    categoriesMeta,
+  );
+
+  const carouselProps = {
+    onItemAdded,
+    buttonStyle:          settings.buttonStyle,
+    filledBg:             settings.filledBg,
+    filledText:           settings.filledText,
+    outlineBorder:        settings.outlineBorder,
+    outlineText:          settings.outlineText,
+    outlineIcon:          settings.outlineIcon,
+    outlineBg:            settings.outlineBg,
+    buttonFontSize:       settings.buttonFontSize,
+    layout:               settings.layout,
+    showShortDescription: settings.showShortDescription,
+    hideButtons:          settings.hideButtons,
+    itemsMobile:          settings.itemsMobile,
+    itemsTablet:          settings.itemsTablet,
+    itemsDesktop:         settings.itemsDesktop,
+    productsPerRow:       settings.productsPerRow,
+    autoplay:             settings.autoplay,
+    interval:             settings.carouselInterval,
+    speed:                settings.speed,
+  };
 
   return (
     <section
@@ -108,29 +185,43 @@ export default function FeaturedProducts({ onItemAdded }) {
           </Link>
         </div>
 
-        <div className="-mx-4 overflow-x-clip sm:mx-0">
-          <ProductCarousel
-            products={products}
-            onItemAdded={onItemAdded}
-            buttonStyle={settings.buttonStyle}
-            filledBg={settings.filledBg}
-            filledText={settings.filledText}
-            outlineBorder={settings.outlineBorder}
-            outlineText={settings.outlineText}
-            outlineIcon={settings.outlineIcon}
-            outlineBg={settings.outlineBg}
-            buttonFontSize={settings.buttonFontSize}
-            layout={settings.layout}
-            showShortDescription={settings.showShortDescription}
-            hideButtons={settings.hideButtons}
-            itemsMobile={settings.itemsMobile}
-            itemsTablet={settings.itemsTablet}
-            itemsDesktop={settings.itemsDesktop}
-            productsPerRow={settings.productsPerRow}
-            autoplay={settings.autoplay}
-            interval={settings.carouselInterval}
-            speed={settings.speed}
-          />
+        <div className="flex flex-col gap-14 sm:gap-20">
+          {categoryGroups.map((group) => (
+            <div key={group.name}>
+              {/* Professional category separator */}
+              <div className="mb-7 flex items-center gap-4 sm:mb-9 sm:gap-5">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span
+                    aria-hidden="true"
+                    className="h-6 w-1 shrink-0 rounded-full bg-zinc-900 sm:h-7"
+                  />
+                  {group.image_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={group.image_url}
+                      alt=""
+                      loading="lazy"
+                      className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-zinc-200 sm:h-11 sm:w-11"
+                    />
+                  )}
+                  <h3 className="truncate text-lg font-bold uppercase tracking-tight text-zinc-900 sm:text-2xl">
+                    {group.name}
+                  </h3>
+                  <span className="shrink-0 rounded-full bg-zinc-100 px-2.5 py-0.5 text-[11px] font-semibold text-zinc-500 sm:text-xs">
+                    {group.items.length}
+                  </span>
+                </div>
+                <span
+                  aria-hidden="true"
+                  className="h-px flex-1 bg-gradient-to-r from-zinc-200 to-transparent rtl:bg-gradient-to-l"
+                />
+              </div>
+
+              <div className="-mx-4 overflow-x-clip sm:mx-0">
+                <ProductCarousel products={group.items} {...carouselProps} />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>

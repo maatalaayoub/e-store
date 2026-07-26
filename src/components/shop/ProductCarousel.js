@@ -12,6 +12,25 @@ import ProductCard from "./ProductCard";
 const MAX_ROWS = 6;
 
 /**
+ * Returns `-1` in LTR documents and `+1` in RTL documents. Used to flip the
+ * sign of `translateX` in the carousel so the same math works for both
+ * directions (see `getOffsetPx` below).
+ *
+ * The value only needs to be sampled once — a locale change unmounts the
+ * component tree, so `document.documentElement.dir` never mutates during the
+ * carousel's lifetime.
+ */
+function useRtlAwareTranslateFactor() {
+  const [factor, setFactor] = useState(-1); // SSR-safe LTR default
+  useEffect(() => {
+    if (typeof document !== "undefined" && document.documentElement.dir === "rtl") {
+      setFactor(1);
+    }
+  }, []);
+  return factor;
+}
+
+/**
  * RowCarousel
  *
  * One row = one independent horizontal carousel.
@@ -47,6 +66,15 @@ function RowCarousel({
   const n          = products.length;
   const cloneCount = numVisible;
 
+  // In an RTL document, `flex-direction: row` lays items out from RIGHT to LEFT,
+  // so the natural resting position of the track sits at the container's right
+  // edge with overflow spilling leftward. Applying the LTR-style negative
+  // `translateX` would push every item off-screen to the left (bug: empty
+  // carousel on Arabic/Darija). Flip the sign so RTL shifts the track *right*
+  // to reveal successive items, and flip the drag threshold accordingly so a
+  // rightward swipe still means "next" in RTL.
+  const translateFactor = useRtlAwareTranslateFactor();
+
   const getContainerW = useCallback(
     () => containerRef.current?.getBoundingClientRect().width ?? 0,
     [],
@@ -63,8 +91,8 @@ function RowCarousel({
   }, [getContainerW, numVisible]);
 
   const getOffsetPx = useCallback(
-    (idx) => -(cloneCount + idx) * getItemW(),
-    [cloneCount, getItemW],
+    (idx) => translateFactor * (cloneCount + idx) * getItemW(),
+    [translateFactor, cloneCount, getItemW],
   );
 
   const moveTo = useCallback(
@@ -198,8 +226,14 @@ function RowCarousel({
       if (!d.active) return;
       d.active = false;
       if (commit && d.horizontal) {
-        if (d.moved < -40) slideNext();
-        else if (d.moved > 40) slidePrev();
+        // `translateFactor` is -1 in LTR and +1 in RTL. Multiplying `d.moved`
+        // by it normalises the swipe into "next-direction" units so the same
+        // threshold works for both directions:
+        //   • LTR: swipe left  (d.moved < -40) → next
+        //   • RTL: swipe right (d.moved >  40) → next
+        const swipe = d.moved * translateFactor;
+        if (swipe > 40) slideNext();
+        else if (swipe < -40) slidePrev();
         else moveTo(rawIdxRef.current, true);
       } else {
         // Cancelled or vertical scroll — snap to canonical position.
@@ -207,7 +241,7 @@ function RowCarousel({
       }
       pauseAndResume();
     },
-    [slideNext, slidePrev, moveTo, pauseAndResume],
+    [translateFactor, slideNext, slidePrev, moveTo, pauseAndResume],
   );
 
   const onPointerUp     = useCallback((e) => {

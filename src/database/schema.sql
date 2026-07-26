@@ -45,8 +45,14 @@ CREATE TABLE IF NOT EXISTS categories (
   id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
   name text NOT NULL UNIQUE,
   slug text NOT NULL UNIQUE,
+  image_url  text,  -- public URL of the category icon / photo (nullable)
+  image_path text,  -- storage bucket path so we can delete/replace the file
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Migration for existing installs (idempotent):
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS image_url  text;
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS image_path text;
 
 -- ========================
 -- PRODUCTS

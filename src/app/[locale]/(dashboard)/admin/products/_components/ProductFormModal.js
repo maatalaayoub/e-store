@@ -3,18 +3,49 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { createPortal } from "react-dom";
-import { Check, ChevronDown, X, Loader2, AlertCircle } from "lucide-react";
+import { Check, ChevronDown, X, Loader2, AlertCircle, Tag, ImagePlus, ImageOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import ImageManager from "./ImageManager";
 import SectionsBuilder from "@/components/admin/product-sections/SectionsBuilder";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { RTL_LOCALES } from "@/config/constants";
+import {
+  ACCEPTED_CATEGORY_IMAGE_TYPES,
+  uploadCategoryImage,
+  validateCategoryImage,
+} from "./categoryImageUpload";
 
 // ── helpers ─────────────────────────────────────────────────────────────────────
 const SUPPORTED_LANGS = ["en", "fr", "ar", "dr"];
 const LANG_LABELS = { en: "English", fr: "Français", ar: "العربية", dr: "الدارجة" };
 const RTL_LANGS = new Set(RTL_LOCALES);
+
+/**
+ * Small 24×24 category icon used in the category picker (trigger + dropdown).
+ * Falls back to a neutral Tag glyph when the category has no `image_url`,
+ * matching the visual language of `CategoriesManagerModal`.
+ */
+function CategoryThumb({ src, name }) {
+  if (src) {
+    return (
+      // Small user-uploaded thumbnail — `next/image` isn't worth its overhead
+      // for a 24px icon rendered inside a dropdown list.
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt={name ?? ""}
+        loading="lazy"
+        className="h-6 w-6 rounded-md object-cover bg-zinc-100 shrink-0"
+      />
+    );
+  }
+  return (
+    <span className="grid h-6 w-6 place-items-center rounded-md bg-zinc-100 text-zinc-400 shrink-0">
+      <Tag className="h-3.5 w-3.5" />
+    </span>
+  );
+}
 
 function emptyTranslations() {
   return Object.fromEntries(
@@ -132,12 +163,15 @@ export default function ProductFormModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryImageFile, setNewCategoryImageFile] = useState(null);
+  const [newCategoryImagePreview, setNewCategoryImagePreview] = useState(null);
   const [addingCategory, setAddingCategory] = useState(false);
   const [showNewCat, setShowNewCat] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
   const [catCoords, setCatCoords] = useState({ top: 0, left: 0, width: 0 });
   const catBtnRef = useRef(null);
   const catPanelRef = useRef(null);
+  const newCategoryFileInputRef = useRef(null);
   const panelRef = useRef(null);
 
   const params = useParams();
@@ -145,6 +179,9 @@ export default function ProductFormModal({
   const [activeLang, setActiveLang] = useState(locale);
   const dict = useDictionary();
   const t = dict?.admin?.products?.form ?? {};
+  // Category-icon labels are shared with the manager modal; reuse those keys
+  // rather than duplicating them under `form.*`.
+  const tc = dict?.admin?.products?.categories_manager ?? {};
 
   const STATUS_STYLES = {
     active:   { pill: "border-emerald-300 bg-emerald-50 text-emerald-700", dot: "bg-emerald-500" },
@@ -227,6 +264,11 @@ export default function ProductFormModal({
     setError(null);
     setShowNewCat(false);
     setNewCategoryName("");
+    // Reset the inline new-category image picker (revoke the previous preview
+    // URL if there was one so it doesn't leak).
+    if (newCategoryImagePreview) URL.revokeObjectURL(newCategoryImagePreview);
+    setNewCategoryImageFile(null);
+    setNewCategoryImagePreview(null);
   }, [open, product, locale]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -314,6 +356,33 @@ export default function ProductFormModal({
     return () => document.removeEventListener("mousedown", handler);
   }, [catOpen]);
 
+  // Keep the fixed-positioned panel glued to the trigger button when the user
+  // scrolls the drawer (or resizes the window). Scroll listener uses capture
+  // so it fires for the drawer's inner scroll container too — not just window.
+  // If the trigger is scrolled out of view, close instead of trailing offscreen.
+  useEffect(() => {
+    if (!catOpen) return;
+    const reposition = () => {
+      const btn = catBtnRef.current;
+      if (!btn) return;
+      const rect = btn.getBoundingClientRect();
+      const outOfView =
+        rect.bottom < 0 ||
+        rect.top > (window.innerHeight || document.documentElement.clientHeight);
+      if (outOfView) {
+        setCatOpen(false);
+        return;
+      }
+      setCatCoords({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+    };
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    return () => {
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    };
+  }, [catOpen]);
+
   function openCatDropdown() {
     const rect = catBtnRef.current?.getBoundingClientRect();
     if (rect) {
@@ -323,20 +392,62 @@ export default function ProductFormModal({
   }
 
   // ── category creation ───────────────────────────────────────────────────────
+  function handleNewCategoryImagePick(e) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-picking the same file later
+    if (!file) return;
+    const err = validateCategoryImage(file);
+    if (err === "invalid_type") {
+      toast.error(tc.image_invalid_type ?? "Unsupported image type");
+      return;
+    }
+    if (err === "too_large") {
+      toast.error(tc.image_too_large ?? "Image is too large (max 3 MB)");
+      return;
+    }
+    if (newCategoryImagePreview) URL.revokeObjectURL(newCategoryImagePreview);
+    setNewCategoryImageFile(file);
+    setNewCategoryImagePreview(URL.createObjectURL(file));
+  }
+
+  function clearNewCategoryImage() {
+    if (newCategoryImagePreview) URL.revokeObjectURL(newCategoryImagePreview);
+    setNewCategoryImageFile(null);
+    setNewCategoryImagePreview(null);
+  }
+
+  // Revoke the picker preview URL on unmount to avoid leaks.
+  useEffect(() => {
+    return () => {
+      if (newCategoryImagePreview) URL.revokeObjectURL(newCategoryImagePreview);
+    };
+  }, [newCategoryImagePreview]);
+
   async function handleCreateCategory() {
     if (!newCategoryName.trim()) return;
     setAddingCategory(true);
     try {
+      let image_path = null;
+      if (newCategoryImageFile) {
+        try {
+          image_path = await uploadCategoryImage(newCategoryImageFile);
+        } catch (uploadErr) {
+          throw new Error(
+            uploadErr?.message || (tc.image_upload_failed ?? "Image upload failed"),
+          );
+        }
+      }
       const res = await fetch("/api/v1/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newCategoryName.trim() }),
+        body: JSON.stringify({ name: newCategoryName.trim(), image_path }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to create category");
       onCategoryCreated?.(json.data);
       dispatch({ type: "set", field: "category_id", value: json.data.id });
       setNewCategoryName("");
+      clearNewCategoryImage();
       setShowNewCat(false);
     } catch (err) {
       setError(err.message);
@@ -617,14 +728,22 @@ export default function ProductFormModal({
                   ref={catBtnRef}
                   type="button"
                   onClick={openCatDropdown}
-                  className="flex-1 flex items-center justify-between gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-start focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors hover:bg-zinc-50"
+                  className="flex-1 flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-start focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors hover:bg-zinc-50"
                 >
-                  <span className={form.category_id ? "text-zinc-900" : "text-zinc-400"}>
-                    {form.category_id
-                      ? (categories.find((c) => c.id === form.category_id)?.name ?? (t.category_none ?? "No category"))
-                      : (t.category_none ?? "No category")}
-                  </span>
-                  <ChevronDown className={`h-4 w-4 text-zinc-400 shrink-0 transition-transform ${catOpen ? "rotate-180" : ""}`} />
+                  {(() => {
+                    const selected = form.category_id
+                      ? categories.find((c) => c.id === form.category_id)
+                      : null;
+                    return (
+                      <>
+                        <CategoryThumb src={selected?.image_url ?? null} name={selected?.name} />
+                        <span className={`flex-1 truncate ${selected ? "text-zinc-900" : "text-zinc-400"}`}>
+                          {selected?.name ?? (t.category_none ?? "No category")}
+                        </span>
+                        <ChevronDown className={`h-4 w-4 text-zinc-400 shrink-0 transition-transform ${catOpen ? "rotate-180" : ""}`} />
+                      </>
+                    );
+                  })()}
                 </button>
                 <button
                   type="button"
@@ -640,9 +759,9 @@ export default function ProductFormModal({
                 <div
                   ref={catPanelRef}
                   style={{ position: "fixed", top: catCoords.top, left: catCoords.left, width: catCoords.width, zIndex: 9999 }}
-                  className="rounded-xl border border-zinc-100 bg-white shadow-xl py-1.5 overflow-hidden"
+                  className="rounded-xl border border-zinc-100 bg-white shadow-xl py-1.5 overflow-hidden max-h-80 overflow-y-auto"
                 >
-                  {[{ id: "", name: t.category_none ?? "No category" }, ...categories].map((cat) => (
+                  {[{ id: "", name: t.category_none ?? "No category", image_url: null }, ...categories].map((cat) => (
                     <button
                       key={cat.id}
                       type="button"
@@ -650,11 +769,12 @@ export default function ProductFormModal({
                         dispatch({ type: "set", field: "category_id", value: cat.id });
                         setCatOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-sm transition-colors hover:bg-zinc-50 ${
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-start transition-colors hover:bg-zinc-50 ${
                         form.category_id === cat.id ? "text-zinc-900 font-medium" : "text-zinc-600"
                       }`}
                     >
-                      <span>{cat.name}</span>
+                      <CategoryThumb src={cat.image_url} name={cat.name} />
+                      <span className="flex-1 truncate">{cat.name}</span>
                       {form.category_id === cat.id && <Check className="h-3.5 w-3.5 text-blue-500 shrink-0" />}
                     </button>
                   ))}
@@ -663,7 +783,51 @@ export default function ProductFormModal({
               )}
 
               {showNewCat && (
-                <div className="mt-2 flex gap-2">
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    ref={newCategoryFileInputRef}
+                    type="file"
+                    accept={ACCEPTED_CATEGORY_IMAGE_TYPES}
+                    onChange={handleNewCategoryImagePick}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => newCategoryFileInputRef.current?.click()}
+                    aria-label={
+                      newCategoryImagePreview
+                        ? (tc.image_change ?? "Change image")
+                        : (tc.image_pick ?? "Add image")
+                    }
+                    title={
+                      newCategoryImagePreview
+                        ? (tc.image_change ?? "Change image")
+                        : (tc.image_pick ?? "Add image")
+                    }
+                    className="relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-400 hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {newCategoryImagePreview ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={newCategoryImagePreview}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <ImagePlus className="h-4 w-4" />
+                    )}
+                  </button>
+                  {newCategoryImagePreview && (
+                    <button
+                      type="button"
+                      onClick={clearNewCategoryImage}
+                      aria-label={tc.image_remove ?? "Remove image"}
+                      title={tc.image_remove ?? "Remove image"}
+                      className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-zinc-200 text-zinc-500 hover:bg-zinc-50"
+                    >
+                      <ImageOff className="h-4 w-4" />
+                    </button>
+                  )}
                   <input
                     type="text"
                     value={newCategoryName}
