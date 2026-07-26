@@ -16,6 +16,7 @@ import LocaleProvider from '@/components/providers/LocaleProvider';
 import CurrencyProvider from '@/components/providers/CurrencyProvider';
 import CartAuthSync from '@/components/providers/CartAuthSync';
 import DeviceIdInit from '@/components/providers/DeviceIdInit';
+import SessionBanGuard from '@/components/providers/SessionBanGuard';
 import DisplaySettingsProvider from '@/components/providers/DisplaySettingsProvider';
 import AnnouncementBar from '@/components/shop/AnnouncementBar';
 import { Toaster } from 'sonner';
@@ -43,6 +44,7 @@ export default async function LocaleLayout({ children, params }) {
       <DisplaySettingsProvider initial={displaySettings}>
         <CurrencyProvider>
           <DeviceIdInit />
+          <SessionBanGuard />
           <CartAuthSync />
           <AnnouncementBar />
           <div style={{ paddingTop: 'var(--bar-height, 0px)' }}>

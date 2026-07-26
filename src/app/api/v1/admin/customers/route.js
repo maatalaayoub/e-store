@@ -3,18 +3,26 @@ import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { getAdminUser } from '@/middlewares/authGuard';
 import { logger } from '@/lib/logger';
+import { buildCustomerClusters } from '@/lib/customer-dedupe';
 
 /**
  * GET /api/v1/admin/customers
  *
- * Returns every non-admin user (i.e. anyone who signed up on the storefront),
- * along with lifetime order stats aggregated from the `orders` table.
+ * Returns a *deduplicated* list of every person the store has seen — both
+ * registered users AND guest checkouts (orders whose user_id IS NULL). The
+ * same physical customer is merged into a single row even if they used
+ * slightly different names, emails or phone numbers between orders. See
+ * `src/lib/customer-dedupe.js` for the identity-resolution rules.
  *
  * Response shape:
  *   { success: true, data: {
- *       customers: [{ id, name, email, phone, city, country, role,
- *                     joined_at, orders, spent, last_order_at }],
- *       stats: { total, new_this_month, returning, avg_order_value }
+ *       customers: [{
+ *         id, kind ('user'|'guest'), name, email, phone, address, city, country,
+ *         role, is_banned, joined_at, orders, spent, last_order_at,
+ *         signals, guest_orders
+ *       }],
+ *       stats: { total, new_this_month, returning, avg_order_value,
+ *                guests, registered }
  *   } }
  */
 export async function GET() {
@@ -30,53 +38,65 @@ export async function GET() {
     // admin querying with the session client would see just themselves.
     const service = createServiceClient();
 
-    // 1) Pull every non-admin user. The schema uses role in ('client','admin'),
-    //    but be tolerant of legacy 'customer' values and NULL roles too.
-    const { data: users, error: usersError } = await service
-      .from('users')
-      .select('id, full_name, email, phone_number, address, city, country, role, created_at, is_banned')
-      .or('role.is.null,role.neq.admin')
-      .order('created_at', { ascending: false });
+    // Fetch users, all orders (registered + guest), and user_devices in
+    // parallel — dedupe is done in memory afterwards.
+    const [usersRes, ordersRes, devicesRes] = await Promise.all([
+      service
+        .from('users')
+        .select(
+          'id, full_name, email, phone_number, address, city, country, role, created_at, is_banned, banned_reason'
+        )
+        .or('role.is.null,role.neq.admin'),
+      service
+        .from('orders')
+        .select('id, user_id, total_amount, status, created_at, shipping_address, device_id')
+        .order('created_at', { ascending: false }),
+      service.from('user_devices').select('user_id, device_id'),
+    ]);
 
-    if (usersError) throw usersError;
+    if (usersRes.error) throw usersRes.error;
+    if (ordersRes.error) throw ordersRes.error;
+    // user_devices may not have any rows yet — swallow "does not exist" softly.
+    const devices = devicesRes.error ? [] : devicesRes.data ?? [];
 
-    // 2) Pull every non-cancelled order so we can aggregate per customer in one shot.
-    //    (One round-trip is much cheaper than N per-user queries.)
-    const { data: orders, error: ordersError } = await service
-      .from('orders')
-      .select('user_id, total_amount, status, created_at')
-      .neq('status', 'cancelled');
-
-    if (ordersError) throw ordersError;
-
-    const stats = new Map(); // user_id → { count, spent, last }
-    for (const o of orders ?? []) {
-      if (!o.user_id) continue;
-      const s = stats.get(o.user_id) ?? { count: 0, spent: 0, last: null };
-      s.count += 1;
-      s.spent += Number(o.total_amount ?? 0);
-      if (!s.last || new Date(o.created_at) > new Date(s.last)) s.last = o.created_at;
-      stats.set(o.user_id, s);
-    }
-
-    const customers = (users ?? []).map((u) => {
-      const s = stats.get(u.id) ?? { count: 0, spent: 0, last: null };
-      return {
-        id: u.id,
-        name: u.full_name || u.email?.split('@')[0] || 'Customer',
-        email: u.email ?? '',
-        phone: u.phone_number ?? '',
-        address: u.address ?? '',
-        city: u.city ?? '',
-        country: u.country ?? '',
-        role: u.role ?? 'client',
-        is_banned: Boolean(u.is_banned),
-        joined_at: u.created_at ?? null,
-        orders: s.count,
-        spent: Number(s.spent.toFixed(2)),
-        last_order_at: s.last,
-      };
+    // The `orders.device_id` column may not exist yet (migration pending).
+    // Supabase returns the rows without the column rather than erroring, so
+    // the field is simply undefined — nothing to do.
+    const clusters = buildCustomerClusters({
+      users: usersRes.data ?? [],
+      orders: ordersRes.data ?? [],
+      devices,
     });
+
+    // Sort: most recently active first, then newest joined.
+    clusters.sort((a, b) => {
+      const la = a.last_order_at ? new Date(a.last_order_at).getTime() : 0;
+      const lb = b.last_order_at ? new Date(b.last_order_at).getTime() : 0;
+      if (lb !== la) return lb - la;
+      const ja = a.joined_at ? new Date(a.joined_at).getTime() : 0;
+      const jb = b.joined_at ? new Date(b.joined_at).getTime() : 0;
+      return jb - ja;
+    });
+
+    // Strip cluster-internal fields we don't need to send to the browser.
+    const customers = clusters.map((c) => ({
+      id: c.id,
+      kind: c.kind,
+      name: c.name,
+      email: c.email,
+      phone: c.phone,
+      address: c.address,
+      city: c.city,
+      country: c.country,
+      role: c.role,
+      is_banned: c.is_banned,
+      joined_at: c.joined_at,
+      orders: c.orders,
+      spent: c.spent,
+      last_order_at: c.last_order_at,
+      signals: c.signals,
+      guest_orders: c.guest_orders,
+    }));
 
     // Aggregate stat cards.
     const now = new Date();
@@ -88,6 +108,7 @@ export async function GET() {
     const totalOrders = customers.reduce((s, c) => s + c.orders, 0);
     const totalSpent = customers.reduce((s, c) => s + c.spent, 0);
     const avgOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
+    const guests = customers.filter((c) => c.kind === 'guest').length;
 
     return NextResponse.json({
       success: true,
@@ -98,6 +119,8 @@ export async function GET() {
           new_this_month: newThisMonth,
           returning,
           avg_order_value: Number(avgOrderValue.toFixed(2)),
+          guests,
+          registered: customers.length - guests,
         },
       },
     });

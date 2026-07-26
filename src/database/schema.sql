@@ -191,6 +191,15 @@ CREATE TABLE IF NOT EXISTS banned_devices (
 ALTER TABLE user_devices   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE banned_devices ENABLE ROW LEVEL SECURITY;
 
+-- Every order remembers which browser placed it. This is the linchpin of the
+-- admin "customer" view: registered users are grouped by user_id, but *guest*
+-- orders (user_id IS NULL) can only be re-identified as the same person via
+-- device_id + normalized phone + normalized email. The middleware also uses
+-- this column to block orders from banned devices at insert time.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS device_id text;
+CREATE INDEX IF NOT EXISTS orders_device_id_idx ON orders (device_id) WHERE device_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS orders_user_id_null_idx ON orders (created_at DESC) WHERE user_id IS NULL;
+
 -- Run once: allow users to upsert their own profile row (needed for account settings save):
 DO $$ BEGIN
   IF NOT EXISTS (

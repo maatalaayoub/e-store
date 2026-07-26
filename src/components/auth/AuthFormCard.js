@@ -36,7 +36,7 @@ export default function AuthFormCard({
             )}
 
             {error && (
-              <div className="mb-6 rounded-md bg-red-50 p-4 text-sm text-red-700">
+              <div className="mb-6 rounded-md bg-red-50 p-4 text-sm text-red-700 whitespace-pre-line">
                 {error}
               </div>
             )}

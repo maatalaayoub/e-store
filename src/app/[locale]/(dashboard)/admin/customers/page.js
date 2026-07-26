@@ -11,6 +11,7 @@ import {
   ShoppingBag,
   UserPlus,
   Users as UsersIcon,
+  UserRound,
 } from "lucide-react";
 import { useDictionary, useLocale } from "@/components/providers/LocaleProvider";
 import { AdminCustomersSkeleton } from "@/components/skeletons";
@@ -93,6 +94,8 @@ export default function AdminCustomersPage() {
     new_this_month: 0,
     returning: 0,
     avg_order_value: 0,
+    guests: 0,
+    registered: 0,
   });
   const [search, setSearch] = useState("");
   const [error, setError] = useState(null);
@@ -128,12 +131,21 @@ export default function AdminCustomersPage() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return customers;
+    // Normalise the query as a phone (digits only, last 9) so admins can
+    // paste a phone regardless of country-code / formatting differences.
+    const qDigits = q.replace(/\D+/g, "");
+    const qPhoneTail = qDigits.length >= 4 ? qDigits.slice(-9) : "";
     return customers.filter((c) => {
       const hay = [c.name, c.email, c.phone, c.city, c.country]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
-      return hay.includes(q);
+      if (hay.includes(q)) return true;
+      if (qPhoneTail) {
+        const phoneDigits = String(c.phone ?? "").replace(/\D+/g, "").slice(-9);
+        if (phoneDigits && phoneDigits.includes(qPhoneTail)) return true;
+      }
+      return false;
     });
   }, [customers, search]);
 
@@ -141,7 +153,11 @@ export default function AdminCustomersPage() {
 
   const statCards = [
     { label: tStats.total, value: String(stats.total ?? 0) },
-    { label: tStats.new, value: String(stats.new_this_month ?? 0) },
+    {
+      label: tStats.guests ?? "Guests",
+      value: String(stats.guests ?? 0),
+      hint: tStats.guests_hint ?? "No account yet",
+    },
     { label: tStats.returning, value: String(stats.returning ?? 0) },
     { label: tStats.avg, value: formatCurrency(stats.avg_order_value) },
   ];
@@ -177,6 +193,9 @@ export default function AdminCustomersPage() {
           >
             <p className="text-sm font-medium text-zinc-500 mb-1">{stat.label}</p>
             <h3 className="text-xl font-bold text-zinc-900">{stat.value}</h3>
+            {stat.hint && (
+              <p className="text-xs text-zinc-400 mt-0.5">{stat.hint}</p>
+            )}
           </div>
         ))}
       </div>
@@ -256,6 +275,12 @@ export default function AdminCustomersPage() {
                     <div className="min-w-0">
                       <p className="font-medium text-zinc-900 text-sm truncate flex items-center gap-1.5">
                         {c.name}
+                        {c.kind === "guest" && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+                            <UserRound className="h-2.5 w-2.5" />
+                            {t.guest ?? "Guest"}
+                          </span>
+                        )}
                         {c.is_banned && (
                           <span className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">
                             <Ban className="h-2.5 w-2.5" />
@@ -359,6 +384,12 @@ export default function AdminCustomersPage() {
                         <div className="min-w-0">
                           <p className="font-medium text-zinc-900 truncate flex items-center gap-1.5">
                             {c.name}
+                            {c.kind === "guest" && (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+                                <UserRound className="h-2.5 w-2.5" />
+                                {t.guest ?? "Guest"}
+                              </span>
+                            )}
                             {c.is_banned && (
                               <span className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">
                                 <Ban className="h-2.5 w-2.5" />

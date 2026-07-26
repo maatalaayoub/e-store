@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
 import {
   Ban,
+  Fingerprint,
   Loader2,
   Mail,
   MapPin,
@@ -12,6 +13,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   User as UserIcon,
+  UserRound,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -177,7 +179,10 @@ export default function CustomerDrawer({ customerId, isOpen, onClose, onChanged 
   const stats = data?.stats;
   const orders = data?.orders ?? [];
   const devices = data?.devices ?? [];
+  const cluster = data?.cluster ?? null;
+  const isGuest = profile?.kind === "guest";
   const displayName = profile?.full_name || profile?.email?.split("@")[0] || "—";
+  const canBanGuest = isGuest && devices.length > 0;
 
   return createPortal(
     <>
@@ -218,17 +223,25 @@ export default function CustomerDrawer({ customerId, isOpen, onClose, onChanged 
             </div>
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
-                {tD.title ?? "Customer"}
+                {isGuest ? tD.guest_title ?? "Guest customer" : tD.title ?? "Customer"}
               </p>
               <h2 className="text-lg font-bold text-zinc-900 leading-tight truncate">
                 {displayName}
               </h2>
-              {profile?.is_banned && (
-                <span className="inline-flex mt-1 items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700">
-                  <Ban className="h-3 w-3" />
-                  {tD.banned ?? "Banned"}
-                </span>
-              )}
+              <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                {isGuest && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                    <UserRound className="h-3 w-3" />
+                    {tD.guest_badge ?? "No account"}
+                  </span>
+                )}
+                {profile?.is_banned && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700">
+                    <Ban className="h-3 w-3" />
+                    {tD.banned ?? "Banned"}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <button
@@ -286,9 +299,43 @@ export default function CustomerDrawer({ customerId, isOpen, onClose, onChanged 
                 />
                 <InfoRow
                   icon={UserIcon}
-                  value={profile.role === "admin" ? tD.admin ?? "Admin" : tD.client ?? "Customer"}
+                  value={
+                    isGuest
+                      ? tD.role_guest ?? "Guest checkout"
+                      : profile.role === "admin"
+                      ? tD.admin ?? "Admin"
+                      : tD.client ?? "Customer"
+                  }
                 />
               </Section>
+
+              {/* Identity signals — only interesting when we merged something */}
+              {cluster &&
+                (cluster.signals?.length > 1 ||
+                  cluster.guest_orders > 0 ||
+                  cluster.user_ids?.length > 1) && (
+                  <Section title={tD.identity ?? "How we recognised this customer"}>
+                    <div className="rounded-[3px] border border-zinc-200 bg-zinc-50/60 px-3 py-2 text-xs text-zinc-700 space-y-1.5">
+                      <div className="flex items-start gap-2">
+                        <Fingerprint className="h-3.5 w-3.5 text-zinc-400 mt-0.5 shrink-0" />
+                        <span>
+                          {tD.identity_desc ??
+                            "We linked these orders using the following matching signals:"}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {cluster.signals?.map((s) => (
+                          <SignalPill key={s} kind={s} dict={tD} />
+                        ))}
+                      </div>
+                      <p className="text-[11px] text-zinc-500 pt-1">
+                        {(tD.identity_orders_summary ?? "Merged {orders} orders ({guest} as guest).")
+                          .replace("{orders}", String(orders.length))
+                          .replace("{guest}", String(cluster.guest_orders ?? 0))}
+                      </p>
+                    </div>
+                  </Section>
+                )}
 
               {/* Orders */}
               <Section title={`${tD.orders ?? "Purchase history"} (${orders.length})`}>
@@ -425,8 +472,15 @@ export default function CustomerDrawer({ customerId, isOpen, onClose, onChanged 
                 className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
               >
                 <ShieldCheck className="h-4 w-4" />
-                {tD.unban ?? "Unban customer"}
+                {isGuest
+                  ? tD.unblock_devices ?? "Unblock devices"
+                  : tD.unban ?? "Unban customer"}
               </button>
+            ) : isGuest && !canBanGuest ? (
+              <span className="text-xs text-zinc-400 italic">
+                {tD.guest_no_devices ??
+                  "No device recorded yet — cannot block this customer."}
+              </span>
             ) : (
               <button
                 type="button"
@@ -434,7 +488,9 @@ export default function CustomerDrawer({ customerId, isOpen, onClose, onChanged 
                 className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
               >
                 <Ban className="h-4 w-4" />
-                {tD.ban ?? "Ban customer"}
+                {isGuest
+                  ? tD.block_devices ?? "Block devices"
+                  : tD.ban ?? "Ban customer"}
               </button>
             )}
           </div>
@@ -458,10 +514,16 @@ export default function CustomerDrawer({ customerId, isOpen, onClose, onChanged 
                 </div>
                 <div>
                   <p className="text-base font-semibold text-zinc-900">
-                    {tD.ban_title ?? "Ban this customer?"}
+                    {isGuest
+                      ? tD.block_title ?? "Block this device?"
+                      : tD.ban_title ?? "Ban this customer?"}
                   </p>
                   <p className="text-sm text-zinc-500">
-                    {tD.ban_desc ?? "They will be signed out and cannot place new orders."}
+                    {isGuest
+                      ? tD.block_desc ??
+                        "Any future orders from this browser will be rejected."
+                      : tD.ban_desc ??
+                        "They will be signed out and cannot place new orders."}
                   </p>
                 </div>
               </div>
@@ -475,18 +537,20 @@ export default function CustomerDrawer({ customerId, isOpen, onClose, onChanged 
                   className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
                 />
               </label>
-              <label className="flex items-start gap-2 text-sm text-zinc-700">
-                <input
-                  type="checkbox"
-                  checked={banDevices}
-                  onChange={(e) => setBanDevices(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-red-600 focus:ring-red-600"
-                />
-                <span>
-                  {tD.ban_devices ??
-                    "Also block every device this customer has ever signed in from"}
-                </span>
-              </label>
+              {!isGuest && (
+                <label className="flex items-start gap-2 text-sm text-zinc-700">
+                  <input
+                    type="checkbox"
+                    checked={banDevices}
+                    onChange={(e) => setBanDevices(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-red-600 focus:ring-red-600"
+                  />
+                  <span>
+                    {tD.ban_devices ??
+                      "Also block every device this customer has ever signed in from"}
+                  </span>
+                </label>
+              )}
               <div className="flex gap-3 pt-1">
                 <button
                   type="button"
@@ -503,7 +567,9 @@ export default function CustomerDrawer({ customerId, isOpen, onClose, onChanged 
                   className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-75"
                 >
                   {banSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {tD.ban ?? "Ban customer"}
+                  {isGuest
+                    ? tD.block_devices ?? "Block devices"
+                    : tD.ban ?? "Ban customer"}
                 </button>
               </div>
             </div>
@@ -514,12 +580,23 @@ export default function CustomerDrawer({ customerId, isOpen, onClose, onChanged 
       {/* Unban confirm */}
       <ConfirmationDialog
         isOpen={unbanOpen}
-        title={tD.unban_title ?? "Restore this customer?"}
-        description={
-          tD.unban_desc ??
-          "They will be able to sign in again from any device."
+        title={
+          isGuest
+            ? tD.unblock_title ?? "Unblock these devices?"
+            : tD.unban_title ?? "Restore this customer?"
         }
-        confirmText={tD.unban ?? "Unban"}
+        description={
+          isGuest
+            ? tD.unblock_desc ??
+              "Orders from these browsers will be accepted again."
+            : tD.unban_desc ??
+              "They will be able to sign in again from any device."
+        }
+        confirmText={
+          isGuest
+            ? tD.unblock_devices ?? "Unblock"
+            : tD.unban ?? "Unban"
+        }
         cancelText={dict?.common?.cancel ?? "Cancel"}
         isLoading={unbanSubmitting}
         isDangerous={false}
@@ -559,5 +636,23 @@ function InfoRow({ icon: Icon, value }) {
       <Icon className="h-4 w-4 text-zinc-400 mt-0.5 shrink-0" />
       <span className="break-all">{value}</span>
     </div>
+  );
+}
+
+const SIGNAL_STYLES = {
+  phone:  "bg-emerald-50 text-emerald-800 border-emerald-200",
+  email:  "bg-blue-50 text-blue-800 border-blue-200",
+  device: "bg-violet-50 text-violet-800 border-violet-200",
+};
+
+function SignalPill({ kind, dict }) {
+  const label = dict?.[`signal_${kind}`] ?? kind;
+  const cls = SIGNAL_STYLES[kind] ?? "bg-zinc-100 text-zinc-700 border-zinc-200";
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${cls}`}
+    >
+      {label}
+    </span>
   );
 }

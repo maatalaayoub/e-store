@@ -3,8 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { isRtlLocale } from "@/config/constants";
@@ -21,12 +21,30 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { locale } = useParams();
+  const searchParams = useSearchParams();
   const isRtl = isRtlLocale(locale);
   const supabase = createClient();
   const dict = useDictionary();
   const t = dict?.auth?.login ?? {};
   const tCommon = dict?.common ?? {};
   const tBack = dict?.auth?.back_home;
+
+  // If we were redirected here by SessionBanGuard after the admin banned
+  // the account, surface the reason instead of rendering an empty form.
+  useEffect(() => {
+    if (searchParams?.get("banned") === "1") {
+      const kind = searchParams.get("kind");
+      const msg = searchParams.get("msg");
+      const base =
+        kind === "device"
+          ? dict?.auth?.login?.device_banned ??
+            "This device has been blocked from accessing the store."
+          : dict?.auth?.login?.banned ??
+            "Your account has been suspended. Please contact support.";
+      const reasonLabel = dict?.auth?.login?.banned_reason ?? "Reason";
+      setError(msg ? `${base}\n${reasonLabel}: ${msg}` : base);
+    }
+  }, [searchParams, dict]);
 
   // Show skeleton until locale dictionary is available
   if (!dict?.auth?.login) return <AuthFormSkeleton />;
@@ -50,8 +68,18 @@ export default function LoginPage() {
       try {
         const res = await fetch('/api/v1/users/track-device', { method: 'POST' });
         if (res.status === 403) {
+          const payload = await res.json().catch(() => ({}));
           await supabase.auth.signOut();
-          setError(dict?.auth?.login?.banned ?? 'Your account has been suspended.');
+          const base =
+            payload?.reason === 'device'
+              ? dict?.auth?.login?.device_banned ??
+                'This device has been blocked from accessing the store.'
+              : dict?.auth?.login?.banned ??
+                'Your account has been suspended.';
+          const reasonLabel = dict?.auth?.login?.banned_reason ?? 'Reason';
+          setError(
+            payload?.message ? `${base}\n${reasonLabel}: ${payload.message}` : base
+          );
           setLoading(false);
           return;
         }

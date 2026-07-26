@@ -160,7 +160,9 @@
       "submit": "Se connecter",
       "no_account": "Vous n'avez pas de compte ?",
       "signup_link": "S'inscrire",
-      "banned": "Votre compte a été suspendu. Veuillez contacter le support."
+      "banned": "Votre compte a été suspendu. Veuillez contacter le support.",
+      "device_banned": "Cet appareil a été bloqué et ne peut plus accéder à la boutique.",
+      "banned_reason": "Motif"
     },
     "signup": {
       "title": "Créer un compte",

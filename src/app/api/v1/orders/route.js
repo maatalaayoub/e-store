@@ -12,6 +12,7 @@ import { getAdminUser } from '@/middlewares/authGuard';
 import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 import { computeEffectivePrice } from '@/lib/price';
 import { logger } from '@/lib/logger';
+import { getRequestDeviceId } from '@/lib/device-id';
 import {
   createNewOrderNotification,
   createOrderCancelledNotification,
@@ -52,6 +53,17 @@ function isMissingVariantColumnError(error) {
       text.includes('selected_color') ||
       text.includes('selected_size')
     )
+  );
+}
+
+function isMissingDeviceIdColumnError(error) {
+  const message = String(error?.message ?? '').toLowerCase();
+  const details = String(error?.details ?? '').toLowerCase();
+  const hint = String(error?.hint ?? '').toLowerCase();
+  const text = `${message} ${details} ${hint}`;
+  return (
+    (error?.code === '42703' || error?.code === 'PGRST204') &&
+    text.includes('device_id')
   );
 }
 
@@ -180,9 +192,50 @@ export async function POST(req) {
       userId = null;
     }
 
+    // Storefront device cookie — recorded on every order so the admin can
+    // re-identify repeat guest customers and, if needed, ban a device.
+    let deviceId = null;
+    try {
+      deviceId = await getRequestDeviceId();
+    } catch {
+      deviceId = null;
+    }
+
     // Service client — bypasses RLS so guests can create orders, and so the
     // stock-decrement / restore compensating writes work in a guest context.
     const db = createServiceClient();
+
+    // Refuse the order if the signed-in user has been suspended by an admin.
+    // (Admins are never banned, so no exemption needed here.)
+    if (userId) {
+      const { data: profile } = await db
+        .from('users')
+        .select('is_banned, role')
+        .eq('id', userId)
+        .maybeSingle();
+      if (profile?.role !== 'admin' && profile?.is_banned) {
+        return NextResponse.json(
+          { success: false, error: 'Your account has been suspended.' },
+          { status: 403 }
+        );
+      }
+    }
+
+    // Refuse the order if this device is banned. Registered users have already
+    // been checked by requireAuth on other routes; this covers guest checkouts.
+    if (deviceId) {
+      const { data: bannedRow } = await db
+        .from('banned_devices')
+        .select('device_id')
+        .eq('device_id', deviceId)
+        .maybeSingle();
+      if (bannedRow) {
+        return NextResponse.json(
+          { success: false, error: 'This device has been blocked from placing orders.' },
+          { status: 403 }
+        );
+      }
+    }
 
     // ── 1. Fetch canonical product rows for pricing + stock validation ────
     const productIds = normalizedItems.map((i) => i.id);
@@ -238,19 +291,35 @@ export async function POST(req) {
 
     let order, orderErr;
     for (let attempt = 0; attempt < 5; attempt++) {
-      const result = await db
+      const insertPayload = {
+        user_id: userId,
+        status: 'pending',
+        total_amount: serverTotalMad,     // canonical, server-computed
+        currency_code: safeCurrency,
+        exchange_rate: safeRate,
+        shipping_address: shipping,
+        order_number: randomOrderNumber(),
+        device_id: deviceId,
+      };
+
+      let result = await db
         .from('orders')
-        .insert({
-          user_id: userId,
-          status: 'pending',
-          total_amount: serverTotalMad,     // canonical, server-computed
-          currency_code: safeCurrency,
-          exchange_rate: safeRate,
-          shipping_address: shipping,
-          order_number: randomOrderNumber(),
-        })
+        .insert(insertPayload)
         .select('id, order_number, total_amount, currency_code')
         .single();
+
+      // Migration for `orders.device_id` may not have run yet — retry without.
+      if (result.error && isMissingDeviceIdColumnError(result.error)) {
+        if (IS_DEV) {
+          console.warn('[POST /api/v1/orders] device_id column missing — migration pending');
+        }
+        const { device_id, ...fallback } = insertPayload;
+        result = await db
+          .from('orders')
+          .insert(fallback)
+          .select('id, order_number, total_amount, currency_code')
+          .single();
+      }
 
       if (!result.error || result.error.code !== '23505') {
         order = result.data;

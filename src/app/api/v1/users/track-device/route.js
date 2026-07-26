@@ -23,25 +23,53 @@ export async function POST() {
     }
 
     const deviceId = await getRequestDeviceId();
+    const service = createServiceClient();
+
+    // Always check the account ban flag, even when there's no device cookie —
+    // this endpoint is also the storefront's "am I still allowed in" probe.
+    const { data: profile } = await service
+      .from('users')
+      .select('is_banned, banned_reason, role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profile?.role !== 'admin' && profile?.is_banned) {
+      return NextResponse.json(
+        {
+          success: false,
+          banned: true,
+          reason: 'user',
+          message: profile.banned_reason ?? null,
+          error: 'Account suspended',
+        },
+        { status: 403 }
+      );
+    }
+
     if (!deviceId) {
+      // No device to record, but the user is not banned.
       return NextResponse.json({ success: true, tracked: false });
     }
 
-    const service = createServiceClient();
-
-    // Reject the sign-in immediately if this device is banned so the
-    // storefront can sign the user out before showing the app shell.
-    const { data: banned } = await service
-      .from('banned_devices')
-      .select('device_id')
-      .eq('device_id', deviceId)
-      .maybeSingle();
-
-    if (banned) {
-      return NextResponse.json(
-        { success: false, banned: true, error: 'Device is banned' },
-        { status: 403 }
-      );
+    // Device-level ban check (admins exempt).
+    if (profile?.role !== 'admin') {
+      const { data: banned } = await service
+        .from('banned_devices')
+        .select('device_id, reason')
+        .eq('device_id', deviceId)
+        .maybeSingle();
+      if (banned) {
+        return NextResponse.json(
+          {
+            success: false,
+            banned: true,
+            reason: 'device',
+            message: banned.reason ?? null,
+            error: 'Device is banned',
+          },
+          { status: 403 }
+        );
+      }
     }
 
     const [userAgent, ip] = await Promise.all([
