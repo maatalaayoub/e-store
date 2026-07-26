@@ -396,9 +396,23 @@
       },
       "storefront_tabs": {
         "hero": "Carrousel héros",
+        "header": "En-tête & menu",
         "display": "Affichage des boutons",
         "layout": "Mise en page carte",
         "carousel": "Carrousel"
+      },
+      "header_sidebar": {
+        "title": "En-tête & menu latéral",
+        "description": "Choisissez les icônes affichées dans l’en-tête et le thème de couleur appliqué au menu latéral.",
+        "cart_icon": "Icône du bouton panier",
+        "cart_icon_desc": "Affichée dans l’en-tête à côté du nombre d’articles.",
+        "menu_icon": "Icône d’ouverture du menu",
+        "menu_icon_desc": "Affichée dans l’en-tête — ouvre le menu latéral.",
+        "theme": "Thème du menu latéral",
+        "theme_desc": "Palette de couleurs appliquée au menu latéral.",
+        "save": "Enregistrer",
+        "saving": "Enregistrement…",
+        "saved": "En-tête et menu enregistrés"
       },
       "carousel": {
         "title": "Carrousel de produits",

@@ -47,6 +47,14 @@ import { Blocks } from "lucide-react";
 import { getMainImage } from "@/lib/product-image";
 import ProductCard from "@/components/shop/ProductCard";
 import { CARD_LAYOUTS } from "@/components/shop/ProductCard";
+import {
+  HEADER_CART_ICONS,
+  HEADER_MENU_ICONS,
+  SIDEBAR_THEMES,
+  DEFAULT_HEADER_CART_ICON,
+  DEFAULT_HEADER_MENU_ICON,
+  DEFAULT_SIDEBAR_THEME,
+} from "@/lib/storefront-ui";
 
 const SECTION_DEFS = [
   { id: "general", icon: Store },
@@ -769,6 +777,7 @@ function StorefrontSection() {
       <div className="mb-6 rounded-xl border border-zinc-200 bg-zinc-50 p-1 flex gap-1" role="tablist" aria-label="Storefront Tabs">
         {[
           { key: 'hero',    label: tabs.hero     ?? 'Hero Carousel' },
+          { key: 'header',  label: tabs.header   ?? 'Header & Sidebar' },
           { key: 'display', label: tabs.display  ?? 'Button Display' },
           { key: 'layout',  label: tabs.layout   ?? 'Card Layout' },
           { key: 'carousel',label: tabs.carousel ?? 'Carousel' },
@@ -791,10 +800,186 @@ function StorefrontSection() {
       </div>
 
       {tab === 'hero' && <HeroSection />}
+      {tab === 'header' && <HeaderSidebarSection />}
       {tab === 'display' && <DisplaySection />}
       {tab === 'layout' && <LayoutSection />}
       {tab === 'carousel' && <CarouselSection />}
     </>
+  );
+}
+
+// ── Header & Sidebar customization ─────────────────────────────────────────
+// Pickers for the storefront header cart icon, drawer-open icon, and the
+// active sidebar drawer theme. All three settings are stored as plain string
+// keys resolved by src/lib/storefront-ui.js.
+function HeaderSidebarSection() {
+  const t = useDictionary()?.admin?.settings?.header_sidebar ?? {};
+  const [cartIcon, setCartIcon] = useState(DEFAULT_HEADER_CART_ICON);
+  const [menuIcon, setMenuIcon] = useState(DEFAULT_HEADER_MENU_ICON);
+  const [theme, setTheme] = useState(DEFAULT_SIDEBAR_THEME);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/v1/settings')
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success && json.data) {
+          setCartIcon(json.data.header_cart_icon ?? DEFAULT_HEADER_CART_ICON);
+          setMenuIcon(json.data.header_menu_icon ?? DEFAULT_HEADER_MENU_ICON);
+          setTheme(json.data.sidebar_theme ?? DEFAULT_SIDEBAR_THEME);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/v1/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          header_cart_icon: cartIcon,
+          header_menu_icon: menuIcon,
+          sidebar_theme: theme,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) toast.success(t.saved ?? 'Header & sidebar saved');
+      else toast.error(json.error ?? 'Save failed');
+    } catch {
+      toast.error('Network error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16 text-zinc-400">
+        <Loader2 className="h-5 w-5 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      <SectionHeader
+        title={t.title ?? 'Header & Sidebar'}
+        description={t.description ?? 'Choose the icons displayed in the storefront header and the color theme applied to the sidebar drawer.'}
+        icon={<LayoutTemplate className="h-5 w-5 text-blue-600" />}
+      />
+
+      {/* Cart icon picker */}
+      <div>
+        <h3 className="text-sm font-semibold text-zinc-800">{t.cart_icon ?? 'Cart button icon'}</h3>
+        <p className="text-xs text-zinc-500 mt-0.5">{t.cart_icon_desc ?? 'Shown in the header next to the cart count.'}</p>
+        <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {Object.entries(HEADER_CART_ICONS).map(([key, { label, Icon }]) => {
+            const active = cartIcon === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setCartIcon(key)}
+                className={`flex flex-col items-center justify-center gap-2 rounded-xl border p-4 transition-all ${
+                  active
+                    ? 'border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-500'
+                    : 'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300'
+                }`}
+                aria-pressed={active}
+              >
+                <Icon className="h-7 w-7" strokeWidth={1.5} />
+                <span className="text-xs font-medium">{label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Menu icon picker */}
+      <div>
+        <h3 className="text-sm font-semibold text-zinc-800">{t.menu_icon ?? 'Sidebar open button icon'}</h3>
+        <p className="text-xs text-zinc-500 mt-0.5">{t.menu_icon_desc ?? 'Shown in the header — opens the sidebar drawer.'}</p>
+        <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {Object.entries(HEADER_MENU_ICONS).map(([key, { label, Icon }]) => {
+            const active = menuIcon === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setMenuIcon(key)}
+                className={`flex flex-col items-center justify-center gap-2 rounded-xl border p-4 transition-all ${
+                  active
+                    ? 'border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-500'
+                    : 'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300'
+                }`}
+                aria-pressed={active}
+              >
+                <Icon className="h-7 w-7" strokeWidth={1.5} />
+                <span className="text-xs font-medium">{label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Sidebar theme picker */}
+      <div>
+        <h3 className="text-sm font-semibold text-zinc-800">{t.theme ?? 'Sidebar theme'}</h3>
+        <p className="text-xs text-zinc-500 mt-0.5">{t.theme_desc ?? 'Color palette applied to the sidebar drawer.'}</p>
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {Object.entries(SIDEBAR_THEMES).map(([key, entry]) => {
+            const active = theme === key;
+            const [bg, accent] = entry.swatch;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTheme(key)}
+                className={`flex items-center gap-4 rounded-xl border p-4 text-left transition-all ${
+                  active
+                    ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
+                    : 'border-zinc-200 bg-white hover:border-zinc-300'
+                }`}
+                aria-pressed={active}
+              >
+                <span
+                  className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-zinc-200"
+                  style={{ backgroundColor: bg }}
+                >
+                  <span
+                    className="h-6 w-6 rounded-full"
+                    style={{ backgroundColor: accent }}
+                  />
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-semibold text-zinc-900">{entry.label}</span>
+                  <span className="block text-xs text-zinc-500 mt-0.5">{entry.description}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex justify-end pt-2 border-t border-zinc-100">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+        >
+          {saving ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4" />
+          )}
+          {saving ? (t.saving ?? 'Saving…') : (t.save ?? 'Save changes')}
+        </button>
+      </div>
+    </div>
   );
 }
 

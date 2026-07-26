@@ -393,9 +393,23 @@
       },
       "storefront_tabs": {
         "hero": "Hero Carousel",
+        "header": "Header & Sidebar",
         "display": "Button Display",
         "layout": "Card Layout",
         "carousel": "Carousel"
+      },
+      "header_sidebar": {
+        "title": "Header & Sidebar",
+        "description": "Choose the icons displayed in the storefront header and the color theme applied to the sidebar drawer.",
+        "cart_icon": "Cart button icon",
+        "cart_icon_desc": "Shown in the header next to the cart count.",
+        "menu_icon": "Sidebar open button icon",
+        "menu_icon_desc": "Shown in the header — opens the sidebar drawer.",
+        "theme": "Sidebar theme",
+        "theme_desc": "Color palette applied to the sidebar drawer.",
+        "save": "Save changes",
+        "saving": "Saving…",
+        "saved": "Header & sidebar saved"
       },
       "carousel": {
         "title": "Product Carousel",

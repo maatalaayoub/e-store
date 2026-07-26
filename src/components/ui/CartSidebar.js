@@ -13,6 +13,7 @@ import { CartSkeleton } from "@/components/skeletons";
 import { parsePrice } from "@/lib/price";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { useLiveCartPrices } from "@/hooks/useLiveCartPrices";
+import { resolveCartIcon, DEFAULT_HEADER_CART_ICON } from "@/lib/storefront-ui";
 
 export default function CartSidebar({ isOpen, onClose }) {
   const { items, removeItem, updateQuantity } = useCartStore();
@@ -26,6 +27,20 @@ export default function CartSidebar({ isOpen, onClose }) {
   useEffect(() => setHydrated(true), []);
   const { formatPrice, stale: staleRate } = useCurrency();
   const { mismatches, mismatchCount } = useLiveCartPrices(locale);
+
+  // Match the admin-selected header cart icon so the drawer stays in sync.
+  const [cartIconKey, setCartIconKey] = useState(DEFAULT_HEADER_CART_ICON);
+  useEffect(() => {
+    fetch("/api/v1/display-settings")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success && json.data?.header_cart_icon) {
+          setCartIconKey(json.data.header_cart_icon);
+        }
+      })
+      .catch(() => {});
+  }, []);
+  const CartIcon = resolveCartIcon(cartIconKey).Icon;
 
   // a11y — trap focus inside the drawer and close on Escape while open.
   const drawerRef = useRef(null);
@@ -82,9 +97,7 @@ export default function CartSidebar({ isOpen, onClose }) {
         {/* ── Header ── */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-200 shrink-0">
           <div className="flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5 text-zinc-700">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-            </svg>
+            <CartIcon strokeWidth={1.5} className="h-5 w-5 text-zinc-700" />
             <h2 className="text-base font-semibold text-zinc-900">{t.title || "Your Cart"}</h2>
             {hydrated && totalItems > 0 && (
               <span className="flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-zinc-900 px-1.5 text-[11px] font-bold text-white">
@@ -107,9 +120,7 @@ export default function CartSidebar({ isOpen, onClose }) {
         ) : items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-zinc-100">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="h-9 w-9 text-zinc-400">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-              </svg>
+              <CartIcon strokeWidth={1} className="h-9 w-9 text-zinc-400" />
             </div>
             <div>
               <p className="text-base font-semibold text-zinc-900">

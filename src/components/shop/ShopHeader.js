@@ -9,9 +9,22 @@ import { useCartStore } from "@/store/useCartStore";
 import { useIsScrolled } from "@/hooks/useIsScrolled";
 import { useOnClickOutside } from "@/hooks/useOnClickOutside";
 import ShopSidebarNav from "./ShopSidebarNav";
+import {
+  resolveCartIcon,
+  resolveMenuIcon,
+  DEFAULT_HEADER_CART_ICON,
+  DEFAULT_HEADER_MENU_ICON,
+} from "@/lib/storefront-ui";
 
 function useStoreLogo() {
-  const [logo, setLogo] = useState({ default: null, dark: null, size: '160', height: '40' });
+  const [logo, setLogo] = useState({
+    default: null,
+    dark: null,
+    size: '160',
+    height: '40',
+    cartIcon: DEFAULT_HEADER_CART_ICON,
+    menuIcon: DEFAULT_HEADER_MENU_ICON,
+  });
   useEffect(() => {
     fetch("/api/v1/display-settings")
       .then((r) => r.json())
@@ -22,6 +35,8 @@ function useStoreLogo() {
             dark: json.data.store_logo_dark ? json.data.store_logo_dark : null,
             size: json.data.store_logo_size ?? '160',
             height: json.data.store_logo_height ?? '40',
+            cartIcon: json.data.header_cart_icon ?? DEFAULT_HEADER_CART_ICON,
+            menuIcon: json.data.header_menu_icon ?? DEFAULT_HEADER_MENU_ICON,
           });
         }
       })
@@ -92,6 +107,11 @@ export default function ShopHeader({ onOpenCart, fixed = true, fixedBelow = null
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef(null);
   const headerRef = useRef(null);
+
+  // Admin-selectable header icons (cart button + sidebar-open button).
+  const headerConfig = useStoreLogo();
+  const CartIcon = resolveCartIcon(headerConfig.cartIcon).Icon;
+  const MenuIcon = resolveMenuIcon(headerConfig.menuIcon).Icon;
 
   const { items: cartItems } = useCartStore();
   const cartCount = cartItems.reduce((acc, i) => acc + i.quantity, 0);
@@ -188,9 +208,7 @@ export default function ShopHeader({ onOpenCart, fixed = true, fixedBelow = null
               aria-label="Open sidebar"
               onClick={() => setIsSidebarOpen(true)}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-              </svg>
+              <MenuIcon className="w-6 h-6" strokeWidth={1.5} />
             </button>
             <Link href={`/${locale}`} className="flex items-center">
               <HeaderLogo mode={logoMode} />
@@ -236,16 +254,10 @@ export default function ShopHeader({ onOpenCart, fixed = true, fixedBelow = null
                   }`}
                 />
               )}
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
+              <CartIcon
                 strokeWidth={1.5}
-                stroke="currentColor"
                 className={`w-6 h-6 ${bump ? "animate-cart-bump" : ""}`}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-              </svg>
+              />
               {mounted && cartCount > 0 && (
                 <span
                   key={cartCount}
