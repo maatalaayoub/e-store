@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { createServiceClient } from '@/lib/supabase/service';
 import { requireAdmin } from '@/middlewares/authGuard';
 import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 import { invalidateTelegramConfig } from '@/lib/telegram';
 import { logger } from '@/lib/logger';
+import { PUBLIC_KEYS } from '@/lib/display-settings';
 
 const ALLOWED_KEYS = [
   'telegram_bot_token',
@@ -153,6 +155,22 @@ export async function PATCH(req) {
     // next order picks up the new token/chat without a server restart.
     if (upserts.some((u) => u.key === 'telegram_bot_token' || u.key === 'telegram_chat_id')) {
       invalidateTelegramConfig();
+    }
+
+    // Any change to a public display key must bust the SSR cache of the
+    // [locale] layout — otherwise storefront pages keep serving the pre-
+    // rendered header with the old icons/logo until the next deploy.
+    // We revalidate the layout so it re-fetches from the DB on the next
+    // request. `revalidatePath('/', 'layout')` invalidates all descendants.
+    const changedPublic = upserts.some((u) => PUBLIC_KEYS.includes(u.key));
+    if (changedPublic) {
+      try {
+        revalidatePath('/', 'layout');
+      } catch (e) {
+        // Non-fatal — the client-side re-fetch in the header will still
+        // pick up the new value on the next navigation.
+        logger.warn('revalidatePath after settings PATCH failed', e);
+      }
     }
 
     return NextResponse.json({ success: true });

@@ -36,28 +36,35 @@ function useStoreLogo() {
 
   const [logo, setLogo] = useState(initial);
 
+  // Keep the state in sync with the hydrated context (avoids first-paint
+  // flicker — the SSR value paints immediately).
   useEffect(() => {
-    // Provider already supplied a value — nothing to fetch on mount.
-    if (hydrated) {
-      setLogo(initial);
-      return;
-    }
+    if (hydrated) setLogo(initial);
+  }, [hydrated, initial]);
+
+  // Always re-fetch from the API after mount. The SSR value may be stale
+  // (the [locale] layout is statically pre-rendered, so admin changes made
+  // after build/deploy won't propagate through the provider until the
+  // layout is revalidated). The API is short-cached, so this is cheap and
+  // corrects any staleness within seconds of the admin saving new icons.
+  useEffect(() => {
+    let cancelled = false;
     fetch("/api/v1/display-settings")
       .then((r) => r.json())
       .then((json) => {
-        if (json.success && json.data) {
-          setLogo({
-            default: json.data.store_logo ? json.data.store_logo : null,
-            dark: json.data.store_logo_dark ? json.data.store_logo_dark : null,
-            size: json.data.store_logo_size ?? '160',
-            height: json.data.store_logo_height ?? '40',
-            cartIcon: json.data.header_cart_icon ?? DEFAULT_HEADER_CART_ICON,
-            menuIcon: json.data.header_menu_icon ?? DEFAULT_HEADER_MENU_ICON,
-          });
-        }
+        if (cancelled || !json.success || !json.data) return;
+        setLogo({
+          default: json.data.store_logo ? json.data.store_logo : null,
+          dark: json.data.store_logo_dark ? json.data.store_logo_dark : null,
+          size: json.data.store_logo_size ?? '160',
+          height: json.data.store_logo_height ?? '40',
+          cartIcon: json.data.header_cart_icon ?? DEFAULT_HEADER_CART_ICON,
+          menuIcon: json.data.header_menu_icon ?? DEFAULT_HEADER_MENU_ICON,
+        });
       })
       .catch(() => {});
-  }, [hydrated, initial]);
+    return () => { cancelled = true; };
+  }, []);
   return logo;
 }
 
