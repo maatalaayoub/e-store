@@ -1003,7 +1003,11 @@
     "address_hint": "Utilisé pour le paiement et la livraison",
     "security_title": "Sécurité du compte",
     "security_text": "Vos informations sont stockées en toute sécurité et ne sont jamais partagées avec des tiers.",
-    "member_since": "Membre depuis"
+    "member_since": "Membre depuis",
+    "user_id": "ID utilisateur",
+    "copy_id": "Copier l'ID utilisateur",
+    "id_copied": "ID utilisateur copié",
+    "id_copy_failed": "Échec de la copie"
   },
   "checkout": {
     "contact_info": "Coordonnées",

@@ -59,7 +59,26 @@ export async function GET(req) {
 
     if (error) throw error;
 
-    return NextResponse.json({ success: true, data });
+    // Flatten the nested `product_images[]` array into the `main_image` /
+    // `image` fields that `<ProductCard/>` expects. We keep the original
+    // `product_images` around too so `getMainImage()` fallbacks still work.
+    const normalized = (data ?? []).map((row) => {
+      const p = row.products;
+      if (!p) return row;
+      const imgs = Array.isArray(p.product_images) ? p.product_images : [];
+      const mainImg = imgs.find((i) => i?.is_main) ?? imgs[0] ?? null;
+      const url = mainImg?.url ?? null;
+      return {
+        ...row,
+        products: {
+          ...p,
+          main_image: url,
+          image: url,
+        },
+      };
+    });
+
+    return NextResponse.json({ success: true, data: normalized });
   } catch (err) {
     logger.error('GET /api/v1/favorites', err);
     return NextResponse.json({ success: false, error: 'Failed to fetch favorites' }, { status: 500 });

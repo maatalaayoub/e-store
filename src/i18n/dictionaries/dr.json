@@ -1005,7 +1005,11 @@
     "address_hint": "كيتحتاج فالدفع وتوصيل الطلبية",
     "security_title": "حماية الحساب",
     "security_text": "معلوماتك محفوظة بأمان ومكانشاركوهاش مع حد.",
-    "member_since": "عضو من"
+    "member_since": "عضو من",
+    "user_id": "رقم المستخدم",
+    "copy_id": "نسخ رقم المستخدم",
+    "id_copied": "تنسخات رقم المستخدم",
+    "id_copy_failed": "ما تنسخاش"
   },
   "checkout": {
     "contact_info": "معلومات التواصل",

@@ -71,6 +71,20 @@ export function resetFavoritesCache() {
 }
 
 /**
+ * Subscribe to the shared favorite-ids cache — returns the current `Set`
+ * (or `null` until the initial fetch resolves). Consumers can use this to
+ * react to changes made anywhere in the app (e.g. a favorites listing that
+ * needs to drop items the user un-hearts from within `<ProductCard/>`).
+ */
+export function useFavoriteIds() {
+  const ids = useSyncExternalStore(subscribe, snapshot, serverSnapshot);
+  useEffect(() => {
+    if (favoriteIds == null) loadFavoriteIds();
+  }, []);
+  return ids;
+}
+
+/**
  * Manages the favorite state for a single product.
  * Requires the user to be logged in; silently does nothing if not.
  */

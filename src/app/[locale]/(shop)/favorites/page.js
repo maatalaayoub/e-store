@@ -1,164 +1,21 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import {
   Heart,
-  Package,
-  ShoppingCart,
-  Trash2,
   ChevronRight,
   ChevronLeft,
 } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
-import { useCurrency } from "@/components/providers/CurrencyProvider";
-import { useCartStore } from "@/store/useCartStore";
 import { useDictionary } from "@/components/providers/LocaleProvider";
-import { getMainImage } from "@/lib/product-image";
-import VariantPickerModal from "@/components/shop/VariantPickerModal";
+import { useDisplaySettings } from "@/components/providers/DisplaySettingsProvider";
+import ProductCard from "@/components/shop/ProductCard";
+import { useFavoriteIds } from "@/hooks/useFavorite";
 
 // Module-level cache: persists across client-side navigations, cleared on hard refresh
 let _favCache = null;
-
-function getEffectivePrice(product) {
-  if (!product) return 0;
-  if (product.discount_price != null) return Number(product.discount_price);
-  if (product.discount_percentage != null) {
-    return Number(product.price) * (1 - Number(product.discount_percentage) / 100);
-  }
-  return Number(product.price);
-}
-
-function FavoriteCard({ item, onRemove }) {
-  const { formatPrice } = useCurrency();
-  const { addItem } = useCartStore();
-  const params = useParams();
-  const locale = params?.locale ?? "en";
-  const dict = useDictionary();
-  const tFav = dict?.favorites ?? {};
-  const product = item.products;
-  const imgUrl = getMainImage(product);
-  const effectivePrice = getEffectivePrice(product);
-  const isDiscounted = effectivePrice < Number(product?.price ?? 0);
-  const [removing, setRemoving] = useState(false);
-  const [adding, setAdding] = useState(false);
-  const [variantOpen, setVariantOpen] = useState(false);
-
-  const colors = Array.isArray(product?.colors)
-    ? product.colors.filter((c) => c && c.name && c.hex)
-    : [];
-  const sizes = Array.isArray(product?.sizes) ? product.sizes.filter(Boolean) : [];
-  const hasVariants = colors.length > 0 || sizes.length > 0;
-
-  const handleRemove = async () => {
-    setRemoving(true);
-    await onRemove(item.product_id);
-    setRemoving(false);
-  };
-
-  const buildCartProduct = () => ({
-    id: product.id,
-    name: product.name,
-    price: product.price,
-    effective_price: effectivePrice,
-    image: imgUrl,
-    main_image: imgUrl,
-    stock: product.stock ?? null,
-  });
-
-  const commitAdd = ({ selectedColor = null, selectedSize = null } = {}) => {
-    addItem(buildCartProduct(), { quantity: 1, selectedColor, selectedSize });
-    setAdding(true);
-    setTimeout(() => setAdding(false), 800);
-  };
-
-  const handleAddToCart = () => {
-    if (hasVariants) {
-      setVariantOpen(true);
-      return;
-    }
-    commitAdd();
-  };
-
-  return (
-    <div className="group relative flex flex-col rounded-lg border border-zinc-200 bg-white overflow-hidden">
-      {/* Image */}
-      <Link href={`/${locale}/product/${product?.id}`} className="block aspect-[4/3] bg-zinc-100 overflow-hidden">
-        {imgUrl ? (
-          <Image
-            src={imgUrl}
-            alt={product?.name ?? ""}
-            width={400}
-            height={300}
-            className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-          />
-        ) : (
-          <div className="h-full w-full flex items-center justify-center">
-            <Package className="h-10 w-10 text-zinc-300" />
-          </div>
-        )}
-      </Link>
-
-      {/* Remove button */}
-      <button
-        onClick={handleRemove}
-        disabled={removing}
-        className="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm border border-zinc-200 text-zinc-400 hover:text-red-500 hover:border-red-300 transition-colors disabled:opacity-50"
-        aria-label={tFav.remove ?? "Remove from favorites"}
-      >
-        {removing ? (
-          <span className="h-3.5 w-3.5 rounded-full border-2 border-zinc-300 border-t-transparent animate-spin" />
-        ) : (
-          <Trash2 className="h-3.5 w-3.5" />
-        )}
-      </button>
-
-      {/* Info */}
-      <div className="flex flex-col flex-1 p-4 gap-3">
-        <div className="flex-1">
-          <Link href={`/${locale}/product/${product?.id}`}>
-            <h3 className="text-sm font-semibold text-zinc-900 line-clamp-2 hover:underline">
-              {product?.name ?? "Product"}
-            </h3>
-          </Link>
-          <div className="mt-1.5 flex items-baseline gap-2">
-            <span className="text-base font-bold text-zinc-900">
-              {formatPrice(effectivePrice)}
-            </span>
-            {isDiscounted && (
-              <span className="text-xs text-zinc-400 line-through">
-                {formatPrice(product.price)}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <button
-          onClick={handleAddToCart}
-          disabled={adding || product?.status !== "active"}
-          className="flex items-center justify-center gap-2 w-full rounded-xl bg-zinc-900 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <ShoppingCart className="h-4 w-4" />
-          {adding ? (tFav.added ?? "Added!") : product?.status !== "active" ? (tFav.unavailable ?? "Unavailable") : (tFav.add_to_cart ?? "Add to Cart")}
-        </button>
-      </div>
-
-      <VariantPickerModal
-        open={variantOpen}
-        onClose={() => setVariantOpen(false)}
-        onConfirm={({ selectedColor, selectedSize }) => {
-          setVariantOpen(false);
-          commitAdd({ selectedColor, selectedSize });
-        }}
-        product={{ ...buildCartProduct(), name: product?.name }}
-        colors={colors}
-        sizes={sizes}
-      />
-    </div>
-  );
-}
 
 export default function FavoritesPage() {
   const params = useParams();
@@ -170,6 +27,33 @@ export default function FavoritesPage() {
   const NavChevron = isRtl ? ChevronLeft : ChevronRight;
   const [favorites, setFavorites] = useState(() => _favCache);
   const [error, setError] = useState(null);
+
+  // Pull the storefront-wide product-card display settings so the cards on
+  // this page look identical to those on the home page / product carousels.
+  const settings = useDisplaySettings();
+  const cardProps = useMemo(
+    () => ({
+      buttonStyle:          settings?.product_card_button_style,
+      filledBg:             settings?.product_card_filled_bg,
+      filledText:           settings?.product_card_filled_text,
+      outlineBorder:        settings?.product_card_outline_border,
+      outlineText:          settings?.product_card_outline_text,
+      outlineIcon:          settings?.product_card_outline_icon,
+      outlineBg:            settings?.product_card_outline_bg,
+      buttonFontSize:       settings?.product_card_button_font_size
+                              ? parseInt(settings.product_card_button_font_size, 10) || 10
+                              : undefined,
+      layout:               settings?.product_card_layout,
+      showShortDescription: settings?.product_card_show_short_description === "true",
+      hideButtons:          settings?.product_card_hide_buttons === "true",
+    }),
+    [settings],
+  );
+
+  // Live view of the user's favorite-ids cache. When the user un-hearts a
+  // product from within `<ProductCard/>`, this set updates and we drop the
+  // corresponding row from the visible list on the next render.
+  const favIds = useFavoriteIds();
 
   const loadFavorites = useCallback(() => {
     const controller = new AbortController();
@@ -187,48 +71,38 @@ export default function FavoritesPage() {
         if (err?.name !== "AbortError") setError(tFav.failed ?? "Failed to load favorites.");
       });
     return controller;
-  }, [locale, router]);
+  }, [locale, router, tFav.failed]);
 
   useEffect(() => {
     const controller = loadFavorites();
     return () => controller.abort();
   }, [loadFavorites]);
 
-  const handleRemove = async (productId) => {
-    try {
-      await fetch("/api/v1/favorites", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ product_id: productId }),
-      });
-      setFavorites((prev) => {
-        const next = prev.filter((f) => f.product_id !== productId);
-        _favCache = next;
-        return next;
-      });
-    } catch {
-      // ignore
-    }
-  };
+  // Reflect un-favorites triggered by `<ProductCard/>`'s heart button.
+  const visible = useMemo(() => {
+    if (!favorites) return null;
+    if (!favIds) return favorites;
+    return favorites.filter((f) => favIds.has(f.product_id));
+  }, [favorites, favIds]);
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-zinc-900">
-      <PageHeader title={tFav.title ?? "Favorites"} />
+      <PageHeader title={tFav.title ?? "Favorites"} showCart />
 
       <main className="flex-1 mx-auto w-full max-w-6xl px-4 sm:px-6 pt-20 pb-20">
         {/* Title */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900">{tFav.title ?? "Favorites"}</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            {favorites
-              ? `${favorites.length} ${favorites.length !== 1 ? (tFav.subtitle_many ?? "saved items") : (tFav.subtitle_one ?? "saved item")}`
+            {visible
+              ? `${visible.length} ${visible.length !== 1 ? (tFav.subtitle_many ?? "saved items") : (tFav.subtitle_one ?? "saved item")}`
               : (tFav.subtitle_default ?? "Your saved items")}
           </p>
         </div>
 
         {/* Loading skeletons */}
-        {!favorites && !error && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        {!visible && !error && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="rounded-2xl bg-zinc-200 animate-pulse aspect-[3/4]" />
             ))}
@@ -241,7 +115,7 @@ export default function FavoritesPage() {
           </div>
         )}
 
-        {favorites && favorites.length === 0 && (
+        {visible && visible.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-zinc-100">
               <Heart className="h-9 w-9 text-zinc-300" />
@@ -259,10 +133,14 @@ export default function FavoritesPage() {
           </div>
         )}
 
-        {favorites && favorites.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {favorites.map((item) => (
-              <FavoriteCard key={item.id} item={item} onRemove={handleRemove} />
+        {visible && visible.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            {visible.map((item) => (
+              <ProductCard
+                key={item.id}
+                product={item.products}
+                {...cardProps}
+              />
             ))}
           </div>
         )}

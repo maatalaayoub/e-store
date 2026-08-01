@@ -1017,7 +1017,11 @@
     "address_hint": "Used for checkout and deliveries",
     "security_title": "Account Security",
     "security_text": "Your information is stored securely and never shared with third parties.",
-    "member_since": "Member since"
+    "member_since": "Member since",
+    "user_id": "User ID",
+    "copy_id": "Copy user ID",
+    "id_copied": "User ID copied",
+    "id_copy_failed": "Failed to copy"
   },
   "checkout": {
     "phone_label": "Phone Number",

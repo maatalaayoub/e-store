@@ -18,6 +18,7 @@ import {
   Check,
   X,
   ChevronRight,
+  Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useDictionary, useLocale } from "@/components/providers/LocaleProvider";
@@ -105,6 +106,8 @@ export default function AccountSettingsPage() {
   const [error, setError] = useState(null);
   const [email, setEmail] = useState(() => _accountCache?.email ?? "");
   const [createdAt, setCreatedAt] = useState(() => _accountCache?.createdAt ?? "");
+  const [userId, setUserId] = useState(() => _accountCache?.userId ?? "");
+  const [idCopied, setIdCopied] = useState(false);
   const [form, setForm] = useState(() => _accountCache?.form ?? {
     full_name: "",
     phone_number: "",
@@ -149,6 +152,7 @@ export default function AccountSettingsPage() {
         const d = json.data ?? {};
         const emailVal = d.email ?? "";
         const createdAtVal = d.created_at ?? "";
+        const idVal = d.id ?? "";
         const formVal = {
           full_name:    d.full_name    ?? "",
           phone_number: d.phone_number ?? "",
@@ -158,6 +162,7 @@ export default function AccountSettingsPage() {
         };
         setEmail(emailVal);
         setCreatedAt(createdAtVal);
+        setUserId(idVal);
         setForm(formVal);
 
         /* Auto-detect from IP only when no country is saved.
@@ -169,7 +174,7 @@ export default function AccountSettingsPage() {
             setForm((f) => ({ ...f, country: detected }));
           }
         }
-        _accountCache = { email: emailVal, createdAt: createdAtVal, form: formVal };
+        _accountCache = { email: emailVal, createdAt: createdAtVal, userId: idVal, form: formVal };
       } catch (err) {
         if (err?.name !== "AbortError") {
           setError(err?.message || (tAccount.load_error ?? "Failed to load profile."));
@@ -209,7 +214,7 @@ export default function AccountSettingsPage() {
       const json = await res.json();
       if (!json.success) throw new Error(json.error);
       toast.success(tAccount.saved ?? "Changes saved!");
-      _accountCache = { email, createdAt, form: { ...form } };
+      _accountCache = { email, createdAt, userId, form: { ...form } };
       setEditing(false);
     } catch (err) {
       setError(err.message || (tAccount.save_error ?? "Failed to save changes."));
@@ -224,6 +229,32 @@ export default function AccountSettingsPage() {
   }, [form.full_name, email]);
 
   const displayName = form.full_name?.trim() || tAccount.no_name || "Account";
+
+  /* ── Copy full user ID to clipboard with a 1.5s visual confirmation. ── */
+  const handleCopyId = async () => {
+    if (!userId) return;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(userId);
+      } else {
+        // Fallback for non-secure contexts (rare — kept for robustness)
+        const ta = document.createElement("textarea");
+        ta.value = userId;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "absolute";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      setIdCopied(true);
+      toast.success(tAccount.id_copied ?? "User ID copied");
+      setTimeout(() => setIdCopied(false), 1500);
+    } catch {
+      toast.error(tAccount.id_copy_failed ?? "Failed to copy");
+    }
+  };
 
   const logoMaxHeight = useMemo(() => {
     const h = parseInt(logo.height || "40", 10) || 40;
@@ -301,6 +332,35 @@ export default function AccountSettingsPage() {
                       </button>
                     )}
                   </div>
+                  {/* User ID row — copy-to-clipboard for support tickets etc. */}
+                  {userId && (
+                    <div className="border-t border-zinc-100 px-5 py-3">
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+                        {tAccount.user_id ?? "User ID"}
+                      </div>
+                      <div className="mt-1 flex items-center gap-2">
+                        <code
+                          dir="ltr"
+                          title={userId}
+                          className="min-w-0 flex-1 truncate rounded-[5px] bg-zinc-50 px-2 py-1.5 font-mono text-[11px] text-zinc-700"
+                        >
+                          {userId}
+                        </code>
+                        <button
+                          type="button"
+                          onClick={handleCopyId}
+                          aria-label={tAccount.copy_id ?? "Copy user ID"}
+                          className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[5px] border transition-colors ${
+                            idCopied
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-600"
+                              : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
+                          }`}
+                        >
+                          {idCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Navigation */}
