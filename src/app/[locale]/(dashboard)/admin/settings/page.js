@@ -34,6 +34,12 @@ import {
   AlignCenter,
   AlignRight,
   LayoutTemplate,
+  Smartphone,
+  Home,
+  Heart,
+  User,
+  Package,
+  Menu as MenuIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { invalidateBarCache, MarqueePreview, Countdown, SwapStack } from "@/components/shop/AnnouncementBar";
@@ -773,11 +779,12 @@ function StorefrontSection() {
   const [tab, setTab] = useState('hero');
 
   const TAB_ITEMS = [
-    { key: 'hero',     label: tabs.hero     ?? 'Hero Carousel',    Icon: Film },
-    { key: 'header',   label: tabs.header   ?? 'Header & Sidebar', Icon: LayoutTemplate },
-    { key: 'display',  label: tabs.display  ?? 'Button Display',   Icon: ShoppingCart },
-    { key: 'layout',   label: tabs.layout   ?? 'Card Layout',      Icon: LayoutGrid },
-    { key: 'carousel', label: tabs.carousel ?? 'Carousel',         Icon: Blocks },
+    { key: 'hero',       label: tabs.hero       ?? 'Hero Carousel',    Icon: Film },
+    { key: 'header',     label: tabs.header     ?? 'Header & Sidebar', Icon: LayoutTemplate },
+    { key: 'mobile_nav', label: tabs.mobile_nav ?? 'Mobile Nav',       Icon: Smartphone },
+    { key: 'display',    label: tabs.display    ?? 'Button Display',   Icon: ShoppingCart },
+    { key: 'layout',     label: tabs.layout     ?? 'Card Layout',      Icon: LayoutGrid },
+    { key: 'carousel',   label: tabs.carousel   ?? 'Carousel',         Icon: Blocks },
   ];
 
   return (
@@ -812,6 +819,7 @@ function StorefrontSection() {
 
       {tab === 'hero' && <HeroSection />}
       {tab === 'header' && <HeaderSidebarSection />}
+      {tab === 'mobile_nav' && <MobileNavSection />}
       {tab === 'display' && <DisplaySection />}
       {tab === 'layout' && <LayoutSection />}
       {tab === 'carousel' && <CarouselSection />}
@@ -993,6 +1001,235 @@ function HeaderSidebarSection() {
             <Save className="h-4 w-4" />
           )}
           {saving ? (t.saving ?? 'Saving…') : (t.save ?? 'Save changes')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Mobile bottom navigation ──────────────────────────────────────────────
+// Master enable flag + per-button visibility toggles for the storefront's
+// mobile bottom nav bar (component: `src/components/shop/MobileBottomNav.js`).
+// All values are stored in the `store_settings` table as string flags
+// (`'true'` / `'false'`) so the same code path as the other display
+// settings applies.
+function MobileNavSection() {
+  const dict = useDictionary();
+  const t = dict?.admin?.settings?.mobile_nav ?? {};
+  const tRoot = dict?.admin?.settings ?? {};
+  const [enabled, setEnabled] = useState(true);
+  const [buttons, setButtons] = useState({
+    home: true,
+    favorites: true,
+    cart: true,
+    orders: false,
+    account: true,
+    menu: true,
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/v1/settings')
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success && json.data) {
+          const d = json.data;
+          setEnabled(d.mobile_nav_enabled !== 'false');
+          setButtons({
+            home:      d.mobile_nav_show_home      !== 'false',
+            favorites: d.mobile_nav_show_favorites !== 'false',
+            cart:      d.mobile_nav_show_cart      !== 'false',
+            orders:    d.mobile_nav_show_orders    === 'true',
+            account:   d.mobile_nav_show_account   !== 'false',
+            // Menu is always on — admins can't disable it.
+            menu:      true,
+          });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const toggleBtn = (key) =>
+    setButtons((b) => ({ ...b, [key]: !b[key] }));
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/v1/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mobile_nav_enabled:        String(enabled),
+          mobile_nav_show_home:      String(buttons.home),
+          mobile_nav_show_favorites: String(buttons.favorites),
+          mobile_nav_show_cart:      String(buttons.cart),
+          mobile_nav_show_orders:    String(buttons.orders),
+          mobile_nav_show_account:   String(buttons.account),
+          // Menu is always on; save as 'true' unconditionally.
+          mobile_nav_show_menu:      'true',
+        }),
+      });
+      const json = await res.json();
+      if (json.success) toast.success(t.saved ?? 'Mobile nav saved');
+      else toast.error(json.error ?? 'Save failed');
+    } catch {
+      toast.error('Network error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16 text-zinc-400">
+        <Loader2 className="h-5 w-5 animate-spin" />
+      </div>
+    );
+  }
+
+  const BUTTONS = [
+    { key: 'home',      Icon: Home,         label: t.btn_home      ?? 'Home',
+      description: t.btn_home_desc      ?? 'Link to the storefront home page.' },
+    { key: 'favorites', Icon: Heart,        label: t.btn_favorites ?? 'Favorites',
+      description: t.btn_favorites_desc ?? 'Opens the current user\u2019s wishlist.' },
+    { key: 'cart',      Icon: ShoppingCart, label: t.btn_cart      ?? 'Cart',
+      description: t.btn_cart_desc      ?? 'Opens the cart sidebar with an item-count badge.' },
+    { key: 'orders',    Icon: Package,      label: t.btn_orders    ?? 'Orders',
+      description: t.btn_orders_desc    ?? 'Link to the current user\u2019s order history.' },
+    { key: 'account',   Icon: User,         label: t.btn_account   ?? 'Account',
+      description: t.btn_account_desc   ?? 'Link to profile/settings.' },
+    { key: 'menu',      Icon: MenuIcon,     label: t.btn_menu      ?? 'Menu',
+      description: t.btn_menu_desc      ?? 'Opens the sidebar menu. Any button also enabled above is hidden from the sidebar to avoid duplication.' },
+  ];
+
+  const activeCount = BUTTONS.filter((b) => buttons[b.key]).length;
+
+  return (
+    <div className="space-y-8">
+      <SectionHeader
+        title={t.title ?? 'Mobile Bottom Navigation'}
+        description={t.description ?? 'Bottom tab bar shown on phones and small tablets. Hidden on desktop (\u2265 1024px).'}
+        icon={<Smartphone className="h-5 w-5 text-blue-600" />}
+      />
+
+      {/* Master enable toggle */}
+      <div className="flex items-start justify-between gap-4 rounded-xl border border-zinc-200 bg-white p-4">
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold text-zinc-800">
+            {t.enable ?? 'Show mobile bottom navigation'}
+          </h3>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            {t.enable_desc ?? 'When off, no bottom nav bar is rendered on the storefront regardless of button toggles below.'}
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={enabled}
+          onClick={() => setEnabled((v) => !v)}
+          className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+            enabled ? 'bg-blue-600' : 'bg-zinc-300'
+          }`}
+        >
+          <span
+            className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+              enabled ? 'translate-x-5' : 'translate-x-0.5'
+            }`}
+          />
+        </button>
+      </div>
+
+      {/* Per-button toggles */}
+      <div>
+        <h3 className="text-sm font-semibold text-zinc-800">
+          {t.buttons_title ?? 'Buttons & pages'}
+        </h3>
+        <p className="text-xs text-zinc-500 mt-0.5">
+          {t.buttons_desc ?? 'Choose which items appear in the bottom bar. We recommend keeping between 3 and 5 buttons for the best mobile experience.'}
+        </p>
+        {activeCount >= 5 && (
+          <p className="mt-2 text-xs text-blue-600">
+            {t.cap_reached ?? 'Maximum of 5 buttons reached. Turn one off to enable another.'}
+          </p>
+        )}
+        {activeCount === 0 && enabled && (
+          <p className="mt-2 text-xs text-red-600">
+            {t.none_enabled ?? 'No buttons are enabled — the bottom bar will not appear even though it is turned on.'}
+          </p>
+        )}
+
+        <div className="mt-3 space-y-2">
+          {BUTTONS.map(({ key, Icon, label, description }) => {
+            const active = buttons[key];
+            const locked = key === 'menu';
+            // Hard cap of 5 active buttons total (including the always-on
+            // Menu). Once we're at the cap, any *unchecked* row can't be
+            // toggled on — only checked ones can be turned off.
+            const atCap = activeCount >= 5 && !active && !locked;
+            return (
+              <label
+                key={key}
+                className={`flex items-start gap-3 rounded-xl border p-3 transition-colors ${
+                  active
+                    ? 'border-blue-500 bg-blue-50/40'
+                    : 'border-zinc-200 bg-white hover:border-zinc-300'
+                } ${!enabled ? 'opacity-50' : ''} ${
+                  atCap ? 'opacity-50' : ''
+                } ${
+                  locked || atCap ? 'cursor-not-allowed' : 'cursor-pointer'
+                }`}
+              >
+                <span
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                    active ? 'bg-blue-600 text-white' : 'bg-zinc-100 text-zinc-500'
+                  }`}
+                >
+                  <Icon className="h-5 w-5" strokeWidth={1.75} />
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-semibold text-zinc-900">
+                    {label}
+                  </span>
+                  <span className="block text-xs text-zinc-500 mt-0.5">
+                    {description}
+                  </span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={active}
+                  disabled={!enabled || locked || atCap}
+                  onChange={() => { if (!locked && !atCap) toggleBtn(key); }}
+                  className={`mt-1 h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 ${
+                    locked ? 'hidden' : ''
+                  }`}
+                />
+                {locked && (
+                  <span className="mt-0.5 shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-700">
+                    {t.always_on ?? 'Always on'}
+                  </span>
+                )}
+              </label>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex justify-end pt-2 border-t border-zinc-100">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+        >
+          {saving ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4" />
+          )}
+          {saving
+            ? (tRoot.saving ?? 'Saving\u2026')
+            : (tRoot.save ?? 'Save changes')}
         </button>
       </div>
     </div>

@@ -453,6 +453,7 @@
       "storefront_tabs": {
         "hero": "Carrousel héros",
         "header": "En-tête & menu",
+        "mobile_nav": "Nav mobile",
         "display": "Affichage des boutons",
         "layout": "Mise en page carte",
         "carousel": "Carrousel"
@@ -501,6 +502,31 @@
           "sunset":   { "label": "Coucher de soleil", "description": "Dégradé ambré avec accents orange" },
           "royal":    { "label": "Royal",    "description": "Indigo profond avec accents violets luxueux" }
         }
+      },
+      "mobile_nav": {
+        "title": "Barre de navigation mobile",
+        "description": "Barre d'onglets affichée en bas sur téléphones et petites tablettes. Masquée sur ordinateur (≥ 1024 px).",
+        "enable": "Afficher la barre de navigation mobile",
+        "enable_desc": "Désactivée, aucune barre n'est affichée, quels que soient les boutons activés ci-dessous.",
+        "buttons_title": "Boutons & pages",
+        "buttons_desc": "Choisissez les éléments à afficher. Nous recommandons entre 3 et 5 boutons pour une meilleure expérience mobile.",
+        "too_many": "Plus de 5 boutons activés — les icônes et libellés peuvent paraître serrés sur les petits écrans.",
+        "none_enabled": "Aucun bouton activé — la barre ne sera pas affichée même si elle est activée.",
+        "btn_home": "Accueil",
+        "btn_home_desc": "Lien vers la page d'accueil de la boutique.",
+        "btn_favorites": "Favoris",
+        "btn_favorites_desc": "Ouvre la liste de souhaits de l'utilisateur.",
+        "btn_cart": "Panier",
+        "btn_cart_desc": "Ouvre le panier latéral avec un badge du nombre d'articles.",
+        "btn_orders": "Commandes",
+        "btn_orders_desc": "Lien vers l'historique des commandes de l'utilisateur.",
+        "btn_account": "Compte",
+        "btn_account_desc": "Lien vers le profil / les paramètres.",
+        "btn_menu": "Menu",
+        "btn_menu_desc": "Ouvre le menu latéral. Tout autre bouton également activé ci-dessus est masqué du menu pour éviter les doublons.",
+        "always_on": "Toujours actif",
+        "cap_reached": "Limite de 5 boutons atteinte. Désactivez-en un pour en activer un autre.",
+        "saved": "Barre mobile enregistrée"
       },
       "carousel": {
         "title": "Carrousel de produits",
@@ -950,6 +976,15 @@
     "unavailable": "Indisponible",
     "remove": "Retirer des favoris",
     "failed": "Impossible de charger les favoris."
+  },
+  "mobile_nav": {
+    "aria": "Navigation en bas",
+    "home": "Accueil",
+    "favorites": "Favoris",
+    "cart": "Panier",
+    "orders": "Commandes",
+    "account": "Compte",
+    "menu": "Menu"
   },
   "product": {
     "homepage": "Accueil",

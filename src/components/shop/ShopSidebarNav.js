@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useDictionary } from "@/components/providers/LocaleProvider";
+import { useDisplaySettings } from "@/components/providers/DisplaySettingsProvider";
 import LocaleSwitcher from "@/components/ui/LocaleSwitcher";
 import { isRtlLocale } from "@/config/constants";
 import { resolveSidebarTheme, DEFAULT_SIDEBAR_THEME } from "@/lib/storefront-ui";
@@ -43,6 +44,22 @@ export default function ShopSidebarNav({ isOpen, onClose }) {
   const theme = resolveSidebarTheme(themeKey);
   // Prefer the dark-variant logo on dark themes, but fall back gracefully.
   const activeLogo = theme.invertLogo && logo.urlDark ? logo.urlDark : logo.url;
+
+  // When the mobile bottom nav is enabled AND has the "Menu" tab active,
+  // any destination that already lives in the bottom nav is hidden here on
+  // small screens (< lg) so we don't duplicate the same links twice. Desktop
+  // (where the bottom nav isn't rendered) keeps all entries intact.
+  const displaySettings = useDisplaySettings();
+  const mobileNavActive =
+    displaySettings?.mobile_nav_enabled !== "false" &&
+    displaySettings?.mobile_nav_show_menu !== "false";
+  const hideFavoritesOnMobile =
+    mobileNavActive && displaySettings?.mobile_nav_show_favorites !== "false";
+  const hideOrdersOnMobile =
+    mobileNavActive && displaySettings?.mobile_nav_show_orders === "true";
+  const hideAccountOnMobile =
+    mobileNavActive && displaySettings?.mobile_nav_show_account !== "false";
+  const hiddenOnMobileClass = "hidden lg:flex";
 
   useEffect(() => {
     fetch("/api/v1/display-settings")
@@ -163,11 +180,11 @@ export default function ShopSidebarNav({ isOpen, onClose }) {
               style={{ transitionDelay: `${isOpen ? 120 : 0}ms` }}
             >
               <div className="mt-0 flex flex-col gap-0.5">
-                <Link href={`/${locale}/orders`} onClick={onClose} className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-colors ${theme.link}`}>
+                <Link href={`/${locale}/orders`} onClick={onClose} className={`group ${hideOrdersOnMobile ? hiddenOnMobileClass : "flex"} items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-colors ${theme.link}`}>
                   <ClipboardList className={`h-5 w-5 shrink-0 ${theme.linkIcon}`} strokeWidth={1.5} />
                   <span>{tNav.my_orders ?? "My Orders"}</span>
                 </Link>
-                <Link href={`/${locale}/favorites`} onClick={onClose} className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-colors ${theme.link}`}>
+                <Link href={`/${locale}/favorites`} onClick={onClose} className={`group ${hideFavoritesOnMobile ? hiddenOnMobileClass : "flex"} items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-colors ${theme.link}`}>
                   <Heart className={`h-5 w-5 shrink-0 ${theme.linkIcon}`} strokeWidth={1.5} />
                   <span>{tNav.favorites ?? "Favorites"}</span>
                 </Link>
@@ -175,7 +192,7 @@ export default function ShopSidebarNav({ isOpen, onClose }) {
                   <LayoutGrid className={`h-5 w-5 shrink-0 ${theme.linkIcon}`} strokeWidth={1.5} />
                   <span>{tNav.categories ?? "Categories"}</span>
                 </Link>
-                <Link href={`/${locale}/account`} onClick={onClose} className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-colors ${theme.link}`}>
+                <Link href={`/${locale}/account`} onClick={onClose} className={`group ${hideAccountOnMobile ? hiddenOnMobileClass : "flex"} items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium transition-colors ${theme.link}`}>
                   <UserIcon className={`h-5 w-5 shrink-0 ${theme.linkIcon}`} strokeWidth={1.5} />
                   <span>{tNav.account_settings ?? "Account Settings"}</span>
                 </Link>

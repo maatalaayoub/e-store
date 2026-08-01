@@ -19,6 +19,7 @@ import DeviceIdInit from '@/components/providers/DeviceIdInit';
 import SessionBanGuard from '@/components/providers/SessionBanGuard';
 import DisplaySettingsProvider from '@/components/providers/DisplaySettingsProvider';
 import AnnouncementBar from '@/components/shop/AnnouncementBar';
+import MobileBottomNav from '@/components/shop/MobileBottomNav';
 import { Toaster } from 'sonner';
 
 /**
@@ -50,6 +51,7 @@ export default async function LocaleLayout({ children, params }) {
           <div style={{ paddingTop: 'var(--bar-height, 0px)' }}>
             {children}
           </div>
+          <MobileBottomNav />
           <Toaster position="bottom-center" richColors />
         </CurrencyProvider>
       </DisplaySettingsProvider>

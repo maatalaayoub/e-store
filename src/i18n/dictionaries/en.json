@@ -467,6 +467,7 @@
       "storefront_tabs": {
         "hero": "Hero Carousel",
         "header": "Header & Sidebar",
+        "mobile_nav": "Mobile Nav",
         "display": "Button Display",
         "layout": "Card Layout",
         "carousel": "Carousel"
@@ -515,6 +516,31 @@
           "sunset":   { "label": "Sunset",   "description": "Warm amber gradient with orange accents" },
           "royal":    { "label": "Royal",    "description": "Deep indigo with luxurious violet accents" }
         }
+      },
+      "mobile_nav": {
+        "title": "Mobile Bottom Navigation",
+        "description": "Bottom tab bar shown on phones and small tablets. Hidden on desktop (≥ 1024px).",
+        "enable": "Show mobile bottom navigation",
+        "enable_desc": "When off, no bottom nav bar is rendered on the storefront regardless of button toggles below.",
+        "buttons_title": "Buttons & pages",
+        "buttons_desc": "Choose which items appear in the bottom bar. We recommend keeping between 3 and 5 buttons for the best mobile experience.",
+        "too_many": "You have more than 5 buttons enabled — the icons and labels may look cramped on smaller phones.",
+        "none_enabled": "No buttons are enabled — the bottom bar will not appear even though it is turned on.",
+        "btn_home": "Home",
+        "btn_home_desc": "Link to the storefront home page.",
+        "btn_favorites": "Favorites",
+        "btn_favorites_desc": "Opens the current user's wishlist.",
+        "btn_cart": "Cart",
+        "btn_cart_desc": "Opens the cart sidebar with an item-count badge.",
+        "btn_orders": "Orders",
+        "btn_orders_desc": "Link to the current user's order history.",
+        "btn_account": "Account",
+        "btn_account_desc": "Link to profile / settings.",
+        "btn_menu": "Menu",
+        "btn_menu_desc": "Opens the sidebar menu. Any other button also enabled above is hidden from the sidebar to avoid duplication.",
+        "always_on": "Always on",
+        "cap_reached": "Maximum of 5 buttons reached. Turn one off to enable another.",
+        "saved": "Mobile nav saved"
       },
       "carousel": {
         "title": "Product Carousel",
@@ -964,6 +990,15 @@
     "unavailable": "Unavailable",
     "remove": "Remove from favorites",
     "failed": "Failed to load favorites."
+  },
+  "mobile_nav": {
+    "aria": "Bottom navigation",
+    "home": "Home",
+    "favorites": "Favorites",
+    "cart": "Cart",
+    "orders": "Orders",
+    "account": "Account",
+    "menu": "Menu"
   },
   "product": {
     "homepage": "Homepage",
