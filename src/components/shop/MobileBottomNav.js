@@ -27,7 +27,7 @@ import { useDisplaySettings } from "@/components/providers/DisplaySettingsProvid
 import { useCartStore } from "@/store/useCartStore";
 import CartSidebar from "@/components/ui/CartSidebar";
 import ShopSidebarNav from "@/components/shop/ShopSidebarNav";
-import { resolveCartIcon, DEFAULT_HEADER_CART_ICON } from "@/lib/storefront-ui";
+import { resolveCartIcon, DEFAULT_HEADER_CART_ICON, resolveSidebarTheme, DEFAULT_SIDEBAR_THEME } from "@/lib/storefront-ui";
 
 /** Routes where the bottom nav must not appear (checkout flows etc.). */
 const HIDE_ON_ROUTES = new Set([
@@ -39,6 +39,8 @@ const HIDE_ON_ROUTES = new Set([
   "signup",
   "forgot-password",
   "reset-password",
+  "contact",
+  "admin",
 ]);
 
 /** Locale segments that need to be stripped before matching HIDE_ON_ROUTES. */
@@ -71,6 +73,12 @@ export default function MobileBottomNav() {
   const CartIcon = resolveCartIcon(
     settings?.header_cart_icon ?? DEFAULT_HEADER_CART_ICON
   ).Icon;
+
+  // Bar colors follow the admin-selected sidebar theme so the bottom nav
+  // reads as one visual system with the drawer it opens.
+  const theme = resolveSidebarTheme(
+    settings?.sidebar_theme ?? DEFAULT_SIDEBAR_THEME
+  );
 
   // Buttons in fixed left-to-right order. Admin toggles each on/off; disabled
   // ones are skipped. The grid below sizes itself based on how many remain.
@@ -154,7 +162,7 @@ export default function MobileBottomNav() {
       <div aria-hidden="true" className="h-16 lg:hidden" />
       <nav
         aria-label={t.aria ?? "Bottom navigation"}
-        className="fixed bottom-0 inset-x-0 z-40 border-t border-zinc-100 bg-white/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)] lg:hidden"
+        className={`fixed bottom-0 inset-x-0 z-40 backdrop-blur-md pb-[env(safe-area-inset-bottom)] lg:hidden ${theme.bottomBar}`}
       >
         <div className={`grid ${colsClass} h-16`}>
           {buttons.map(({ key, label, href, onClick, Icon, badge, matches }) => {
@@ -164,17 +172,17 @@ export default function MobileBottomNav() {
               <div className="flex h-full flex-col items-center justify-center gap-1 relative">
                 <div className="relative">
                   <Icon
-                    className={`h-6 w-6 ${active ? "text-blue-600" : "text-zinc-600"}`}
+                    className={`h-6 w-6 ${active ? theme.bottomActive : theme.bottomIdle}`}
                     strokeWidth={active ? 2 : 1.75}
                   />
                   {badge > 0 && (
-                    <span className="absolute -top-1.5 -right-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-bold text-white">
+                    <span className={`absolute -top-1.5 -right-2 flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-bold ${theme.bottomBadge}`}>
                       {badge > 9 ? "9+" : badge}
                     </span>
                   )}
                 </div>
                 <span
-                  className={`text-[10px] font-medium ${active ? "text-blue-600" : "text-zinc-600"}`}
+                  className={`text-[10px] font-medium ${active ? theme.bottomActive : theme.bottomIdle}`}
                 >
                   {label}
                 </span>
@@ -188,7 +196,7 @@ export default function MobileBottomNav() {
                   type="button"
                   onClick={onClick}
                   aria-label={label}
-                  className="w-full h-full active:bg-zinc-100 transition-colors"
+                  className={`w-full h-full transition-colors ${theme.bottomPress}`}
                 >
                   {content}
                 </button>
@@ -200,7 +208,7 @@ export default function MobileBottomNav() {
                 href={href}
                 aria-label={label}
                 aria-current={active ? "page" : undefined}
-                className="w-full h-full active:bg-zinc-100 transition-colors"
+                className={`w-full h-full transition-colors ${theme.bottomPress}`}
               >
                 {content}
               </Link>

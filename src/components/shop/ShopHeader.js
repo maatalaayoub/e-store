@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { useDisplaySettings } from "@/components/providers/DisplaySettingsProvider";
@@ -103,6 +103,7 @@ function HeaderLogo({ mode = 'light' }) {
 export default function ShopHeader({ onOpenCart, fixed = true, fixedBelow = null }) {
   const params = useParams();
   const locale = params?.locale || "en";
+  const pathname = usePathname();
   const dict = useDictionary();
   const isScrolled = useIsScrolled();
   const [isHovered, setIsHovered] = useState(false);
@@ -135,6 +136,18 @@ export default function ShopHeader({ onOpenCart, fixed = true, fixedBelow = null
   const headerConfig = useStoreLogo();
   const CartIcon = resolveCartIcon(headerConfig.cartIcon).Icon;
   const MenuIcon = resolveMenuIcon(headerConfig.menuIcon).Icon;
+
+  // On the home page, if the mobile bottom nav is active the sidebar/menu is
+  // already reachable via the always-on Menu tab in the bottom bar — the top
+  // hamburger becomes redundant on small screens, so hide it there.
+  const settings = useDisplaySettings();
+  const isHome = (() => {
+    if (!pathname) return false;
+    const parts = pathname.replace(/^\/+/, "").split("/").filter(Boolean);
+    return parts.length === 0 || (parts.length === 1 && parts[0] === locale);
+  })();
+  const hideSidebarBtnOnMobile =
+    isHome && settings?.mobile_nav_enabled !== "false";
 
   const { items: cartItems } = useCartStore();
   const cartCount = cartItems.reduce((acc, i) => acc + i.quantity, 0);
@@ -227,7 +240,7 @@ export default function ShopHeader({ onOpenCart, fixed = true, fixedBelow = null
               className={`p-2 -ms-2 rounded-full hover:scale-110 active:scale-95 transition-all duration-200 ${btnClass(
                 "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900",
                 "text-white hover:bg-white/10"
-              )}`}
+              )} ${hideSidebarBtnOnMobile ? "hidden lg:inline-flex" : ""}`}
               aria-label="Open sidebar"
               onClick={() => setIsSidebarOpen(true)}
             >
