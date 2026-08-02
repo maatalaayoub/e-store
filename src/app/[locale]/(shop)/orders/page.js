@@ -205,7 +205,7 @@ export default function MyOrdersPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-zinc-900">
-      <PageHeader title={tOrders.title ?? "My Orders"} />
+      <PageHeader title={tOrders.title ?? "My Orders"} showCart />
 
       <main className="flex-1 mx-auto w-full max-w-3xl px-4 sm:px-6 pt-20 pb-20">
         {/* Title */}

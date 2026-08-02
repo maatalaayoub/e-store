@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useParams, usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -134,7 +136,20 @@ export default function PageHeader({ title, showCart = false }) {
     return settings?.[key] !== "false";
   }, [pathname, locale, settings]);
 
-  const hideHeaderOnMobile = hideLeftOnMobile && !showCart;
+  /* ── Logo (shown on mobile in place of the back/title cluster) ── */
+  // Reuses the admin-configured store logo. Sized down for the compact
+  // PageHeader so it doesn't dominate the 56px bar.
+  const logoSrc = settings?.store_logo || "";
+  const logoHeightRaw = parseInt(settings?.store_logo_height ?? "40", 10);
+  const logoHeight = Math.min(
+    Math.max(Number.isFinite(logoHeightRaw) ? logoHeightRaw : 40, 20),
+    40
+  );
+  const logoWidthRaw = parseInt(settings?.store_logo_size ?? "160", 10);
+  const logoWidth = Math.min(
+    Math.max(Number.isFinite(logoWidthRaw) ? logoWidthRaw : 160, 80),
+    200
+  );
 
   return (
     <>
@@ -145,7 +160,7 @@ export default function PageHeader({ title, showCart = false }) {
         style={{ top: 'var(--bar-height, 0px)' }}
         className={`fixed inset-x-0 z-50 bg-white border-b border-zinc-100 transition-transform duration-300 ${
           visible ? "translate-y-0" : "-translate-y-full"
-        } ${hideHeaderOnMobile ? "hidden lg:block" : ""}`}
+        }`}
       >
         <div className="mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
           <div className={`items-center gap-4 ${hideLeftOnMobile ? "hidden lg:flex" : "flex"}`}>
@@ -160,6 +175,30 @@ export default function PageHeader({ title, showCart = false }) {
               <span className="text-base font-semibold text-zinc-900">{title}</span>
             )}
           </div>
+
+          {hideLeftOnMobile && (
+            <Link
+              href={`/${locale}`}
+              aria-label="Home"
+              className="flex lg:hidden items-center"
+            >
+              {logoSrc ? (
+                <Image
+                  src={logoSrc}
+                  alt="Store"
+                  width={logoWidth}
+                  height={logoHeight}
+                  className="h-auto w-auto max-w-full object-contain"
+                  style={{ maxHeight: `${logoHeight}px` }}
+                  priority
+                />
+              ) : (
+                <span className="text-base font-semibold text-zinc-900">
+                  {settings?.store_name || "Store"}
+                </span>
+              )}
+            </Link>
+          )}
 
           {showCart && (
             <button
