@@ -38,6 +38,7 @@ import {
   ArrowDown,
   Mail,
   Blocks,
+  UserCog,
   AlertTriangle,
   XCircle,
   Package as PackageIcon,
@@ -86,6 +87,7 @@ function buildIndex({ dict, locale, t }) {
     { id: "page-customers",     group: groupPages, icon: Users,            label: nav.customers     ?? "Customers",     href: wl("/admin/customers"),    keywords: ["customers", "users", "clients"] },
     { id: "page-messages",      group: groupPages, icon: Mail,             label: nav.messages      ?? "Messages",      href: wl("/admin/messages"),     keywords: ["messages", "contact", "inbox", messages.title] },
     { id: "page-notifications", group: groupPages, icon: Bell,             label: nav.notifications ?? "Notifications", href: wl("/admin/notifications"), keywords: ["notifications", "alerts", "updates", notif.title] },
+    { id: "page-team",          group: groupPages, icon: UserCog,          label: nav.team          ?? "Team",          href: wl("/admin/team"),         keywords: ["team", "staff", "members", "invite", "permissions", "roles"] },
     { id: "page-settings",      group: groupPages, icon: Settings,         label: nav.settings      ?? "Settings",      href: wl("/admin/settings"),     keywords: ["settings", "configuration", "preferences"] },
 
     // Settings sub-sections (deep-linked via ?tab=)

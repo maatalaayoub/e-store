@@ -27,7 +27,7 @@ export async function PUT(req, { params }) {
   if (limited) return limited;
   try {
     const supabase = await createClient();
-    const adminUser = await getAdminUser(supabase);
+    const adminUser = await getAdminUser(supabase, 'products');
     if (!adminUser) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
@@ -52,7 +52,7 @@ export async function DELETE(req, { params }) {
   if (limited) return limited;
   try {
     const supabase = await createClient();
-    const adminUser = await getAdminUser(supabase);
+    const adminUser = await getAdminUser(supabase, 'products');
     if (!adminUser) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }

@@ -19,7 +19,7 @@ function parsePagination(searchParams) {
 export async function GET(req) {
   try {
     const supabase = await createClient();
-    const adminUser = await getAdminUser(supabase);
+    const adminUser = await getAdminUser(supabase, 'notifications');
     if (!adminUser) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
@@ -73,7 +73,7 @@ export async function PATCH(req) {
 
   try {
     const supabase = await createClient();
-    const adminUser = await getAdminUser(supabase);
+    const adminUser = await getAdminUser(supabase, 'notifications');
     if (!adminUser) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
@@ -113,7 +113,7 @@ export async function DELETE(req) {
 
   try {
     const supabase = await createClient();
-    const adminUser = await getAdminUser(supabase);
+    const adminUser = await getAdminUser(supabase, 'notifications');
     if (!adminUser) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }

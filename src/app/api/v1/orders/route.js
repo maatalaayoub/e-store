@@ -548,7 +548,7 @@ const ALLOWED_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'deli
 export async function GET(req) {
   try {
     const anonClient = await createClient();
-    const adminUser = await getAdminUser(anonClient);
+    const adminUser = await getAdminUser(anonClient, 'orders');
     if (!adminUser) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
@@ -705,8 +705,12 @@ export async function PATCH(req) {
     }
 
     // Check if user is admin
-    const { data: userData } = await supabase.from('users').select('role').eq('id', user.id).single();
-    const isAdmin = userData?.role === 'admin';
+    const { data: userData } = await supabase.from('users').select('role, permissions').eq('id', user.id).single();
+    const isAdmin =
+      userData?.role === 'admin' ||
+      (userData?.role === 'staff' &&
+        Array.isArray(userData?.permissions) &&
+        userData.permissions.includes('orders'));
 
     if (isAdmin) {
       const db = createServiceClient();

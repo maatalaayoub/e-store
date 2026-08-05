@@ -12,7 +12,7 @@ export async function GET(req) {
     if (withCounts) {
       // Product counts are admin-only management data and must never be cached.
       const supabase = await createClient();
-      const adminUser = await getAdminUser(supabase);
+      const adminUser = await getAdminUser(supabase, 'products');
       if (!adminUser) {
         return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
       }
@@ -38,7 +38,7 @@ export async function POST(req) {
   if (limited) return limited;
   try {
     const supabase = await createClient();
-    const adminUser = await getAdminUser(supabase);
+    const adminUser = await getAdminUser(supabase, 'products');
     if (!adminUser) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }

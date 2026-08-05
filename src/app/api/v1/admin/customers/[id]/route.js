@@ -101,7 +101,7 @@ function normalizeOrder(o) {
 export async function GET(_req, { params }) {
   try {
     const supabase = await createClient();
-    const adminUser = await getAdminUser(supabase);
+    const adminUser = await getAdminUser(supabase, 'customers');
     if (!adminUser) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
@@ -250,7 +250,7 @@ export async function GET(_req, { params }) {
 export async function PATCH(req, { params }) {
   try {
     const supabase = await createClient();
-    const adminUser = await getAdminUser(supabase);
+    const adminUser = await getAdminUser(supabase, 'customers');
     if (!adminUser) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }

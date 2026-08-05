@@ -8,7 +8,7 @@ import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 export async function GET(req) {
   try {
     const supabase = await createClient();
-    const adminUser = await getAdminUser(supabase);
+    const adminUser = await getAdminUser(supabase, 'products');
 
     const { searchParams } = new URL(req.url);
     const featured = searchParams.get('featured') === 'true' ? true : undefined;
@@ -52,7 +52,7 @@ export async function POST(req) {
   if (limited) return limited;
   try {
     const supabase = await createClient();
-    const adminUser = await getAdminUser(supabase);
+    const adminUser = await getAdminUser(supabase, 'products');
     if (!adminUser) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }

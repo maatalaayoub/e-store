@@ -1176,3 +1176,49 @@ CREATE TRIGGER products_stock_notifications
   AFTER UPDATE OF stock ON products
   FOR EACH ROW
   EXECUTE FUNCTION check_admin_stock_notifications();
+
+-- ========================================================================
+-- TEAM / STAFF MANAGEMENT (idempotent)
+-- Lets the store owner invite existing accounts to help manage the store
+-- and grant them a granular set of permissions. A team member's account
+-- keeps role='staff' while active; removing them reverts role to 'client'.
+-- ========================================================================
+
+-- Allow the new 'staff' role alongside the existing client/admin roles.
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('client', 'admin', 'staff'));
+
+-- Granular permission keys granted to a staff member (owner/admins ignore it).
+ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions jsonb NOT NULL DEFAULT '[]'::jsonb;
+-- Audit: who invited the member and when they were added to the team.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS invited_by uuid REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS team_added_at timestamp with time zone;
+
+-- Registry of team memberships. Mirrors the permissions saved on the user row
+-- but preserves invite metadata even after a member is removed for auditing.
+CREATE TABLE IF NOT EXISTS team_members (
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id uuid REFERENCES users(id) ON DELETE CASCADE NOT NULL UNIQUE,
+  permissions jsonb NOT NULL DEFAULT '[]'::jsonb,
+  status text CHECK (status IN ('active', 'removed')) DEFAULT 'active',
+  invited_email text,
+  invited_by uuid REFERENCES users(id) ON DELETE SET NULL,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_team_members_status ON team_members(status);
+
+ALTER TABLE team_members ENABLE ROW LEVEL SECURITY;
+
+-- Only the store owner (role='admin') can read/manage the team registry.
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'team_members' AND policyname = 'Owners manage team members') THEN
+    EXECUTE $p$CREATE POLICY "Owners manage team members" ON team_members
+      FOR ALL USING (EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'))$p$;
+  END IF;
+END $$;
+
+CREATE OR REPLACE TRIGGER team_members_updated_at
+  BEFORE UPDATE ON team_members
+  FOR EACH ROW EXECUTE PROCEDURE public.set_updated_at();

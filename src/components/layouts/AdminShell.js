@@ -19,6 +19,7 @@ import {
   Package,
   ShoppingCart,
   Users,
+  UserCog,
   Settings,
   Menu,
   X,
@@ -34,13 +35,14 @@ import { isRtlLocale } from "@/config/constants";
 import { createClient } from "@/lib/supabase/client";
 
 const NAV_ITEMS = [
-  { href: "/admin", key: "dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/admin/products", key: "products", icon: Package },
-  { href: "/admin/orders", key: "orders", icon: ShoppingCart },
-  { href: "/admin/customers", key: "customers", icon: Users },
-  { href: "/admin/messages", key: "messages", icon: Mail },
-  { href: "/admin/notifications", key: "notifications", icon: Bell },
-  { href: "/admin/settings", key: "settings", icon: Settings },
+  { href: "/admin", key: "dashboard", icon: LayoutDashboard, exact: true, permission: "dashboard" },
+  { href: "/admin/products", key: "products", icon: Package, permission: "products" },
+  { href: "/admin/orders", key: "orders", icon: ShoppingCart, permission: "orders" },
+  { href: "/admin/customers", key: "customers", icon: Users, permission: "customers" },
+  { href: "/admin/messages", key: "messages", icon: Mail, permission: "messages" },
+  { href: "/admin/notifications", key: "notifications", icon: Bell, permission: "notifications" },
+  { href: "/admin/team", key: "team", icon: UserCog, ownerOnly: true },
+  { href: "/admin/settings", key: "settings", icon: Settings, ownerOnly: true },
 ];
 
 export default function AdminShell({ children }) {
@@ -55,6 +57,34 @@ export default function AdminShell({ children }) {
   const [logoSize, setLogoSize] = useState({ width: 160, height: 40 });
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  // Access context drives which nav items a staff member can see. `null`
+  // while loading; owners get everything, staff only their permissions.
+  const [access, setAccess] = useState(null);
+
+  // Resolve the signed-in user's role + permissions so we can filter the nav.
+  useEffect(() => {
+    fetch("/api/v1/team/me")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json?.success) {
+          setAccess({
+            role: json.role,
+            permissions: Array.isArray(json.permissions) ? json.permissions : [],
+            isOwner: !!json.isOwner,
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const visibleNavItems = NAV_ITEMS.filter((item) => {
+    // Until access resolves, owners' full nav is a safe default; staff nav is
+    // corrected as soon as the fetch returns.
+    if (!access) return !item.ownerOnly;
+    if (access.isOwner) return true;
+    if (item.ownerOnly) return false;
+    return item.permission ? access.permissions.includes(item.permission) : false;
+  });
 
   useEffect(() => {
     fetch("/api/v1/display-settings")
@@ -212,7 +242,7 @@ export default function AdminShell({ children }) {
         </div>
 
         <nav className="flex flex-col gap-1 p-4">
-          {NAV_ITEMS.map((item) => {
+          {visibleNavItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item);
             const badgeCount =

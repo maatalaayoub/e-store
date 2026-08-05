@@ -7,7 +7,7 @@
 
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { isAdmin } from '@/middlewares/authGuard';
+import { canAccessAdmin } from '@/middlewares/authGuard';
 import AdminShell from "@/components/layouts/AdminShell";
 
 export default async function AdminLayout({ children, params }) {
@@ -15,7 +15,7 @@ export default async function AdminLayout({ children, params }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user || !(await isAdmin(user.id))) {
+  if (!user || !(await canAccessAdmin(user.id))) {
     redirect(`/${locale}`);
   }
 

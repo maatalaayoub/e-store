@@ -20,6 +20,27 @@ export async function isAdmin(userId) {
 }
 
 /**
+ * Resolves a user's admin access context: their role and (for staff) the
+ * list of permission keys they were granted. Owners (role='admin') always
+ * have full access regardless of the `permissions` column.
+ *
+ * @returns {Promise<{ role: string|null, permissions: string[] }>}
+ */
+export async function getUserAccess(userId) {
+  if (!userId) return { role: null, permissions: [] };
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('users')
+    .select('role, permissions')
+    .eq('id', userId)
+    .single();
+  return {
+    role: data?.role ?? null,
+    permissions: Array.isArray(data?.permissions) ? data.permissions : [],
+  };
+}
+
+/**
  * Verifies an incoming request has an authenticated Supabase session AND
  * that neither the user nor their current device has been banned by an admin.
  *
@@ -43,7 +64,7 @@ export async function requireAuth() {
     .eq('id', user.id)
     .maybeSingle();
 
-  if (profile?.role !== 'admin') {
+  if (profile?.role !== 'admin' && profile?.role !== 'staff') {
     if (profile?.is_banned) {
       throw new UnauthorizedError('Your account has been suspended');
     }
@@ -63,13 +84,19 @@ export async function requireAuth() {
   return user;
 }
 
-export async function requireAdmin() {
+/**
+ * Requires the caller to be a store owner (role='admin') OR a staff member
+ * that was granted the given `permission`. Calling with no argument keeps the
+ * original owner-only behaviour — used for sensitive areas (Settings, Team).
+ *
+ * @param {string} [permission] permission key the staff member must hold
+ */
+export async function requireAdmin(permission) {
   const user = await requireAuth();
-  const admin = await isAdmin(user.id);
-  if (!admin) {
-    throw new UnauthorizedError('Admin access required');
-  }
-  return user;
+  const { role, permissions } = await getUserAccess(user.id);
+  if (role === 'admin') return user;
+  if (role === 'staff' && permission && permissions.includes(permission)) return user;
+  throw new UnauthorizedError('Admin access required');
 }
 
 /**
@@ -77,15 +104,37 @@ export async function requireAdmin() {
  * NextResponse themselves. Pass the route's already-created supabase
  * server client so we don't open a second one.
  *
- * Returns the user if they are an admin, or null otherwise.
+ * Returns the user if they are an owner (role='admin') or a staff member that
+ * holds the given `permission`. With no `permission` argument the check is
+ * owner-only. Returns null otherwise.
+ *
+ * @param {import('@supabase/supabase-js').SupabaseClient} supabase
+ * @param {string} [permission]
  */
-export async function getAdminUser(supabase) {
+export async function getAdminUser(supabase, permission) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
   const { data } = await supabase
     .from('users')
-    .select('role')
+    .select('role, permissions')
     .eq('id', user.id)
     .single();
-  return data?.role === 'admin' ? user : null;
+  if (!data) return null;
+  if (data.role === 'admin') return user;
+  if (data.role === 'staff' && permission) {
+    const perms = Array.isArray(data.permissions) ? data.permissions : [];
+    if (perms.includes(permission)) return user;
+  }
+  return null;
+}
+
+/**
+ * True if the user can reach the admin dashboard at all: either an owner
+ * (role='admin') or a staff member with at least one granted permission.
+ * Used by the admin layout to gate the whole `/admin` section.
+ */
+export async function canAccessAdmin(userId) {
+  const { role, permissions } = await getUserAccess(userId);
+  if (role === 'admin') return true;
+  return role === 'staff' && permissions.length > 0;
 }

@@ -12,7 +12,7 @@ const VALID_STATUSES = ['new', 'read', 'replied', 'archived'];
  */
 export async function GET(req) {
   try {
-    await requireAdmin();
+    await requireAdmin('messages');
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
@@ -80,7 +80,7 @@ export async function PATCH(req) {
   if (limited) return limited;
 
   try {
-    await requireAdmin();
+    await requireAdmin('messages');
 
     const { id, status } = await req.json();
     if (!id || !VALID_STATUSES.includes(status)) {
@@ -128,7 +128,7 @@ export async function DELETE(req) {
   if (limited) return limited;
 
   try {
-    await requireAdmin();
+    await requireAdmin('messages');
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
