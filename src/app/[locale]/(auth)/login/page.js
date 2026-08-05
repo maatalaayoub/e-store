@@ -86,8 +86,16 @@ export default function LoginPage() {
       } catch { /* best-effort */ }
 
       const user = data?.user;
-      const role = user?.user_metadata?.role || user?.app_metadata?.role;
-      router.push(role === "admin" ? `/${locale}/admin` : `/${locale}`);
+      let goToAdmin = (user?.user_metadata?.role || user?.app_metadata?.role) === 'admin';
+      if (!goToAdmin) {
+        // Staff members don't carry a role in auth metadata; ask the API.
+        try {
+          const r = await fetch('/api/v1/auth/is-admin');
+          const j = await r.json();
+          goToAdmin = j?.isAdmin === true;
+        } catch { /* fall back to storefront */ }
+      }
+      router.push(goToAdmin ? `/${locale}/admin` : `/${locale}`);
       router.refresh();
     }
   };
