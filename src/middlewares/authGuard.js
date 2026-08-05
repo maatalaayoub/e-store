@@ -24,19 +24,20 @@ export async function isAdmin(userId) {
  * list of permission keys they were granted. Owners (role='admin') always
  * have full access regardless of the `permissions` column.
  *
- * @returns {Promise<{ role: string|null, permissions: string[] }>}
+ * @returns {Promise<{ role: string|null, permissions: string[], dataFrom: string|null }>}
  */
 export async function getUserAccess(userId) {
-  if (!userId) return { role: null, permissions: [] };
+  if (!userId) return { role: null, permissions: [], dataFrom: null };
   const supabase = await createClient();
   const { data } = await supabase
     .from('users')
-    .select('role, permissions')
+    .select('role, permissions, data_from')
     .eq('id', userId)
     .single();
   return {
     role: data?.role ?? null,
     permissions: Array.isArray(data?.permissions) ? data.permissions : [],
+    dataFrom: data?.data_from ?? null,
   };
 }
 
@@ -126,6 +127,27 @@ export async function getAdminUser(supabase, permission) {
     if (perms.includes(permission)) return user;
   }
   return null;
+}
+
+/**
+ * Returns the date lower-bound that store data should be filtered by for the
+ * given user. Staff members with a `data_from` date only see records created
+ * on/after that date. Owners (and staff with no date set) return null, which
+ * means all-time / unrestricted access.
+ *
+ * @param {import('@supabase/supabase-js').SupabaseClient} supabase
+ * @param {string} userId
+ * @returns {Promise<string|null>}
+ */
+export async function getStaffDataFrom(supabase, userId) {
+  if (!userId) return null;
+  const { data } = await supabase
+    .from('users')
+    .select('role, data_from')
+    .eq('id', userId)
+    .single();
+  if (!data || data.role !== 'staff') return null;
+  return data.data_from ?? null;
 }
 
 /**

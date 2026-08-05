@@ -253,6 +253,11 @@
       "identifier_hint": "La personne doit déjà avoir un compte sur votre boutique.",
       "permissions_label": "Autorisations",
       "permissions_hint": "Choisissez les zones que ce membre peut gérer.",
+      "data_from_label": "Visibilité des données",
+      "data_from_hint": "Limitez ce membre aux données de la boutique (commandes, statistiques) créées à partir de cette date. Laissez vide pour un accès à tout l'historique.",
+      "data_from_clear": "Effacer (tout l'historique)",
+      "data_from_since": "Données depuis",
+      "data_from_all": "Tout l'historique",
       "toast_invited": "Membre ajouté",
       "toast_updated": "Autorisations mises à jour",
       "toast_removed": "Membre retiré",
@@ -263,7 +268,8 @@
         "orders": "Commandes",
         "customers": "Clients",
         "messages": "Messages",
-        "notifications": "Notifications"
+        "notifications": "Notifications",
+        "settings": "Paramètres"
       },
       "errors": {
         "identifier_required": "Saisissez un e-mail ou identifiant de compte.",
@@ -273,6 +279,7 @@
         "cannot_invite_self": "Vous ne pouvez pas vous inviter vous-même.",
         "already_owner": "Ce compte est déjà propriétaire de la boutique.",
         "not_a_member": "Ce compte n'est pas membre de l'équipe.",
+        "invalid_data_from": "Saisissez une date valide.",
         "generic": "Une erreur s'est produite. Veuillez réessayer."
       }
     },

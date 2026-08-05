@@ -99,7 +99,7 @@ const DEFAULT_VALUE_MAX = 1000;
  */
 export async function GET() {
   try {
-    await requireAdmin();
+    await requireAdmin('settings');
 
     const supabase = createServiceClient();
     const { data, error } = await supabase.from('store_settings').select('key, value');
@@ -136,7 +136,7 @@ export async function PATCH(req) {
   const limited = await rateLimitOrReject(req, { bucket: 'admin-settings', limit: 10, windowMs: 60_000 });
   if (limited) return limited;
   try {
-    await requireAdmin();
+    await requireAdmin('settings');
 
     const body = await req.json();
     const upserts = Object.entries(body)

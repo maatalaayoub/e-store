@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getAdminUser } from '@/middlewares/authGuard';
+import { getAdminUser, getStaffDataFrom } from '@/middlewares/authGuard';
 import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 import { logger } from '@/lib/logger';
 
@@ -29,6 +29,9 @@ export async function GET(req) {
     const unreadOnly = searchParams.get('unread') === 'true';
     const typeFilter = searchParams.get('type');
 
+    // Staff may only see notifications created on/after their allowed date.
+    const dataFrom = await getStaffDataFrom(supabase, adminUser.id);
+
     let query = supabase
       .from('admin_notifications')
       .select('*', { count: 'exact' })
@@ -37,14 +40,17 @@ export async function GET(req) {
 
     if (unreadOnly) query = query.eq('read', false);
     if (typeFilter) query = query.eq('type', typeFilter);
+    if (dataFrom) query = query.gte('created_at', dataFrom);
 
     const { data, error, count } = await query;
     if (error) throw error;
 
-    const { count: unreadCount, error: countErr } = await supabase
+    const unreadQuery = supabase
       .from('admin_notifications')
       .select('*', { count: 'exact', head: true })
       .eq('read', false);
+    if (dataFrom) unreadQuery.gte('created_at', dataFrom);
+    const { count: unreadCount, error: countErr } = await unreadQuery;
 
     if (countErr) console.error('[GET /api/v1/notifications] unread count error:', countErr.message);
 

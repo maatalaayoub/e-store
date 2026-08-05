@@ -8,7 +8,7 @@ import {
   buildLowStockMessage,
   buildOutOfStockMessage,
 } from '@/lib/telegram';
-import { getAdminUser } from '@/middlewares/authGuard';
+import { getAdminUser, getStaffDataFrom } from '@/middlewares/authGuard';
 import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 import { computeEffectivePrice } from '@/lib/price';
 import { logger } from '@/lib/logger';
@@ -553,6 +553,9 @@ export async function GET(req) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
+    // Staff may be limited to data created on/after a certain date.
+    const dataFrom = await getStaffDataFrom(anonClient, adminUser.id);
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
@@ -596,11 +599,13 @@ export async function GET(req) {
     `;
 
     if (id) {
-      const { data, error } = await anonClient
+      let detailQuery = anonClient
         .from('orders')
         .select(detailFields)
-        .eq('id', id)
-        .single();
+        .eq('id', id);
+      // Staff cannot open orders that predate their allowed window.
+      if (dataFrom) detailQuery = detailQuery.gte('created_at', dataFrom);
+      const { data, error } = await detailQuery.single();
       if (error) throw error;
       return NextResponse.json({ success: true, data });
     }
@@ -636,6 +641,9 @@ export async function GET(req) {
     if (statusParam && ALLOWED_STATUSES.includes(statusParam)) {
       query = query.eq('status', statusParam);
     }
+
+    // Restrict staff to orders within their allowed date window.
+    if (dataFrom) query = query.gte('created_at', dataFrom);
 
     if (isPaginated) {
       const from = (page - 1) * limit;

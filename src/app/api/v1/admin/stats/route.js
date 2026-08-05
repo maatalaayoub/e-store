@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
-import { getAdminUser } from '@/middlewares/authGuard';
+import { getAdminUser, getStaffDataFrom } from '@/middlewares/authGuard';
 import { logger } from '@/lib/logger';
 
 /**
@@ -16,6 +16,11 @@ export async function GET() {
     if (!adminUser) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
+
+    // Staff may only see store data created on/after their allowed date.
+    const dataFrom = await getStaffDataFrom(supabase, adminUser.id);
+    // Conditionally narrows a query builder to the staff's visible window.
+    const scope = (b) => (dataFrom ? b.gte('created_at', dataFrom) : b);
 
     // Period boundaries (computed once so SQL filters are consistent).
     const now = new Date();
@@ -39,38 +44,38 @@ export async function GET() {
       recentProductsRes,
     ] = await Promise.all([
       // Total order count (head:true \u2014 no row payload).
-      supabase.from('orders').select('id', { count: 'exact', head: true }),
+      scope(supabase.from('orders').select('id', { count: 'exact', head: true })),
 
       // Total non-cancelled revenue \u2014 stream only `total_amount`.
-      sumActiveRevenue(supabase.from('orders')),
+      scope(sumActiveRevenue(supabase.from('orders'))),
 
       // This-month order count.
-      supabase.from('orders')
+      scope(supabase.from('orders')
         .select('id', { count: 'exact', head: true })
-        .gte('created_at', startOfThisMonth),
+        .gte('created_at', startOfThisMonth)),
 
       // Last-month order count.
-      supabase.from('orders')
+      scope(supabase.from('orders')
         .select('id', { count: 'exact', head: true })
         .gte('created_at', startOfLastMonth)
-        .lt('created_at', startOfThisMonth),
+        .lt('created_at', startOfThisMonth)),
 
       // This-month non-cancelled revenue.
-      sumActiveRevenue(supabase.from('orders'))
-        .gte('created_at', startOfThisMonth),
+      scope(sumActiveRevenue(supabase.from('orders'))
+        .gte('created_at', startOfThisMonth)),
 
       // Last-month non-cancelled revenue.
-      sumActiveRevenue(supabase.from('orders'))
+      scope(sumActiveRevenue(supabase.from('orders'))
         .gte('created_at', startOfLastMonth)
-        .lt('created_at', startOfThisMonth),
+        .lt('created_at', startOfThisMonth)),
 
-      supabase.from('products').select('id', { count: 'exact', head: true }),
+      scope(supabase.from('products').select('id', { count: 'exact', head: true })),
       // Use service-role for the customer count: `users` RLS only lets each
       // session read its own row, so a session-scoped count would always be 1.
-      createServiceClient().from('users')
+      scope(createServiceClient().from('users')
         .select('id', { count: 'exact', head: true })
-        .or('role.is.null,role.neq.admin'),
-      supabase.from('products')
+        .or('role.is.null,role.neq.admin')),
+      scope(supabase.from('products')
         .select(`
           id,
           name,
@@ -82,7 +87,7 @@ export async function GET() {
           product_images ( url, is_main, display_order )
         `)
         .order('created_at', { ascending: false })
-        .limit(5),
+        .limit(5)),
     ]);
 
     for (const r of [totalOrdersCountRes, totalRevenueRes, thisMonthOrdersCountRes,

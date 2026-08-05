@@ -253,6 +253,11 @@
       "identifier_hint": "The person must already have an account on your store.",
       "permissions_label": "Permissions",
       "permissions_hint": "Choose which areas this member can manage.",
+      "data_from_label": "Data visibility",
+      "data_from_hint": "Limit this member to store data (orders, stats) created on or after this date. Leave empty for all-time access.",
+      "data_from_clear": "Clear (all-time)",
+      "data_from_since": "Data since",
+      "data_from_all": "All-time data",
       "toast_invited": "Team member added",
       "toast_updated": "Permissions updated",
       "toast_removed": "Team member removed",
@@ -263,7 +268,8 @@
         "orders": "Orders",
         "customers": "Customers",
         "messages": "Messages",
-        "notifications": "Notifications"
+        "notifications": "Notifications",
+        "settings": "Settings"
       },
       "errors": {
         "identifier_required": "Enter an account email or ID.",
@@ -273,6 +279,7 @@
         "cannot_invite_self": "You can't invite yourself.",
         "already_owner": "That account is already a store owner.",
         "not_a_member": "That account is not a team member.",
+        "invalid_data_from": "Enter a valid date.",
         "generic": "Something went wrong. Please try again."
       }
     },

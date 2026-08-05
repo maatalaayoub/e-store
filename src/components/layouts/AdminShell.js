@@ -13,7 +13,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useParams, usePathname } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Package,
@@ -42,12 +42,13 @@ const NAV_ITEMS = [
   { href: "/admin/messages", key: "messages", icon: Mail, permission: "messages" },
   { href: "/admin/notifications", key: "notifications", icon: Bell, permission: "notifications" },
   { href: "/admin/team", key: "team", icon: UserCog, ownerOnly: true },
-  { href: "/admin/settings", key: "settings", icon: Settings, ownerOnly: true },
+  { href: "/admin/settings", key: "settings", icon: Settings, permission: "settings" },
 ];
 
 export default function AdminShell({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const { locale } = useParams();
   const dict = useDictionary();
   const tNav = dict?.admin?.nav ?? {};
@@ -85,6 +86,20 @@ export default function AdminShell({ children }) {
     if (item.ownerOnly) return false;
     return item.permission ? access.permissions.includes(item.permission) : false;
   });
+
+  // Staff without the 'dashboard' permission should never sit on the empty
+  // Overview page — send them to their first authorized page instead.
+  useEffect(() => {
+    if (!access || access.isOwner) return;
+    const onOverview = pathname === `/${locale}/admin`;
+    const canSeeDashboard = access.permissions.includes("dashboard");
+    if (onOverview && !canSeeDashboard) {
+      const first = NAV_ITEMS.find(
+        (item) => !item.ownerOnly && item.permission && access.permissions.includes(item.permission)
+      );
+      if (first) router.replace(`/${locale}${first.href}`);
+    }
+  }, [access, pathname, locale, router]);
 
   useEffect(() => {
     fetch("/api/v1/display-settings")

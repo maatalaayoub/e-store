@@ -4,11 +4,13 @@ import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
 import {
   Bell,
+  CalendarClock,
   Check,
   LayoutDashboard,
   Loader2,
   Mail,
   Package,
+  Settings,
   ShieldCheck,
   ShoppingCart,
   UserPlus,
@@ -25,9 +27,10 @@ const PERMISSION_ICONS = {
   customers: Users,
   messages: Mail,
   notifications: Bell,
+  settings: Settings,
 };
 
-const PERMISSION_KEYS = ["dashboard", "products", "orders", "customers", "messages", "notifications"];
+const PERMISSION_KEYS = ["dashboard", "products", "orders", "customers", "messages", "notifications", "settings"];
 
 /**
  * Invite a new team member or edit an existing member's permissions.
@@ -47,6 +50,7 @@ export default function InviteMemberModal({ isOpen, onClose, onSaved, member }) 
 
   const [identifier, setIdentifier] = useState("");
   const [permissions, setPermissions] = useState([]);
+  const [dataFrom, setDataFrom] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [mounted, setMounted] = useState(false);
@@ -63,6 +67,7 @@ export default function InviteMemberModal({ isOpen, onClose, onSaved, member }) 
     if (!isOpen) return;
     setIdentifier("");
     setPermissions(isEdit ? [...(member.permissions ?? [])] : []);
+    setDataFrom(isEdit ? (member.data_from ?? "") : "");
     setError(null);
     setSubmitting(false);
   }, [isOpen, isEdit, member]);
@@ -104,8 +109,8 @@ export default function InviteMemberModal({ isOpen, onClose, onSaved, member }) 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           isEdit
-            ? { user_id: member.id, permissions }
-            : { identifier: identifier.trim(), permissions }
+            ? { user_id: member.id, permissions, data_from: dataFrom || null }
+            : { identifier: identifier.trim(), permissions, data_from: dataFrom || null }
         ),
       });
       const json = await res.json();
@@ -225,6 +230,35 @@ export default function InviteMemberModal({ isOpen, onClose, onSaved, member }) 
                 </button>
               );
             })}
+          </div>
+
+          <div className="mt-5 border-t border-zinc-100 pt-5">
+            <div className="mb-2 flex items-center gap-2">
+              <CalendarClock className="h-4 w-4 text-zinc-500" />
+              <p className="text-sm font-medium text-zinc-700">
+                {t.data_from_label ?? "Data visibility"}
+              </p>
+            </div>
+            <p className="mb-2 text-xs text-zinc-500">
+              {t.data_from_hint ??
+                "Limit this member to store data (orders, stats) created on or after this date. Leave empty for all-time access."}
+            </p>
+            <input
+              type="date"
+              value={dataFrom}
+              onChange={(e) => setDataFrom(e.target.value)}
+              className="w-full rounded-[5px] border border-zinc-200 px-3 py-2 text-sm text-zinc-900 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100 sm:w-auto"
+              dir="ltr"
+            />
+            {dataFrom && (
+              <button
+                type="button"
+                onClick={() => setDataFrom("")}
+                className="ms-3 text-xs font-medium text-blue-600 hover:underline"
+              >
+                {t.data_from_clear ?? "Clear (all-time)"}
+              </button>
+            )}
           </div>
 
           {error && (

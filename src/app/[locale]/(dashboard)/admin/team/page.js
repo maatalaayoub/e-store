@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Bell,
+  CalendarClock,
   Crown,
   LayoutDashboard,
   Mail,
   Package,
+  Settings,
   ShieldCheck,
   ShoppingCart,
   Trash2,
@@ -26,6 +28,7 @@ const PERMISSION_ICONS = {
   customers: UsersIcon,
   messages: Mail,
   notifications: Bell,
+  settings: Settings,
 };
 
 const AVATAR_PALETTE = [
@@ -273,6 +276,12 @@ export default function AdminTeamPage() {
                     <p className="truncate text-xs text-zinc-500">{m.email}</p>
                     <p className="mt-0.5 text-[11px] text-zinc-400">
                       {t.added_on ?? "Added"} {formatDate(m.team_added_at, locale)}
+                    </p>
+                    <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-zinc-400">
+                      <CalendarClock className="h-3 w-3" />
+                      {m.data_from
+                        ? `${t.data_from_since ?? "Data since"} ${formatDate(m.data_from, locale)}`
+                        : (t.data_from_all ?? "All-time data")}
                     </p>
                   </div>
                 </div>

@@ -86,7 +86,7 @@ function sanitizeSlide(s, idx) {
 export async function GET() {
   try {
     const supabase = await createClient();
-    const adminUser = await getAdminUser(supabase);
+    const adminUser = await getAdminUser(supabase, 'settings');
     if (!adminUser) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
 
     const { data, error } = await supabase
@@ -119,7 +119,7 @@ export async function PUT(request) {
   if (limited) return limited;
   try {
     const supabase = await createClient();
-    const adminUser = await getAdminUser(supabase);
+    const adminUser = await getAdminUser(supabase, 'settings');
     if (!adminUser) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
 
     const { slides } = await request.json();

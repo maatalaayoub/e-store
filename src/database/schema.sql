@@ -1222,3 +1222,59 @@ END $$;
 CREATE OR REPLACE TRIGGER team_members_updated_at
   BEFORE UPDATE ON team_members
   FOR EACH ROW EXECUTE PROCEDURE public.set_updated_at();
+
+-- ------------------------------------------------------------------
+-- Date-scoped data visibility for staff.
+-- `data_from` limits which store data (orders, stats) a staff member can see:
+-- only records created on/after this date are returned. NULL = all-time access.
+-- The filter is applied in the API layer per request.
+-- ------------------------------------------------------------------
+ALTER TABLE users ADD COLUMN IF NOT EXISTS data_from date;
+ALTER TABLE team_members ADD COLUMN IF NOT EXISTS data_from date;
+
+-- ------------------------------------------------------------------
+-- Give staff the same RLS read/manage access as the owner.
+-- Granular per-section limits are enforced in the API layer (getAdminUser),
+-- and date-scoped visibility is applied per request, so it is safe for RLS to
+-- treat staff like admins here. This helper avoids duplicating the role check.
+-- ------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.is_store_manager()
+RETURNS boolean LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role IN ('admin', 'staff'));
+$$;
+
+DROP POLICY IF EXISTS "Admins manage categories" ON categories;
+CREATE POLICY "Admins manage categories" ON categories
+  FOR ALL USING (public.is_store_manager());
+
+DROP POLICY IF EXISTS "Public reads active products" ON products;
+CREATE POLICY "Public reads active products" ON products
+  FOR SELECT USING (status = 'active' OR public.is_store_manager());
+DROP POLICY IF EXISTS "Admins manage products" ON products;
+CREATE POLICY "Admins manage products" ON products
+  FOR ALL USING (public.is_store_manager());
+
+DROP POLICY IF EXISTS "Product images visible with product" ON product_images;
+CREATE POLICY "Product images visible with product" ON product_images
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM products p
+      WHERE p.id = product_id
+        AND (p.status = 'active' OR public.is_store_manager())
+    )
+  );
+DROP POLICY IF EXISTS "Admins manage product images" ON product_images;
+CREATE POLICY "Admins manage product images" ON product_images
+  FOR ALL USING (public.is_store_manager());
+
+DROP POLICY IF EXISTS "Admins manage all orders" ON orders;
+CREATE POLICY "Admins manage all orders" ON orders
+  FOR ALL USING (public.is_store_manager());
+
+DROP POLICY IF EXISTS "Admins manage all order items" ON order_items;
+CREATE POLICY "Admins manage all order items" ON order_items
+  FOR ALL USING (public.is_store_manager());
+
+DROP POLICY IF EXISTS "Admins manage admin notifications" ON admin_notifications;
+CREATE POLICY "Admins manage admin notifications" ON admin_notifications
+  FOR ALL USING (public.is_store_manager());

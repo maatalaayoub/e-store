@@ -253,6 +253,11 @@
       "identifier_hint": "خاص الشخص يكون عندو حساب من قبل ف المتجر ديالك.",
       "permissions_label": "الصلاحيات",
       "permissions_hint": "ختار المجالات اللي هاد العضو يقدر يسيّرهم.",
+      "data_from_label": "رؤية البيانات",
+      "data_from_hint": "حدّد لهاد العضو غير بيانات المتجر (الطلبات، الإحصائيات) اللي تدارو من هاد التاريخ ولا من بعد. خلّيه خاوي باش يشوف كلشي.",
+      "data_from_clear": "مسح (كلشي)",
+      "data_from_since": "البيانات من",
+      "data_from_all": "كل البيانات",
       "toast_invited": "تزاد العضو",
       "toast_updated": "تبدّلات الصلاحيات",
       "toast_removed": "تحيّد العضو",
@@ -263,7 +268,8 @@
         "orders": "الطلبات",
         "customers": "العملاء",
         "messages": "الرسائل",
-        "notifications": "الإشعارات"
+        "notifications": "الإشعارات",
+        "settings": "الإعدادات"
       },
       "errors": {
         "identifier_required": "دخّل الإيميل ولا معرّف الحساب.",
@@ -273,6 +279,7 @@
         "cannot_invite_self": "ما تقدرش تعيّط لراسك.",
         "already_owner": "هاد الحساب راه مالك المتجر من قبل.",
         "not_a_member": "هاد الحساب ماشي عضو ف الفريق.",
+        "invalid_data_from": "دخّل تاريخ صحيح.",
         "generic": "وقع شي مشكل. عاود جرّب."
       }
     },

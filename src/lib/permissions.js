@@ -8,7 +8,7 @@
  *               their `permissions` array.
  *  - `client` — regular shopper. No admin access.
  *
- * Owner-only areas (Settings, Team) are intentionally NOT grantable to staff.
+ * Owner-only areas (Team) are intentionally NOT grantable to staff.
  */
 
 // Permission keys that can be granted to a staff member. Each maps to an
@@ -20,10 +20,11 @@ export const TEAM_PERMISSIONS = [
   'customers',
   'messages',
   'notifications',
+  'settings',
 ];
 
 // Areas only the store owner (role === 'admin') may access.
-export const OWNER_ONLY_AREAS = ['settings', 'team'];
+export const OWNER_ONLY_AREAS = ['team'];
 
 /**
  * Keep only known permission keys, de-duplicated. Used on write so a client
