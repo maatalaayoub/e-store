@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
-import { getAdminUser } from '@/middlewares/authGuard';
+import { getAdminUser, getStaffDataWindow, applyStaffDateWindow } from '@/middlewares/authGuard';
 import { logger } from '@/lib/logger';
 import { buildCustomerClusters } from '@/lib/customer-dedupe';
 
@@ -38,19 +38,27 @@ export async function GET() {
     // admin querying with the session client would see just themselves.
     const service = createServiceClient();
 
+    // Staff may only see customers whose profile (or guest orders) fall
+    // within their allowed date window.
+    const dataWindow = await getStaffDataWindow(supabase, adminUser.id);
+
     // Fetch users, all orders (registered + guest), and user_devices in
     // parallel — dedupe is done in memory afterwards.
+    let usersQuery = service
+      .from('users')
+      .select(
+        'id, full_name, email, phone_number, address, city, country, role, created_at, is_banned, banned_reason'
+      )
+      .or('role.is.null,role.neq.admin');
+    let ordersQuery = service
+      .from('orders')
+      .select('id, user_id, total_amount, status, created_at, shipping_address, device_id')
+      .order('created_at', { ascending: false });
+    usersQuery = applyStaffDateWindow(usersQuery, dataWindow);
+    ordersQuery = applyStaffDateWindow(ordersQuery, dataWindow);
     const [usersRes, ordersRes, devicesRes] = await Promise.all([
-      service
-        .from('users')
-        .select(
-          'id, full_name, email, phone_number, address, city, country, role, created_at, is_banned, banned_reason'
-        )
-        .or('role.is.null,role.neq.admin'),
-      service
-        .from('orders')
-        .select('id, user_id, total_amount, status, created_at, shipping_address, device_id')
-        .order('created_at', { ascending: false }),
+      usersQuery,
+      ordersQuery,
       service.from('user_devices').select('user_id, device_id'),
     ]);
 

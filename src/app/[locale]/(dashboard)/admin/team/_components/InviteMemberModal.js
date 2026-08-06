@@ -51,9 +51,13 @@ export default function InviteMemberModal({ isOpen, onClose, onSaved, member }) 
   const [identifier, setIdentifier] = useState("");
   const [permissions, setPermissions] = useState([]);
   const [dataFrom, setDataFrom] = useState("");
+  const [dataTo, setDataTo] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [mounted, setMounted] = useState(false);
+
+  // End date must be on/after start date when both are set.
+  const rangeInvalid = !!(dataFrom && dataTo && dataFrom > dataTo);
 
   useEffect(() => {
     if (isOpen) setMounted(true);
@@ -68,6 +72,7 @@ export default function InviteMemberModal({ isOpen, onClose, onSaved, member }) 
     setIdentifier("");
     setPermissions(isEdit ? [...(member.permissions ?? [])] : []);
     setDataFrom(isEdit ? (member.data_from ?? "") : "");
+    setDataTo(isEdit ? (member.data_to ?? "") : "");
     setError(null);
     setSubmitting(false);
   }, [isOpen, isEdit, member]);
@@ -101,6 +106,14 @@ export default function InviteMemberModal({ isOpen, onClose, onSaved, member }) 
       setError(tErr.permissions_required ?? "Select at least one permission.");
       return;
     }
+    if (rangeInvalid) {
+      setError(
+        t.date_range_invalid ??
+          tErr.invalid_date_range ??
+          "End date must be on or after the start date."
+      );
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -109,8 +122,18 @@ export default function InviteMemberModal({ isOpen, onClose, onSaved, member }) 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           isEdit
-            ? { user_id: member.id, permissions, data_from: dataFrom || null }
-            : { identifier: identifier.trim(), permissions, data_from: dataFrom || null }
+            ? {
+                user_id: member.id,
+                permissions,
+                data_from: dataFrom || null,
+                data_to: dataTo || null,
+              }
+            : {
+                identifier: identifier.trim(),
+                permissions,
+                data_from: dataFrom || null,
+                data_to: dataTo || null,
+              }
         ),
       });
       const json = await res.json();
@@ -243,27 +266,64 @@ export default function InviteMemberModal({ isOpen, onClose, onSaved, member }) 
             <div className="mb-2 flex items-center gap-2">
               <CalendarClock className="h-4 w-4 text-zinc-500" />
               <p className="text-sm font-medium text-zinc-700">
-                {t.data_from_label ?? "Data visibility"}
+                {t.date_range_label ?? t.data_from_label ?? "Date range"}
               </p>
             </div>
-            <p className="mb-2 text-xs text-zinc-500">
-              {t.data_from_hint ??
-                "Limit this member to store data (orders, stats) created on or after this date. Leave empty for all-time access."}
+            <p className="mb-3 text-xs text-zinc-500">
+              {t.date_range_hint ??
+                "Limit this member to store data (orders, customers, messages, stats) whose creation date falls inside the range. Leave both empty for all-time access. Dates are compared in UTC."}
             </p>
-            <input
-              type="date"
-              value={dataFrom}
-              onChange={(e) => setDataFrom(e.target.value)}
-              className="w-full rounded-[5px] border border-zinc-200 px-3 py-2 text-sm text-zinc-900 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100 sm:w-auto"
-              dir="ltr"
-            />
-            {dataFrom && (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <label className="flex-1">
+                <span className="mb-1 block text-xs font-medium text-zinc-600">
+                  {t.date_range_from ?? "From"}
+                </span>
+                <input
+                  type="date"
+                  value={dataFrom}
+                  onChange={(e) => setDataFrom(e.target.value)}
+                  max={dataTo || undefined}
+                  className={`w-full rounded-[5px] border px-3 py-2 text-sm text-zinc-900 outline-none transition-colors focus:ring-2 ${
+                    rangeInvalid
+                      ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                      : "border-zinc-200 focus:border-blue-500 focus:ring-blue-100"
+                  }`}
+                  dir="ltr"
+                />
+              </label>
+              <label className="flex-1">
+                <span className="mb-1 block text-xs font-medium text-zinc-600">
+                  {t.date_range_to ?? "To"}
+                </span>
+                <input
+                  type="date"
+                  value={dataTo}
+                  onChange={(e) => setDataTo(e.target.value)}
+                  min={dataFrom || undefined}
+                  className={`w-full rounded-[5px] border px-3 py-2 text-sm text-zinc-900 outline-none transition-colors focus:ring-2 ${
+                    rangeInvalid
+                      ? "border-red-400 focus:border-red-500 focus:ring-red-100"
+                      : "border-zinc-200 focus:border-blue-500 focus:ring-blue-100"
+                  }`}
+                  dir="ltr"
+                />
+              </label>
+            </div>
+            {rangeInvalid && (
+              <p className="mt-2 text-xs font-medium text-red-600">
+                {t.date_range_invalid ?? "End date must be on or after the start date."}
+              </p>
+            )}
+            {(dataFrom || dataTo) && !rangeInvalid && (
               <button
                 type="button"
-                onClick={() => setDataFrom("")}
-                className="ms-3 text-xs font-medium text-blue-600 hover:underline"
+                onClick={() => {
+                  setDataFrom("");
+                  setDataTo("");
+                }}
+                className="mt-2 text-xs font-medium text-blue-600 hover:underline"
               >
-                {t.data_from_clear ?? "Clear (all-time)"}
+                {t.date_range_clear ?? t.data_from_clear ?? "Clear (all-time)"}
               </button>
             )}
           </div>
@@ -284,7 +344,7 @@ export default function InviteMemberModal({ isOpen, onClose, onSaved, member }) 
             </button>
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || rangeInvalid}
               className="inline-flex items-center gap-2 rounded-[5px] bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-60"
             >
               {submitting && <Loader2 className="h-4 w-4 animate-spin" />}

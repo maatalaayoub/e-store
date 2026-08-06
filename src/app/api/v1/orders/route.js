@@ -8,7 +8,7 @@ import {
   buildLowStockMessage,
   buildOutOfStockMessage,
 } from '@/lib/telegram';
-import { getAdminUser, getStaffDataFrom } from '@/middlewares/authGuard';
+import { getAdminUser, getStaffDataWindow, applyStaffDateWindow } from '@/middlewares/authGuard';
 import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 import { computeEffectivePrice } from '@/lib/price';
 import { logger } from '@/lib/logger';
@@ -553,8 +553,8 @@ export async function GET(req) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
-    // Staff may be limited to data created on/after a certain date.
-    const dataFrom = await getStaffDataFrom(anonClient, adminUser.id);
+    // Staff may be limited to a date window on their store data.
+    const dataWindow = await getStaffDataWindow(anonClient, adminUser.id);
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
@@ -604,7 +604,7 @@ export async function GET(req) {
         .select(detailFields)
         .eq('id', id);
       // Staff cannot open orders that predate their allowed window.
-      if (dataFrom) detailQuery = detailQuery.gte('created_at', dataFrom);
+      detailQuery = applyStaffDateWindow(detailQuery, dataWindow);
       const { data, error } = await detailQuery.single();
       if (error) throw error;
       return NextResponse.json({ success: true, data });
@@ -643,7 +643,7 @@ export async function GET(req) {
     }
 
     // Restrict staff to orders within their allowed date window.
-    if (dataFrom) query = query.gte('created_at', dataFrom);
+    query = applyStaffDateWindow(query, dataWindow);
 
     if (isPaginated) {
       const from = (page - 1) * limit;
@@ -899,13 +899,13 @@ export async function DELETE(req) {
 
     // Enforce staff data window: staff can only delete orders within their
     // allowed date range.
-    const dataFrom = await getStaffDataFrom(anonClient, adminUser.id);
+    const dataWindow = await getStaffDataWindow(anonClient, adminUser.id);
 
     let selectQuery = db
       .from('orders')
       .select('id, stock_committed, order_items(product_id, quantity)')
       .in('id', ids);
-    if (dataFrom) selectQuery = selectQuery.gte('created_at', dataFrom);
+    selectQuery = applyStaffDateWindow(selectQuery, dataWindow);
     const { data: rows, error: fetchErr } = await selectQuery;
     if (fetchErr) throw fetchErr;
 

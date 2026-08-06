@@ -24,20 +24,21 @@ export async function isAdmin(userId) {
  * list of permission keys they were granted. Owners (role='admin') always
  * have full access regardless of the `permissions` column.
  *
- * @returns {Promise<{ role: string|null, permissions: string[], dataFrom: string|null }>}
+ * @returns {Promise<{ role: string|null, permissions: string[], dataFrom: string|null, dataTo: string|null }>}
  */
 export async function getUserAccess(userId) {
-  if (!userId) return { role: null, permissions: [], dataFrom: null };
+  if (!userId) return { role: null, permissions: [], dataFrom: null, dataTo: null };
   const supabase = await createClient();
   const { data } = await supabase
     .from('users')
-    .select('role, permissions, data_from')
+    .select('role, permissions, data_from, data_to')
     .eq('id', userId)
     .single();
   return {
     role: data?.role ?? null,
     permissions: Array.isArray(data?.permissions) ? data.permissions : [],
     dataFrom: data?.data_from ?? null,
+    dataTo: data?.data_to ?? null,
   };
 }
 
@@ -130,14 +131,53 @@ export async function getAdminUser(supabase, permission) {
 }
 
 /**
- * Returns the date lower-bound that store data should be filtered by for the
- * given user. Staff members with a `data_from` date only see records created
- * on/after that date. Owners (and staff with no date set) return null, which
- * means all-time / unrestricted access.
+ * Returns the created_at bounds a staff member is allowed to see. Owners and
+ * unconstrained staff resolve to `{ from: null, to: null }` (all-time). Bounds
+ * are ISO UTC strings so callers can pass them directly to
+ * `.gte('created_at', from)` / `.lte('created_at', to)`.
+ *
+ *  - Only `data_from` set  → { from: <ISO>, to: null }        (created_at >= from)
+ *  - Only `data_to`   set  → { from: null,  to: <ISO>-EOD }   (created_at <= end-of-day UTC)
+ *  - Both set              → both bounds applied (from <= created_at <= to)
  *
  * @param {import('@supabase/supabase-js').SupabaseClient} supabase
  * @param {string} userId
- * @returns {Promise<string|null>}
+ * @returns {Promise<{ from: string|null, to: string|null }>}
+ */
+export async function getStaffDataWindow(supabase, userId) {
+  if (!userId) return { from: null, to: null };
+  const { data } = await supabase
+    .from('users')
+    .select('role, data_from, data_to')
+    .eq('id', userId)
+    .single();
+  if (!data || data.role !== 'staff') return { from: null, to: null };
+  const from = data.data_from ? `${data.data_from}T00:00:00.000Z` : null;
+  const to   = data.data_to   ? `${data.data_to}T23:59:59.999Z`   : null;
+  return { from, to };
+}
+
+/**
+ * Applies a staff date window (returned by `getStaffDataWindow`) to a
+ * Supabase query builder targeting a `created_at` timestamptz column.
+ * Returns the (possibly narrowed) builder so calls can be chained.
+ *
+ * @template T
+ * @param {T} query   supabase query builder
+ * @param {{ from: string|null, to: string|null }} window
+ * @param {string} [column='created_at']
+ * @returns {T}
+ */
+export function applyStaffDateWindow(query, window, column = 'created_at') {
+  if (!window) return query;
+  if (window.from) query = query.gte(column, window.from);
+  if (window.to)   query = query.lte(column, window.to);
+  return query;
+}
+
+/**
+ * @deprecated Use `getStaffDataWindow` instead. Returned as a `YYYY-MM-DD`
+ * string for backward compatibility with older callers.
  */
 export async function getStaffDataFrom(supabase, userId) {
   if (!userId) return null;

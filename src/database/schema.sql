@@ -1225,12 +1225,37 @@ CREATE OR REPLACE TRIGGER team_members_updated_at
 
 -- ------------------------------------------------------------------
 -- Date-scoped data visibility for staff.
--- `data_from` limits which store data (orders, stats) a staff member can see:
--- only records created on/after this date are returned. NULL = all-time access.
+-- `data_from` + `data_to` limit which store data (orders, stats, customers,
+-- messages, notifications) a staff member can see: only records whose
+-- created_at falls within [data_from, data_to] are returned. NULL on either
+-- side means unbounded on that side (both NULL = all-time access).
 -- The filter is applied in the API layer per request.
 -- ------------------------------------------------------------------
 ALTER TABLE users ADD COLUMN IF NOT EXISTS data_from date;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS data_to   date;
 ALTER TABLE team_members ADD COLUMN IF NOT EXISTS data_from date;
+ALTER TABLE team_members ADD COLUMN IF NOT EXISTS data_to   date;
+
+-- Guarantee data_from <= data_to when both are set.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'users_data_window_chk'
+  ) THEN
+    ALTER TABLE users
+      ADD CONSTRAINT users_data_window_chk
+      CHECK (data_from IS NULL OR data_to IS NULL OR data_from <= data_to);
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'team_members_data_window_chk'
+  ) THEN
+    ALTER TABLE team_members
+      ADD CONSTRAINT team_members_data_window_chk
+      CHECK (data_from IS NULL OR data_to IS NULL OR data_from <= data_to);
+  END IF;
+END $$;
 
 -- ------------------------------------------------------------------
 -- Give staff the same RLS read/manage access as the owner.

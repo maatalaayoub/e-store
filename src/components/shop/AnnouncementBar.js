@@ -150,6 +150,16 @@ function pathIsAdmin(pathname) {
   return /^\/(?:en|fr|ar|dr)\/admin(?:\/|$)/.test(pathname);
 }
 
+function pathIsAuth(pathname) {
+  if (!pathname) return false;
+  return /^\/(?:en|fr|ar|dr)\/(?:login|signup)(?:\/|$)/.test(pathname);
+}
+
+function pathIsContact(pathname) {
+  if (!pathname) return false;
+  return /^\/(?:en|fr|ar|dr)\/contact(?:\/|$)/.test(pathname);
+}
+
 /** Scope → regex map. A scope matches if the regex matches the current pathname. */
 const SCOPE_PATTERNS = {
   home:              /^\/(?:en|fr|ar|dr)?\/?$/,
@@ -693,6 +703,8 @@ export default function AnnouncementBar() {
   const visible = useMemo(() => {
     if (!items || items.length === 0) return [];
     if (pathIsAdmin(pathname)) return [];
+    if (pathIsAuth(pathname)) return [];
+    if (pathIsContact(pathname)) return [];
     const now = Date.now();
     return items
       .filter((a) => a.is_active !== false)

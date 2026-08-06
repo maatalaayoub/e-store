@@ -279,9 +279,17 @@ export default function AdminTeamPage() {
                     </p>
                     <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-zinc-400">
                       <CalendarClock className="h-3 w-3" />
-                      {m.data_from
-                        ? `${t.data_from_since ?? "Data since"} ${formatDate(m.data_from, locale)}`
-                        : (t.data_from_all ?? "All-time data")}
+                      {(() => {
+                        const from = m.data_from ? formatDate(m.data_from, locale) : null;
+                        const to   = m.data_to   ? formatDate(m.data_to,   locale) : null;
+                        if (from && to) {
+                          const tpl = t.date_range_between ?? "Data from {from} to {to}";
+                          return tpl.replace("{from}", from).replace("{to}", to);
+                        }
+                        if (from) return `${t.date_range_since ?? t.data_from_since ?? "Data since"} ${from}`;
+                        if (to)   return `${t.date_range_until ?? "Data until"} ${to}`;
+                        return t.date_range_all ?? t.data_from_all ?? "All-time data";
+                      })()}
                     </p>
                   </div>
                 </div>

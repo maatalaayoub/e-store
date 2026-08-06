@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/service';
-import { requireAdmin } from '@/middlewares/authGuard';
+import { requireAdmin, getStaffDataWindow, applyStaffDateWindow } from '@/middlewares/authGuard';
 import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 import { logger } from '@/lib/logger';
 
@@ -12,7 +12,7 @@ const VALID_STATUSES = ['new', 'read', 'replied', 'archived'];
  */
 export async function GET(req) {
   try {
-    await requireAdmin('messages');
+    const adminUser = await requireAdmin('messages');
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
@@ -22,6 +22,10 @@ export async function GET(req) {
     const offset = offsetParam ? Math.max(0, parseInt(offsetParam, 10) || 0) : 0;
 
     const supabase = createServiceClient();
+
+    // Staff may only see contact messages within their allowed date window.
+    const dataWindow = await getStaffDataWindow(supabase, adminUser.id);
+
     let query = supabase
       .from('contact_messages')
       .select('*', { count: 'exact' })
@@ -30,16 +34,18 @@ export async function GET(req) {
     if (status && VALID_STATUSES.includes(status)) {
       query = query.eq('status', status);
     }
-
+    query = applyStaffDateWindow(query, dataWindow);
     query = query.range(offset, offset + limit - 1);
 
     const { data, error, count } = await query;
     if (error) throw error;
 
-    const { count: unreadCount, error: unreadErr } = await supabase
+    let unreadQuery = supabase
       .from('contact_messages')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'new');
+    unreadQuery = applyStaffDateWindow(unreadQuery, dataWindow);
+    const { count: unreadCount, error: unreadErr } = await unreadQuery;
 
     if (unreadErr) {
       console.error('[GET /api/v1/admin/contact-messages] unread count error:', unreadErr.message);

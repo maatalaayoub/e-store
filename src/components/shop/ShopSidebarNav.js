@@ -214,11 +214,12 @@ export default function ShopSidebarNav({ isOpen, onClose }) {
               </div>
             </div>
           ) : (
-            /* ── Guest: Categories + Track Order ── */
+            /* ── Guest: Categories + Track Order + Contact ── */
             <nav className="flex flex-col py-4">
               {[
                 { href: `/${locale}/categories`, label: tNav.categories ?? "Categories", Icon: LayoutGrid },
                 { href: `/${locale}/track-order`, label: tNav.track_order ?? "Track Order", Icon: Search },
+                { href: `/${locale}/contact`, label: tNav.contact ?? "Contact Us", Icon: Phone },
               ].map((linkItem, idx) => {
                 const Chevron = isRtl ? ChevronLeft : ChevronRight;
                 return (

@@ -10,11 +10,12 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * Normalizes a `data_from` value from a request body.
- * Returns null for empty (all-time access), a `YYYY-MM-DD` string when valid,
- * or `undefined` when the value is present but malformed (caller should reject).
+ * Normalizes a `data_from` / `data_to` value from a request body.
+ * Returns null for empty (unbounded on that side), a `YYYY-MM-DD` string when
+ * valid, or `undefined` when the value is present but malformed (caller
+ * should reject).
  */
-function normalizeDataFrom(value) {
+function normalizeDateOnly(value) {
   if (value == null || value === '') return null;
   const s = String(value).trim();
   if (!DATE_RE.test(s)) return undefined;
@@ -42,6 +43,7 @@ function memberShape(row) {
     invited_by: row.invited_by ?? null,
     team_added_at: row.team_added_at ?? null,
     data_from: row.data_from ?? null,
+    data_to: row.data_to ?? null,
     created_at: row.created_at ?? null,
   };
 }
@@ -57,7 +59,7 @@ export async function GET() {
     const service = createServiceClient();
     const { data, error } = await service
       .from('users')
-      .select('id, full_name, email, role, permissions, invited_by, team_added_at, data_from, created_at')
+      .select('id, full_name, email, role, permissions, invited_by, team_added_at, data_from, data_to, created_at')
       .in('role', ['admin', 'staff'])
       .order('role', { ascending: true })
       .order('team_added_at', { ascending: false, nullsFirst: false });
@@ -98,7 +100,8 @@ export async function POST(req) {
     const body = await req.json().catch(() => ({}));
     const identifier = String(body.identifier ?? '').trim();
     const permissions = normalizePermissions(body.permissions);
-    const dataFrom = normalizeDataFrom(body.data_from);
+    const dataFrom = normalizeDateOnly(body.data_from);
+    const dataTo   = normalizeDateOnly(body.data_to);
 
     if (!identifier) {
       return NextResponse.json({ success: false, error: 'identifier_required' }, { status: 400 });
@@ -108,6 +111,12 @@ export async function POST(req) {
     }
     if (dataFrom === undefined) {
       return NextResponse.json({ success: false, error: 'invalid_data_from' }, { status: 400 });
+    }
+    if (dataTo === undefined) {
+      return NextResponse.json({ success: false, error: 'invalid_data_to' }, { status: 400 });
+    }
+    if (dataFrom && dataTo && dataFrom > dataTo) {
+      return NextResponse.json({ success: false, error: 'invalid_date_range' }, { status: 400 });
     }
 
     const service = createServiceClient();
@@ -141,11 +150,12 @@ export async function POST(req) {
         role: 'staff',
         permissions,
         data_from: dataFrom,
+        data_to: dataTo,
         invited_by: owner.id,
         team_added_at: nowIso,
       })
       .eq('id', target.id)
-      .select('id, full_name, email, role, permissions, invited_by, team_added_at, data_from, created_at')
+      .select('id, full_name, email, role, permissions, invited_by, team_added_at, data_from, data_to, created_at')
       .single();
     if (updErr) throw updErr;
 
@@ -157,6 +167,7 @@ export async function POST(req) {
           user_id: target.id,
           permissions,
           data_from: dataFrom,
+          data_to: dataTo,
           status: 'active',
           invited_email: target.email,
           invited_by: owner.id,
@@ -192,7 +203,8 @@ export async function PATCH(req) {
     const body = await req.json().catch(() => ({}));
     const userId = String(body.user_id ?? '').trim();
     const permissions = normalizePermissions(body.permissions);
-    const dataFrom = normalizeDataFrom(body.data_from);
+    const dataFrom = normalizeDateOnly(body.data_from);
+    const dataTo   = normalizeDateOnly(body.data_to);
 
     if (!UUID_RE.test(userId)) {
       return NextResponse.json({ success: false, error: 'invalid_user' }, { status: 400 });
@@ -202,6 +214,12 @@ export async function PATCH(req) {
     }
     if (dataFrom === undefined) {
       return NextResponse.json({ success: false, error: 'invalid_data_from' }, { status: 400 });
+    }
+    if (dataTo === undefined) {
+      return NextResponse.json({ success: false, error: 'invalid_data_to' }, { status: 400 });
+    }
+    if (dataFrom && dataTo && dataFrom > dataTo) {
+      return NextResponse.json({ success: false, error: 'invalid_date_range' }, { status: 400 });
     }
 
     const service = createServiceClient();
@@ -218,15 +236,15 @@ export async function PATCH(req) {
     const nowIso = new Date().toISOString();
     const { data: updated, error: updErr } = await service
       .from('users')
-      .update({ permissions, data_from: dataFrom })
+      .update({ permissions, data_from: dataFrom, data_to: dataTo })
       .eq('id', userId)
-      .select('id, full_name, email, role, permissions, invited_by, team_added_at, data_from, created_at')
+      .select('id, full_name, email, role, permissions, invited_by, team_added_at, data_from, data_to, created_at')
       .single();
     if (updErr) throw updErr;
 
     await service
       .from('team_members')
-      .update({ permissions, data_from: dataFrom, updated_at: nowIso })
+      .update({ permissions, data_from: dataFrom, data_to: dataTo, updated_at: nowIso })
       .eq('user_id', userId);
 
     return NextResponse.json({ success: true, data: memberShape(updated) });

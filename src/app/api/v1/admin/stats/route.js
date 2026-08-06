@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
-import { getAdminUser, getStaffDataFrom } from '@/middlewares/authGuard';
+import { getAdminUser, getStaffDataWindow, applyStaffDateWindow } from '@/middlewares/authGuard';
 import { logger } from '@/lib/logger';
 
 /**
@@ -17,10 +17,10 @@ export async function GET() {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
-    // Staff may only see store data created on/after their allowed date.
-    const dataFrom = await getStaffDataFrom(supabase, adminUser.id);
+    // Staff may only see store data within their allowed date window.
+    const dataWindow = await getStaffDataWindow(supabase, adminUser.id);
     // Conditionally narrows a query builder to the staff's visible window.
-    const scope = (b) => (dataFrom ? b.gte('created_at', dataFrom) : b);
+    const scope = (b) => applyStaffDateWindow(b, dataWindow);
 
     // Period boundaries (computed once so SQL filters are consistent).
     const now = new Date();
