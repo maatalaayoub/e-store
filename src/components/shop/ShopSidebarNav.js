@@ -273,14 +273,14 @@ export default function ShopSidebarNav({ isOpen, onClose }) {
                   onClick={onClose}
                 >
                   <UserIcon className="h-4 w-4" />
-                  <span>{tNav.login}</span>
+                  <span>{tNav.login ?? "Log in"}</span>
                 </Link>
                 <Link
                   href={`/${locale}/signup`}
                   className={`flex-1 inline-flex items-center justify-center rounded-xl py-3 text-sm font-semibold shadow-md transition-colors active:scale-95 ${theme.accent}`}
                   onClick={onClose}
                 >
-                  {tNav.signup}
+                  {tNav.signup ?? "Create account"}
                 </Link>
               </div>
             )}
@@ -297,7 +297,7 @@ export default function ShopSidebarNav({ isOpen, onClose }) {
                   className="flex w-full items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium text-red-600 hover:bg-red-50 transition-colors"
                 >
                   <LogOut className={`h-5 w-5 shrink-0 ${logoutIconDirectionClass}`} strokeWidth={1.5} />
-                  <span>{tNav.logout}</span>
+                  <span>{tNav.logout ?? "Log out"}</span>
                 </button>
               </div>
             )}

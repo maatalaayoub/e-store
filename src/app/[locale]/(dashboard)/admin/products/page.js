@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter, useParams } from "next/navigation";
 import {
   Plus,
   Search,
@@ -18,50 +18,117 @@ import {
   AlertTriangle,
   MoreVertical,
   Tag,
+  ArrowUpRight,
 } from "lucide-react";
 
 import { toast } from "sonner";
 import { useDictionary } from "@/components/providers/LocaleProvider";
+import { useAdminOrderView } from "@/components/providers/AdminOrderViewContext";
 import { AdminProductsSkeleton } from "@/components/skeletons";
 import ProductFormModal from "./_components/ProductFormModal";
 import CategoriesManagerModal from "./_components/CategoriesManagerModal";
 import ProductDetailDrawer from "./_components/ProductDetailDrawer";
 
 // ── Custom confirm modal ────────────────────────────────────────────────────
-function ConfirmModal({ open, title, message, orders, confirmLabel = "Confirm", confirmVariant = "red", cancelLabel = "Cancel", onConfirm, onCancel }) {
+function ConfirmModal({
+  open,
+  title,
+  message,
+  orders,
+  onOrderClick,
+  confirmLabel = "Confirm",
+  confirmVariant = "red",
+  cancelLabel = "Cancel",
+  onConfirm,
+  onCancel,
+}) {
   if (!open || typeof document === "undefined") return null;
+  const hasOrders = Array.isArray(orders) && orders.length > 0;
+  const isBlocking = hasOrders; // "Cannot delete" variant
+
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.4)" }}>
-      <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6 flex flex-col gap-4">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50">
-            <AlertTriangle className="h-5 w-5 text-red-500" />
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+      style={{ background: "rgba(15,23,42,0.5)", backdropFilter: "blur(2px)" }}
+      onClick={onCancel}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 flex items-start gap-4">
+          <div
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
+              isBlocking ? "bg-amber-50 ring-4 ring-amber-50/50" : "bg-red-50 ring-4 ring-red-50/50"
+            }`}
+          >
+            <AlertTriangle
+              className={`h-5 w-5 ${isBlocking ? "text-amber-600" : "text-red-500"}`}
+            />
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-zinc-900 text-sm">{title}</p>
-            {message && <p className="text-sm text-zinc-500 mt-1 leading-relaxed">{message}</p>}
-            {orders && orders.length > 0 && (
-              <ul className="mt-3 rounded-lg bg-zinc-50 border border-zinc-200 divide-y divide-zinc-100 text-xs max-h-36 overflow-y-auto">
-                {orders.map((o) => (
-                  <li key={o.id} className="flex items-center justify-between px-3 py-2 gap-2">
-                    <span className="font-mono font-medium text-zinc-700">#{o.order_number}</span>
-                    <span className="capitalize text-amber-600 font-medium">{o.status}</span>
-                  </li>
-                ))}
-              </ul>
+          <div className="flex-1 min-w-0 pt-0.5">
+            <p className="font-semibold text-zinc-900 text-base leading-tight">{title}</p>
+            {message && (
+              <p className="text-sm text-zinc-500 mt-1.5 leading-relaxed">{message}</p>
             )}
           </div>
         </div>
-        <div className="flex justify-end gap-2 pt-1">
+
+        {/* Clickable orders list */}
+        {hasOrders && (
+          <div className="px-6 pb-4">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-2 flex items-center justify-between">
+              <span>Linked orders ({orders.length})</span>
+              <span className="text-zinc-300 font-normal normal-case tracking-normal">Click to open</span>
+            </div>
+            <ul className="rounded-xl border border-zinc-200 bg-zinc-50/60 divide-y divide-zinc-200 max-h-56 overflow-y-auto">
+              {orders.map((o) => (
+                <li key={o.id}>
+                  <button
+                    type="button"
+                    onClick={() => onOrderClick?.(o)}
+                    className="group flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-sm hover:bg-white transition-colors focus-visible:bg-white focus-visible:outline-none"
+                  >
+                    <span className="flex items-center gap-2 min-w-0">
+                      <ArrowUpRight className="h-3.5 w-3.5 text-zinc-300 group-hover:text-blue-600 transition-colors shrink-0" />
+                      <span className="font-mono font-medium text-zinc-800 truncate">
+                        #{o.order_number ?? String(o.id).slice(0, 8)}
+                      </span>
+                    </span>
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize ${
+                        o.status === "pending"
+                          ? "bg-amber-50 text-amber-700"
+                          : o.status === "confirmed"
+                            ? "bg-blue-50 text-blue-700"
+                            : o.status === "shipped"
+                              ? "bg-violet-50 text-violet-700"
+                              : o.status === "delivered"
+                                ? "bg-emerald-50 text-emerald-700"
+                                : "bg-zinc-100 text-zinc-600"
+                      }`}
+                    >
+                      {o.status}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="flex justify-end gap-2 px-6 py-4 bg-zinc-50 border-t border-zinc-100">
           <button
             onClick={onCancel}
-            className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
+            className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 transition-colors"
           >
             {cancelLabel}
           </button>
           <button
             onClick={onConfirm}
-            className={`rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors ${
+            className={`rounded-lg px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors ${
               confirmVariant === "amber"
                 ? "bg-amber-500 hover:bg-amber-600"
                 : "bg-red-600 hover:bg-red-700"
@@ -251,6 +318,23 @@ export default function AdminProductsPage() {
   const searchParams = useSearchParams();
   const highlightProductId = searchParams.get("product");
   const [pulseProductId, setPulseProductId] = useState(null);
+
+  // ── Navigate to orders page & auto-open a specific order ──────────────────
+  const router = useRouter();
+  const params = useParams();
+  const locale = params?.locale ?? "en";
+  const { openOrder } = useAdminOrderView();
+
+  const handleOpenLinkedOrder = useCallback(
+    (order) => {
+      if (!order?.id) return;
+      openOrder(order.id);
+      setConfirmModal(null);
+      setActioningId(null);
+      router.push(`/${locale}/admin/orders`);
+    },
+    [openOrder, router, locale]
+  );
 
   // ── Detail drawer state ────────────────────────────────────────────────────
   const [viewingProduct, setViewingProduct] = useState(null);
@@ -557,6 +641,7 @@ export default function AdminProductsPage() {
         title={confirmModal?.title}
         message={confirmModal?.message}
         orders={confirmModal?.orders}
+        onOrderClick={handleOpenLinkedOrder}
         confirmLabel={confirmModal?.confirmLabel}
         confirmVariant={confirmModal?.confirmVariant}
         onConfirm={confirmModal?.onConfirm}

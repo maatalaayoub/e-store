@@ -5,6 +5,13 @@
   --foreground: #171717;
 }
 
+/* MobileBottomNav is hidden by `lg:hidden`, but its useEffect always sets
+   --mobile-nav-h. Force it back to 0 on lg+ so bottom-fixed elements
+   (e.g. AnnouncementBar) don't sit 4rem above the viewport edge. */
+@media (min-width: 1024px) {
+  :root { --mobile-nav-h: 0px !important; }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

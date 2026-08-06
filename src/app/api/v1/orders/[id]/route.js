@@ -68,6 +68,7 @@ export async function GET(req, { params }) {
           selected_color,
           selected_size,
           products (
+            id,
             name,
             product_images ( url, is_main )
           )

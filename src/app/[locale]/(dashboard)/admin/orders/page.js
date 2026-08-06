@@ -564,13 +564,27 @@ export default function AdminOrdersPage() {
   const { pendingOrderId, clearPendingOrder } = useAdminOrderView();
 
   /* ── Open order drawer when another admin view requests it (e.g. a
-     notification was clicked). The id is passed through React context, never
-     the URL or storage, so closing + refreshing cannot reopen it. */
+     notification was clicked, or a linked-orders click from the products
+     page). The id is passed through React context, never the URL or storage,
+     so closing + refreshing cannot reopen it. Also scrolls the row into
+     view so the admin can see which order was selected. */
   useEffect(() => {
     if (!pendingOrderId || orders.length === 0) return;
     const order = orders.find((o) => o.id === pendingOrderId);
-    if (order) setSelectedOrder(order);
-  }, [pendingOrderId, orders]);
+    if (!order) return;
+    setSelectedOrder(order);
+    // If current filters would hide the row, reset them so it becomes visible.
+    if (activeTab !== "all" && order.status !== activeTab) setActiveTab("all");
+    if (search) setSearch("");
+    if (dateRange !== "all") setDateRange("all");
+    if (cancelledBy !== "any") setCancelledBy("any");
+    // Defer scroll to next frame so the row is mounted after any tab switch.
+    const id = pendingOrderId;
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`order-row-${id}`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }, [pendingOrderId, orders, activeTab, search, dateRange, cancelledBy]);
 
   const closeOrderDrawer = useCallback(() => {
     setSelectedOrder(null);
@@ -1005,7 +1019,7 @@ export default function AdminOrdersPage() {
               const date = new Date(o.created_at).toLocaleDateString();
               const customerAmt = formatCustomerCurrency(o.total_amount, o.currency_code, o.exchange_rate);
               return (
-                <li key={o.id} className={`px-4 py-4 flex gap-3 cursor-pointer hover:bg-zinc-50 active:bg-zinc-100 transition-colors ${selectedIds.includes(o.id) ? "bg-blue-50/50" : ""}`} onClick={() => {
+                <li key={o.id} id={`order-row-${o.id}`} className={`px-4 py-4 flex gap-3 cursor-pointer hover:bg-zinc-50 active:bg-zinc-100 transition-colors ${selectedIds.includes(o.id) ? "bg-blue-50/50" : ""}`} onClick={() => {
                   if (selectedIds.length > 0) { toggleSelect(o.id); return; }
                   setSelectedOrder(o);
                 }}>
@@ -1094,7 +1108,7 @@ export default function AdminOrdersPage() {
                   const date     = new Date(o.created_at).toLocaleDateString();
                   const customerAmt = formatCustomerCurrency(o.total_amount, o.currency_code, o.exchange_rate);
                   return (
-                    <tr key={o.id} className={`hover:bg-zinc-50 cursor-pointer ${selectedIds.includes(o.id) ? "bg-blue-50/40" : ""}`} onClick={() => {
+                    <tr key={o.id} id={`order-row-${o.id}`} className={`hover:bg-zinc-50 cursor-pointer ${selectedIds.includes(o.id) ? "bg-blue-50/40" : ""}`} onClick={() => {
                       if (selectedIds.length > 0) { toggleSelect(o.id); return; }
                       setSelectedOrder(o);
                     }}>

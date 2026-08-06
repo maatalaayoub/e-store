@@ -21,6 +21,7 @@ import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
 let _ordersCache = null;
 
 function OrderCard({ order, onCancel }) {
+  const { locale } = useParams();
   const { formatPrice } = useCurrency();
   const dict = useDictionary();
   const tOrders = dict?.orders ?? {};
@@ -82,8 +83,19 @@ function OrderCard({ order, onCancel }) {
       <ul className="divide-y divide-zinc-100">
         {(order.order_items ?? []).map((item) => {
           const imgUrl = getMainImage(item.products);
+          const productId = item.products?.id;
+          const RowTag = productId ? Link : "div";
+          const rowProps = productId
+            ? { href: `/${locale}/product/${productId}`, "aria-label": item.products?.name }
+            : {};
           return (
-            <li key={item.id} className="flex items-center gap-4 px-5 py-4">
+            <li key={item.id}>
+              <RowTag
+                {...rowProps}
+                className={`flex items-center gap-4 px-5 py-4 ${
+                  productId ? "hover:bg-zinc-50 transition-colors cursor-pointer" : ""
+                }`}
+              >
               <div className="h-14 w-14 shrink-0 rounded-xl overflow-hidden bg-zinc-100 border border-zinc-200">
                 {imgUrl ? (
                   <Image src={imgUrl} alt={item.products?.name ?? ""} width={56} height={56} className="h-full w-full object-cover" />
@@ -94,7 +106,7 @@ function OrderCard({ order, onCancel }) {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-zinc-900 truncate">{item.products?.name ?? "Product"}</p>
+                <p className={`text-sm font-semibold truncate ${productId ? "text-zinc-900 hover:text-blue-600 transition-colors" : "text-zinc-900"}`}>{item.products?.name ?? "Product"}</p>
                 <p className="text-xs text-zinc-500 mt-0.5">{tOrders.qty ?? "Qty"}: {item.quantity}</p>
                 {(item.selected_color?.name || item.selected_size) && (
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500">
@@ -117,6 +129,7 @@ function OrderCard({ order, onCancel }) {
                 )}
               </div>
               <p className="text-sm font-semibold text-zinc-900 shrink-0">{formatPrice(item.unit_price)}</p>
+              </RowTag>
             </li>
           );
         })}

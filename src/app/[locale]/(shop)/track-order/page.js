@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import {
   Search,
   Package,
@@ -193,8 +194,19 @@ export default function TrackOrderPage() {
                   const colorHex = item.selected_color?.hex ?? null;
                   const sizeLabel = item.selected_size ?? null;
                   const imageUrl = getMainImage(item.products);
+                  const productId = item.products?.id;
+                  const RowTag = productId ? Link : "div";
+                  const rowProps = productId
+                    ? { href: `/${locale}/product/${productId}`, "aria-label": item.products?.name }
+                    : {};
                   return (
-                    <li key={i} className="flex items-center gap-3 text-sm">
+                    <li key={i}>
+                      <RowTag
+                        {...rowProps}
+                        className={`flex items-center gap-3 text-sm rounded-lg -mx-2 px-2 py-1 ${
+                          productId ? "hover:bg-zinc-50 transition-colors cursor-pointer" : ""
+                        }`}
+                      >
                       <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-zinc-100 bg-zinc-50">
                         {imageUrl ? (
                           <img
@@ -209,7 +221,7 @@ export default function TrackOrderPage() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-zinc-800 truncate">
+                        <p className={`truncate ${productId ? "text-zinc-800 hover:text-blue-600 transition-colors" : "text-zinc-800"}`}>
                           {item.products?.name ?? "Product"}
                         </p>
                         {(colorName || sizeLabel) && (
@@ -236,6 +248,7 @@ export default function TrackOrderPage() {
                       <span className="font-medium text-zinc-900 shrink-0">
                         {(unit * item.quantity).toFixed(2)} {currency}
                       </span>
+                      </RowTag>
                     </li>
                   );
                 })}

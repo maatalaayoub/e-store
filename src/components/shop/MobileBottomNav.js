@@ -18,7 +18,7 @@
  *    only ships Home + Cart doesn't end up with awkward empty slots).
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { Home, Heart, User, Package, Menu as MenuIcon } from "lucide-react";
@@ -41,6 +41,7 @@ const HIDE_ON_ROUTES = new Set([
   "reset-password",
   "contact",
   "admin",
+  "account",
 ]);
 
 /** Locale segments that need to be stripped before matching HIDE_ON_ROUTES. */
@@ -137,9 +138,19 @@ export default function MobileBottomNav() {
 
   // Master enable flag OR nothing to show → render nothing.
   const enabled = settings?.mobile_nav_enabled !== "false";
-  if (!enabled) return null;
-  if (buttons.length === 0) return null;
-  if (HIDE_ON_ROUTES.has(currentRoot)) return null;
+  const shouldShow = enabled && buttons.length > 0 && !HIDE_ON_ROUTES.has(currentRoot);
+
+  // Expose the bar's height so page-level fixed elements (announcement bar,
+  // floating CTAs) can offset above it. Media query in globals.css zeroes
+  // the var on lg+ where this nav is hidden by `lg:hidden`.
+  useEffect(() => {
+    if (!shouldShow) return;
+    const root = document.documentElement;
+    root.style.setProperty('--mobile-nav-h', '4rem');
+    return () => root.style.removeProperty('--mobile-nav-h');
+  }, [shouldShow]);
+
+  if (!shouldShow) return null;
 
   const colsClass =
     buttons.length === 1

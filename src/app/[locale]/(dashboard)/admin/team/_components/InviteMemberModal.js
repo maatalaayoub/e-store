@@ -143,12 +143,17 @@ export default function InviteMemberModal({ isOpen, onClose, onSaved, member }) 
         onClick={() => !submitting && onClose?.()}
       />
       <div
-        className={`relative w-full max-w-lg rounded-[5px] bg-white shadow-xl transition-transform ${
-          isOpen ? "translate-y-0" : "translate-y-4"
-        }`}
+        className={`relative flex w-full max-h-[92vh] flex-col overflow-hidden bg-white shadow-xl transition-transform
+          rounded-t-2xl sm:max-w-lg sm:max-h-[90vh] sm:rounded-[5px]
+          ${isOpen ? "translate-y-0" : "translate-y-full sm:translate-y-4"}`}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
+        {/* Grabber handle (mobile bottom-sheet affordance) */}
+        <div className="flex justify-center pt-2 pb-1 sm:hidden">
+          <span className="h-1 w-10 rounded-full bg-zinc-300" />
+        </div>
+
+        {/* Header (fixed) */}
+        <div className="flex shrink-0 items-center justify-between border-b border-zinc-100 px-6 py-4">
           <div className="flex items-center gap-3">
             <span className="flex h-9 w-9 items-center justify-center rounded-[5px] bg-blue-50 text-blue-600">
               {isEdit ? <ShieldCheck className="h-5 w-5" /> : <UserPlus className="h-5 w-5" />}
@@ -174,7 +179,9 @@ export default function InviteMemberModal({ isOpen, onClose, onSaved, member }) 
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-5">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          {/* Scrollable body */}
+          <div className="flex-1 overflow-y-auto px-6 py-5">
           {!isEdit && (
             <div className="mb-5">
               <label className="mb-1.5 block text-sm font-medium text-zinc-700">
@@ -264,8 +271,10 @@ export default function InviteMemberModal({ isOpen, onClose, onSaved, member }) 
           {error && (
             <p className="mt-4 rounded-[5px] bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
           )}
+          </div>
 
-          <div className="mt-6 flex items-center justify-end gap-3">
+          {/* Sticky footer */}
+          <div className="flex shrink-0 items-center justify-end gap-3 border-t border-zinc-100 bg-white px-6 py-4">
             <button
               type="button"
               onClick={() => !submitting && onClose?.()}

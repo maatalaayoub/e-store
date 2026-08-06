@@ -796,8 +796,10 @@ export default function AnnouncementBar() {
     setActiveIdx((i) => (i - 1 + visible.length) % visible.length);
   const goNext = () => setActiveIdx((i) => (i + 1) % visible.length);
 
-  // Always fixed at top/bottom so the bar is never mixed into page content
-  const positionClass = positionTop ? "top-0" : "bottom-0";
+  // Always fixed at top/bottom so the bar is never mixed into page content.
+  // Bottom bars sit above the mobile bottom nav via --mobile-nav-h (set from
+  // MobileBottomNav; zeroed on lg+ by globals.css).
+  const positionClass = positionTop ? "top-0" : "";
   const stickyClass = `fixed inset-x-0 ${positionClass} z-[51]`;
 
   const borderClass = current.border_enabled
@@ -814,6 +816,7 @@ export default function AnnouncementBar() {
       className={`${stickyClass} ${borderClass} transition-transform duration-300 overflow-hidden`}
       style={{
         height: "2.5rem",
+        bottom: positionTop ? undefined : 'var(--mobile-nav-h, 0px)',
         transform: scrollHidden
           ? (positionTop ? 'translateY(-100%)' : 'translateY(100%)')
           : 'translateY(0)',
