@@ -428,7 +428,16 @@
       "empty_title": "ما كاينش طلبات",
       "empty_desc": "الطلبات غادي يبانو هنا منين العملاء يشريو.",
       "filter_panel": { "date_range": "نطاق التاريخ", "all_time": "كل الأوقات", "today": "اليوم", "last_7": "آخر 7 أيام", "last_30": "آخر 30 يوم", "cancelled_by": "لغاه", "any": "الكل", "customer": "العميل", "admin_cancel": "الأدمين", "clear": "مسح الفلاتر" },
-      "drawer": { "items": "المنتجات", "qty": "الكمية", "color": "اللون", "size": "القياس", "no_items": "ما كاين اشي.", "cancel": "إلغاء", "confirm": "أكّد الطلب", "change_status": "بدّل الحالة", "status_updated": "الطلب تحدّث", "cancelled_note": "هاد الطلب تلغى.", "cancel_confirm_title": "واش بغيتي تلغي هاد الطلب؟", "cancel_confirm_desc": "السطوك اللي تحجز لهاد الطلب غادي يرجع. هاد الفعل ما يتراجعش.", "cancel_confirm_yes": "لغي الطلب", "cancel_confirm_no": "خلّي الطلب" }
+      "drawer": { "items": "المنتجات", "qty": "الكمية", "color": "اللون", "size": "القياس", "no_items": "ما كاين اشي.", "cancel": "إلغاء", "confirm": "أكّد الطلب", "change_status": "بدّل الحالة", "status_updated": "الطلب تحدّث", "cancelled_note": "هاد الطلب تلغى.", "cancel_confirm_title": "واش بغيتي تلغي هاد الطلب؟", "cancel_confirm_desc": "السطوك اللي تحجز لهاد الطلب غادي يرجع. هاد الفعل ما يتراجعش.", "cancel_confirm_yes": "لغي الطلب", "cancel_confirm_no": "خلّي الطلب" },
+      "select": "سيليكسيوني",
+      "deselect": "دسيليكسيوني",
+      "select_all": "سيليكسيوني الكل",
+      "selected": "مسيليكسيوني",
+      "delete_selected": "مسح المسيليكسيوني",
+      "delete_selected_title": "تمسح الطلبات المسيليكسيوني؟",
+      "delete_selected_desc": "هاد الفعل ما يتراجعش. السطوك اللي تحجز لهاد الطلبات غادي يرجع.",
+      "deleted_selected": "الطلبات المسيليكسيوني تمسحو",
+      "delete_failed": "ما تمسحوش الطلبات"
     },
     "customers": {
       "title": "العملاء",
@@ -768,7 +777,15 @@
         "filter_new": "جديد",
         "filter_read": "مقروء",
         "filter_replied": "تجاوب",
-        "filter_archived": "مؤرشف"
+        "filter_archived": "مؤرشف",
+        "select": "ختار",
+        "deselect": "حيد التحديد",
+        "select_all": "ختار الكل",
+        "selected": "مختار",
+        "delete_selected": "مسح المختار",
+        "delete_selected_title": "مسح الرسائل المختارة؟",
+        "delete_selected_desc": "هاد العملية ما يمكنش ترجع.",
+        "deleted_selected": "تمسحو الرسائل المختارة"
       },
       "hero": {
         "title": "الشرائح الرئيسية",
@@ -972,6 +989,13 @@
       "filter_all": "الكل",
       "filter_unread": "ما مقروءش",
       "read": "مقروء",
+      "select_all": "ختار الكل",
+      "selected": "مختار",
+      "select": "ختار",
+      "deselect": "حيد التحديد",
+      "delete_selected": "مسح المختار",
+      "delete_selected_title": "مسح الإشعارات المختارة؟",
+      "delete_selected_desc": "هاد العملية ما يمكنش ترجع.",
       "load_more": "تحميل زيادة",
       "mark_read": "حيد كمقروء",
       "mark_all_read": "حيد الكل كمقروء",

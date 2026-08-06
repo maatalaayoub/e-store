@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useParams } from "next/navigation";
-import { Search, Filter, Download, ShoppingCart, RefreshCw, ChevronDown, Check, X, MapPin, Phone, User, Package, Calendar, CheckCircle2, XCircle, Loader2, RotateCw, Tag } from "lucide-react";
+import { Search, Filter, Download, ShoppingCart, RefreshCw, ChevronDown, Check, X, MapPin, Phone, User, Package, Calendar, CheckCircle2, XCircle, Loader2, RotateCw, Tag, Square, CheckSquare, MinusSquare, Trash2 } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { AdminOrdersSkeleton } from "@/components/skeletons";
 import { useAdminOrderView } from "@/components/providers/AdminOrderViewContext";
@@ -550,6 +550,9 @@ export default function AdminOrdersPage() {
   const [filterCoords, setFilterCoords] = useState({ top: 0, left: 0 });
   const [dateRange, setDateRange] = useState("all");
   const [cancelledBy, setCancelledBy] = useState("any");
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const filterBtnRef = useRef(null);
   const filterPanelRef = useRef(null);
 
@@ -694,6 +697,44 @@ export default function AdminOrdersPage() {
   const clearFilters = () => { setDateRange("all"); setCancelledBy("any"); };
   const activeFilterCount = (dateRange !== "all" ? 1 : 0) + (cancelledBy !== "any" ? 1 : 0);
 
+  /* ── Bulk selection ── */
+  // Clear selection whenever the visible list changes (tab / search / filters).
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [activeTab, search, dateRange, cancelledBy]);
+
+  const toggleSelect = useCallback((id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }, []);
+
+  const deleteSelected = async () => {
+    if (selectedIds.length === 0) return;
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/v1/orders", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.success) {
+        throw new Error(json?.error || "Delete failed");
+      }
+      const removed = new Set(selectedIds);
+      setOrders((prev) => prev.filter((o) => !removed.has(o.id)));
+      setSelectedIds([]);
+      setBulkDeleteOpen(false);
+      toast.success(t.deleted_selected ?? "Selected orders deleted");
+    } catch (err) {
+      toast.error(t.delete_failed ?? "Failed to delete orders");
+      console.error("[delete orders]", err);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   /* ── Filtered list ── */
   const filtered = orders.filter((o) => {
     const matchTab = activeTab === "all" || o.status === activeTab;
@@ -718,11 +759,35 @@ export default function AdminOrdersPage() {
     return matchTab && matchSearch && matchDate && matchCancelledBy;
   });
 
+  // Tri-state select-all across the currently visible orders.
+  const visibleIds = filtered.map((o) => o.id);
+  const visibleSelectedCount = visibleIds.filter((id) => selectedIds.includes(id)).length;
+  const allVisibleSelected = visibleIds.length > 0 && visibleSelectedCount === visibleIds.length;
+  const someVisibleSelected = visibleSelectedCount > 0 && !allVisibleSelected;
+  const toggleSelectAll = () => {
+    if (allVisibleSelected) {
+      const visible = new Set(visibleIds);
+      setSelectedIds((prev) => prev.filter((id) => !visible.has(id)));
+    } else {
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...visibleIds])));
+    }
+  };
+
   if (!dict?.admin?.orders) return <AdminOrdersSkeleton />;
 
   return (
     <>
       <OrderDrawer order={selectedOrder} onClose={closeOrderDrawer} onStatusChanged={handleDrawerStatusChanged} />
+      <ConfirmationDialog
+        isOpen={bulkDeleteOpen}
+        title={t.delete_selected_title ?? "Delete selected orders?"}
+        description={t.delete_selected_desc ?? "This action cannot be undone."}
+        confirmText={t.delete_selected ?? "Delete selected"}
+        cancelText={t.drawer?.cancel ?? "Cancel"}
+        onConfirm={deleteSelected}
+        onCancel={() => setBulkDeleteOpen(false)}
+        isLoading={deleting}
+      />
       <div className="flex flex-col items-start gap-4 mb-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900">{t.title ?? "Orders"}</h1>
@@ -797,6 +862,47 @@ export default function AdminOrdersPage() {
                 </span>
               )}
             </button>
+
+            {/* Bulk-select controls */}
+            <div className="flex items-center gap-1 border-l border-zinc-200 pl-2 ml-1">
+              {/* Mobile-only select-all (desktop has one in the table header) */}
+              <button
+                type="button"
+                onClick={toggleSelectAll}
+                disabled={visibleIds.length === 0}
+                title={allVisibleSelected ? (t.deselect ?? "Deselect") : (t.select_all ?? "Select all")}
+                aria-label={allVisibleSelected ? (t.deselect ?? "Deselect") : (t.select_all ?? "Select all")}
+                className={`sm:hidden flex h-9 w-9 items-center justify-center rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                  visibleSelectedCount > 0
+                    ? "text-blue-600 hover:bg-blue-50"
+                    : "text-zinc-500 hover:bg-zinc-100"
+                }`}
+              >
+                {allVisibleSelected ? (
+                  <CheckSquare className="h-5 w-5" />
+                ) : someVisibleSelected ? (
+                  <MinusSquare className="h-5 w-5" />
+                ) : (
+                  <Square className="h-5 w-5" />
+                )}
+              </button>
+              {selectedIds.length > 0 && (
+                <>
+                  <span className="whitespace-nowrap rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                    {selectedIds.length} {t.selected ?? "selected"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setBulkDeleteOpen(true)}
+                    title={t.delete_selected ?? "Delete selected"}
+                    aria-label={t.delete_selected ?? "Delete selected"}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    <Trash2 className="h-5 w-5" />
+                  </button>
+                </>
+              )}
+            </div>
 
             {filterOpen && typeof document !== "undefined" && createPortal(
               <div
@@ -899,7 +1005,23 @@ export default function AdminOrdersPage() {
               const date = new Date(o.created_at).toLocaleDateString();
               const customerAmt = formatCustomerCurrency(o.total_amount, o.currency_code, o.exchange_rate);
               return (
-                <li key={o.id} className="px-4 py-4 flex flex-col gap-2 cursor-pointer hover:bg-zinc-50 active:bg-zinc-100 transition-colors" onClick={() => setSelectedOrder(o)}>
+                <li key={o.id} className={`px-4 py-4 flex gap-3 cursor-pointer hover:bg-zinc-50 active:bg-zinc-100 transition-colors ${selectedIds.includes(o.id) ? "bg-blue-50/50" : ""}`} onClick={() => {
+                  if (selectedIds.length > 0) { toggleSelect(o.id); return; }
+                  setSelectedOrder(o);
+                }}>
+                  <button
+                    type="button"
+                    role="checkbox"
+                    aria-checked={selectedIds.includes(o.id)}
+                    aria-label={selectedIds.includes(o.id) ? (t.deselect ?? "Deselect") : (t.select ?? "Select")}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleSelect(o.id); }}
+                    className={`mt-0.5 flex-shrink-0 transition-colors ${
+                      selectedIds.includes(o.id) ? "text-blue-600" : "text-zinc-400"
+                    }`}
+                  >
+                    {selectedIds.includes(o.id) ? <CheckSquare className="h-5 w-5" /> : <Square className="h-5 w-5" />}
+                  </button>
+                  <div className="flex-1 flex flex-col gap-2">
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-medium text-zinc-900 text-sm">#{o.order_number ?? o.id.slice(0, 8)}</span>
                   </div>
@@ -925,6 +1047,7 @@ export default function AdminOrdersPage() {
                       labels={tTabs}
                     />
                   </div>
+                  </div>
                 </li>
               );
             })}
@@ -937,6 +1060,25 @@ export default function AdminOrdersPage() {
             <table className="w-full text-left text-sm text-zinc-600">
               <thead className="bg-white text-xs uppercase text-zinc-400 border-b border-zinc-100">
                 <tr>
+                  <th className="w-10 px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={toggleSelectAll}
+                      disabled={visibleIds.length === 0}
+                      aria-label={allVisibleSelected ? (t.deselect ?? "Deselect") : (t.select_all ?? "Select all")}
+                      className={`flex items-center justify-center transition-colors disabled:opacity-40 ${
+                        visibleSelectedCount > 0 ? "text-blue-600" : "text-zinc-400 hover:text-zinc-600"
+                      }`}
+                    >
+                      {allVisibleSelected ? (
+                        <CheckSquare className="h-4 w-4" />
+                      ) : someVisibleSelected ? (
+                        <MinusSquare className="h-4 w-4" />
+                      ) : (
+                        <Square className="h-4 w-4" />
+                      )}
+                    </button>
+                  </th>
                   <th className="px-6 py-3 font-medium">{tH.order ?? "Order"}</th>
                   <th className="px-6 py-3 font-medium">{tH.customer ?? "Customer"}</th>
                   <th className="px-6 py-3 font-medium">{tH.date ?? "Date"}</th>
@@ -952,7 +1094,24 @@ export default function AdminOrdersPage() {
                   const date     = new Date(o.created_at).toLocaleDateString();
                   const customerAmt = formatCustomerCurrency(o.total_amount, o.currency_code, o.exchange_rate);
                   return (
-                    <tr key={o.id} className="hover:bg-zinc-50 cursor-pointer" onClick={() => setSelectedOrder(o)}>
+                    <tr key={o.id} className={`hover:bg-zinc-50 cursor-pointer ${selectedIds.includes(o.id) ? "bg-blue-50/40" : ""}`} onClick={() => {
+                      if (selectedIds.length > 0) { toggleSelect(o.id); return; }
+                      setSelectedOrder(o);
+                    }}>
+                      <td className="w-10 px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          role="checkbox"
+                          aria-checked={selectedIds.includes(o.id)}
+                          aria-label={selectedIds.includes(o.id) ? (t.deselect ?? "Deselect") : (t.select ?? "Select")}
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleSelect(o.id); }}
+                          className={`flex items-center justify-center transition-colors ${
+                            selectedIds.includes(o.id) ? "text-blue-600" : "text-zinc-400 hover:text-zinc-600"
+                          }`}
+                        >
+                          {selectedIds.includes(o.id) ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}
+                        </button>
+                      </td>
                       <td className="px-6 py-4 font-mono text-xs text-zinc-500">#{o.order_number ?? o.id.slice(0, 8)}</td>
                       <td className="px-6 py-4">
                         <span className="font-medium text-zinc-900">{customer}</span>

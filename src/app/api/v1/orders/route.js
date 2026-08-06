@@ -849,3 +849,99 @@ export async function PATCH(req) {
     return NextResponse.json({ success: false, error: 'Failed to update order' }, { status: 500 });
   }
 }
+
+/**
+ * DELETE /api/v1/orders
+ * Admin-only bulk delete. Accepts either `?id=<uuid>` (single) or JSON body
+ * `{ ids: [uuid, ...] }`. Restores stock for any deleted order that still has
+ * `stock_committed = true`, then deletes the orders (line items cascade via FK).
+ */
+export async function DELETE(req) {
+  const originRejection = assertSameOrigin(req);
+  if (originRejection) return originRejection;
+
+  const limited = await rateLimitOrReject(req, {
+    bucket: 'orders-delete',
+    limit: 10,
+    windowMs: 60_000,
+  });
+  if (limited) return limited;
+
+  try {
+    const anonClient = await createClient();
+    const adminUser = await getAdminUser(anonClient, 'orders');
+    if (!adminUser) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Collect ids from query string or JSON body.
+    const { searchParams } = new URL(req.url);
+    const singleId = searchParams.get('id');
+    let ids = [];
+    if (singleId) {
+      ids = [singleId];
+    } else {
+      try {
+        const body = await req.json();
+        if (Array.isArray(body?.ids)) ids = body.ids.filter(Boolean);
+      } catch {
+        // no body
+      }
+    }
+    if (ids.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Order id(s) required' },
+        { status: 400 },
+      );
+    }
+
+    const db = createServiceClient();
+
+    // Enforce staff data window: staff can only delete orders within their
+    // allowed date range.
+    const dataFrom = await getStaffDataFrom(anonClient, adminUser.id);
+
+    let selectQuery = db
+      .from('orders')
+      .select('id, stock_committed, order_items(product_id, quantity)')
+      .in('id', ids);
+    if (dataFrom) selectQuery = selectQuery.gte('created_at', dataFrom);
+    const { data: rows, error: fetchErr } = await selectQuery;
+    if (fetchErr) throw fetchErr;
+
+    const allowedIds = (rows ?? []).map((r) => r.id);
+    if (allowedIds.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'No matching orders found' },
+        { status: 404 },
+      );
+    }
+
+    // Restore stock for any order that still had stock committed. This mirrors
+    // the cancel-flow behaviour so deletion never leaves ghost decrements.
+    for (const row of rows ?? []) {
+      if (!row.stock_committed) continue;
+      const items = (row.order_items ?? []).map((i) => ({
+        id: i.product_id,
+        quantity: i.quantity,
+      }));
+      if (items.length > 0) {
+        await restoreStock(db, items);
+      }
+    }
+
+    const { error: delErr } = await db
+      .from('orders')
+      .delete()
+      .in('id', allowedIds);
+    if (delErr) throw delErr;
+
+    return NextResponse.json({ success: true, deleted: allowedIds.length });
+  } catch (err) {
+    logger.error('DELETE /api/v1/orders', err);
+    return NextResponse.json(
+      { success: false, error: 'Failed to delete order(s)' },
+      { status: 500 },
+    );
+  }
+}

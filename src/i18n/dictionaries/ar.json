@@ -428,7 +428,16 @@
       "empty_title": "لا توجد طلبات بعد",
       "empty_desc": "ستظهر الطلبات هنا عند شراء العملاء.",
       "filter_panel": { "date_range": "نطاق التاريخ", "all_time": "كل الأوقات", "today": "اليوم", "last_7": "آخر 7 أيام", "last_30": "آخر 30 يومًا", "cancelled_by": "ألغاه", "any": "الكل", "customer": "العميل", "admin_cancel": "المشرف", "clear": "مسح الفلاتر" },
-      "drawer": { "items": "المنتجات", "qty": "الكمية", "color": "اللون", "size": "المقاس", "no_items": "لا توجد منتجات.", "cancel": "إلغاء", "confirm": "تأكيد الطلب", "change_status": "تغيير الحالة", "status_updated": "تم تحديث الطلب", "cancelled_note": "تم إلغاء هذا الطلب.", "cancel_confirm_title": "هل تريد إلغاء هذا الطلب؟", "cancel_confirm_desc": "سيتم إرجاع المخزون المحجوز لهذا الطلب. لا يمكن التراجع عن هذا الإجراء.", "cancel_confirm_yes": "إلغاء الطلب", "cancel_confirm_no": "الاحتفاظ بالطلب" }
+      "drawer": { "items": "المنتجات", "qty": "الكمية", "color": "اللون", "size": "المقاس", "no_items": "لا توجد منتجات.", "cancel": "إلغاء", "confirm": "تأكيد الطلب", "change_status": "تغيير الحالة", "status_updated": "تم تحديث الطلب", "cancelled_note": "تم إلغاء هذا الطلب.", "cancel_confirm_title": "هل تريد إلغاء هذا الطلب؟", "cancel_confirm_desc": "سيتم إرجاع المخزون المحجوز لهذا الطلب. لا يمكن التراجع عن هذا الإجراء.", "cancel_confirm_yes": "إلغاء الطلب", "cancel_confirm_no": "الاحتفاظ بالطلب" },
+      "select": "تحديد",
+      "deselect": "إلغاء التحديد",
+      "select_all": "تحديد الكل",
+      "selected": "محدد",
+      "delete_selected": "حذف المحدد",
+      "delete_selected_title": "حذف الطلبات المحددة؟",
+      "delete_selected_desc": "لا يمكن التراجع عن هذا الإجراء. سيتم إرجاع المخزون المحجوز لهذه الطلبات.",
+      "deleted_selected": "تم حذف الطلبات المحددة",
+      "delete_failed": "فشل حذف الطلبات"
     },
     "customers": {
       "title": "العملاء",
@@ -768,7 +777,15 @@
         "filter_new": "جديد",
         "filter_read": "مقروء",
         "filter_replied": "تم الرد",
-        "filter_archived": "مؤرشف"
+        "filter_archived": "مؤرشف",
+        "select": "تحديد",
+        "deselect": "إلغاء التحديد",
+        "select_all": "تحديد الكل",
+        "selected": "محدد",
+        "delete_selected": "حذف المحدد",
+        "delete_selected_title": "حذف الرسائل المحددة؟",
+        "delete_selected_desc": "لا يمكن التراجع عن هذا الإجراء.",
+        "deleted_selected": "تم حذف الرسائل المحددة"
       },
       "hero": {
         "title": "الشرائح الرئيسية",
@@ -972,6 +989,13 @@
       "filter_all": "الكل",
       "filter_unread": "غير مقروءة",
       "read": "مقروءة",
+      "select_all": "تحديد الكل",
+      "selected": "محدد",
+      "select": "تحديد",
+      "deselect": "إلغاء التحديد",
+      "delete_selected": "حذف المحدد",
+      "delete_selected_title": "حذف الإشعارات المحددة؟",
+      "delete_selected_desc": "لا يمكن التراجع عن هذا الإجراء.",
       "load_more": "تحميل المزيد",
       "mark_read": "تحديد كمقروء",
       "mark_all_read": "تحديد الكل كمقروء",

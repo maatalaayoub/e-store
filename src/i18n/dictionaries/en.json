@@ -425,7 +425,16 @@
       "empty_title": "No orders yet",
       "empty_desc": "Orders will appear here as customers check out.",
       "filter_panel": { "date_range": "Date range", "all_time": "All time", "today": "Today", "last_7": "Last 7 days", "last_30": "Last 30 days", "cancelled_by": "Cancelled by", "any": "Any", "customer": "Customer", "admin_cancel": "Admin", "clear": "Clear filters" },
-      "drawer": { "items": "Items", "qty": "Qty", "color": "Color", "size": "Size", "no_items": "No items found.", "cancel": "Cancel", "confirm": "Confirm order", "change_status": "Change status", "status_updated": "Order updated", "cancelled_note": "This order has been cancelled.", "cancel_confirm_title": "Cancel this order?", "cancel_confirm_desc": "Stock committed for this order will be restored. This action cannot be undone.", "cancel_confirm_yes": "Cancel order", "cancel_confirm_no": "Keep order" }
+      "drawer": { "items": "Items", "qty": "Qty", "color": "Color", "size": "Size", "no_items": "No items found.", "cancel": "Cancel", "confirm": "Confirm order", "change_status": "Change status", "status_updated": "Order updated", "cancelled_note": "This order has been cancelled.", "cancel_confirm_title": "Cancel this order?", "cancel_confirm_desc": "Stock committed for this order will be restored. This action cannot be undone.", "cancel_confirm_yes": "Cancel order", "cancel_confirm_no": "Keep order" },
+      "select": "Select",
+      "deselect": "Deselect",
+      "select_all": "Select all",
+      "selected": "selected",
+      "delete_selected": "Delete selected",
+      "delete_selected_title": "Delete selected orders?",
+      "delete_selected_desc": "This action cannot be undone. Stock committed for these orders will be restored.",
+      "deleted_selected": "Selected orders deleted",
+      "delete_failed": "Failed to delete orders"
     },
     "customers": {
       "title": "Customers",
@@ -782,7 +791,15 @@
         "filter_new": "New",
         "filter_read": "Read",
         "filter_replied": "Replied",
-        "filter_archived": "Archived"
+        "filter_archived": "Archived",
+        "select": "Select",
+        "deselect": "Deselect",
+        "select_all": "Select all",
+        "selected": "selected",
+        "delete_selected": "Delete selected",
+        "delete_selected_title": "Delete selected messages?",
+        "delete_selected_desc": "This action cannot be undone.",
+        "deleted_selected": "Selected messages deleted"
       },
       "hero": {
         "title": "Hero Carousel",
@@ -986,6 +1003,13 @@
       "filter_all": "All",
       "filter_unread": "Unread",
       "read": "Read",
+      "select_all": "Select all",
+      "selected": "selected",
+      "select": "Select",
+      "deselect": "Deselect",
+      "delete_selected": "Delete selected",
+      "delete_selected_title": "Delete selected notifications?",
+      "delete_selected_desc": "This action cannot be undone.",
       "load_more": "Load more",
       "mark_read": "Mark as read",
       "mark_all_read": "Mark all as read",

@@ -132,18 +132,34 @@ export async function DELETE(req) {
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
-    if (!id) {
+
+    let ids = [];
+    if (id) {
+      ids = [id];
+    } else {
+      try {
+        const body = await req.json();
+        if (Array.isArray(body?.ids)) ids = body.ids.filter(Boolean);
+      } catch {
+        // no body
+      }
+    }
+
+    if (ids.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'Message id required' },
+        { success: false, error: 'Message id(s) required' },
         { status: 400 }
       );
     }
 
     const supabase = createServiceClient();
-    const { error } = await supabase.from('contact_messages').delete().eq('id', id);
+    const { error } = await supabase
+      .from('contact_messages')
+      .delete()
+      .in('id', ids);
     if (error) throw error;
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, deleted: ids.length });
   } catch (err) {
     if (err?.statusCode === 401 || err?.message?.toLowerCase().includes('unauthorized')) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });

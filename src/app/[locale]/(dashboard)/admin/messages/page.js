@@ -13,6 +13,9 @@ import {
   MessageCircle,
   Eye,
   EyeOff,
+  Square,
+  CheckSquare,
+  MinusSquare,
 } from "lucide-react";
 
 const STATUS_FILTERS = ["all", "new", "read", "replied", "archived"];
@@ -30,6 +33,8 @@ export default function AdminMessagesPage() {
   );
   const [expanded, setExpanded] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   const fetchMessages = async () => {
     setLoading(true);
@@ -90,6 +95,46 @@ export default function AdminMessagesPage() {
       toast.error(err?.message ?? "Failed to delete");
     } finally {
       setDeleteId(null);
+    }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const allSelected =
+    messages.length > 0 && selectedIds.length === messages.length;
+  const someSelected = selectedIds.length > 0 && !allSelected;
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(messages.map((m) => m.id));
+    }
+  };
+
+  const deleteSelected = async () => {
+    if (selectedIds.length === 0) return;
+    try {
+      const res = await fetch("/api/v1/admin/contact-messages", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error ?? "Failed");
+      const removed = selectedIds.length;
+      setMessages((prev) => prev.filter((m) => !selectedIds.includes(m.id)));
+      setCount((c) => Math.max(0, c - removed));
+      setSelectedIds([]);
+      toast.success(t.deleted_selected ?? `Deleted ${removed} message(s)`);
+    } catch (err) {
+      toast.error(err?.message ?? "Failed to delete");
+    } finally {
+      setBulkDeleteOpen(false);
     }
   };
 
@@ -165,27 +210,70 @@ export default function AdminMessagesPage() {
         </div>
       </div>
 
-      {/* ── Filter pills (same style as storefront tabs) ── */}
-      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Message filters">
-        {STATUS_FILTERS.map((f) => {
-          const active = filter === f;
-          return (
+      {/* Toolbar: filters + bulk actions */}
+      <div className="flex flex-col gap-3 rounded-xl border border-zinc-100 bg-white p-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-1.5 px-1" role="tablist" aria-label="Message filters">
+          {STATUS_FILTERS.map((f) => {
+            const active = filter === f;
+            return (
+              <button
+                key={f}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => {
+                  setFilter(f);
+                  setSelectedIds([]);
+                }}
+                className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
+                  active
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "text-zinc-600 hover:bg-zinc-100"
+                }`}
+              >
+                {t[`filter_${f}`] ?? f}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center gap-1 border-t border-zinc-100 pt-2 sm:border-t-0 sm:pt-0">
+          {messages.length > 0 && (
             <button
-              key={f}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => setFilter(f)}
-              className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 border ${
-                active
-                  ? "bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/25"
-                  : "bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300 hover:text-zinc-900 hover:bg-zinc-50"
+              onClick={toggleSelectAll}
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+                selectedIds.length > 0
+                  ? "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                  : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
               }`}
+              title={t.select_all ?? "Select all"}
+              aria-label={t.select_all ?? "Select all"}
             >
-              {t[`filter_${f}`] ?? f}
+              {allSelected ? (
+                <CheckSquare className="h-4 w-4" />
+              ) : someSelected ? (
+                <MinusSquare className="h-4 w-4" />
+              ) : (
+                <Square className="h-4 w-4" />
+              )}
             </button>
-          );
-        })}
+          )}
+          {selectedIds.length > 0 && (
+            <>
+              <span className="px-1.5 text-xs font-medium text-zinc-500">
+                {selectedIds.length} {t.selected ?? "selected"}
+              </span>
+              <button
+                onClick={() => setBulkDeleteOpen(true)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                title={t.delete_selected ?? "Delete selected"}
+                aria-label={t.delete_selected ?? "Delete selected"}
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {loading ? (
@@ -216,6 +304,31 @@ export default function AdminMessagesPage() {
 
                 <div className="p-4 sm:p-5 ps-5 sm:ps-6">
                   <div className="flex items-start gap-4">
+                    {/* Selection checkbox */}
+                    <button
+                      type="button"
+                      onClick={() => toggleSelect(m.id)}
+                      className={`mt-1 shrink-0 rounded p-0.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
+                        selectedIds.includes(m.id)
+                          ? "text-blue-600 hover:text-blue-700"
+                          : "text-zinc-400 hover:text-zinc-600"
+                      }`}
+                      title={
+                        selectedIds.includes(m.id) ? (t.deselect ?? "Deselect") : (t.select ?? "Select")
+                      }
+                      aria-label={
+                        selectedIds.includes(m.id) ? (t.deselect ?? "Deselect") : (t.select ?? "Select")
+                      }
+                      aria-checked={selectedIds.includes(m.id)}
+                      role="checkbox"
+                    >
+                      {selectedIds.includes(m.id) ? (
+                        <CheckSquare className="h-5 w-5" />
+                      ) : (
+                        <Square className="h-5 w-5" />
+                      )}
+                    </button>
+
                     {/* Avatar */}
                     <div
                       className={`hidden sm:flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${avatarClass(m.name || m.email)}`}
@@ -358,6 +471,19 @@ export default function AdminMessagesPage() {
         icon={<Trash2 className="h-5 w-5" />}
         onConfirm={() => deleteMessage(deleteId)}
         onCancel={() => setDeleteId(null)}
+      />
+
+      <ConfirmationDialog
+        isOpen={bulkDeleteOpen}
+        title={t.delete_selected_title ?? "Delete selected messages?"}
+        description={
+          t.delete_selected_desc ?? "This action cannot be undone."
+        }
+        confirmText={t.delete ?? "Delete"}
+        cancelText={dict?.common?.close ?? "Cancel"}
+        icon={<Trash2 className="h-5 w-5" />}
+        onConfirm={deleteSelected}
+        onCancel={() => setBulkDeleteOpen(false)}
       />
     </div>
   );

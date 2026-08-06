@@ -14,12 +14,16 @@ import {
   Package,
   Loader2,
   Filter,
+  Square,
+  CheckSquare,
+  MinusSquare,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { useAdminOrderView } from "@/components/providers/AdminOrderViewContext";
 import { AdminOrdersSkeleton } from "@/components/skeletons";
+import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
 
 const TYPE_META = {
   new_order: {
@@ -120,6 +124,9 @@ export default function AdminNotificationsPage() {
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
   const LIMIT = 25;
 
   const fetchNotifications = useCallback(
@@ -266,10 +273,50 @@ export default function AdminNotificationsPage() {
     }
   };
 
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const allSelected =
+    notifications.length > 0 && selectedIds.length === notifications.length;
+  const someSelected = selectedIds.length > 0 && !allSelected;
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(notifications.map((n) => n.id));
+    }
+  };
+
+  const deleteSelected = async () => {
+    if (selectedIds.length === 0) return;
+    try {
+      const res = await fetch("/api/v1/notifications", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        const removed = notifications.filter((n) => selectedIds.includes(n.id));
+        const removedUnread = removed.filter((n) => !n.read).length;
+        setNotifications((prev) => prev.filter((n) => !selectedIds.includes(n.id)));
+        setUnreadCount((c) => Math.max(0, c - removedUnread));
+        setSelectedIds([]);
+      }
+    } catch (e) {
+      console.error("[AdminNotificationsPage] bulk delete failed", e);
+    }
+  };
+
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setFilterType(tab === "all" || tab === "unread" ? "all" : tab);
     setOffset(0);
+    setSelectedIds([]);
   };
 
   const filtered = notifications;
@@ -278,56 +325,94 @@ export default function AdminNotificationsPage() {
 
   return (
     <>
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-900">{tNav.notifications ?? t.title ?? "Notifications"}</h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            {unreadCount > 0
-              ? `${unreadCount} ${t.unread ?? "unread"}`
-              : t.empty ?? "No notifications"}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {unreadCount > 0 && (
-            <button
-              onClick={markAllAsRead}
-              className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-            >
-              <CheckCheck className="h-4 w-4" />
-              {t.mark_all_read ?? "Mark all read"}
-            </button>
-          )}
-          {notifications.some((n) => n.read) && (
-            <button
-              onClick={clearRead}
-              className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-red-50 hover:text-red-600"
-            >
-              <Trash2 className="h-4 w-4" />
-              {t.clear_read ?? "Clear read"}
-            </button>
-          )}
-        </div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-zinc-900">{tNav.notifications ?? t.title ?? "Notifications"}</h1>
+        <p className="mt-1 text-sm text-zinc-500">
+          {unreadCount > 0
+            ? `${unreadCount} ${t.unread ?? "unread"}`
+            : t.empty ?? "No notifications"}
+        </p>
       </div>
 
-      {/* Tabs */}
-      <div className="mb-6 flex flex-wrap items-center gap-2">
-        {TAB_KEYS.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => handleTabChange(tab)}
-            className={`rounded-full border px-4 py-1.5 text-xs font-medium transition-colors ${
-              activeTab === tab
-                ? "border-blue-600 bg-blue-600 text-white"
-                : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50"
-            }`}
-          >
-            {tab === "all"
-              ? t.filter_all ?? "All"
-              : tab === "unread"
-              ? t.filter_unread ?? "Unread"
-              : t[`type_${tab}`] ?? tab}
-          </button>
-        ))}
+      {/* Toolbar: tabs + actions */}
+      <div className="mb-4 flex flex-col gap-3 rounded-xl border border-zinc-100 bg-white p-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-1.5 px-1">
+          {TAB_KEYS.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => handleTabChange(tab)}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
+                activeTab === tab
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "text-zinc-600 hover:bg-zinc-100"
+              }`}
+            >
+              {tab === "all"
+                ? t.filter_all ?? "All"
+                : tab === "unread"
+                ? t.filter_unread ?? "Unread"
+                : t[`type_${tab}`] ?? tab}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-1 border-t border-zinc-100 pt-2 sm:border-t-0 sm:pt-0">
+          {notifications.length > 0 && (
+            <button
+              onClick={toggleSelectAll}
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+                selectedIds.length > 0
+                  ? "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                  : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
+              }`}
+              title={t.select_all ?? "Select all"}
+              aria-label={t.select_all ?? "Select all"}
+            >
+              {allSelected ? (
+                <CheckSquare className="h-4 w-4" />
+              ) : someSelected ? (
+                <MinusSquare className="h-4 w-4" />
+              ) : (
+                <Square className="h-4 w-4" />
+              )}
+            </button>
+          )}
+          {selectedIds.length > 0 && (
+            <>
+              <span className="px-1.5 text-xs font-medium text-zinc-500">
+                {selectedIds.length} {t.selected ?? "selected"}
+              </span>
+              <button
+                onClick={() => setBulkDeleteOpen(true)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                title={t.delete_selected ?? "Delete selected"}
+                aria-label={t.delete_selected ?? "Delete selected"}
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </>
+          )}
+          {selectedIds.length === 0 && unreadCount > 0 && (
+            <button
+              onClick={markAllAsRead}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
+              title={t.mark_all_read ?? "Mark all as read"}
+              aria-label={t.mark_all_read ?? "Mark all as read"}
+            >
+              <CheckCheck className="h-4 w-4" />
+            </button>
+          )}
+          {selectedIds.length === 0 && notifications.some((n) => n.read) && (
+            <button
+              onClick={clearRead}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-red-50 hover:text-red-600"
+              title={t.clear_read ?? "Clear read"}
+              aria-label={t.clear_read ?? "Clear read"}
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* List */}
@@ -376,6 +461,33 @@ export default function AdminNotificationsPage() {
                   isUnread ? "bg-zinc-50/80" : "bg-white"
                 }`}
               >
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleSelect(n.id);
+                  }}
+                  className={`mt-1 shrink-0 rounded p-0.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
+                    selectedIds.includes(n.id)
+                      ? "text-blue-600 hover:text-blue-700"
+                      : "text-zinc-400 hover:text-zinc-600"
+                  }`}
+                  title={
+                    selectedIds.includes(n.id) ? t.deselect : t.select
+                  }
+                  aria-label={
+                    selectedIds.includes(n.id) ? t.deselect : t.select
+                  }
+                  aria-checked={selectedIds.includes(n.id)}
+                  role="checkbox"
+                >
+                  {selectedIds.includes(n.id) ? (
+                    <CheckSquare className="h-5 w-5" />
+                  ) : (
+                    <Square className="h-5 w-5" />
+                  )}
+                </button>
                 <div
                   className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white ${meta.color}`}
                 >
@@ -412,7 +524,7 @@ export default function AdminNotificationsPage() {
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          deleteNotification(n.id);
+                          setDeleteId(n.id);
                         }}
                         className="rounded p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600"
                         title={t.delete}
@@ -428,6 +540,10 @@ export default function AdminNotificationsPage() {
 
             const orderId = getOrderNotificationId(n);
             const handleClick = () => {
+              if (selectedIds.length > 0) {
+                toggleSelect(n.id);
+                return;
+              }
               markAsRead(n.id);
               if (orderId) openOrder(orderId);
             };
@@ -465,6 +581,37 @@ export default function AdminNotificationsPage() {
           </div>
         )}
       </div>
+
+      <ConfirmationDialog
+        isOpen={!!deleteId}
+        title={t.delete_title ?? "Delete notification?"}
+        description={t.delete_desc ?? "This action cannot be undone."}
+        confirmText={t.delete ?? "Delete"}
+        cancelText={t.cancel ?? "Cancel"}
+        onConfirm={() => {
+          if (deleteId) {
+            deleteNotification(deleteId);
+            setDeleteId(null);
+          }
+        }}
+        onCancel={() => setDeleteId(null)}
+      />
+
+      <ConfirmationDialog
+        isOpen={bulkDeleteOpen}
+        title={t.delete_selected_title ?? "Delete selected notifications?"}
+        description={
+          t.delete_selected_desc ??
+          `This will delete ${selectedIds.length} notification(s). This action cannot be undone.`
+        }
+        confirmText={t.delete ?? "Delete"}
+        cancelText={t.cancel ?? "Cancel"}
+        onConfirm={() => {
+          deleteSelected();
+          setBulkDeleteOpen(false);
+        }}
+        onCancel={() => setBulkDeleteOpen(false)}
+      />
     </>
   );
 }

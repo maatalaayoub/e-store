@@ -428,7 +428,16 @@
       "empty_title": "Aucune commande",
       "empty_desc": "Les commandes apparaîtront ici lors des achats.",
       "filter_panel": { "date_range": "Période", "all_time": "Toujours", "today": "Aujourd'hui", "last_7": "7 derniers jours", "last_30": "30 derniers jours", "cancelled_by": "Annulé par", "any": "Tous", "customer": "Client", "admin_cancel": "Admin", "clear": "Effacer les filtres" },
-      "drawer": { "items": "Articles", "qty": "Qté", "color": "Couleur", "size": "Taille", "no_items": "Aucun article trouvé.", "cancel": "Annuler", "confirm": "Confirmer la commande", "change_status": "Changer le statut", "status_updated": "Commande mise à jour", "cancelled_note": "Cette commande a été annulée.", "cancel_confirm_title": "Annuler cette commande ?", "cancel_confirm_desc": "Le stock réservé pour cette commande sera restauré. Cette action est irréversible.", "cancel_confirm_yes": "Annuler la commande", "cancel_confirm_no": "Conserver la commande" }
+      "drawer": { "items": "Articles", "qty": "Qté", "color": "Couleur", "size": "Taille", "no_items": "Aucun article trouvé.", "cancel": "Annuler", "confirm": "Confirmer la commande", "change_status": "Changer le statut", "status_updated": "Commande mise à jour", "cancelled_note": "Cette commande a été annulée.", "cancel_confirm_title": "Annuler cette commande ?", "cancel_confirm_desc": "Le stock réservé pour cette commande sera restauré. Cette action est irréversible.", "cancel_confirm_yes": "Annuler la commande", "cancel_confirm_no": "Conserver la commande" },
+      "select": "Sélectionner",
+      "deselect": "Désélectionner",
+      "select_all": "Tout sélectionner",
+      "selected": "sélectionné(s)",
+      "delete_selected": "Supprimer la sélection",
+      "delete_selected_title": "Supprimer les commandes sélectionnées ?",
+      "delete_selected_desc": "Cette action est irréversible. Le stock réservé pour ces commandes sera restauré.",
+      "deleted_selected": "Commandes sélectionnées supprimées",
+      "delete_failed": "Échec de la suppression des commandes"
     },
     "customers": {
       "title": "Clients",
@@ -768,7 +777,15 @@
         "filter_new": "Nouveaux",
         "filter_read": "Lus",
         "filter_replied": "Répondus",
-        "filter_archived": "Archivés"
+        "filter_archived": "Archivés",
+        "select": "Sélectionner",
+        "deselect": "Désélectionner",
+        "select_all": "Tout sélectionner",
+        "selected": "sélectionné(s)",
+        "delete_selected": "Supprimer la sélection",
+        "delete_selected_title": "Supprimer les messages sélectionnés ?",
+        "delete_selected_desc": "Cette action est irréversible.",
+        "deleted_selected": "Messages sélectionnés supprimés"
       },
       "hero": {
         "title": "Carrousel Hero",
@@ -972,6 +989,13 @@
       "filter_all": "Tout",
       "filter_unread": "Non lues",
       "read": "Lues",
+      "select_all": "Tout sélectionner",
+      "selected": "sélectionnée(s)",
+      "select": "Sélectionner",
+      "deselect": "Désélectionner",
+      "delete_selected": "Supprimer la sélection",
+      "delete_selected_title": "Supprimer les notifications sélectionnées ?",
+      "delete_selected_desc": "Cette action est irréversible.",
       "load_more": "Charger plus",
       "mark_read": "Marquer comme lu",
       "mark_all_read": "Tout marquer comme lu",

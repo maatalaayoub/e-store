@@ -14,6 +14,9 @@ import {
   AlertTriangle,
   XCircle,
   Loader2,
+  Square,
+  CheckSquare,
+  MinusSquare,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -89,7 +92,17 @@ function getNotificationLink(n, locale) {
   return null;
 }
 
-function NotificationItem({ n, locale, t, onRead, onDelete, closeDropdown, onRequestDelete }) {
+function NotificationItem({
+  n,
+  locale,
+  t,
+  onRead,
+  onDelete,
+  onRequestDelete,
+  closeDropdown,
+  selected,
+  onToggleSelect,
+}) {
   const { openOrder } = useAdminOrderView();
   const meta = TYPE_META[n.type] ?? TYPE_META.out_of_stock;
   const Icon = meta.icon;
@@ -128,6 +141,29 @@ function NotificationItem({ n, locale, t, onRead, onDelete, closeDropdown, onReq
         isUnread ? "bg-zinc-50" : "bg-white"
       } hover:bg-zinc-100`}
     >
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onToggleSelect(n.id);
+        }}
+        className={`mt-0.5 shrink-0 rounded p-0.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
+          selected
+            ? "text-blue-600 hover:text-blue-700"
+            : "text-zinc-400 hover:text-zinc-600"
+        }`}
+        title={selected ? t.deselect : t.select}
+        aria-label={selected ? t.deselect : t.select}
+        aria-checked={selected}
+        role="checkbox"
+      >
+        {selected ? (
+          <CheckSquare className="h-4 w-4" />
+        ) : (
+          <Square className="h-4 w-4" />
+        )}
+      </button>
       <div
         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white ${meta.color}`}
       >
@@ -214,6 +250,8 @@ export default function NotificationBell() {
   const [hasMore, setHasMore] = useState(false);
   const [offset, setOffset] = useState(0);
   const [deleteId, setDeleteId] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const bellRef = useRef(null);
   const panelRef = useRef(null);
   const { locale } = useParams();
@@ -339,10 +377,16 @@ export default function NotificationBell() {
       ) {
         return;
       }
+      // Ignore clicks inside a modal/portal dialog (e.g. confirmation dialog).
+      if (e.target.closest('[role="dialog"]')) return;
       setOpen(false);
+      setSelectedIds([]);
     };
     const keyHandler = (e) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+        setSelectedIds([]);
+      }
     };
     document.addEventListener("mousedown", clickHandler);
     document.addEventListener("keydown", keyHandler);
@@ -424,13 +468,60 @@ export default function NotificationBell() {
     }
   };
 
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const allSelected =
+    notifications.length > 0 && selectedIds.length === notifications.length;
+  const someSelected = selectedIds.length > 0 && !allSelected;
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(notifications.map((n) => n.id));
+    }
+  };
+
+  const deleteSelected = async () => {
+    if (selectedIds.length === 0) return;
+    try {
+      const res = await fetch("/api/v1/notifications", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        const removed = notifications.filter((n) => selectedIds.includes(n.id));
+        const removedUnread = removed.filter((n) => !n.read).length;
+        setNotifications((prev) =>
+          prev.filter((n) => !selectedIds.includes(n.id))
+        );
+        setUnreadCount((c) => Math.max(0, c - removedUnread));
+        setSelectedIds([]);
+      }
+    } catch (e) {
+      console.error("[NotificationBell] bulk delete failed", e);
+    }
+  };
+
   const unreadNotifications = notifications.filter((n) => !n.read);
   const readNotifications = notifications.filter((n) => n.read);
 
   return (
     <div className="relative" ref={bellRef}>
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          if (bulkDeleteOpen) return;
+          setOpen((o) => {
+            if (o) setSelectedIds([]);
+            return !o;
+          });
+        }}
         className="relative rounded-lg p-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
         aria-label={t.title ?? "Notifications"}
         aria-haspopup="true"
@@ -453,10 +544,48 @@ export default function NotificationBell() {
         >
           <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-3">
             <h3 className="text-sm font-semibold text-zinc-900">
-              {t.title ?? "Notifications"}
+              {selectedIds.length > 0
+                ? `${selectedIds.length} ${t.selected ?? "selected"}`
+                : (t.title ?? "Notifications")}
             </h3>
             <div className="flex items-center gap-1">
-              {unreadCount > 0 && (
+              {notifications.length > 0 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleSelectAll();
+                  }}
+                  className={`rounded p-1.5 transition-colors ${
+                    selectedIds.length > 0
+                      ? "text-blue-600 hover:bg-blue-50"
+                      : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
+                  }`}
+                  title={t.select_all ?? "Select all"}
+                  aria-label={t.select_all ?? "Select all"}
+                >
+                  {allSelected ? (
+                    <CheckSquare className="h-4 w-4" />
+                  ) : someSelected ? (
+                    <MinusSquare className="h-4 w-4" />
+                  ) : (
+                    <Square className="h-4 w-4" />
+                  )}
+                </button>
+              )}
+              {selectedIds.length > 0 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setBulkDeleteOpen(true);
+                  }}
+                  className="rounded p-1.5 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                  title={t.delete_selected ?? "Delete selected"}
+                  aria-label={t.delete_selected ?? "Delete selected"}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+              {selectedIds.length === 0 && unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
                   className="rounded p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
@@ -466,7 +595,7 @@ export default function NotificationBell() {
                   <CheckCheck className="h-4 w-4" />
                 </button>
               )}
-              {readNotifications.length > 0 && (
+              {selectedIds.length === 0 && readNotifications.length > 0 && (
                 <button
                   onClick={clearRead}
                   className="rounded p-1.5 text-zinc-500 transition-colors hover:bg-red-50 hover:text-red-600"
@@ -498,7 +627,12 @@ export default function NotificationBell() {
                     onRead={markAsRead}
                     onDelete={deleteNotification}
                     onRequestDelete={setDeleteId}
-                    closeDropdown={() => setOpen(false)}
+                    closeDropdown={() => {
+                      setOpen(false);
+                      setSelectedIds([]);
+                    }}
+                    selected={selectedIds.includes(n.id)}
+                    onToggleSelect={toggleSelect}
                   />
                 ))}
               </div>
@@ -519,7 +653,12 @@ export default function NotificationBell() {
                 onRead={markAsRead}
                 onDelete={deleteNotification}
                 onRequestDelete={setDeleteId}
-                closeDropdown={() => setOpen(false)}
+                closeDropdown={() => {
+                  setOpen(false);
+                  setSelectedIds([]);
+                }}
+                selected={selectedIds.includes(n.id)}
+                onToggleSelect={toggleSelect}
               />
             ))}
 
@@ -555,6 +694,23 @@ export default function NotificationBell() {
           }
         }}
         onCancel={() => setDeleteId(null)}
+      />
+
+      <ConfirmationDialog
+        isOpen={bulkDeleteOpen}
+        title={t.delete_selected_title ?? "Delete selected notifications?"}
+        description={
+          t.delete_selected_desc ??
+          `This will delete ${selectedIds.length} notification(s). This action cannot be undone.`
+        }
+        confirmText={t.delete ?? "Delete"}
+        cancelText={t.cancel ?? "Cancel"}
+        onConfirm={() => {
+          deleteSelected();
+          setBulkDeleteOpen(false);
+          setSelectedIds([]);
+        }}
+        onCancel={() => setBulkDeleteOpen(false)}
       />
     </div>
   );
