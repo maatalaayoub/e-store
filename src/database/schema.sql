@@ -1303,3 +1303,72 @@ CREATE POLICY "Admins manage all order items" ON order_items
 DROP POLICY IF EXISTS "Admins manage admin notifications" ON admin_notifications;
 CREATE POLICY "Admins manage admin notifications" ON admin_notifications
   FOR ALL USING (public.is_store_manager());
+
+-- ========================
+-- PROMO CODES / DISCOUNTS
+-- ========================
+-- Flexible discount codes: percentage or fixed-amount, optional product
+-- restrictions, usage limits, and scheduling.
+
+CREATE TABLE IF NOT EXISTS promo_codes (
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+
+  -- Human-readable code entered by the customer (e.g. SUMMER25).
+  code text NOT NULL UNIQUE,
+
+  -- Discount type: percentage_off or fixed_amount.
+  discount_type text NOT NULL DEFAULT 'percentage_off'
+    CHECK (discount_type IN ('percentage_off', 'fixed_amount')),
+
+  -- Discount value: percentage (0-100) or fixed amount in MAD.
+  discount_value numeric(10, 2) NOT NULL CHECK (discount_value >= 0),
+
+  -- Minimum order subtotal (MAD) required before the code can be applied.
+  min_order_amount numeric(10, 2) DEFAULT 0 CHECK (min_order_amount >= 0),
+
+  -- Optional fixed maximum discount cap for percentage codes (MAD).
+  max_discount_amount numeric(10, 2) DEFAULT NULL CHECK (max_discount_amount IS NULL OR max_discount_amount >= 0),
+
+  -- Scheduling: both NULL means always active.
+  starts_at timestamp with time zone,
+  expires_at timestamp with time zone,
+
+  -- Usage limits.
+  usage_limit integer DEFAULT NULL CHECK (usage_limit IS NULL OR usage_limit > 0),
+  used_count integer NOT NULL DEFAULT 0 CHECK (used_count >= 0),
+
+  -- Scope: 'all' products, 'products' (only selected IDs), or 'categories'.
+  applies_to text NOT NULL DEFAULT 'all'
+    CHECK (applies_to IN ('all', 'products', 'categories')),
+
+  -- JSON arrays of UUIDs when applies_to is 'products' or 'categories'.
+  product_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+  category_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+
+  is_active boolean NOT NULL DEFAULT true,
+
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Fast lookup by code at checkout.
+CREATE INDEX IF NOT EXISTS idx_promo_codes_code ON promo_codes(code);
+
+-- Track which order used which promo code.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS promo_code_id uuid REFERENCES promo_codes(id) ON DELETE SET NULL;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS promo_discount_amount numeric(10, 2) DEFAULT 0 CHECK (promo_discount_amount >= 0);
+
+ALTER TABLE promo_codes ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public reads active promo codes" ON promo_codes;
+CREATE POLICY "Public reads active promo codes" ON promo_codes
+  FOR SELECT USING (is_active = true);
+
+DROP POLICY IF EXISTS "Admins manage promo codes" ON promo_codes;
+CREATE POLICY "Admins manage promo codes" ON promo_codes
+  FOR ALL USING (public.is_store_manager());
+
+CREATE OR REPLACE TRIGGER promo_codes_updated_at
+  BEFORE UPDATE ON promo_codes
+  FOR EACH ROW EXECUTE PROCEDURE public.set_updated_at();
+

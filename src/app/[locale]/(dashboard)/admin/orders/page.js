@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { Search, Filter, Download, ShoppingCart, RefreshCw, ChevronDown, Check, X, MapPin, Phone, User, Package, Calendar, CheckCircle2, XCircle, Loader2, RotateCw, Tag, Square, CheckSquare, MinusSquare, Trash2 } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { AdminOrdersSkeleton } from "@/components/skeletons";
@@ -132,6 +133,7 @@ function OrderDrawer({ order, onClose, onStatusChanged }) {
   const tD = dict?.admin?.orders?.drawer ?? {};
   const tH = dict?.admin?.orders?.headers ?? {};
   const tTabs = dict?.admin?.orders?.tabs ?? {};
+  const promoAppliedLabel = dict?.admin?.orders?.promo_applied ?? "Promo code applied";
   const params = useParams();
   const locale = params?.locale || "en";
 
@@ -242,6 +244,9 @@ function OrderDrawer({ order, onClose, onStatusChanged }) {
   const date = new Date(data.created_at).toLocaleString();
   const style = STATUS_STYLES[data.status] ?? { pill: "bg-zinc-100 text-zinc-700 border-zinc-200", dot: "bg-zinc-400" };
   const total = Number(data.total_amount ?? 0).toFixed(2);
+  const promoDiscount = Number(data.promo_discount_amount ?? 0);
+  const hasPromo = promoDiscount > 0;
+  const originalTotal = (Number(data.total_amount ?? 0) + promoDiscount).toFixed(2);
 
   return createPortal(
     <>
@@ -273,7 +278,19 @@ function OrderDrawer({ order, onClose, onStatusChanged }) {
         <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">{tH.order ?? "Order"}</p>
-            <h2 className="text-lg font-bold text-zinc-900 leading-tight">#{snapshot.order_number ?? snapshot.id.slice(0, 8)}</h2>
+            <h2 className="text-lg font-bold text-zinc-900 leading-tight inline-flex items-center gap-2 flex-wrap">
+              #{snapshot.order_number ?? snapshot.id.slice(0, 8)}
+              {data.promo_code_id && (
+                <Link
+                  href={`/${locale}/admin/marketing?promo=${data.promo_code_id}`}
+                  className="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[11px] font-semibold uppercase text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
+                  title={promoAppliedLabel}
+                >
+                  <Tag className="h-3 w-3" />
+                  {data.promo_codes?.code ?? ""}
+                </Link>
+              )}
+            </h2>
           </div>
           <div className="flex items-center gap-3">
             <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${style.pill}`}>
@@ -417,6 +434,21 @@ function OrderDrawer({ order, onClose, onStatusChanged }) {
 
         {/* Footer: total + status actions */}
         <div className="border-t border-zinc-100 bg-zinc-50">
+          {hasPromo && (
+            <div className="px-5 pt-3 flex items-center justify-between text-xs">
+              <span className="text-zinc-500">{tD.subtotal ?? "Subtotal"}</span>
+              <span className="text-zinc-600">{originalTotal} DH</span>
+            </div>
+          )}
+          {hasPromo && (
+            <div className="px-5 pt-1 flex items-center justify-between text-xs">
+              <span className="inline-flex items-center gap-1 text-emerald-600">
+                <Tag className="h-3 w-3" />
+                {tD.promo_discount ?? "Promo discount"}
+              </span>
+              <span className="text-emerald-600">−{promoDiscount.toFixed(2)} DH</span>
+            </div>
+          )}
           <div className="px-5 py-3 flex items-center justify-between">
             <span className="text-sm font-medium text-zinc-500">{tH.total ?? "Total"}</span>
             <span className="text-lg font-bold text-zinc-900">{total} DH</span>
@@ -561,6 +593,8 @@ export default function AdminOrdersPage() {
   const tStats = t.stats ?? {};
   const tTabs = t.tabs ?? {};
   const tH = t.headers ?? {};
+  const params = useParams();
+  const locale = params?.locale || "en";
   const { pendingOrderId, clearPendingOrder } = useAdminOrderView();
 
   /* ── Open order drawer when another admin view requests it (e.g. a
@@ -1037,7 +1071,20 @@ export default function AdminOrdersPage() {
                   </button>
                   <div className="flex-1 flex flex-col gap-2">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium text-zinc-900 text-sm">#{o.order_number ?? o.id.slice(0, 8)}</span>
+                    <span className="font-medium text-zinc-900 text-sm inline-flex items-center gap-1.5 flex-wrap">
+                      #{o.order_number ?? o.id.slice(0, 8)}
+                      {o.promo_code_id && (
+                        <Link
+                          href={`/${locale}/admin/marketing?promo=${o.promo_code_id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
+                          title={t.promo_applied ?? "Promo code applied"}
+                        >
+                          <Tag className="h-2.5 w-2.5" />
+                          {o.promo_codes?.code ?? ""}
+                        </Link>
+                      )}
+                    </span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs text-zinc-500">
                     <div>
@@ -1051,6 +1098,11 @@ export default function AdminOrdersPage() {
                   </div>
                   <div className="flex items-center justify-between pt-1" onClick={(e) => e.stopPropagation()}>
                     <div>
+                      {Number(o.promo_discount_amount ?? 0) > 0 && (
+                        <span className="mr-1.5 text-xs text-zinc-400 line-through">
+                          {formatMAD(Number(o.total_amount ?? 0) + Number(o.promo_discount_amount ?? 0))}
+                        </span>
+                      )}
                       <span className="text-sm font-semibold text-zinc-900">{formatMAD(o.total_amount)}</span>
                       {customerAmt && <span className="ml-1.5 text-xs text-zinc-400">{customerAmt}</span>}
                     </div>
@@ -1126,13 +1178,33 @@ export default function AdminOrdersPage() {
                           {selectedIds.includes(o.id) ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}
                         </button>
                       </td>
-                      <td className="px-6 py-4 font-mono text-xs text-zinc-500">#{o.order_number ?? o.id.slice(0, 8)}</td>
+                      <td className="px-6 py-4 font-mono text-xs text-zinc-500">
+                        <span className="inline-flex items-center gap-1.5">
+                          #{o.order_number ?? o.id.slice(0, 8)}
+                          {o.promo_code_id && (
+                            <Link
+                              href={`/${locale}/admin/marketing?promo=${o.promo_code_id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
+                              title={t.promo_applied ?? "Promo code applied"}
+                            >
+                              <Tag className="h-2.5 w-2.5" />
+                              {o.promo_codes?.code ?? ""}
+                            </Link>
+                          )}
+                        </span>
+                      </td>
                       <td className="px-6 py-4">
                         <span className="font-medium text-zinc-900">{customer}</span>
                         {country && <span className="ml-1.5 text-xs text-zinc-400">{country}</span>}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">{date}</td>
                       <td className="px-6 py-4 font-semibold text-zinc-900 whitespace-nowrap">
+                        {Number(o.promo_discount_amount ?? 0) > 0 && (
+                          <span className="mr-1.5 text-xs font-normal text-zinc-400 line-through">
+                            {formatMAD(Number(o.total_amount ?? 0) + Number(o.promo_discount_amount ?? 0))}
+                          </span>
+                        )}
                         {formatMAD(o.total_amount)}
                       </td>
                       <td className="px-6 py-4 text-zinc-500 whitespace-nowrap">

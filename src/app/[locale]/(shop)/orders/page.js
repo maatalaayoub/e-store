@@ -9,6 +9,7 @@ import {
   ChevronRight,
   ChevronLeft,
   XCircle,
+  Tag,
 } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
@@ -63,7 +64,18 @@ function OrderCard({ order, onCancel }) {
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-zinc-100 bg-zinc-50">
         <div>
           <p className="text-xs text-zinc-400 font-medium mb-0.5">{tOrders.order_id ?? "Order ID"}</p>
-          <p className="font-mono text-sm font-semibold text-zinc-700 truncate max-w-[180px]">#{order.order_number ?? order.id.slice(0, 8).toUpperCase()}</p>
+          <p className="font-mono text-sm font-semibold text-zinc-700 truncate max-w-[180px] inline-flex items-center gap-1.5">
+            #{order.order_number ?? order.id.slice(0, 8).toUpperCase()}
+            {order.promo_code_id && (
+              <span
+                className="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-emerald-700"
+                title={tOrders.promo_applied ?? "Promo code applied"}
+              >
+                <Tag className="h-2.5 w-2.5" />
+                {order.promo_codes?.code ?? ""}
+              </span>
+            )}
+          </p>
         </div>
         <div>
           <p className="text-xs text-zinc-400 font-medium mb-0.5">{tOrders.date ?? "Date"}</p>
@@ -71,7 +83,14 @@ function OrderCard({ order, onCancel }) {
         </div>
         <div>
           <p className="text-xs text-zinc-400 font-medium mb-0.5">{tOrders.total ?? "Total"}</p>
-          <p className="text-sm font-bold text-zinc-900">{formatPrice(order.total_amount)}</p>
+          <p className="text-sm font-bold text-zinc-900">
+            {Number(order.promo_discount_amount ?? 0) > 0 && (
+              <span className="mr-1.5 text-xs font-normal text-zinc-400 line-through">
+                {formatPrice(Number(order.total_amount ?? 0) + Number(order.promo_discount_amount ?? 0))}
+              </span>
+            )}
+            {formatPrice(order.total_amount)}
+          </p>
         </div>
         <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${status.color} ${status.bg} ${status.border}`}>
           <StatusIcon className="h-3.5 w-3.5" />

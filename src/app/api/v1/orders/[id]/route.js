@@ -62,6 +62,9 @@ export async function GET(req, { params }) {
         exchange_rate,
         created_at,
         shipping_address,
+        promo_code_id,
+        promo_discount_amount,
+        promo_codes ( code ),
         order_items (
           quantity,
           unit_price,

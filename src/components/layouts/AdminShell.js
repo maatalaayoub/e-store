@@ -26,6 +26,7 @@ import {
   LogOut,
   Mail,
   Bell,
+  Tag,
 } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { AdminOrderViewProvider } from "@/components/providers/AdminOrderViewContext";
@@ -41,6 +42,7 @@ const NAV_ITEMS = [
   { href: "/admin/customers", key: "customers", icon: Users, permission: "customers" },
   { href: "/admin/messages", key: "messages", icon: Mail, permission: "messages" },
   { href: "/admin/notifications", key: "notifications", icon: Bell, permission: "notifications" },
+  { href: "/admin/marketing", key: "marketing", icon: Tag, permission: "products" },
   { href: "/admin/team", key: "team", icon: UserCog, ownerOnly: true },
   { href: "/admin/settings", key: "settings", icon: Settings, permission: "settings" },
 ];

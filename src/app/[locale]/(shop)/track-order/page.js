@@ -11,6 +11,7 @@ import {
   Truck,
   XCircle,
   Download,
+  Tag,
 } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { isRtlLocale } from "@/config/constants";
@@ -156,8 +157,17 @@ export default function TrackOrderPage() {
             <div className="px-5 py-4 border-b border-zinc-100 grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs text-zinc-400 mb-0.5">{t.order_id ?? "Order ID"}</p>
-                <p className="text-sm font-mono font-medium text-zinc-800">
+                <p className="text-sm font-mono font-medium text-zinc-800 inline-flex items-center gap-1.5 flex-wrap">
                   #{order.order_number ?? order.id.slice(0, 8).toUpperCase()}
+                  {order.promo_code_id && (
+                    <span
+                      className="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-emerald-700"
+                      title={t.promo_applied ?? "Promo code applied"}
+                    >
+                      <Tag className="h-2.5 w-2.5" />
+                      {order.promo_codes?.code ?? ""}
+                    </span>
+                  )}
                 </p>
               </div>
               {ship.full_name && (
@@ -258,9 +268,16 @@ export default function TrackOrderPage() {
             {/* Total */}
             <div className="px-5 py-4 flex items-center justify-between">
               <span className="text-sm font-semibold text-zinc-900">{t.total ?? "Total"}</span>
-              <span className="text-lg font-bold text-zinc-900">
-                {(Number(order.total_amount) * rate).toFixed(2)} {currency}
-              </span>
+              <div className="text-end">
+                {Number(order.promo_discount_amount ?? 0) > 0 && (
+                  <div className="text-xs text-zinc-400 line-through">
+                    {((Number(order.total_amount) + Number(order.promo_discount_amount ?? 0)) * rate).toFixed(2)} {currency}
+                  </div>
+                )}
+                <span className="text-lg font-bold text-zinc-900">
+                  {(Number(order.total_amount) * rate).toFixed(2)} {currency}
+                </span>
+              </div>
             </div>
 
             {/* Download invoice */}

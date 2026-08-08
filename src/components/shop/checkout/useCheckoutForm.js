@@ -44,6 +44,7 @@ const INITIAL_FORM = {
  * @param {(price:number)=>string} opts.formatPrice
  * @param {(orderId:string)=>void} [opts.onOrderSuccess]
  * @param {string[]} [opts.requiredFields]     — defaults to all visible required fields
+ * @param {object}   [opts.promo]              — applied promo code object from validate endpoint
  */
 export function useCheckoutForm({
   items,
@@ -54,6 +55,7 @@ export function useCheckoutForm({
   formatPrice,
   onOrderSuccess,
   requiredFields,
+  promo,
 }) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState({});
@@ -210,6 +212,7 @@ export function useCheckoutForm({
           // currency if the country isn't in the mapping.
           currency_code: COUNTRY_CURRENCY[form.country] ?? currency?.code ?? 'MAD',
           exchange_rate: rate,
+          promo_code_id: promo?.promo_code_id ?? null,
         }),
       });
       const json = await res.json().catch(() => ({}));
@@ -232,6 +235,10 @@ export function useCheckoutForm({
     const e = validate();
     if (Object.keys(e).length) { setErrors(e); return; }
     if (!Array.isArray(items) || items.length === 0) return;
+    const discountLine = promo?.discount_amount > 0
+      ? `*Discount (${promo.code}): -${formatPrice(promo.discount_amount)}*`
+      : null;
+    const finalTotal = Math.max(0, subtotal - (promo?.discount_amount ?? 0));
     const lines = [
       `*New Order*`,
       ``,
@@ -254,11 +261,12 @@ export function useCheckoutForm({
         return `- ${resolved.name} x${qty} = ${formatPrice(price * qty)}${variantSuffix}`;
       }),
       ``,
-      `*Total: ${formatPrice(subtotal)}*`,
-    ];
+      discountLine,
+      `*Total: ${formatPrice(finalTotal)}*`,
+    ].filter(Boolean);
     const msg = encodeURIComponent(lines.join("\n"));
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank", "noopener,noreferrer");
-  }, [validate, items, form, subtotal, formatPrice, locale]);
+  }, [validate, items, form, subtotal, formatPrice, locale, promo]);
 
   return {
     form,

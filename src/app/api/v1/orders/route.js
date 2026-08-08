@@ -125,7 +125,7 @@ export async function POST(req) {
   if (limited) return limited;
   try {
     const body = await req.json();
-    const { shipping, items, currency_code, exchange_rate } = body;
+    const { shipping, items, currency_code, exchange_rate, promo_code_id } = body;
 
     if (
       !shipping ||
@@ -154,6 +154,12 @@ export async function POST(req) {
         { success: false, error: shippingError },
         { status: 400 }
       );
+    }
+
+    // Reject invalid promo code id shape early.
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (promo_code_id != null && !UUID_RE.test(String(promo_code_id))) {
+      return NextResponse.json({ success: false, error: 'invalid_promo_code' }, { status: 400 });
     }
 
     // Normalize items: keep only id + qty + variants. Reject malformed entries.
@@ -241,7 +247,7 @@ export async function POST(req) {
     const productIds = normalizedItems.map((i) => i.id);
     const { data: productRows, error: productErr } = await db
       .from('products')
-      .select('id, name, price, discount_price, discount_percentage, stock, status')
+      .select('id, name, price, discount_price, discount_percentage, stock, status, category_id')
       .in('id', productIds);
 
     if (productErr) throw productErr;
@@ -273,9 +279,71 @@ export async function POST(req) {
       }
       item.unit_price_mad = effectivePriceMad(product);
       item.name = product.name;
+      item.category_id = product.category_id;
       serverTotalMad += item.unit_price_mad * item.quantity;
     }
     serverTotalMad = Math.round(serverTotalMad * 100) / 100;
+
+    // ── 2b. Validate and apply promo code ────────────────────────────────
+    let promoDiscount = 0;
+    let appliedPromoId = null;
+    let promoUsedCount = 0;
+    if (promo_code_id) {
+      const { data: promo, error: promoErr } = await db
+        .from('promo_codes')
+        .select('*')
+        .eq('id', promo_code_id)
+        .single();
+      if (promoErr || !promo) {
+        return NextResponse.json({ success: false, error: 'invalid_promo_code' }, { status: 400 });
+      }
+      const now = new Date();
+      if (!promo.is_active ||
+          (promo.starts_at && new Date(promo.starts_at) > now) ||
+          (promo.expires_at && new Date(promo.expires_at) < now) ||
+          (promo.usage_limit != null && promo.used_count >= promo.usage_limit)) {
+        return NextResponse.json({ success: false, error: 'promo_code_unavailable' }, { status: 400 });
+      }
+      if (serverTotalMad < Number(promo.min_order_amount ?? 0)) {
+        return NextResponse.json({ success: false, error: 'min_order_not_met' }, { status: 400 });
+      }
+
+      let applicableTotal = serverTotalMad;
+      const promoProductIds = new Set((promo.product_ids ?? []).map(String));
+      const promoCategoryIds = new Set((promo.category_ids ?? []).map(String));
+      if (promo.applies_to === 'products') {
+        applicableTotal = normalizedItems
+          .filter((i) => promoProductIds.has(String(i.id)))
+          .reduce((acc, i) => acc + i.unit_price_mad * i.quantity, 0);
+      } else if (promo.applies_to === 'categories') {
+        applicableTotal = normalizedItems
+          .filter((i) => promoCategoryIds.has(String(i.category_id)))
+          .reduce((acc, i) => acc + i.unit_price_mad * i.quantity, 0);
+      }
+
+      // Scoped promo but no cart item qualifies → refuse the order so the
+      // customer isn't silently charged full price with a "promo" attached.
+      if (promo.applies_to !== 'all' && applicableTotal <= 0) {
+        return NextResponse.json({ success: false, error: 'promo_not_applicable' }, { status: 400 });
+      }
+
+      if (promo.discount_type === 'percentage_off') {
+        promoDiscount = (applicableTotal * Number(promo.discount_value)) / 100;
+        if (promo.max_discount_amount != null) {
+          promoDiscount = Math.min(promoDiscount, Number(promo.max_discount_amount));
+        }
+      } else {
+        promoDiscount = Number(promo.discount_value);
+      }
+      promoDiscount = Math.round(Math.min(promoDiscount, applicableTotal) * 100) / 100;
+      appliedPromoId = promo.id;
+      promoUsedCount = promo.used_count ?? 0;
+    }
+
+    const finalTotalMad = Math.round((serverTotalMad - promoDiscount) * 100) / 100;
+    if (finalTotalMad < 0) {
+      return NextResponse.json({ success: false, error: 'invalid_order_total' }, { status: 400 });
+    }
 
     // Sanitize currency hints (display only; canonical accounting stays in MAD).
     // Lowercase codes are normalized to uppercase; invalid codes fall back to MAD.
@@ -294,12 +362,14 @@ export async function POST(req) {
       const insertPayload = {
         user_id: userId,
         status: 'pending',
-        total_amount: serverTotalMad,     // canonical, server-computed
+        total_amount: finalTotalMad,     // canonical, server-computed after discount
         currency_code: safeCurrency,
         exchange_rate: safeRate,
         shipping_address: shipping,
         order_number: randomOrderNumber(),
         device_id: deviceId,
+        promo_code_id: appliedPromoId,
+        promo_discount_amount: promoDiscount,
       };
 
       let result = await db
@@ -357,6 +427,18 @@ export async function POST(req) {
       }
     }
 
+    // ── 4. Increment promo code usage counter (best-effort) ──────────────
+    if (appliedPromoId) {
+      try {
+        await db
+          .from('promo_codes')
+          .update({ used_count: promoUsedCount + 1 })
+          .eq('id', appliedPromoId);
+      } catch (err) {
+        logger.logSwallowed('POST /api/v1/orders: promo usage increment', err);
+      }
+    }
+
     // ── 5. Telegram (best-effort, never fails the order) ──────────────────
     try {
       const message = buildOrderMessage({
@@ -373,8 +455,9 @@ export async function POST(req) {
           color: item.selected_color?.name ?? null,
           size:  item.selected_size ?? null,
         })),
-        total: serverTotalMad,
+        total: finalTotalMad,
         currency: 'MAD',
+        discount: promoDiscount > 0 ? `${promoDiscount} MAD` : undefined,
       });
       await sendTelegramMessage(message, 'new_order');
     } catch (err) {
@@ -569,7 +652,10 @@ export async function GET(req) {
       currency_code,
       exchange_rate,
       created_at,
-      shipping_address
+      shipping_address,
+      promo_code_id,
+      promo_discount_amount,
+      promo_codes ( code )
     `;
 
     // Detail query — includes full item breakdown (only fetched on click)
@@ -583,6 +669,9 @@ export async function GET(req) {
       exchange_rate,
       created_at,
       shipping_address,
+      promo_code_id,
+      promo_discount_amount,
+      promo_codes ( code ),
       order_items (
         quantity,
         unit_price,

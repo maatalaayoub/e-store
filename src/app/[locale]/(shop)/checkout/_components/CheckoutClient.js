@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Trash2, Minus, Plus } from "lucide-react";
+import { ArrowLeft, ArrowRight, Trash2, Minus, Plus, Tag, Loader2, X } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { isRtlLocale } from "@/config/constants";
 import { resolveProductTranslation } from "@/lib/product-locale";
@@ -52,6 +52,11 @@ export default function CheckoutClient({ locale, dict }) {
     0,
   );
 
+  const [promoCode, setPromoCode] = useState("");
+  const [promo, setPromo] = useState(null);
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState(null);
+
   const checkout = useCheckoutForm({
     items,
     subtotal,
@@ -59,6 +64,7 @@ export default function CheckoutClient({ locale, dict }) {
     currency,
     rate,
     formatPrice,
+    promo,
     onOrderSuccess: (orderId) => {
       clearCart();
       router.push(`/${locale}/order-confirmed?id=${orderId}`);
@@ -73,7 +79,36 @@ export default function CheckoutClient({ locale, dict }) {
     }
   }, [checkout.form.country, setCurrencyByCountry]);
 
-  const [discount, setDiscount] = useState("");
+  const validatePromo = async () => {
+    setPromoError(null);
+    setPromo(null);
+    const code = promoCode.trim();
+    if (!code) return;
+    setPromoLoading(true);
+    try {
+      const res = await fetch("/api/v1/promos/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, items, subtotal }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        setPromoError(json.error || "invalid_code");
+        return;
+      }
+      setPromo(json.data);
+    } catch {
+      setPromoError("generic");
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const removePromo = () => {
+    setPromo(null);
+    setPromoError(null);
+    setPromoCode("");
+  };
 
   if (!checkout.hydrated) return null;
 
@@ -151,6 +186,18 @@ export default function CheckoutClient({ locale, dict }) {
                     const selectedColor = item.selectedColor ?? item.selected_color ?? null;
                     const selectedSize = item.selectedSize ?? item.selected_size ?? null;
                     const img = getMainImage(item) ?? "/images/placeholder-product.svg";
+                    const isPromoCovered =
+                      !!promo &&
+                      (promo.applies_to === "all" ||
+                        (Array.isArray(promo.applicable_product_ids) &&
+                          promo.applicable_product_ids.includes(String(item.id))));
+                    const isPercentagePromo =
+                      isPromoCovered && promo?.discount_type === "percentage_off";
+                    const percentValue = isPercentagePromo ? Number(promo.discount_value ?? 0) : 0;
+                    const lineOriginal = price * item.quantity;
+                    const lineDiscounted = isPercentagePromo
+                      ? Math.max(0, lineOriginal * (1 - percentValue / 100))
+                      : lineOriginal;
                     return (
                       <div key={lineKey} className="flex items-center gap-4 px-4 py-4 bg-white">
                         <div className="h-16 w-16 relative shrink-0 rounded-lg overflow-hidden border border-zinc-200 bg-white">
@@ -177,9 +224,36 @@ export default function CheckoutClient({ locale, dict }) {
                               )}
                             </div>
                           )}
-                          <span className="text-sm font-bold text-zinc-900">
-                            {formatPrice(price * item.quantity)}
-                          </span>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {isPercentagePromo ? (
+                              <>
+                                <span className="text-xs text-zinc-400 line-through">
+                                  {formatPrice(lineOriginal)}
+                                </span>
+                                <span className="text-sm font-bold text-zinc-900">
+                                  {formatPrice(lineDiscounted)}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-sm font-bold text-zinc-900">
+                                {formatPrice(lineOriginal)}
+                              </span>
+                            )}
+                            {isPromoCovered && promo.applies_to !== "all" && (
+                              <span
+                                className="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-emerald-700"
+                                title={tCheckout.promo_covers_line ?? "Promo applied to this item"}
+                              >
+                                <Tag className="h-2.5 w-2.5" />
+                                {promo.code}
+                              </span>
+                            )}
+                            {isPercentagePromo && percentValue > 0 && (
+                              <span className="inline-flex items-center rounded bg-rose-50 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">
+                                −{percentValue}%
+                              </span>
+                            )}
+                          </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             <div className="flex items-center gap-0.5 rounded-full border border-zinc-200 bg-white px-1">
                               <button
@@ -226,20 +300,50 @@ export default function CheckoutClient({ locale, dict }) {
               <div className="border-t border-zinc-100" />
 
               {/* Discount code */}
-              <div className="flex items-center gap-4 py-6">
-                <input
-                  type="text"
-                  value={discount}
-                  onChange={(e) => setDiscount(e.target.value)}
-                  placeholder={tCheckout.discount_placeholder ?? "Discount code"}
-                  className="flex-1 rounded border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400"
-                />
-                <button
-                  type="button"
-                  className="text-sm font-semibold text-zinc-900 hover:text-zinc-600 transition-colors"
-                >
-                  {tCheckout.apply ?? "Apply"}
-                </button>
+              <div className="py-6 space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Tag className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                    <input
+                      type="text"
+                      value={promoCode}
+                      onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                      disabled={!!promo}
+                      placeholder={tCheckout.discount_placeholder ?? "Promo code"}
+                      className="w-full rounded border border-zinc-200 bg-white ps-9 pe-3 py-2 text-sm outline-none focus:border-zinc-400 disabled:bg-zinc-50"
+                      dir="ltr"
+                    />
+                  </div>
+                  {promo ? (
+                    <button
+                      type="button"
+                      onClick={removePromo}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded border border-zinc-200 text-zinc-500 hover:bg-zinc-50"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={promoLoading || !promoCode.trim()}
+                      onClick={validatePromo}
+                      className="inline-flex items-center gap-1.5 rounded bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-zinc-700 disabled:opacity-60"
+                    >
+                      {promoLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                      {tCheckout.apply ?? "Apply"}
+                    </button>
+                  )}
+                </div>
+                {promo && (
+                  <p className="text-xs text-emerald-600">
+                    {tCheckout.promo_applied ?? "Promo applied"}: -{formatPrice(promo.discount_amount)}
+                  </p>
+                )}
+                {promoError && (
+                  <p className="text-xs text-red-600">
+                    {tCheckout.promo_error?.[promoError] ?? tCheckout.promo_error?.generic ?? "Invalid promo code."}
+                  </p>
+                )}
               </div>
 
               <div className="border-t border-zinc-100" />
@@ -250,9 +354,17 @@ export default function CheckoutClient({ locale, dict }) {
                   <span>{tCheckout.subtotal ?? "Subtotal"}</span>
                   <span className="font-medium text-zinc-900">{formatPrice(subtotal)}</span>
                 </div>
+                {promo?.discount_amount > 0 && (
+                  <div className="flex justify-between text-sm text-emerald-600">
+                    <span>{tCheckout.discount ?? "Discount"} ({promo.code})</span>
+                    <span className="font-medium">-{formatPrice(promo.discount_amount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm text-zinc-700 items-center">
                   <span>{tCheckout.total ?? "Total"}</span>
-                  <span className="text-xl font-bold text-zinc-900">{formatPrice(subtotal)}</span>
+                  <span className="text-xl font-bold text-zinc-900">
+                    {formatPrice(Math.max(0, subtotal - (promo?.discount_amount ?? 0)))}
+                  </span>
                 </div>
               </div>
 
