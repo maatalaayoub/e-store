@@ -484,6 +484,11 @@ ALTER TABLE announcements DROP CONSTRAINT IF EXISTS announcements_scope_check;
 ALTER TABLE announcements ADD CONSTRAINT announcements_scope_check
   CHECK (scope IN ('all', 'home', 'product', 'cart', 'checkout', 'favorites', 'account', 'orders', 'order-confirmed', 'track-order', 'invoice', 'login', 'signup'));
 
+-- Multi-page targeting: an announcement can be shown on several pages at once.
+-- JSON array of page ids (subset of the scope CHECK values). The legacy `scope`
+-- column is kept in sync (holds 'all' or the first selected page) for compat.
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS scopes jsonb NOT NULL DEFAULT '[]'::jsonb;
+
 -- Per-locale overrides for translatable text fields.
 -- Shape: { "en": { "text": "...", "cta_text": "...", "marquee_messages": ["..."] }, "fr": {...}, ... }
 ALTER TABLE announcements ADD COLUMN IF NOT EXISTS translations jsonb DEFAULT NULL;
@@ -662,6 +667,8 @@ DO $$ BEGIN
         'contact_phone',
         'contact_whatsapp',
         'contact_address',
+        'contact_lat',
+        'contact_lng',
         'store_name',
         'store_description',
         'store_logo',
@@ -1033,6 +1040,8 @@ DO $$ BEGIN
         'contact_phone',
         'contact_whatsapp',
         'contact_address',
+        'contact_lat',
+        'contact_lng',
         'store_name',
         'store_description',
         'show_social_whatsapp',

@@ -40,6 +40,7 @@ import {
   User,
   Package,
   Menu as MenuIcon,
+  Check,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { invalidateBarCache, MarqueePreview, Countdown, SwapStack } from "@/components/shop/AnnouncementBar";
@@ -52,6 +53,7 @@ import SectionsBuilder from "@/components/admin/product-sections/SectionsBuilder
 import { Blocks } from "lucide-react";
 import { getMainImage } from "@/lib/product-image";
 import ProductCard from "@/components/shop/ProductCard";
+import LocationPicker from "@/components/admin/LocationPicker";
 import { CARD_LAYOUTS } from "@/components/shop/ProductCard";
 import {
   HEADER_CART_ICONS,
@@ -218,6 +220,8 @@ function GeneralSection() {
     contact_phone: '',
     contact_whatsapp: '',
     contact_address: '',
+    contact_lat: '',
+    contact_lng: '',
     show_social_whatsapp: 'true',
     show_social_instagram: 'true',
     show_social_facebook: 'true',
@@ -246,6 +250,8 @@ function GeneralSection() {
             contact_phone: data.contact_phone ?? '',
             contact_whatsapp: data.contact_whatsapp ?? '',
             contact_address: data.contact_address ?? '',
+            contact_lat: data.contact_lat ?? '',
+            contact_lng: data.contact_lng ?? '',
             show_social_whatsapp: data.show_social_whatsapp ?? 'true',
             show_social_instagram: data.show_social_instagram ?? 'true',
             show_social_facebook: data.show_social_facebook ?? 'true',
@@ -464,6 +470,20 @@ function GeneralSection() {
           value={form.contact_address}
           onChange={handleChange('contact_address')}
           placeholder="123 Main Street, City, Country"
+        />
+      </Field>
+      <Field label={t.store_location ?? 'Store location'} hint={t.store_location_hint ?? 'Pick the exact spot shown on the contact page map.'}>
+        <LocationPicker
+          lat={form.contact_lat}
+          lng={form.contact_lng}
+          dict={t}
+          onChange={(la, ln) =>
+            setForm((prev) => ({
+              ...prev,
+              contact_lat: la == null ? '' : String(la),
+              contact_lng: ln == null ? '' : String(ln),
+            }))
+          }
         />
       </Field>
 
@@ -3220,6 +3240,33 @@ function scopeLabel(t, scope) {
   return t?.[key] ?? SCOPE_LABEL_FALLBACKS[id] ?? id;
 }
 
+/** Selectable page ids (excludes the special 'all'). */
+const SCOPE_PAGE_IDS = [
+  'home', 'product', 'cart', 'checkout', 'favorites', 'account',
+  'orders', 'order-confirmed', 'track-order', 'invoice', 'login', 'signup',
+];
+
+/** Normalize an announcement to its effective list of target scopes. */
+function effectiveScopes(a) {
+  const arr = Array.isArray(a?.scopes) ? a.scopes.filter((s) => SCOPE_LABEL_FALLBACKS[s]) : [];
+  if (arr.includes('all')) return ['all'];
+  if (arr.length) return [...new Set(arr)];
+  const single = a?.scope || 'all';
+  return single === 'all' ? ['all'] : [single];
+}
+
+/** Stable key used to group announcements that target the same set of pages. */
+function scopeGroupKey(a) {
+  return effectiveScopes(a).slice().sort().join('|');
+}
+
+/** Human label for one or many scopes. */
+function scopesLabel(t, a) {
+  const arr = effectiveScopes(a);
+  if (arr.includes('all')) return scopeLabel(t, 'all');
+  return arr.map((s) => scopeLabel(t, s)).join(', ');
+}
+
 function blankAnnouncement(type = 'promotion') {
   const tp = ANNOUNCEMENT_TYPES.find((x) => x.id === type) ?? ANNOUNCEMENT_TYPES[0];
   return {
@@ -3240,7 +3287,7 @@ function blankAnnouncement(type = 'promotion') {
     marquee_pause_on_hover: true,
     marquee_separator: '•',
     marquee_scroll_mode: 'together',
-    position: 'top', behavior: 'sticky', scope: 'all',
+    position: 'top', behavior: 'sticky', scope: 'all', scopes: ['all'],
     carousel_enabled: false, rotation_seconds: 5, dismissible: true,
     start_at: null, end_at: null, priority: 0, is_active: true,
     translations: {
@@ -3278,7 +3325,7 @@ function normalizeAnnouncementForEdit(a) {
         : [...baseMarquee],
     };
   }
-  return { ...a, translations };
+  return { ...a, translations, scopes: effectiveScopes(a) };
 }
 
 function isoToLocalInput(iso) {
@@ -3333,9 +3380,9 @@ function AnnouncementSelect({ value, onChange, options, placeholder }) {
         onClick={toggleOpen}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className={`w-full flex items-center justify-between gap-2 rounded-lg border bg-white px-3 py-2 text-sm shadow-sm outline-none transition-all cursor-pointer ${
+        className={`w-full flex items-center justify-between gap-2 rounded-[5px] border bg-white px-3 py-2 text-sm outline-none transition-all cursor-pointer ${
           open
-            ? 'border-blue-400 ring-2 ring-blue-100'
+            ? 'border-blue-400'
             : 'border-zinc-200 hover:border-zinc-300'
         }`}
       >
@@ -3410,7 +3457,7 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
             }
           </div>
         ) : value.type === 'social' ? (
-            <div className="px-4 py-2.5 flex flex-wrap items-center gap-2">
+            <div className="px-4 py-5 flex flex-wrap items-center gap-2 min-h-[68px]">
               {/* Left: info */}
               <div className="flex items-center gap-2 shrink-0 min-w-0">
                 {value.social_show_logo && value.social_logo_url && (
@@ -3478,7 +3525,7 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
         </span>
         <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium bg-zinc-100 text-zinc-600">
           <Megaphone className="h-3 w-3 opacity-60" />
-          {scopeLabel(t, value.scope)}
+          {scopesLabel(t, value)}
         </span>
         <span className="text-[11px] text-zinc-400 capitalize hidden sm:inline">
           {value.position ?? 'top'}
@@ -3580,6 +3627,48 @@ function AnnouncementTypePicker({ open, t, onPick, onClose }) {
   );
 }
 
+/**
+ * Multi-page scope picker. `value` is the effective scopes array (e.g. ['all']
+ * or ['cart','checkout']). Selecting "All pages" clears specific pages, and
+ * selecting any specific page turns off "All pages".
+ */
+function ScopeMultiSelect({ value, onChange, t }) {
+  const selected = Array.isArray(value) && value.length ? value : ['all'];
+  const isAll = selected.includes('all');
+
+  const chipCls = (active) =>
+    `inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all active:scale-95 ${
+      active
+        ? 'border-blue-600 bg-blue-600 text-white shadow-sm'
+        : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50'
+    }`;
+
+  const toggle = (id) => {
+    if (id === 'all') { onChange(['all']); return; }
+    let next = isAll ? [] : selected.filter((s) => s !== 'all');
+    next = next.includes(id) ? next.filter((s) => s !== id) : [...next, id];
+    onChange(next.length ? next : ['all']);
+  };
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      <button type="button" onClick={() => toggle('all')} className={chipCls(isAll)}>
+        {isAll && <Check className="h-3.5 w-3.5" />}
+        {scopeLabel(t, 'all')}
+      </button>
+      {SCOPE_PAGE_IDS.map((id) => {
+        const active = !isAll && selected.includes(id);
+        return (
+          <button key={id} type="button" onClick={() => toggle(id)} className={chipCls(active)}>
+            {active && <Check className="h-3.5 w-3.5" />}
+            {scopeLabel(t, id)}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) {
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -3641,7 +3730,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
     onUpdate('social_platforms', next);
   };
 
-  const inputCls = "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all";
+  const inputCls = "w-full rounded-[5px] border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:border-blue-400 transition-all";
 
   const content = (
     <>
@@ -3755,7 +3844,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
           </div>
 
           {/* Language tab switcher (translatable fields below) */}
-          <div className="flex gap-1 p-1 bg-zinc-100 rounded-xl">
+          <div className="flex gap-1 p-1 bg-zinc-100 rounded-[5px]">
             {ANN_LANGS.map((lang) => {
               const tr = value.translations?.[lang];
               const hasContent =
@@ -3767,9 +3856,9 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
                   key={lang}
                   type="button"
                   onClick={() => setActiveLang(lang)}
-                  className={`relative flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                  className={`relative flex-1 py-1.5 text-xs font-semibold rounded-[5px] transition-all ${
                     activeLang === lang
-                      ? 'bg-white text-zinc-900 shadow-sm'
+                      ? 'bg-white text-zinc-900'
                       : 'text-zinc-500 hover:text-zinc-700'
                   }`}
                 >
@@ -3938,7 +4027,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
                     type="color"
                     value={value.social_btn_color || '#25D366'}
                     onChange={(e) => onUpdate('social_btn_color', e.target.value)}
-                    className="h-9 w-14 rounded-lg cursor-pointer border border-zinc-200 p-0.5"
+                    className="h-9 w-14 rounded-[5px] cursor-pointer border border-zinc-200 p-0.5"
                   />
                   <span className="text-xs text-zinc-500 font-mono">{value.social_btn_color || '— default'}</span>
                   {value.social_btn_color && (
@@ -4029,11 +4118,11 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
                 <label className="block text-xs text-zinc-600 mb-1.5">{t.bg_color ?? 'Background'}</label>
-                <input type="color" value={value.bg_color || '#111111'} onChange={(e) => onUpdate('bg_color', e.target.value)} className="h-10 w-full rounded-lg border border-zinc-200 cursor-pointer" />
+                <input type="color" value={value.bg_color || '#111111'} onChange={(e) => onUpdate('bg_color', e.target.value)} className="h-10 w-full rounded-[5px] border border-zinc-200 cursor-pointer" />
               </div>
               <div>
                 <label className="block text-xs text-zinc-600 mb-1.5">{t.text_color ?? 'Text color'}</label>
-                <input type="color" value={value.text_color || '#ffffff'} onChange={(e) => onUpdate('text_color', e.target.value)} className="h-10 w-full rounded-lg border border-zinc-200 cursor-pointer" />
+                <input type="color" value={value.text_color || '#ffffff'} onChange={(e) => onUpdate('text_color', e.target.value)} className="h-10 w-full rounded-[5px] border border-zinc-200 cursor-pointer" />
               </div>
               <div>
                 <label className="block text-xs text-zinc-600 mb-1.5">{t.font_size ?? 'Font size'}</label>
@@ -4076,26 +4165,15 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
                   ]}
                 />
               </div>
-              <div>
+              <div className="col-span-2">
                 <label className="block text-xs text-zinc-600 mb-1.5">{t.scope ?? 'Scope'}</label>
-                <AnnouncementSelect
-                  value={value.scope}
-                  onChange={(e) => onUpdate('scope', e.target.value)}
-                  options={[
-                    { value: 'all',              label: t.scope_all              ?? 'All pages' },
-                    { value: 'home',             label: t.scope_home             ?? 'Home' },
-                    { value: 'product',          label: t.scope_product          ?? 'Product page' },
-                    { value: 'cart',             label: t.scope_cart             ?? 'Cart' },
-                    { value: 'checkout',         label: t.scope_checkout         ?? 'Checkout' },
-                    { value: 'favorites',        label: t.scope_favorites        ?? 'Favorites' },
-                    { value: 'account',          label: t.scope_account          ?? 'Account' },
-                    { value: 'orders',           label: t.scope_orders           ?? 'Orders' },
-                    { value: 'order-confirmed',  label: t.scope_order_confirmed  ?? 'Order confirmed' },
-                    { value: 'track-order',      label: t.scope_track_order      ?? 'Track order' },
-                    { value: 'invoice',          label: t.scope_invoice          ?? 'Invoice' },
-                    { value: 'login',            label: t.scope_login            ?? 'Login' },
-                    { value: 'signup',           label: t.scope_signup           ?? 'Sign up' },
-                  ]}
+                <ScopeMultiSelect
+                  t={t}
+                  value={effectiveScopes(value)}
+                  onChange={(next) => {
+                    onUpdate('scopes', next);
+                    onUpdate('scope', next.includes('all') || next.length === 0 ? 'all' : next[0]);
+                  }}
                 />
               </div>
               <div>
@@ -4272,14 +4350,14 @@ function AnnouncementsSection() {
     }
   };
 
-  const changeRotationForScope = async (scope, val) => {
+  const changeRotationForScope = async (scopeKey, val) => {
     const secs = Math.max(2, Math.min(60, val));
     const prev = items;
     const next = items.map((it) =>
-      (it.scope || 'all') === scope ? { ...it, rotation_seconds: secs } : it,
+      scopeGroupKey(it) === scopeKey ? { ...it, rotation_seconds: secs } : it,
     );
     setItems(next);
-    setRotationSavingScope(scope);
+    setRotationSavingScope(scopeKey);
     try {
       await persist(next);
     } catch (err) {
@@ -4294,10 +4372,10 @@ function AnnouncementsSection() {
    * Move an item up/down within its scope group.
    * `gIdx` is the position within the group, not the global items index.
    */
-  const moveWithinScope = async (scope, gIdx, dir) => {
+  const moveWithinScope = async (scopeKey, gIdx, dir) => {
     const groupGlobalIdxs = items
       .map((it, i) => ({ it, i }))
-      .filter(({ it }) => (it.scope || 'all') === scope)
+      .filter(({ it }) => scopeGroupKey(it) === scopeKey)
       .map(({ i }) => i);
     const target = gIdx + dir;
     if (target < 0 || target >= groupGlobalIdxs.length) return;
@@ -4379,13 +4457,13 @@ function AnnouncementsSection() {
             const groups = [];
             const byScope = new Map();
             items.forEach((a, idx) => {
-              const scope = a.scope || 'all';
-              if (!byScope.has(scope)) {
-                const g = { scope, entries: [] };
-                byScope.set(scope, g);
+              const key = scopeGroupKey(a);
+              if (!byScope.has(key)) {
+                const g = { key, sample: a, entries: [] };
+                byScope.set(key, g);
                 groups.push(g);
               }
-              byScope.get(scope).entries.push({ a, idx });
+              byScope.get(key).entries.push({ a, idx });
             });
 
             return groups.map((g) => {
@@ -4393,7 +4471,7 @@ function AnnouncementsSection() {
               const showRotation = g.entries.length > 1;
               return (
                 <section
-                  key={g.scope}
+                  key={g.key}
                   className="min-w-0 max-w-full rounded-2xl border border-zinc-200 bg-white/60 overflow-hidden"
                 >
                   {/* Group header */}
@@ -4403,7 +4481,7 @@ function AnnouncementsSection() {
                         <Megaphone className="h-3.5 w-3.5" />
                       </span>
                       <span className="text-sm font-semibold text-zinc-800 truncate">
-                        {scopeLabel(t, g.scope)}
+                        {scopesLabel(t, g.sample)}
                       </span>
                       <span className="text-[11px] text-zinc-400">
                         · {g.entries.length} {g.entries.length === 1 ? (t.item_one ?? 'item') : (t.item_many ?? 'items')}
@@ -4420,8 +4498,8 @@ function AnnouncementsSection() {
                           min={2}
                           max={60}
                           defaultValue={groupRotation}
-                          onMouseUp={(e) => changeRotationForScope(g.scope, Number(e.target.value))}
-                          onTouchEnd={(e) => changeRotationForScope(g.scope, Number(e.target.value))}
+                          onMouseUp={(e) => changeRotationForScope(g.key, Number(e.target.value))}
+                          onTouchEnd={(e) => changeRotationForScope(g.key, Number(e.target.value))}
                           onChange={(e) => {
                             // Local visual feedback only — persist on release.
                             e.target.nextElementSibling.textContent = `${e.target.value}s`;
@@ -4430,7 +4508,7 @@ function AnnouncementsSection() {
                           aria-label={t.rotation_speed ?? 'Rotation speed'}
                         />
                         <span className="text-xs font-semibold text-zinc-700 w-9 text-right tabular-nums">
-                          {rotationSavingScope === g.scope
+                          {rotationSavingScope === g.key
                             ? <Loader2 className="h-3 w-3 animate-spin inline" />
                             : `${groupRotation}s`}
                         </span>
@@ -4447,7 +4525,7 @@ function AnnouncementsSection() {
                         t={t}
                         isFirst={gIdx === 0}
                         isLast={gIdx === g.entries.length - 1}
-                        onMove={(dir) => moveWithinScope(g.scope, gIdx, dir)}
+                        onMove={(dir) => moveWithinScope(g.key, gIdx, dir)}
                         onToggle={(val) => toggleActive(idx, val)}
                         toggling={togglingIdxs.has(idx)}
                         onEdit={() => openEdit(idx)}

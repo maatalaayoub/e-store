@@ -99,6 +99,18 @@ function sanitize(a, idx = 0) {
   const sched = safeSchedule(a.start_at, a.end_at);
   const translations = safeTranslations(a.translations);
 
+  // Multi-page scope: normalize to a deduped list of allowed page ids.
+  // 'all' collapses to a single ['all']; empty falls back to the legacy
+  // single `scope` (or 'all'). `scope` is kept in sync for backward-compat.
+  let scopes = Array.isArray(a.scopes)
+    ? [...new Set(a.scopes.filter((s) => ALLOWED_SCOPES.includes(s)))]
+    : [];
+  if (scopes.includes('all')) scopes = ['all'];
+  if (scopes.length === 0) {
+    scopes = (ALLOWED_SCOPES.includes(a.scope) && a.scope !== 'all') ? [a.scope] : ['all'];
+  }
+  const derivedScope = scopes.includes('all') ? 'all' : scopes[0];
+
   // Base fields stay populated (legacy + fallback for clients without `translations`).
   // If admin left them empty, fall back to the first non-empty locale.
   // Exception: social type allows an empty text (info panel + buttons are the content).
@@ -152,7 +164,8 @@ function sanitize(a, idx = 0) {
     cta_swap_seconds: Math.max(1, Math.min(30, Number(a.cta_swap_seconds) || 4)),
     position: ALLOWED_POSITIONS.includes(a.position) ? a.position : 'top',
     behavior: ALLOWED_BEHAVIORS.includes(a.behavior) ? a.behavior : 'sticky',
-    scope: ALLOWED_SCOPES.includes(a.scope) ? a.scope : 'all',
+    scope: derivedScope,
+    scopes,
     carousel_enabled: !!a.carousel_enabled,
     rotation_seconds: Math.max(2, Math.min(120, Number(a.rotation_seconds) || 5)),
     dismissible: a.dismissible == null ? true : !!a.dismissible,
@@ -234,7 +247,14 @@ export async function PUT(request) {
     if (delError) throw delError;
 
     if (rows.length > 0) {
-      const { error: insError } = await db.from('announcements').insert(rows);
+      let { error: insError } = await db.from('announcements').insert(rows);
+      // Fallback for DBs where the `scopes` migration hasn't run yet: retry
+      // without the column so saving still works (multi-page targeting will
+      // resume once the migration is applied).
+      if (insError && /scopes/.test(insError.message ?? '')) {
+        const stripped = rows.map(({ scopes, ...rest }) => rest);
+        ({ error: insError } = await db.from('announcements').insert(stripped));
+      }
       if (insError) {
         // Best-effort restore to avoid data loss on insert failure.
         if (Array.isArray(snapshot) && snapshot.length > 0) {

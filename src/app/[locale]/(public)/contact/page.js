@@ -61,6 +61,8 @@ export default function ContactPage() {
     contact_phone: "",
     contact_whatsapp: "",
     contact_address: "",
+    contact_lat: "",
+    contact_lng: "",
   });
   const [form, setForm] = useState({
     name: "",
@@ -81,6 +83,8 @@ export default function ContactPage() {
             contact_phone: json.data.contact_phone ?? "",
             contact_whatsapp: json.data.contact_whatsapp ?? "",
             contact_address: json.data.contact_address ?? "",
+            contact_lat: json.data.contact_lat ?? "",
+            contact_lng: json.data.contact_lng ?? "",
           });
         }
       })
@@ -112,6 +116,16 @@ export default function ContactPage() {
 
   const inputClass =
     "w-full rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-blue-600 placeholder:text-zinc-400";
+
+  const mapLat = Number(settings.contact_lat);
+  const mapLng = Number(settings.contact_lng);
+  const hasMap =
+    settings.contact_lat !== "" && settings.contact_lng !== "" &&
+    Number.isFinite(mapLat) && Number.isFinite(mapLng);
+  const osmEmbedUrl = hasMap
+    ? `https://www.openstreetmap.org/export/embed.html?bbox=${mapLng - 0.01}%2C${mapLat - 0.01}%2C${mapLng + 0.01}%2C${mapLat + 0.01}&layer=mapnik&marker=${mapLat}%2C${mapLng}`
+    : "";
+  const directionsUrl = hasMap ? `https://www.google.com/maps?q=${mapLat},${mapLng}` : "";
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-zinc-900">
@@ -308,6 +322,32 @@ export default function ContactPage() {
               </form>
             </div>
           </div>
+
+          {hasMap && (
+            <div className="mt-16 max-w-2xl mx-auto">
+              <h2 className="text-lg font-semibold text-zinc-900 mb-4 text-center">
+                {t.map_title ?? "Find us on the map"}
+              </h2>
+              <div className="overflow-hidden rounded-2xl border border-zinc-100">
+                <iframe
+                  title={t.map_title ?? "Store location"}
+                  src={osmEmbedUrl}
+                  className="h-56 w-full"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+              <a
+                href={directionsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700"
+              >
+                <MapPin className="h-4 w-4" />
+                {t.get_directions ?? "Get directions"}
+              </a>
+            </div>
+          )}
         </div>
       </main>
 

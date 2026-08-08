@@ -42,6 +42,8 @@ const ALLOWED_KEYS = [
   'contact_phone',
   'contact_whatsapp',
   'contact_address',
+  'contact_lat',
+  'contact_lng',
   // General / footer
   'store_name',
   'store_description',

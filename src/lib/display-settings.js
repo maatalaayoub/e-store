@@ -18,6 +18,7 @@ export const PUBLIC_KEYS = [
   'hero_type',
   // Contact info shown on the public contact page
   'contact_email', 'contact_phone', 'contact_whatsapp', 'contact_address',
+  'contact_lat', 'contact_lng',
   // Footer / general
   'store_name',
   'store_description',

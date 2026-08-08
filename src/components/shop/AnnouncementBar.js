@@ -182,6 +182,15 @@ function pathMatchesScope(pathname, scope) {
   return re ? re.test(pathname) : true;
 }
 
+/** Match an announcement that may target one or many pages (`scopes` array). */
+function pathMatchesAnnouncement(pathname, a) {
+  const scopes = Array.isArray(a?.scopes) && a.scopes.length
+    ? a.scopes
+    : [a?.scope || 'all'];
+  if (scopes.includes('all')) return true;
+  return scopes.some((s) => pathMatchesScope(pathname, s));
+}
+
 /* ─────────────────── Countdown sub-component ─────────────────── */
 export function Countdown({ endAt, labels, expiredLabel }) {
   const [now, setNow] = useState(() => Date.now());
@@ -261,7 +270,7 @@ function PromoCode({ code, label = "Copy" }) {
     <button
       type="button"
       onClick={handle}
-      className="inline-flex items-center gap-1.5 ms-2 px-2 py-0.5 rounded bg-white/20 hover:bg-white/30 text-xs sm:text-sm font-mono font-semibold transition-colors"
+      className="inline-flex items-center gap-1.5 ms-2 px-2 py-0.5 rounded bg-white/20 hover:bg-white/30 active:scale-95 text-xs sm:text-sm font-mono font-semibold transition-all"
       aria-label={label}
     >
       <span className="tracking-wider">{code}</span>
@@ -381,7 +390,7 @@ function SocialInfoPanel({ a }) {
         <img
           src={a.social_logo_url}
           alt={a.social_business_name ? `${a.social_business_name} logo` : 'Social channel logo'}
-          className="h-7 w-7 rounded-full object-cover shrink-0"
+          className="h-8 w-8 rounded-full object-cover shrink-0 ring-2 ring-white/25 shadow-sm"
         />
       )}
       {(showName || showPhone) && (
@@ -417,7 +426,7 @@ function SocialButtons({ a }) {
             target="_blank"
             rel="noopener noreferrer"
             aria-label={link.label}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide shadow-sm transition-all duration-200 hover:brightness-110 hover:shadow active:scale-95"
             style={a.social_btn_color ? { backgroundColor: a.social_btn_color, color: '#fff' } : { backgroundColor: 'rgba(255,255,255,0.2)' }}
           >
             <Icon className="h-4 w-4" /> {link.label}
@@ -708,7 +717,7 @@ export default function AnnouncementBar() {
     const now = Date.now();
     return items
       .filter((a) => a.is_active !== false)
-      .filter((a) => pathMatchesScope(pathname, a.scope))
+      .filter((a) => pathMatchesAnnouncement(pathname, a))
       .filter((a) => isWithinSchedule(a, now))
       .filter((a) => !dismissed.has(a.id))
       .map((a) => resolveAnnouncementTranslation(a, locale));
@@ -825,9 +834,9 @@ export default function AnnouncementBar() {
       ref={barRef}
       role="region"
       aria-label="Site announcement"
-      className={`${stickyClass} ${borderClass} transition-transform duration-300 overflow-hidden`}
+      className={`${stickyClass} ${borderClass} transition-[height,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] overflow-hidden`}
       style={{
-        height: "2.5rem",
+        height: current.type === 'social' ? "4rem" : "2.5rem",
         bottom: positionTop ? undefined : 'var(--mobile-nav-h, 0px)',
         transform: scrollHidden
           ? (positionTop ? 'translateY(-100%)' : 'translateY(100%)')
@@ -860,7 +869,7 @@ export default function AnnouncementBar() {
               type="button"
               onClick={() => handleDismiss(current.id)}
               aria-label="Dismiss"
-              className="absolute end-2 sm:end-4 inline-flex h-6 w-6 items-center justify-center rounded hover:bg-white/15 transition-colors shrink-0"
+              className="absolute end-2 sm:end-4 inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-white/15 active:scale-90 transition-all shrink-0"
             >
               <X className="h-4 w-4" />
             </button>
@@ -886,18 +895,18 @@ export default function AnnouncementBar() {
             {visible.length > 1 && (
               <>
                 <button type="button" onClick={goPrev} aria-label="Previous announcement"
-                  className="hidden sm:inline-flex h-6 w-6 items-center justify-center rounded hover:bg-white/15 transition-colors">
+                  className="hidden sm:inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-white/15 active:scale-90 transition-all">
                   <ChevronLeft className="h-4 w-4" />
                 </button>
                 <button type="button" onClick={goNext} aria-label="Next announcement"
-                  className="hidden sm:inline-flex h-6 w-6 items-center justify-center rounded hover:bg-white/15 transition-colors">
+                  className="hidden sm:inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-white/15 active:scale-90 transition-all">
                   <ChevronRight className="h-4 w-4" />
                 </button>
               </>
             )}
             {current.dismissible !== false && (
               <button type="button" onClick={() => handleDismiss(current.id)} aria-label="Dismiss"
-                className="inline-flex h-6 w-6 items-center justify-center rounded hover:bg-white/15 transition-colors">
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-white/15 active:scale-90 transition-all">
                 <X className="h-4 w-4" />
               </button>
             )}
@@ -912,7 +921,7 @@ export default function AnnouncementBar() {
                 type="button"
                 onClick={goPrev}
                 aria-label="Previous announcement"
-                className="hidden sm:inline-flex h-6 w-6 items-center justify-center rounded hover:bg-white/15 transition-colors shrink-0"
+                className="hidden sm:inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-white/15 active:scale-90 transition-all shrink-0"
               >
                 <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
               </button>
@@ -935,7 +944,7 @@ export default function AnnouncementBar() {
                 type="button"
                 onClick={goNext}
                 aria-label="Next announcement"
-                className="hidden sm:inline-flex h-6 w-6 items-center justify-center rounded hover:bg-white/15 transition-colors shrink-0"
+                className="hidden sm:inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-white/15 active:scale-90 transition-all shrink-0"
               >
                 <ChevronRight className="h-4 w-4 rtl:rotate-180" />
               </button>
@@ -945,7 +954,7 @@ export default function AnnouncementBar() {
                 type="button"
                 onClick={() => handleDismiss(current.id)}
                 aria-label="Dismiss"
-                className="inline-flex h-6 w-6 items-center justify-center rounded hover:bg-white/15 transition-colors shrink-0"
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-white/15 active:scale-90 transition-all shrink-0"
               >
                 <X className="h-4 w-4" />
               </button>

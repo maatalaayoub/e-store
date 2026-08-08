@@ -7,14 +7,15 @@ const isProd = process.env.NODE_ENV === 'production';
 // 'unsafe-eval' but keep 'unsafe-inline' (Next still emits inline bootstrap).
 const CSP = [
   "default-src 'self'",
-  "img-src 'self' data: blob: https://*.supabase.co https://picsum.photos https://fastly.picsum.photos",
+  "img-src 'self' data: blob: https://*.supabase.co https://picsum.photos https://fastly.picsum.photos https://*.tile.openstreetmap.org",
   "media-src 'self' blob: https://*.supabase.co",
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
   isProd
     ? "script-src 'self' 'unsafe-inline'"
     : "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://nominatim.openstreetmap.org",
+  "frame-src 'self' https://www.openstreetmap.org",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -26,7 +27,7 @@ const securityHeaders = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-  { key: 'Permissions-Policy', value: 'geolocation=(), microphone=(), camera=(), interest-cohort=()' },
+  { key: 'Permissions-Policy', value: 'geolocation=(self), microphone=(), camera=(), interest-cohort=()' },
   { key: 'Content-Security-Policy', value: CSP },
   // HSTS only meaningful over HTTPS; browsers ignore it on plain localhost.
   ...(isProd ? [{ key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains; preload' }] : []),
