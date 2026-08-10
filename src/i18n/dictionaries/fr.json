@@ -22,6 +22,19 @@
     "store_name": "Ma Boutique",
     "close": "Fermer"
   },
+  "shop_search": {
+    "placeholder": "Rechercher des produits ou des catégories…",
+    "categories": "Catégories",
+    "products": "Produits",
+    "no_results": "Aucun résultat pour « {q} »",
+    "no_results_hint": "Essayez un autre mot-clé.",
+    "loading": "Recherche…",
+    "hint_title": "Recherchez dans notre boutique",
+    "hint_desc": "Trouvez des produits ou parcourez les catégories.",
+    "item_count_one": "{n} produit",
+    "item_count_other": "{n} produits",
+    "close": "Fermer"
+  },
   "nav": {
     "home": "Accueil",
     "shop": "Boutique",

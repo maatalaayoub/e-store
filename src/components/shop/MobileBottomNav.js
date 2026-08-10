@@ -42,6 +42,7 @@ const HIDE_ON_ROUTES = new Set([
   "contact",
   "admin",
   "account",
+  "product",
 ]);
 
 /** Locale segments that need to be stripped before matching HIDE_ON_ROUTES. */

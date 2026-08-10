@@ -819,9 +819,12 @@ export default function AnnouncementBar() {
 
   // Always fixed at top/bottom so the bar is never mixed into page content.
   // Bottom bars sit above the mobile bottom nav via --mobile-nav-h (set from
-  // MobileBottomNav; zeroed on lg+ by globals.css).
+  // MobileBottomNav; zeroed on lg+ by globals.css). Bottom bars use a lower
+  // z-index so the mobile nav stays in front — the slide-out then goes behind
+  // the nav instead of covering it.
   const positionClass = positionTop ? "top-0" : "";
-  const stickyClass = `fixed inset-x-0 ${positionClass} z-[51]`;
+  const zClass = positionTop ? "z-[51]" : "z-30";
+  const stickyClass = `fixed inset-x-0 ${positionClass} ${zClass}`;
 
   const borderClass = current.border_enabled
     ? positionTop

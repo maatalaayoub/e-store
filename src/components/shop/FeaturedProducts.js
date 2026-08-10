@@ -138,6 +138,19 @@ export default function FeaturedProducts({ onItemAdded }) {
     return () => { mounted = false; controller.abort(); };
   }, [locale]);
 
+  // Search overlay links to `/${locale}#cat-<id>` — scroll after products load.
+  useEffect(() => {
+    if (!products || products.length === 0) return;
+    if (typeof window === 'undefined') return;
+    const hash = window.location.hash;
+    if (!hash || !hash.startsWith('#cat-')) return;
+    const id = hash.slice(1);
+    requestAnimationFrame(() => {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, [products]);
+
   if (!products) return <FeaturedProductsSkeleton />;
   if (products.length === 0) return null;
 
@@ -203,7 +216,7 @@ export default function FeaturedProducts({ onItemAdded }) {
 
         <div className="flex flex-col gap-14 sm:gap-20">
           {categoryGroups.map((group) => (
-            <div key={group.id}>
+            <div key={group.id} id={`cat-${group.id}`} className="scroll-mt-28">
               {/* Professional category separator */}
               <div className="mb-7 flex items-center gap-4 sm:mb-9 sm:gap-5">
                 <div className="flex min-w-0 items-center gap-3">

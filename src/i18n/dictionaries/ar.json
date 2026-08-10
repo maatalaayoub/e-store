@@ -22,6 +22,19 @@
     "store_name": "متجري",
     "close": "إغلاق"
   },
+  "shop_search": {
+    "placeholder": "ابحث عن المنتجات أو الفئات…",
+    "categories": "الفئات",
+    "products": "المنتجات",
+    "no_results": "لا نتائج لـ ”{q}“",
+    "no_results_hint": "جرّب كلمة مفتاحية أخرى.",
+    "loading": "جارٍ البحث…",
+    "hint_title": "ابحث في متجرنا",
+    "hint_desc": "اعثر على المنتجات أو تصفح حسب الفئة.",
+    "item_count_one": "منتج {n}",
+    "item_count_other": "{n} منتجات",
+    "close": "إغلاق"
+  },
   "nav": {
     "home": "الرئيسية",
     "shop": "المتجر",

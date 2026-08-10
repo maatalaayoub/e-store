@@ -22,6 +22,19 @@
     "store_name": "My Store",
     "close": "Close"
   },
+  "shop_search": {
+    "placeholder": "Search products or categories…",
+    "categories": "Categories",
+    "products": "Products",
+    "no_results": "No results for “{q}”",
+    "no_results_hint": "Try a different keyword.",
+    "loading": "Searching…",
+    "hint_title": "Search our store",
+    "hint_desc": "Find products or browse by category.",
+    "item_count_one": "{n} product",
+    "item_count_other": "{n} products",
+    "close": "Close"
+  },
   "nav": {
     "home": "Home",
     "shop": "Shop",

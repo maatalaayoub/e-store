@@ -22,6 +22,19 @@
     "store_name": "حانوتي",
     "close": "سد"
   },
+  "shop_search": {
+    "placeholder": "قلّب على منتوج ولا فئة…",
+    "categories": "الفئات",
+    "products": "المنتوجات",
+    "no_results": "ماكاين حتى نتيجة ل ”{q}“",
+    "no_results_hint": "جرّب كلمة أخرى.",
+    "loading": "كيقلّب…",
+    "hint_title": "قلّب فحانوتنا",
+    "hint_desc": "لقا المنتوجات ولا تصفّح الفئات.",
+    "item_count_one": "{n} منتوج",
+    "item_count_other": "{n} منتوجات",
+    "close": "سد"
+  },
   "nav": {
     "home": "الرئيسية",
     "shop": "المتجر",

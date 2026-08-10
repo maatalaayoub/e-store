@@ -2,13 +2,16 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useParams, usePathname } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useParams, usePathname, useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { useDisplaySettings } from "@/components/providers/DisplaySettingsProvider";
 import { useCartStore } from "@/store/useCartStore";
 import { useIsScrolled } from "@/hooks/useIsScrolled";
-import { useOnClickOutside } from "@/hooks/useOnClickOutside";
+import { useCurrency } from "@/components/providers/CurrencyProvider";
+import { resolveCategoryName } from "@/lib/category-locale";
+import { resolveProductTranslation } from "@/lib/product-locale";
+import { computeDiscountInfo } from "@/lib/price";
 import ShopSidebarNav from "./ShopSidebarNav";
 import {
   resolveCartIcon,
@@ -16,6 +19,25 @@ import {
   DEFAULT_HEADER_CART_ICON,
   DEFAULT_HEADER_MENU_ICON,
 } from "@/lib/storefront-ui";
+
+// Module-scoped cache so re-opening the search doesn't refetch.
+const _searchCache = { products: null, categories: null, ts: 0, locale: null };
+const SEARCH_CACHE_MS = 60_000;
+
+function HighlightedText({ text, query }) {
+  if (!query || !text) return <>{text}</>;
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="bg-yellow-100 text-inherit px-0.5 rounded-sm">
+        {text.slice(idx, idx + query.length)}
+      </mark>
+      {text.slice(idx + query.length)}
+    </>
+  );
+}
 
 function useStoreLogo() {
   // Prefer the settings hydrated by the server (via `DisplaySettingsProvider`
@@ -104,7 +126,10 @@ export default function ShopHeader({ onOpenCart, fixed = true, fixedBelow = null
   const params = useParams();
   const locale = params?.locale || "en";
   const pathname = usePathname();
+  const router = useRouter();
   const dict = useDictionary();
+  const tSearch = dict?.shop_search ?? {};
+  const { formatPrice } = useCurrency() ?? {};
   const isScrolled = useIsScrolled();
   const [isHovered, setIsHovered] = useState(false);
   // fixedBelow='lg'  → hero is behind header: dark/transparent until scroll/hover on mobile,
@@ -129,8 +154,15 @@ export default function ShopHeader({ onOpenCart, fixed = true, fixedBelow = null
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchData, setSearchData] = useState({ products: [], categories: [] });
+  const [activeIdx, setActiveIdx] = useState(-1);
   const searchInputRef = useRef(null);
   const headerRef = useRef(null);
+  const searchOverlayRef = useRef(null);
+  const searchButtonRef = useRef(null);
+  const activeItemRef = useRef(null);
 
   // Admin-selectable header icons (cart button + sidebar-open button).
   const headerConfig = useStoreLogo();
@@ -176,15 +208,157 @@ export default function ShopHeader({ onOpenCart, fixed = true, fixedBelow = null
     if (isSearchOpen) searchInputRef.current?.focus();
   }, [isSearchOpen]);
 
-  // Close search on outside click
-  useOnClickOutside(
-    headerRef,
-    () => {
+  // Close search on outside click — scoped to the overlay + trigger button so
+  // clicks on the logo/cart/menu also close the search.
+  useEffect(() => {
+    if (!isSearchOpen) return;
+    const onDocDown = (e) => {
+      const overlay = searchOverlayRef.current;
+      const btn = searchButtonRef.current;
+      if (overlay?.contains(e.target)) return;
+      if (btn?.contains(e.target)) return;
       setIsSearchOpen(false);
       setSearchQuery("");
-    },
-    isSearchOpen
+      setDebouncedQuery("");
+    };
+    document.addEventListener("mousedown", onDocDown);
+    document.addEventListener("touchstart", onDocDown, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", onDocDown);
+      document.removeEventListener("touchstart", onDocDown);
+    };
+  }, [isSearchOpen]);
+
+  // Fetch products + categories once the search opens; keep a short-lived cache.
+  useEffect(() => {
+    if (!isSearchOpen) return;
+    const fresh =
+      _searchCache.locale === locale &&
+      Date.now() - _searchCache.ts < SEARCH_CACHE_MS &&
+      _searchCache.products &&
+      _searchCache.categories;
+    if (fresh) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSearchData({
+        products: _searchCache.products,
+        categories: _searchCache.categories,
+      });
+      return;
+    }
+    let cancelled = false;
+    setSearchLoading(true);
+    Promise.all([
+      fetch(`/api/v1/products?limit=100&locale=${locale}`).then((r) => r.json()).catch(() => null),
+      fetch(`/api/v1/categories`).then((r) => r.json()).catch(() => null),
+    ]).then(([p, c]) => {
+      if (cancelled) return;
+      const products = p?.success && Array.isArray(p.data) ? p.data : [];
+      const categories = c?.success && Array.isArray(c.data) ? c.data : [];
+      _searchCache.products = products;
+      _searchCache.categories = categories;
+      _searchCache.locale = locale;
+      _searchCache.ts = Date.now();
+      setSearchData({ products, categories });
+      setSearchLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [isSearchOpen, locale]);
+
+  // Debounce the raw input so filtering only runs after the user pauses.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 120);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  // Reset the highlighted row whenever the query or dataset changes.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setActiveIdx(-1); }, [debouncedQuery, isSearchOpen]);
+
+  // Compute filtered results (locale-aware category/product names).
+  const results = useMemo(() => {
+    const q = debouncedQuery.toLowerCase();
+    if (!q) return { products: [], categories: [] };
+
+    const cats = searchData.categories
+      .map((c) => ({
+        ...c,
+        _name: resolveCategoryName(c, locale) || c.name || "",
+      }))
+      .filter((c) => c._name.toLowerCase().includes(q))
+      .slice(0, 5);
+
+    const prods = searchData.products
+      .map((p) => resolveProductTranslation(p, locale) || p)
+      .filter((p) => {
+        const name = (p.name ?? "").toLowerCase();
+        const desc = (p.description ?? "").toLowerCase();
+        const cat = (p.category ?? "").toLowerCase();
+        return name.includes(q) || desc.includes(q) || cat.includes(q);
+      })
+      .slice(0, 8);
+
+    return { products: prods, categories: cats };
+  }, [debouncedQuery, searchData, locale]);
+
+  // Flatten for keyboard navigation.
+  const flatResults = useMemo(
+    () => [
+      ...results.categories.map((c) => ({ type: "cat", id: c.id, item: c })),
+      ...results.products.map((p) => ({ type: "prod", id: p.id, item: p })),
+    ],
+    [results],
   );
+
+  // Keep the highlighted item scrolled into view inside the dropdown.
+  useEffect(() => {
+    activeItemRef.current?.scrollIntoView({ block: "nearest" });
+  }, [activeIdx]);
+
+  const closeSearch = useCallback(() => {
+    setIsSearchOpen(false);
+    setSearchQuery("");
+    setDebouncedQuery("");
+  }, []);
+
+  const goToCategory = useCallback((catId) => {
+    closeSearch();
+    if (isHome) {
+      const el = document.getElementById(`cat-${catId}`);
+      if (el) {
+        history.replaceState(null, "", `#cat-${catId}`);
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+    }
+    router.push(`/${locale}#cat-${catId}`);
+  }, [closeSearch, isHome, router, locale]);
+
+  const goToProduct = useCallback((prodId) => {
+    closeSearch();
+    router.push(`/${locale}/product/${prodId}`);
+  }, [closeSearch, router, locale]);
+
+  const onSearchKeyDown = useCallback((e) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeSearch();
+      return;
+    }
+    if (!flatResults.length) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIdx((i) => (i + 1) % flatResults.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIdx((i) => (i <= 0 ? flatResults.length - 1 : i - 1));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const pick = flatResults[activeIdx >= 0 ? activeIdx : 0];
+      if (!pick) return;
+      if (pick.type === "cat") goToCategory(pick.id);
+      else goToProduct(pick.id);
+    }
+  }, [flatResults, activeIdx, closeSearch, goToCategory, goToProduct]);
 
   // Publish the header's rendered height so below-hero layouts can offset correctly.
   useEffect(() => {
@@ -260,6 +434,7 @@ export default function ShopHeader({ onOpenCart, fixed = true, fixedBelow = null
             }`}
           >
             <button
+              ref={searchButtonRef}
               onClick={() => setIsSearchOpen((v) => !v)}
               className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
                 isSearchOpen ? "opacity-0 pointer-events-none" : ""
@@ -307,13 +482,16 @@ export default function ShopHeader({ onOpenCart, fixed = true, fixedBelow = null
 
           {/* Search overlay */}
           <div
-            className={`absolute top-1/2 left-6 right-6 -translate-y-1/2 md:left-1/2 md:right-auto md:w-[26rem] lg:w-[32rem] md:-translate-x-1/2 transition-all duration-300 ${
+            ref={searchOverlayRef}
+            className={`absolute top-1/2 left-6 right-6 -translate-y-1/2 md:left-1/2 md:right-auto md:w-[28rem] lg:w-[34rem] md:-translate-x-1/2 transition-all duration-300 ${
               isSearchOpen
                 ? "opacity-100 scale-100 pointer-events-auto"
                 : "opacity-0 scale-95 pointer-events-none"
             }`}
           >
-            <div className="flex w-full items-center gap-3 rounded-full border border-zinc-200 bg-white px-4 py-2">
+            <div
+              className="relative flex w-full items-center gap-3 rounded-full border border-zinc-200 bg-white px-4 py-2"
+            >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="h-5 w-5 shrink-0 text-zinc-400">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
               </svg>
@@ -322,28 +500,202 @@ export default function ShopHeader({ onOpenCart, fixed = true, fixedBelow = null
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") {
-                    setIsSearchOpen(false);
-                    setSearchQuery("");
-                  }
-                }}
-                placeholder={dict?.common?.search ? `${dict.common.search}…` : "Search products…"}
+                onKeyDown={onSearchKeyDown}
+                placeholder={tSearch.placeholder ?? "Search products or categories…"}
+                aria-label={tSearch.placeholder ?? "Search products or categories"}
+                aria-autocomplete="list"
+                aria-controls="shop-search-results"
                 className="flex-1 min-w-0 bg-transparent text-sm text-zinc-800 placeholder-zinc-400 outline-none"
               />
-              <button
-                onClick={() => {
-                  setIsSearchOpen(false);
-                  setSearchQuery("");
-                }}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 transition-colors"
-                aria-label="Close search"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
+              {searchQuery && (
+                <button
+                  onClick={() => { setSearchQuery(""); searchInputRef.current?.focus(); }}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 transition-colors"
+                  aria-label={tSearch.close ?? dict?.common?.close ?? "Clear"}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
+
+            {/* Results panel */}
+            {isSearchOpen && (
+              <div
+                id="shop-search-results"
+                role="listbox"
+                className="absolute left-0 right-0 top-full mt-1.5 max-h-[70vh] overflow-y-auto rounded-[5px] border border-zinc-200 bg-white"
+              >
+                {!debouncedQuery ? (
+                  <div className="flex flex-col items-center justify-center gap-1 px-6 py-8 text-center">
+                    <div className="mb-1 flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100 text-zinc-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="h-5 w-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                      </svg>
+                    </div>
+                    <p className="text-sm font-medium text-zinc-800">{tSearch.hint_title ?? "Search our store"}</p>
+                    <p className="text-xs text-zinc-500">{tSearch.hint_desc ?? "Find products or browse by category."}</p>
+                  </div>
+                ) : searchLoading && !searchData.products.length ? (
+                  <div className="flex items-center justify-center gap-2 px-6 py-8 text-sm text-zinc-500">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-700" />
+                    <span>{tSearch.loading ?? "Searching…"}</span>
+                  </div>
+                ) : flatResults.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center gap-1 px-6 py-8 text-center">
+                    <p className="text-sm font-medium text-zinc-800">
+                      {(tSearch.no_results ?? 'No results for "{q}"').replace("{q}", debouncedQuery)}
+                    </p>
+                    <p className="text-xs text-zinc-500">{tSearch.no_results_hint ?? "Try a different keyword."}</p>
+                  </div>
+                ) : (
+                  <div className="py-2">
+                    {results.categories.length > 0 && (
+                      <div>
+                        <div className="px-4 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+                          {tSearch.categories ?? "Categories"}
+                        </div>
+                        <ul>
+                          {results.categories.map((c, idx) => {
+                            const globalIdx = idx;
+                            const isActive = globalIdx === activeIdx;
+                            const count = searchData.products.filter((p) => p.category_id === c.id).length;
+                            return (
+                              <li
+                                key={`cat-${c.id}`}
+                                ref={isActive ? activeItemRef : null}
+                                role="option"
+                                aria-selected={isActive}
+                              >
+                                <button
+                                  type="button"
+                                  onMouseEnter={() => setActiveIdx(globalIdx)}
+                                  onClick={() => goToCategory(c.id)}
+                                  className={`flex w-full items-center gap-3 px-4 py-2.5 text-start transition-colors ${
+                                    isActive ? "bg-zinc-100" : "hover:bg-zinc-50"
+                                  }`}
+                                >
+                                  {c.image_url ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                      src={c.image_url}
+                                      alt=""
+                                      className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-zinc-200"
+                                    />
+                                  ) : (
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 ring-1 ring-zinc-200">
+                                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
+                                        <rect x="3" y="3" width="7" height="7" rx="1" />
+                                        <rect x="14" y="3" width="7" height="7" rx="1" />
+                                        <rect x="3" y="14" width="7" height="7" rx="1" />
+                                        <rect x="14" y="14" width="7" height="7" rx="1" />
+                                      </svg>
+                                    </div>
+                                  )}
+                                  <div className="min-w-0 flex-1">
+                                    <div className="truncate text-sm font-medium text-zinc-900">
+                                      <HighlightedText text={c._name} query={debouncedQuery} />
+                                    </div>
+                                    {count > 0 && (
+                                      <div className="text-[11px] text-zinc-500">
+                                        {(count === 1
+                                          ? (tSearch.item_count_one ?? "{n} product")
+                                          : (tSearch.item_count_other ?? "{n} products")
+                                        ).replace("{n}", String(count))}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4 shrink-0 text-zinc-400 rtl:rotate-180">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                  </svg>
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    )}
+                    {results.products.length > 0 && (
+                      <div>
+                        <div className="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+                          {tSearch.products ?? "Products"}
+                        </div>
+                        <ul>
+                          {results.products.map((p, idx) => {
+                            const globalIdx = results.categories.length + idx;
+                            const isActive = globalIdx === activeIdx;
+                            const { effective, percent } = computeDiscountInfo(p);
+                            const base = Number(p.price) || 0;
+                            const hasDiscount = percent > 0 && effective < base;
+                            const priceStr = formatPrice ? formatPrice(effective) : `${effective.toFixed(2)} DH`;
+                            const originalStr = formatPrice ? formatPrice(base) : `${base.toFixed(2)} DH`;
+                            const img = p.image || p.main_image || null;
+                            return (
+                              <li
+                                key={`prod-${p.id}`}
+                                ref={isActive ? activeItemRef : null}
+                                role="option"
+                                aria-selected={isActive}
+                              >
+                                <button
+                                  type="button"
+                                  onMouseEnter={() => setActiveIdx(globalIdx)}
+                                  onClick={() => goToProduct(p.id)}
+                                  className={`flex w-full items-center gap-3 px-4 py-2.5 text-start transition-colors ${
+                                    isActive ? "bg-zinc-100" : "hover:bg-zinc-50"
+                                  }`}
+                                >
+                                  {img ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                      src={img}
+                                      alt=""
+                                      className="h-11 w-11 shrink-0 rounded-lg object-cover ring-1 ring-zinc-200"
+                                    />
+                                  ) : (
+                                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-400 ring-1 ring-zinc-200">
+                                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-5 w-5">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                                        <path d="M3 15l5-5 4 4 4-4 5 5" />
+                                      </svg>
+                                    </div>
+                                  )}
+                                  <div className="min-w-0 flex-1">
+                                    <div className="truncate text-sm font-medium text-zinc-900">
+                                      <HighlightedText text={p.name} query={debouncedQuery} />
+                                    </div>
+                                    <div className="mt-0.5 flex items-center gap-2 text-xs">
+                                      <span className={`font-semibold ${hasDiscount ? "text-red-600" : "text-zinc-800"}`}>
+                                        {priceStr}
+                                      </span>
+                                      {hasDiscount && (
+                                        <>
+                                          <span className="text-zinc-400 line-through">{originalStr}</span>
+                                          <span className="rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-600">
+                                            -{percent}%
+                                          </span>
+                                        </>
+                                      )}
+                                      {p.category && (
+                                        <span className="truncate text-zinc-500">· {p.category}</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4 shrink-0 text-zinc-400 rtl:rotate-180">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                  </svg>
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </header>
