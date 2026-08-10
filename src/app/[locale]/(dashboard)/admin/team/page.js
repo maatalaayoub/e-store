@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Bell,
   CalendarClock,
@@ -95,6 +96,9 @@ export default function AdminTeamPage() {
   const { locale } = useLocale();
   const t = dict?.admin?.team ?? {};
   const tp = t.permissions_labels ?? {};
+  const searchParams = useSearchParams();
+  const autoOpenNew = searchParams.get("new") === "1";
+  const autoOpenNewRef = useRef(false);
 
   const [loading, setLoading] = useState(true);
   const [owners, setOwners] = useState([]);
@@ -159,6 +163,17 @@ export default function AdminTeamPage() {
     setEditMember(null);
     setInviteOpen(true);
   };
+
+  // Auto-open the invite modal when navigated to with ?new=1 (from admin search).
+  useEffect(() => {
+    if (!autoOpenNew || autoOpenNewRef.current || loading) return;
+    autoOpenNewRef.current = true;
+    const id = setTimeout(() => {
+      setEditMember(null);
+      setInviteOpen(true);
+    }, 0);
+    return () => clearTimeout(id);
+  }, [autoOpenNew, loading]);
 
   const totalPeople = useMemo(() => owners.length + members.length, [owners, members]);
 

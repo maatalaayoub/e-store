@@ -64,8 +64,10 @@ export default function AdminMarketingPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const highlightedPromoId = searchParams.get("promo");
+  const autoOpenNew = searchParams.get("new") === "1";
   const rowRefs = useRef({});
   const autoOpenedRef = useRef(false);
+  const autoOpenNewRef = useRef(false);
 
   const [loading, setLoading] = useState(true);
   const [promos, setPromos] = useState([]);
@@ -165,6 +167,17 @@ export default function AdminMarketingPage() {
     setModalOpen(true);
   };
 
+  // Auto-open the create modal when navigated to with ?new=1 (from admin search).
+  useEffect(() => {
+    if (!autoOpenNew || autoOpenNewRef.current || loading) return;
+    autoOpenNewRef.current = true;
+    const id = setTimeout(() => {
+      setEditPromo(null);
+      setModalOpen(true);
+    }, 0);
+    return () => clearTimeout(id);
+  }, [autoOpenNew, loading]);
+
   if (loading) {
     return (
       <div className="flex h-96 items-center justify-center">
@@ -220,7 +233,119 @@ export default function AdminMarketingPage() {
           </button>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+        <>
+          {/* Mobile card list */}
+          <div className="grid gap-3 md:hidden">
+            {filtered.map((promo) => {
+              const badge = statusBadge(promo, t);
+              const Icon = promo.discount_type === "percentage_off" ? Percent : Banknote;
+              const isHighlighted = highlightedPromoId === promo.id;
+              return (
+                <div
+                  key={promo.id}
+                  ref={(el) => { rowRefs.current[promo.id] = el; }}
+                  className={`rounded-xl border bg-white p-4 ${
+                    isHighlighted ? "border-blue-300 ring-2 ring-inset ring-blue-200" : "border-zinc-200"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <button
+                        onClick={() => copyCode(promo.code)}
+                        className="shrink-0 rounded border border-zinc-200 p-1 text-zinc-400 transition-colors hover:border-zinc-300 hover:bg-zinc-100 hover:text-zinc-700"
+                        aria-label="Copy"
+                      >
+                        {copiedId === promo.code ? (
+                          <Check className="h-3.5 w-3.5 text-green-600" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                      <span className="truncate font-semibold text-zinc-900">{promo.code}</span>
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${badge.class}`}>
+                      {badge.text}
+                    </span>
+                  </div>
+
+                  <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
+                    <div className="min-w-0">
+                      <dt className="text-[10px] font-medium uppercase tracking-wide text-zinc-400">
+                        {t.columns?.discount ?? "Discount"}
+                      </dt>
+                      <dd className="mt-0.5 inline-flex items-center gap-1.5 text-zinc-800">
+                        <Icon className="h-3.5 w-3.5 text-zinc-500" />
+                        {promo.discount_type === "percentage_off"
+                          ? `${promo.discount_value}%`
+                          : `${promo.discount_value} MAD`}
+                      </dd>
+                    </div>
+                    <div className="min-w-0">
+                      <dt className="text-[10px] font-medium uppercase tracking-wide text-zinc-400">
+                        {t.columns?.usage ?? "Usage"}
+                      </dt>
+                      <dd className="mt-0.5 inline-flex items-center gap-1.5 text-zinc-800">
+                        <Users className="h-3.5 w-3.5 text-zinc-500" />
+                        {promo.usage_limit != null
+                          ? (t.usage_text ?? "{used} / {limit}")
+                              .replace("{used}", String(promo.used_count))
+                              .replace("{limit}", String(promo.usage_limit))
+                          : (t.usage_unlimited ?? "{used} used").replace("{used}", String(promo.used_count))}
+                      </dd>
+                    </div>
+                    <div className="col-span-2 min-w-0">
+                      <dt className="text-[10px] font-medium uppercase tracking-wide text-zinc-400">
+                        {t.columns?.applies_to ?? "Applies to"}
+                      </dt>
+                      <dd className="mt-0.5 inline-flex items-center gap-1.5 text-zinc-800">
+                        {promo.applies_to === "all" ? (
+                          <Package className="h-3.5 w-3.5" />
+                        ) : promo.applies_to === "categories" ? (
+                          <LayoutGrid className="h-3.5 w-3.5" />
+                        ) : (
+                          <Tag className="h-3.5 w-3.5" />
+                        )}
+                        <span className="truncate">{appliesText(promo, t)}</span>
+                      </dd>
+                    </div>
+                    <div className="col-span-2 min-w-0">
+                      <dt className="text-[10px] font-medium uppercase tracking-wide text-zinc-400">
+                        {t.columns?.validity ?? "Validity"}
+                      </dt>
+                      <dd className="mt-0.5 inline-flex items-center gap-1.5 text-zinc-600">
+                        <CalendarClock className="h-3.5 w-3.5 text-zinc-500" />
+                        <span className="truncate">
+                          {promo.starts_at || promo.expires_at
+                            ? `${formatDate(promo.starts_at, locale)} – ${formatDate(promo.expires_at, locale)}`
+                            : "—"}
+                        </span>
+                      </dd>
+                    </div>
+                  </dl>
+
+                  <div className="mt-3 flex items-center justify-end gap-2 border-t border-zinc-100 pt-3">
+                    <button
+                      onClick={() => openEdit(promo)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      {dict?.common?.edit ?? "Edit"}
+                    </button>
+                    <button
+                      onClick={() => setRemoveTarget(promo)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      {dict?.common?.delete ?? "Delete"}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden overflow-hidden rounded-xl border border-zinc-200 bg-white md:block">
           <table className="w-full text-left text-sm">
             <thead className="bg-zinc-50 text-zinc-600">
               <tr>
@@ -325,7 +450,8 @@ export default function AdminMarketingPage() {
               })}
             </tbody>
           </table>
-        </div>
+          </div>
+        </>
       )}
 
       <PromoModal

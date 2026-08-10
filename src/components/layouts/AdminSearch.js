@@ -42,6 +42,22 @@ import {
   AlertTriangle,
   XCircle,
   Package as PackageIcon,
+  Tag,
+  Film,
+  LayoutTemplate,
+  Smartphone,
+  LayoutGrid,
+  MapPin,
+  Phone,
+  Image as ImageIcon,
+  Palette,
+  Languages,
+  Clock,
+  DollarSign,
+  Send,
+  MessageCircle,
+  Percent,
+  UserPlus,
 } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 
@@ -71,53 +87,105 @@ function buildIndex({ dict, locale, t }) {
   const ann = settings.announcements ?? {};
   const notif = dict?.admin?.notifications ?? {};
   const messages = settings.messages ?? {};
+  const marketing = dict?.admin?.marketing ?? {};
+  const team = dict?.admin?.team ?? {};
+  const storefrontTabs = settings.storefront_tabs ?? {};
+  const gen = settings.general ?? {};
+  const disp = settings.display ?? {};
+  const car = settings.carousel ?? {};
+  const mnav = settings.mobile_nav ?? {};
+  const hdr = settings.header_sidebar ?? {};
+  const pay = settings.payments ?? {};
+  const ship = settings.shipping ?? {};
+  const notifSet = settings.notifications ?? {};
+  const intg = settings.integrations ?? {};
+  const loc = settings.localization ?? {};
+  const productSectionsSet = settings.product_sections ?? {};
   const settingsTitle = settings.title ?? "Settings";
+  const storefrontTitle = sec.storefront ?? "Storefront";
 
   const groupPages = t.group_pages ?? "Pages";
   const groupSettings = t.group_settings ?? settingsTitle;
+  const groupStorefront = t.group_storefront ?? storefrontTitle;
   const groupActions = t.group_actions ?? "Quick Actions";
 
   const wl = (href) => `/${locale}${href}`;
 
   return [
-    // Top-level pages
+    // ─── Top-level pages ────────────────────────────────────────────────────
     { id: "page-dashboard",     group: groupPages, icon: LayoutDashboard,  label: nav.dashboard     ?? "Dashboard",     href: wl("/admin"),              keywords: ["dashboard", "home", "overview", dash.title] },
     { id: "page-products",      group: groupPages, icon: Package,          label: nav.products      ?? "Products",      href: wl("/admin/products"),     keywords: ["products", "inventory", "catalog", prod.title] },
     { id: "page-orders",        group: groupPages, icon: ShoppingCart,     label: nav.orders        ?? "Orders",        href: wl("/admin/orders"),       keywords: ["orders", "sales"] },
     { id: "page-customers",     group: groupPages, icon: Users,            label: nav.customers     ?? "Customers",     href: wl("/admin/customers"),    keywords: ["customers", "users", "clients"] },
+    { id: "page-marketing",     group: groupPages, icon: Tag,              label: nav.marketing     ?? marketing.title ?? "Marketing", href: wl("/admin/marketing"), keywords: ["marketing", "promo", "promo code", "discount", "coupon", marketing.title] },
     { id: "page-messages",      group: groupPages, icon: Mail,             label: nav.messages      ?? "Messages",      href: wl("/admin/messages"),     keywords: ["messages", "contact", "inbox", messages.title] },
     { id: "page-notifications", group: groupPages, icon: Bell,             label: nav.notifications ?? "Notifications", href: wl("/admin/notifications"), keywords: ["notifications", "alerts", "updates", notif.title] },
-    { id: "page-team",          group: groupPages, icon: UserCog,          label: nav.team          ?? "Team",          href: wl("/admin/team"),         keywords: ["team", "staff", "members", "invite", "permissions", "roles"] },
+    { id: "page-team",          group: groupPages, icon: UserCog,          label: nav.team          ?? team.title ?? "Team", href: wl("/admin/team"),  keywords: ["team", "staff", "members", "invite", "permissions", "roles", team.title] },
     { id: "page-settings",      group: groupPages, icon: Settings,         label: nav.settings      ?? "Settings",      href: wl("/admin/settings"),     keywords: ["settings", "configuration", "preferences"] },
 
-    // Settings sub-sections (deep-linked via ?tab=)
-    { id: "set-general",          group: groupSettings, icon: Store,        label: sec.general          ?? "General",          description: settingsTitle, href: wl("/admin/settings?tab=general"),          keywords: ["general", "store", "info", "name", "logo", "contact"] },
+    // ─── Settings top-level tabs (deep-linked via ?tab=) ─────────────────────
+    { id: "set-general",          group: groupSettings, icon: Store,        label: sec.general          ?? "General",          description: settingsTitle, href: wl("/admin/settings?tab=general"),          keywords: ["general", "store", "info", "name", "logo", "contact", gen.title] },
     { id: "set-storefront",       group: groupSettings, icon: Layers,       label: sec.storefront       ?? "Storefront",       description: settingsTitle, href: wl("/admin/settings?tab=storefront"),       keywords: ["storefront", "hero", "banner", "carousel", "slides", "display", "buttons", "product cards"] },
-    { id: "set-announcements",    group: groupSettings, icon: Megaphone,    label: sec.announcements    ?? "Announcements",    description: settingsTitle, href: wl("/admin/settings?tab=announcements"),    keywords: ["announcements", "marquee", "promo", "banner", ann.title] },
-    { id: "set-product-sections", group: groupSettings, icon: Blocks,       label: sec.product_sections ?? "Product Sections", description: settingsTitle, href: wl("/admin/settings?tab=product_sections"), keywords: ["product sections", "sections", "homepage", "builder"] },
-    { id: "set-payments",         group: groupSettings, icon: CreditCard,   label: sec.payments         ?? "Payments",         description: settingsTitle, href: wl("/admin/settings?tab=payments"),         keywords: ["payments", "stripe", "checkout", "cod", "cash on delivery"] },
-    { id: "set-shipping",         group: groupSettings, icon: Truck,        label: sec.shipping         ?? "Shipping",         description: settingsTitle, href: wl("/admin/settings?tab=shipping"),         keywords: ["shipping", "delivery", "rates", "zones"] },
-    { id: "set-notifications",    group: groupSettings, icon: Bell,         label: sec.notifications    ?? "Notifications",    description: settingsTitle, href: wl("/admin/settings?tab=notifications"),    keywords: ["notifications", "alerts", "telegram", "new order", "low stock", "out of stock"] },
-    { id: "set-integrations",     group: groupSettings, icon: Zap,          label: sec.integrations     ?? "Integrations",     description: settingsTitle, href: wl("/admin/settings?tab=integrations"),     keywords: ["integrations", "api", "webhooks", "telegram", "whatsapp"] },
-    { id: "set-localization",     group: groupSettings, icon: Globe,        label: sec.localization     ?? "Localization",     description: settingsTitle, href: wl("/admin/settings?tab=localization"),     keywords: ["localization", "language", "currency", "i18n", "timezone"] },
+    { id: "set-announcements",    group: groupSettings, icon: Megaphone,    label: sec.announcements    ?? "Announcements",    description: settingsTitle, href: wl("/admin/settings?tab=announcements"),    keywords: ["announcements", "marquee", "promo", "banner", "notice", ann.title] },
+    { id: "set-product-sections", group: groupSettings, icon: Blocks,       label: sec.product_sections ?? "Product Sections", description: settingsTitle, href: wl("/admin/settings?tab=product_sections"), keywords: ["product sections", "sections", "product page", "homepage", "builder", productSectionsSet.title] },
+    { id: "set-payments",         group: groupSettings, icon: CreditCard,   label: sec.payments         ?? "Payments",         description: settingsTitle, href: wl("/admin/settings?tab=payments"),         keywords: ["payments", "stripe", "checkout", "cod", "cash on delivery", "currency", pay.title] },
+    { id: "set-shipping",         group: groupSettings, icon: Truck,        label: sec.shipping         ?? "Shipping",         description: settingsTitle, href: wl("/admin/settings?tab=shipping"),         keywords: ["shipping", "delivery", "rates", "zones", "flat rate", "origin country", ship.title] },
+    { id: "set-notifications",    group: groupSettings, icon: Bell,         label: sec.notifications    ?? "Notifications",    description: settingsTitle, href: wl("/admin/settings?tab=notifications"),    keywords: ["notifications", "alerts", "telegram", "new order", "low stock", "out of stock", notifSet.title] },
+    { id: "set-integrations",     group: groupSettings, icon: Zap,          label: sec.integrations     ?? "Integrations",     description: settingsTitle, href: wl("/admin/settings?tab=integrations"),     keywords: ["integrations", "api", "webhooks", "telegram", "whatsapp", intg.title] },
+    { id: "set-localization",     group: groupSettings, icon: Globe,        label: sec.localization     ?? "Localization",     description: settingsTitle, href: wl("/admin/settings?tab=localization"),     keywords: ["localization", "language", "currency", "i18n", "timezone", loc.title] },
 
-    // Quick actions
-    { id: "act-add-product",      group: groupActions, icon: Plus, label: prod.add ?? dash.add_product ?? "Add Product",      description: nav.products,                            href: wl("/admin/products?new=1"),                   keywords: ["add product", "new product", "create"] },
-    { id: "act-add-announcement", group: groupActions, icon: Plus, label: ann.add ?? "Add Announcement",                      description: sec.announcements ?? "Announcements",    href: wl("/admin/settings?tab=announcements&new=1"), keywords: ["add announcement", "new announcement", "banner"] },
+    // ─── Storefront sub-tabs (deep-linked via ?tab=storefront&sub=) ─────────
+    { id: "sub-hero",       group: groupStorefront, icon: Film,           label: storefrontTabs.hero       ?? "Hero Carousel",    description: storefrontTitle, href: wl("/admin/settings?tab=storefront&sub=hero"),       keywords: ["hero", "carousel", "banner", "slider", "slides", "homepage", "hero slider"] },
+    { id: "sub-header",     group: groupStorefront, icon: LayoutTemplate, label: storefrontTabs.header     ?? "Header & Sidebar", description: storefrontTitle, href: wl("/admin/settings?tab=storefront&sub=header"),     keywords: ["header", "sidebar", "menu icon", "cart icon", "theme", "top bar", hdr.title] },
+    { id: "sub-mobile-nav", group: groupStorefront, icon: Smartphone,     label: storefrontTabs.mobile_nav ?? "Mobile Nav",       description: storefrontTitle, href: wl("/admin/settings?tab=storefront&sub=mobile_nav"), keywords: ["mobile nav", "mobile navigation", "bottom bar", "bottom nav", "tab bar", "phone", mnav.title] },
+    { id: "sub-display",    group: groupStorefront, icon: Palette,        label: storefrontTabs.display    ?? "Button Display",   description: storefrontTitle, href: wl("/admin/settings?tab=storefront&sub=display"),    keywords: ["button", "buttons", "product card", "cart button", "shop now", "colors", "colours", disp.title] },
+    { id: "sub-layout",     group: groupStorefront, icon: LayoutGrid,     label: storefrontTabs.layout     ?? "Card Layout",      description: storefrontTitle, href: wl("/admin/settings?tab=storefront&sub=layout"),     keywords: ["card layout", "grid", "product card", "columns"] },
+    { id: "sub-carousel",   group: groupStorefront, icon: Blocks,         label: storefrontTabs.carousel   ?? "Carousel",         description: storefrontTitle, href: wl("/admin/settings?tab=storefront&sub=carousel"),   keywords: ["carousel", "autoplay", "speed", "products per row", car.title] },
 
-    // Notifications filters
-    { id: "notif-unread",         group: notif.title ?? "Notifications", icon: Bell,          label: notif.filter_unread ?? "Unread",        description: notif.title ?? "Notifications", href: wl("/admin/notifications?tab=unread"),         keywords: ["unread", "notifications"] },
-    { id: "notif-new-order",      group: notif.title ?? "Notifications", icon: ShoppingCart,  label: notif.type_new_order ?? "New order",      description: notif.title ?? "Notifications", href: wl("/admin/notifications?tab=new_order"),      keywords: ["new order", "order", "notification"] },
+    // ─── Settings deep-links: General ───────────────────────────────────────
+    { id: "gen-store-info",     group: groupSettings, icon: Store,      label: gen.store_name       ?? "Store name",       description: sec.general ?? "General", href: wl("/admin/settings?tab=general#store-info"),     keywords: ["store name", "store info", "brand", gen.store_name] },
+    { id: "gen-contact",        group: groupSettings, icon: Phone,      label: gen.contact_email    ?? "Contact info",     description: sec.general ?? "General", href: wl("/admin/settings?tab=general#contact"),        keywords: ["contact", "email", "phone", "whatsapp", "address", gen.contact_email, gen.contact_phone, gen.contact_whatsapp, gen.contact_address] },
+    { id: "gen-location",       group: groupSettings, icon: MapPin,     label: gen.store_location   ?? "Store location",   description: sec.general ?? "General", href: wl("/admin/settings?tab=general#location"),       keywords: ["location", "map", "address", "coordinates", "latitude", "longitude", gen.store_location] },
+    { id: "gen-logo",           group: groupSettings, icon: ImageIcon,  label: gen.store_logo       ?? "Store logo",       description: sec.general ?? "General", href: wl("/admin/settings?tab=general#logo"),           keywords: ["logo", "brand", "image", gen.store_logo, gen.store_logo_dark] },
+    { id: "gen-social",         group: groupSettings, icon: MessageCircle, label: gen.social_title  ?? "Social media",     description: sec.general ?? "General", href: wl("/admin/settings?tab=general#social"),         keywords: ["social", "instagram", "facebook", "tiktok", "whatsapp", gen.social_title] },
+
+    // ─── Settings deep-links: Payments / Shipping ──────────────────────────
+    { id: "pay-currency",   group: groupSettings, icon: DollarSign, label: pay.currency ?? "Currency",     description: sec.payments ?? "Payments",  href: wl("/admin/settings?tab=payments"),  keywords: ["currency", "mad", "usd", "eur", pay.currency] },
+    { id: "pay-stripe",     group: groupSettings, icon: CreditCard, label: pay.stripe   ?? "Stripe",       description: sec.payments ?? "Payments",  href: wl("/admin/settings?tab=payments"),  keywords: ["stripe", "card payment", "api key", pay.stripe] },
+    { id: "pay-cod",        group: groupSettings, icon: Truck,      label: pay.cod      ?? "Cash on delivery", description: sec.payments ?? "Payments", href: wl("/admin/settings?tab=payments"),  keywords: ["cod", "cash on delivery", "cash", pay.cod] },
+    { id: "ship-flat",      group: groupSettings, icon: Truck,      label: ship.flat    ?? "Flat rate",    description: sec.shipping ?? "Shipping",  href: wl("/admin/settings?tab=shipping"),  keywords: ["flat rate", "shipping rate", ship.flat] },
+    { id: "ship-free",      group: groupSettings, icon: Truck,      label: ship.free_threshold ?? "Free shipping threshold", description: sec.shipping ?? "Shipping", href: wl("/admin/settings?tab=shipping"), keywords: ["free shipping", "threshold", ship.free_threshold] },
+    { id: "ship-origin",    group: groupSettings, icon: Globe,      label: ship.origin  ?? "Origin country", description: sec.shipping ?? "Shipping", href: wl("/admin/settings?tab=shipping"),  keywords: ["origin", "country", ship.origin] },
+
+    // ─── Settings deep-links: Notifications & Integrations ─────────────────
+    { id: "notif-low-thresh", group: groupSettings, icon: AlertTriangle, label: notifSet.low_stock_threshold ?? "Low stock threshold", description: sec.notifications ?? "Notifications", href: wl("/admin/settings?tab=notifications"), keywords: ["low stock", "threshold", notifSet.low_stock_threshold] },
+    { id: "notif-telegram",   group: groupSettings, icon: Send,          label: notifSet.telegram_title      ?? "Telegram alerts",     description: sec.notifications ?? "Notifications", href: wl("/admin/settings?tab=notifications"), keywords: ["telegram", "bot", "alerts", notifSet.telegram_title] },
+    { id: "intg-telegram",    group: groupSettings, icon: Send,          label: intg.telegram                ?? "Telegram Bot",         description: sec.integrations ?? "Integrations",  href: wl("/admin/settings?tab=integrations"),  keywords: ["telegram", "bot", "token", "chat id", intg.telegram, intg.bot_token, intg.chat_id] },
+    { id: "intg-whatsapp",    group: groupSettings, icon: MessageCircle, label: intg.whatsapp                ?? "WhatsApp Business",    description: sec.integrations ?? "Integrations",  href: wl("/admin/settings?tab=integrations"),  keywords: ["whatsapp", "business", intg.whatsapp, intg.whatsapp_number] },
+
+    // ─── Settings deep-links: Localization ─────────────────────────────────
+    { id: "loc-language", group: groupSettings, icon: Languages, label: loc.default_language ?? "Default language", description: sec.localization ?? "Localization", href: wl("/admin/settings?tab=localization"), keywords: ["language", "english", "french", "arabic", "darija", loc.default_language] },
+    { id: "loc-timezone", group: groupSettings, icon: Clock,     label: loc.timezone         ?? "Timezone",         description: sec.localization ?? "Localization", href: wl("/admin/settings?tab=localization"), keywords: ["timezone", "time", "tz", loc.timezone] },
+
+    // ─── Quick actions ─────────────────────────────────────────────────────
+    { id: "act-add-product",      group: groupActions, icon: Plus,        label: prod.add          ?? dash.add_product ?? "Add Product",     description: nav.products,                         href: wl("/admin/products?new=1"),                   keywords: ["add product", "new product", "create product"] },
+    { id: "act-add-announcement", group: groupActions, icon: Megaphone,   label: ann.add           ?? "Add Announcement",                    description: sec.announcements ?? "Announcements", href: wl("/admin/settings?tab=announcements&new=1"), keywords: ["add announcement", "new announcement", "banner", "notice"] },
+    { id: "act-add-promo",        group: groupActions, icon: Percent,     label: marketing.add_button ?? "Add promo code",                   description: marketing.title ?? "Marketing",       href: wl("/admin/marketing?new=1"),                  keywords: ["add promo", "new promo", "promo code", "coupon", "discount code", marketing.add_button] },
+    { id: "act-invite-team",      group: groupActions, icon: UserPlus,    label: team.invite_button ?? "Invite team member",                 description: team.title ?? "Team",                 href: wl("/admin/team?new=1"),                       keywords: ["invite", "team", "member", "staff", "add user", team.invite_button] },
+
+    // ─── Notifications filters ─────────────────────────────────────────────
+    { id: "notif-unread",         group: notif.title ?? "Notifications", icon: Bell,          label: notif.filter_unread ?? "Unread",         description: notif.title ?? "Notifications", href: wl("/admin/notifications?tab=unread"),          keywords: ["unread", "notifications"] },
+    { id: "notif-new-order",      group: notif.title ?? "Notifications", icon: ShoppingCart,  label: notif.type_new_order ?? "New order",     description: notif.title ?? "Notifications", href: wl("/admin/notifications?tab=new_order"),       keywords: ["new order", "order", "notification"] },
     { id: "notif-order-cancelled",group: notif.title ?? "Notifications", icon: XCircle,       label: notif.type_order_cancelled ?? "Order cancelled", description: notif.title ?? "Notifications", href: wl("/admin/notifications?tab=order_cancelled"), keywords: ["cancelled", "order", "notification"] },
-    { id: "notif-low-stock",      group: notif.title ?? "Notifications", icon: AlertTriangle, label: notif.type_low_stock ?? "Low stock",      description: notif.title ?? "Notifications", href: wl("/admin/notifications?tab=low_stock"),      keywords: ["low stock", "stock", "notification"] },
-    { id: "notif-out-of-stock",   group: notif.title ?? "Notifications", icon: PackageIcon,   label: notif.type_out_of_stock ?? "Out of stock", description: notif.title ?? "Notifications", href: wl("/admin/notifications?tab=out_of_stock"),   keywords: ["out of stock", "stock", "notification"] },
+    { id: "notif-low-stock",      group: notif.title ?? "Notifications", icon: AlertTriangle, label: notif.type_low_stock ?? "Low stock",     description: notif.title ?? "Notifications", href: wl("/admin/notifications?tab=low_stock"),       keywords: ["low stock", "stock", "notification"] },
+    { id: "notif-out-of-stock",   group: notif.title ?? "Notifications", icon: PackageIcon,   label: notif.type_out_of_stock ?? "Out of stock", description: notif.title ?? "Notifications", href: wl("/admin/notifications?tab=out_of_stock"),    keywords: ["out of stock", "stock", "notification"] },
 
-    // Message filters
-    { id: "msg-new",      group: messages.title ?? "Messages", icon: Mail,       label: messages.filter_new ?? "New",      description: messages.title ?? "Messages", href: wl("/admin/messages?status=new"),      keywords: ["new", "messages", "contact"] },
-    { id: "msg-read",     group: messages.title ?? "Messages", icon: Mail,       label: messages.filter_read ?? "Read",    description: messages.title ?? "Messages", href: wl("/admin/messages?status=read"),     keywords: ["read", "messages", "contact"] },
-    { id: "msg-replied",  group: messages.title ?? "Messages", icon: Mail,       label: messages.filter_replied ?? "Replied", description: messages.title ?? "Messages", href: wl("/admin/messages?status=replied"),  keywords: ["replied", "messages", "contact"] },
-    { id: "msg-archived", group: messages.title ?? "Messages", icon: Mail,       label: messages.filter_archived ?? "Archived", description: messages.title ?? "Messages", href: wl("/admin/messages?status=archived"), keywords: ["archived", "messages", "contact"] },
-  ];
+    // ─── Message filters ───────────────────────────────────────────────────
+    { id: "msg-new",      group: messages.title ?? "Messages", icon: Mail, label: messages.filter_new      ?? "New",      description: messages.title ?? "Messages", href: wl("/admin/messages?status=new"),      keywords: ["new", "messages", "contact"] },
+    { id: "msg-read",     group: messages.title ?? "Messages", icon: Mail, label: messages.filter_read     ?? "Read",     description: messages.title ?? "Messages", href: wl("/admin/messages?status=read"),     keywords: ["read", "messages", "contact"] },
+    { id: "msg-replied",  group: messages.title ?? "Messages", icon: Mail, label: messages.filter_replied  ?? "Replied",  description: messages.title ?? "Messages", href: wl("/admin/messages?status=replied"),  keywords: ["replied", "messages", "contact"] },
+    { id: "msg-archived", group: messages.title ?? "Messages", icon: Mail, label: messages.filter_archived ?? "Archived", description: messages.title ?? "Messages", href: wl("/admin/messages?status=archived"), keywords: ["archived", "messages", "contact"] },
+  ].filter((it) => it && it.label && it.href);
 }
 
 export default function AdminSearch({ locale, isRtl }) {

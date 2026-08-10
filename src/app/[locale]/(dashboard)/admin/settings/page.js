@@ -796,7 +796,21 @@ function ColorRow() { return null; }
 function StorefrontSection() {
   const t = useDictionary()?.admin?.settings ?? {};
   const tabs = t.storefront_tabs ?? {};
-  const [tab, setTab] = useState('hero');
+  const searchParams = useSearchParams();
+  const VALID_SUBS = ['hero', 'header', 'mobile_nav', 'display', 'layout', 'carousel'];
+  const initialSub = (() => {
+    const s = searchParams.get('sub');
+    return VALID_SUBS.includes(s) ? s : 'hero';
+  })();
+  const [tab, setTab] = useState(initialSub);
+
+  // Sync when the URL sub-tab changes (e.g. via admin search deep-link).
+  useEffect(() => {
+    const next = searchParams.get('sub');
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (next && VALID_SUBS.includes(next) && next !== tab) setTab(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const TAB_ITEMS = [
     { key: 'hero',       label: tabs.hero       ?? 'Hero Carousel',    Icon: Film },
