@@ -155,34 +155,8 @@ function useNavigationProgress() {
   }, []);
 }
 
-function useFetchProgress() {
-  useEffect(() => {
-    const originalFetch = window.fetch;
-    let shouldTrackFetches = false;
-
-    const settleTimer = setTimeout(() => {
-      shouldTrackFetches = true;
-    }, INITIAL_LOAD_SUPPRESS_MS);
-
-    window.fetch = async (...args) => {
-      const finish = shouldTrackFetches && hasRecentUserInteraction() ? loadingProgress.start() : null;
-      try {
-        return await originalFetch(...args);
-      } finally {
-        finish?.();
-      }
-    };
-
-    return () => {
-      clearTimeout(settleTimer);
-      window.fetch = originalFetch;
-    };
-  }, []);
-}
-
 export default function GlobalProgressBar() {
   useNavigationProgress();
-  useFetchProgress();
 
   const progress = useSyncExternalStore(
     loadingProgress.subscribe,
