@@ -45,7 +45,7 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
   const [discountType, setDiscountType] = useState("percentage_off");
   const [discountValue, setDiscountValue] = useState("");
   const [minOrderAmount, setMinOrderAmount] = useState("0");
-  const [maxDiscountAmount, setMaxDiscountAmount] = useState("");
+  const [maxOrderAmount, setMaxOrderAmount] = useState("");
   const [appliesTo, setAppliesTo] = useState("all");
   const [selectedProductIds, setSelectedProductIds] = useState([]);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
@@ -74,7 +74,7 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
     setDiscountType(isEdit ? promo.discount_type ?? "percentage_off" : "percentage_off");
     setDiscountValue(isEdit ? String(promo.discount_value ?? "") : "");
     setMinOrderAmount(isEdit ? String(promo.min_order_amount ?? 0) : "0");
-    setMaxDiscountAmount(isEdit ? (promo.max_discount_amount != null ? String(promo.max_discount_amount) : "") : "");
+    setMaxOrderAmount(isEdit ? (promo.max_order_amount != null ? String(promo.max_order_amount) : "") : "");
     setAppliesTo(isEdit ? promo.applies_to ?? "all" : "all");
     setSelectedProductIds(isEdit ? (promo.product_ids ?? []).map(String) : []);
     setSelectedCategoryIds(isEdit ? (promo.category_ids ?? []).map(String) : []);
@@ -119,9 +119,10 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
     if (discountType === "percentage_off" && v > 100) return tErr.percentage_too_high;
     const mo = Number(minOrderAmount);
     if (!Number.isFinite(mo) || mo < 0) return tErr.invalid_min_order_amount;
-    if (maxDiscountAmount !== "" && maxDiscountAmount != null) {
-      const md = Number(maxDiscountAmount);
-      if (!Number.isFinite(md) || md < 0) return tErr.invalid_max_discount_amount;
+    if (maxOrderAmount !== "" && maxOrderAmount != null) {
+      const mx = Number(maxOrderAmount);
+      if (!Number.isFinite(mx) || mx < 0) return tErr.invalid_max_order_amount;
+      if (mx < mo) return tErr.invalid_max_order_amount;
     }
     if (!unlimitedUsage) {
       const ul = Number(usageLimit);
@@ -148,7 +149,7 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
         discount_type: discountType,
         discount_value: Number(discountValue),
         min_order_amount: Number(minOrderAmount),
-        max_discount_amount: maxDiscountAmount === "" || maxDiscountAmount == null ? null : Number(maxDiscountAmount),
+        max_order_amount: maxOrderAmount === "" || maxOrderAmount == null ? null : Number(maxOrderAmount),
         starts_at: startsAt || null,
         expires_at: expiresAt || null,
         usage_limit: unlimitedUsage ? null : Number(usageLimit),
@@ -298,15 +299,15 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-zinc-700">
-                  {t.form?.max_discount_label ?? "Max discount"}
+                  {t.form?.max_order_label ?? "Maximum order amount"}
                 </label>
                 <input
                   type="number"
                   min="0"
                   step="0.01"
-                  value={maxDiscountAmount}
-                  onChange={(e) => setMaxDiscountAmount(e.target.value)}
-                  placeholder={t.form?.max_discount_hint ?? "Optional cap"}
+                  value={maxOrderAmount}
+                  onChange={(e) => setMaxOrderAmount(e.target.value)}
+                  placeholder={t.form?.max_order_hint ?? "Optional — no upper limit"}
                   className="w-full rounded-[5px] border border-zinc-200 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   dir="ltr"
                 />

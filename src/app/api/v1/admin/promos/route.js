@@ -28,7 +28,7 @@ function promoShape(row) {
     discount_type: row.discount_type,
     discount_value: Number(row.discount_value ?? 0),
     min_order_amount: Number(row.min_order_amount ?? 0),
-    max_discount_amount: row.max_discount_amount != null ? Number(row.max_discount_amount) : null,
+    max_order_amount: row.max_order_amount != null ? Number(row.max_order_amount) : null,
     starts_at: row.starts_at ?? null,
     expires_at: row.expires_at ?? null,
     usage_limit: row.usage_limit ?? null,
@@ -102,7 +102,7 @@ export async function POST(req) {
     const discountType = body.discount_type ?? 'percentage_off';
     const discountValue = Number(body.discount_value);
     const minOrderAmount = Number(body.min_order_amount ?? 0);
-    const maxDiscountAmount = body.max_discount_amount != null ? Number(body.max_discount_amount) : null;
+    const maxOrderAmount = body.max_order_amount != null ? Number(body.max_order_amount) : null;
     const startsAt = body.starts_at || null;
     const expiresAt = body.expires_at || null;
     const usageLimit = body.usage_limit != null ? Number(body.usage_limit) : null;
@@ -125,8 +125,11 @@ export async function POST(req) {
     if (!Number.isFinite(minOrderAmount) || minOrderAmount < 0) {
       return NextResponse.json({ success: false, error: 'invalid_min_order_amount' }, { status: 400 });
     }
-    if (maxDiscountAmount != null && (!Number.isFinite(maxDiscountAmount) || maxDiscountAmount < 0)) {
-      return NextResponse.json({ success: false, error: 'invalid_max_discount_amount' }, { status: 400 });
+    if (maxOrderAmount != null && (!Number.isFinite(maxOrderAmount) || maxOrderAmount < 0)) {
+      return NextResponse.json({ success: false, error: 'invalid_max_order_amount' }, { status: 400 });
+    }
+    if (maxOrderAmount != null && maxOrderAmount < minOrderAmount) {
+      return NextResponse.json({ success: false, error: 'invalid_max_order_amount' }, { status: 400 });
     }
     if (!APPLIES_TO.has(appliesTo)) {
       return NextResponse.json({ success: false, error: 'invalid_applies_to' }, { status: 400 });
@@ -149,7 +152,7 @@ export async function POST(req) {
         discount_type: discountType,
         discount_value: discountValue,
         min_order_amount: minOrderAmount,
-        max_discount_amount: maxDiscountAmount,
+        max_order_amount: maxOrderAmount,
         starts_at: startsAt,
         expires_at: expiresAt,
         usage_limit: usageLimit,
@@ -222,10 +225,10 @@ export async function PATCH(req) {
       if (!Number.isFinite(v) || v < 0) return NextResponse.json({ success: false, error: 'invalid_min_order_amount' }, { status: 400 });
       update.min_order_amount = v;
     }
-    if (body.max_discount_amount !== undefined) {
-      const v = body.max_discount_amount === null ? null : Number(body.max_discount_amount);
-      if (v !== null && (!Number.isFinite(v) || v < 0)) return NextResponse.json({ success: false, error: 'invalid_max_discount_amount' }, { status: 400 });
-      update.max_discount_amount = v;
+    if (body.max_order_amount !== undefined) {
+      const v = body.max_order_amount === null ? null : Number(body.max_order_amount);
+      if (v !== null && (!Number.isFinite(v) || v < 0)) return NextResponse.json({ success: false, error: 'invalid_max_order_amount' }, { status: 400 });
+      update.max_order_amount = v;
     }
     if (body.starts_at !== undefined) update.starts_at = body.starts_at || null;
     if (body.expires_at !== undefined) update.expires_at = body.expires_at || null;

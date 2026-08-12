@@ -11,6 +11,7 @@ import {
 import { getAdminUser, getStaffDataWindow, applyStaffDateWindow } from '@/middlewares/authGuard';
 import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 import { computeEffectivePrice } from '@/lib/price';
+import { computePromoDiscount } from '@/lib/promo';
 import { logger } from '@/lib/logger';
 import { getRequestDeviceId } from '@/lib/device-id';
 import {
@@ -307,6 +308,9 @@ export async function POST(req) {
       if (serverTotalMad < Number(promo.min_order_amount ?? 0)) {
         return NextResponse.json({ success: false, error: 'min_order_not_met' }, { status: 400 });
       }
+      if (promo.max_order_amount != null && serverTotalMad > Number(promo.max_order_amount)) {
+        return NextResponse.json({ success: false, error: 'max_order_exceeded' }, { status: 400 });
+      }
 
       let applicableTotal = serverTotalMad;
       const promoProductIds = new Set((promo.product_ids ?? []).map(String));
@@ -327,15 +331,7 @@ export async function POST(req) {
         return NextResponse.json({ success: false, error: 'promo_not_applicable' }, { status: 400 });
       }
 
-      if (promo.discount_type === 'percentage_off') {
-        promoDiscount = (applicableTotal * Number(promo.discount_value)) / 100;
-        if (promo.max_discount_amount != null) {
-          promoDiscount = Math.min(promoDiscount, Number(promo.max_discount_amount));
-        }
-      } else {
-        promoDiscount = Number(promo.discount_value);
-      }
-      promoDiscount = Math.round(Math.min(promoDiscount, applicableTotal) * 100) / 100;
+      promoDiscount = computePromoDiscount(promo, applicableTotal);
       appliedPromoId = promo.id;
       promoUsedCount = promo.used_count ?? 0;
     }

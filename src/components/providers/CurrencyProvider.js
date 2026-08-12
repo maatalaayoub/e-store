@@ -273,8 +273,14 @@ export default function CurrencyProvider({ children }) {
     setCurrencyByCountry,
     formatPrice: (madAmount) => {
       if (madAmount == null) return '';
-      const num = Number(String(madAmount).replace(/[^0-9.]/g, '')) || 0;
-      const converted = num * rate;
+      // Never round-trip numbers through the string-strip path: JS renders
+      // tiny floats (e.g. 2.84e-14 from `subtotal - discount` on a 100% promo)
+      // in scientific notation, and stripping the `e-` produces `2.84`, which
+      // then displays as a bogus non-zero total.
+      const num = typeof madAmount === 'number'
+        ? madAmount
+        : Number(String(madAmount).replace(/[^0-9.\-eE]/g, '')) || 0;
+      const converted = (Number.isFinite(num) ? num : 0) * rate;
       return `\u200E${converted.toFixed(2)} ${currency.sym}`;
     },
   }), [currency, rate, stale, detectedCountry, setCurrencyByCountry]);

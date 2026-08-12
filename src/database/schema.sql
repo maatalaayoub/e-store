@@ -1335,7 +1335,8 @@ CREATE TABLE IF NOT EXISTS promo_codes (
   -- Minimum order subtotal (MAD) required before the code can be applied.
   min_order_amount numeric(10, 2) DEFAULT 0 CHECK (min_order_amount >= 0),
 
-  -- Optional fixed maximum discount cap for percentage codes (MAD).
+  -- Deprecated: former percentage discount cap (MAD). No longer applied; kept
+  -- for backward compatibility. Use max_order_amount for an order-total bound.
   max_discount_amount numeric(10, 2) DEFAULT NULL CHECK (max_discount_amount IS NULL OR max_discount_amount >= 0),
 
   -- Scheduling: both NULL means always active.
@@ -1362,6 +1363,12 @@ CREATE TABLE IF NOT EXISTS promo_codes (
 
 -- Fast lookup by code at checkout.
 CREATE INDEX IF NOT EXISTS idx_promo_codes_code ON promo_codes(code);
+
+-- Optional upper bound: the code only applies when the order subtotal is at or
+-- below this amount (MAD). NULL means no upper bound. Shown for both discount
+-- types; replaces the old percentage discount cap.
+ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS max_order_amount numeric(10, 2)
+  DEFAULT NULL CHECK (max_order_amount IS NULL OR max_order_amount >= 0);
 
 -- Track which order used which promo code.
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS promo_code_id uuid REFERENCES promo_codes(id) ON DELETE SET NULL;

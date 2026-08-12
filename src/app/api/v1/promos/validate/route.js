@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase/service';
 import { rateLimitOrReject } from '@/lib/request-guard';
 import { logger } from '@/lib/logger';
 import { parsePrice } from '@/lib/price';
+import { computePromoDiscount, checkPromoOrderRange } from '@/lib/promo';
 
 /**
  * POST /api/v1/promos/validate
@@ -53,8 +54,12 @@ export async function POST(req) {
     if (promo.usage_limit != null && promo.used_count >= promo.usage_limit) {
       return NextResponse.json({ success: false, error: 'code_usage_limit_reached' }, { status: 400 });
     }
-    if (subtotal < Number(promo.min_order_amount ?? 0)) {
+    const range = checkPromoOrderRange(promo, subtotal);
+    if (range === 'below_min') {
       return NextResponse.json({ success: false, error: 'min_order_not_met' }, { status: 400 });
+    }
+    if (range === 'above_max') {
+      return NextResponse.json({ success: false, error: 'max_order_exceeded' }, { status: 400 });
     }
 
     // Determine which cart items the discount applies to.
@@ -90,17 +95,7 @@ export async function POST(req) {
     );
     const applicableProductIds = [...new Set(applicableItems.map((i) => String(i.id)))];
 
-    let discountAmount = 0;
-    if (promo.discount_type === 'percentage_off') {
-      discountAmount = (applicableSubtotal * Number(promo.discount_value)) / 100;
-      if (promo.max_discount_amount != null) {
-        discountAmount = Math.min(discountAmount, Number(promo.max_discount_amount));
-      }
-    } else {
-      discountAmount = Number(promo.discount_value);
-    }
-
-    discountAmount = Math.round(Math.min(discountAmount, applicableSubtotal) * 100) / 100;
+    const discountAmount = computePromoDiscount(promo, applicableSubtotal);
 
     return NextResponse.json({
       success: true,
@@ -114,6 +109,8 @@ export async function POST(req) {
         applicable_subtotal: applicableSubtotal,
         applicable_product_ids: applicableProductIds,
         min_order_amount: Number(promo.min_order_amount ?? 0),
+        max_order_amount:
+          promo.max_order_amount != null ? Number(promo.max_order_amount) : null,
       },
     });
   } catch (err) {

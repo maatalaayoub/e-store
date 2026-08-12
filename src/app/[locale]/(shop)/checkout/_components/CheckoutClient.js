@@ -10,6 +10,7 @@ import { isRtlLocale } from "@/config/constants";
 import { resolveProductTranslation } from "@/lib/product-locale";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
 import { parsePrice } from "@/lib/price";
+import { computePromoDiscount } from "@/lib/promo";
 import { useCheckoutForm } from "@/components/shop/checkout/useCheckoutForm";
 import CheckoutFields from "@/components/shop/checkout/CheckoutFields";
 import CheckoutActions from "@/components/shop/checkout/CheckoutActions";
@@ -110,6 +111,71 @@ export default function CheckoutClient({ locale, dict }) {
     setPromoCode("");
   };
 
+  // Keep the applied promo in sync with the cart. If the user removes items,
+  // decrements quantity, or otherwise drops the subtotal below the promo's
+  // minimum — or empties the applicable scope — auto-invalidate the promo so
+  // the discount and final total can never be stale. The backend re-verifies
+  // this on order submit (see /api/v1/orders), this effect just keeps the UI
+  // truthful without a page refresh.
+  useEffect(() => {
+    if (!promo) return;
+
+    // Empty cart → drop the promo entirely.
+    if (items.length === 0) {
+      setPromo(null);
+      setPromoError(null);
+      return;
+    }
+
+    // Minimum order threshold no longer met.
+    if (subtotal < Number(promo.min_order_amount ?? 0)) {
+      setPromo(null);
+      setPromoError("min_order_not_met");
+      return;
+    }
+
+    // Order climbed above the promo's maximum eligible total.
+    if (promo.max_order_amount != null && subtotal > Number(promo.max_order_amount)) {
+      setPromo(null);
+      setPromoError("max_order_exceeded");
+      return;
+    }
+
+    // Recompute the applicable subtotal from the *current* cart. For scoped
+    // promos we can only match by product id — categories were resolved to
+    // product ids server-side at apply time, which is fine because checkout
+    // does not let the user add new products.
+    const scopeIds = promo.applies_to === "all"
+      ? null
+      : new Set((promo.applicable_product_ids ?? []).map(String));
+    const applicableItems = scopeIds
+      ? items.filter((i) => scopeIds.has(String(i.id)))
+      : items;
+    const applicableSubtotal = applicableItems.reduce(
+      (acc, item) => acc + parsePrice(item.effective_price ?? item.price) * item.quantity,
+      0,
+    );
+
+    // Scoped promo whose covered items were all removed.
+    if (scopeIds && applicableSubtotal <= 0) {
+      setPromo(null);
+      setPromoError("not_applicable");
+      return;
+    }
+
+    const newDiscount = computePromoDiscount(promo, applicableSubtotal);
+    if (
+      newDiscount !== promo.discount_amount ||
+      applicableSubtotal !== promo.applicable_subtotal
+    ) {
+      setPromo((prev) =>
+        prev
+          ? { ...prev, discount_amount: newDiscount, applicable_subtotal: applicableSubtotal }
+          : prev,
+      );
+    }
+  }, [items, subtotal, promo]);
+
   if (!checkout.hydrated) return null;
 
   return (
@@ -193,10 +259,16 @@ export default function CheckoutClient({ locale, dict }) {
                           promo.applicable_product_ids.includes(String(item.id))));
                     const isPercentagePromo =
                       isPromoCovered && promo?.discount_type === "percentage_off";
-                    const percentValue = isPercentagePromo ? Number(promo.discount_value ?? 0) : 0;
+                    // Derive the per-line rate from the actual applied discount
+                    // so the line prices always match the total shown below.
+                    const effectiveRate =
+                      isPercentagePromo && Number(promo.applicable_subtotal) > 0
+                        ? Number(promo.discount_amount) / Number(promo.applicable_subtotal)
+                        : 0;
+                    const percentValue = Math.round(effectiveRate * 100);
                     const lineOriginal = price * item.quantity;
                     const lineDiscounted = isPercentagePromo
-                      ? Math.max(0, lineOriginal * (1 - percentValue / 100))
+                      ? Math.max(0, lineOriginal * (1 - effectiveRate))
                       : lineOriginal;
                     return (
                       <div key={lineKey} className="flex items-center gap-4 px-4 py-4 bg-white">
@@ -363,7 +435,9 @@ export default function CheckoutClient({ locale, dict }) {
                 <div className="flex justify-between text-sm text-zinc-700 items-center">
                   <span>{tCheckout.total ?? "Total"}</span>
                   <span className="text-xl font-bold text-zinc-900">
-                    {formatPrice(Math.max(0, subtotal - (promo?.discount_amount ?? 0)))}
+                    {formatPrice(
+                      Math.max(0, Math.round((subtotal - (promo?.discount_amount ?? 0)) * 100) / 100),
+                    )}
                   </span>
                 </div>
               </div>
