@@ -132,20 +132,33 @@ export default function ShopHeader({ onOpenCart, fixed = true, fixedBelow = null
   const { formatPrice } = useCurrency() ?? {};
   const isScrolled = useIsScrolled();
   const [isHovered, setIsHovered] = useState(false);
-  // fixedBelow='lg'  → hero is behind header: dark/transparent until scroll/hover on mobile,
-  //                      solid light style on desktop (lg+).
-  // fixedBelow='all' → hero is below header: fixed with normal light style everywhere.
+  // fixedBelow='lg'   → hero is behind header on mobile only: dark/transparent
+  //                       until scroll/hover on mobile, solid light on desktop (lg+).
+  // fixedBelow='full' → hero is behind header on all breakpoints (e.g. carousel/
+  //                       single/multi/video/countdown): transparent + white icons
+  //                       until the user scrolls, then solid light everywhere.
+  // fixedBelow='all'  → hero is below header: fixed with normal light style
+  //                       everywhere.
   const isMobileBehindHero = fixedBelow === 'lg';
+  const isFullBehindHero = fixedBelow === 'full';
   const isAlwaysLight = fixedBelow === 'all';
   // forceLight: fully light (white bg, dark icons) on every breakpoint.
-  const forceLight = isScrolled || isHovered || isAlwaysLight;
-  // behindResponsive: transparent + white icons on mobile, light on desktop (lg+).
-  const behindResponsive = isMobileBehindHero && !forceLight;
-  const logoMode = forceLight ? 'light' : behindResponsive ? 'responsive' : 'dark';
+  // Hover solidifies the header for the transparent modes ('lg' and 'full')
+  // but is a no-op for 'all' (iHerb) because that mode is already solid.
+  const forceLight = isScrolled || (isHovered && !isAlwaysLight) || isAlwaysLight;
+  // behindResponsive: transparent + white icons over the hero. In 'lg' mode this
+  // only applies on mobile; in 'full' mode it applies on every breakpoint.
+  const behindResponsive = (isMobileBehindHero || isFullBehindHero) && !forceLight;
+  const logoMode = forceLight
+    ? 'light'
+    : behindResponsive
+      ? (isFullBehindHero ? 'dark' : 'responsive')
+      : 'dark';
   // Class helpers reused by the icon buttons so the mobile/desktop split stays consistent.
   const btnClass = (light, dark) => {
     if (forceLight) return light;
     if (behindResponsive) {
+      if (isFullBehindHero) return dark;
       const lgLight = light.split(' ').filter(Boolean).map((c) => `lg:${c}`).join(' ');
       return `${dark} ${lgLight}`;
     }
@@ -388,19 +401,23 @@ export default function ShopHeader({ onOpenCart, fixed = true, fixedBelow = null
           forceLight
             ? "bg-white border-b border-zinc-200"
             : behindResponsive
-              ? "bg-transparent border-b border-transparent lg:bg-white lg:border-zinc-200"
+              ? (isFullBehindHero
+                  ? "bg-transparent border-b border-transparent"
+                  : "bg-transparent border-b border-transparent lg:bg-white lg:border-zinc-200")
               : "bg-transparent border-b border-transparent"
         }`}
       >
         <div className="relative mx-auto flex items-center justify-between px-6 py-2">
-          {/* Hover backdrop: only used for the transparent mobile behind-hero state. */}
+          {/* Hover backdrop: white slide-down for the transparent behind-hero
+              modes ('lg' on mobile only, 'full' at every breakpoint). Never
+              shown in 'all' mode (iHerb) since the header is already solid. */}
           <div
             aria-hidden="true"
             className={`pointer-events-none absolute inset-0 -z-10 transition-all duration-500 ease-in-out origin-top ${
-              !isScrolled && isHovered
-                ? "opacity-100 scale-y-100 backdrop-blur-md bg-white/95 shadow-sm"
+              !isScrolled && isHovered && !isAlwaysLight
+                ? `opacity-100 scale-y-100 backdrop-blur-md bg-white/95 shadow-sm${isMobileBehindHero ? ' lg:opacity-0 lg:scale-y-0' : ''}`
                 : "opacity-0 scale-y-0 backdrop-blur-none bg-transparent"
-            } ${isAlwaysLight ? 'opacity-0 scale-y-0' : ''} ${isMobileBehindHero ? 'lg:opacity-0 lg:scale-y-0' : ''}`}
+            }`}
           />
           {/* Left: menu + logo */}
           <div
@@ -461,7 +478,11 @@ export default function ShopHeader({ onOpenCart, fixed = true, fixedBelow = null
                 <span
                   aria-hidden="true"
                   className={`pointer-events-none absolute inset-0 rounded-full animate-cart-ring ${
-                    forceLight ? "bg-zinc-900/20" : behindResponsive ? "bg-white/30 lg:bg-zinc-900/20" : "bg-white/30"
+                    forceLight
+                      ? "bg-zinc-900/20"
+                      : behindResponsive
+                        ? (isFullBehindHero ? "bg-white/30" : "bg-white/30 lg:bg-zinc-900/20")
+                        : "bg-white/30"
                   }`}
                 />
               )}

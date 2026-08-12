@@ -226,7 +226,7 @@ export default function LocationPicker({ lat, lng, onChange, dict = {} }) {
           <button
             type="button"
             onClick={clear}
-            className="inline-flex items-center gap-1 text-zinc-400 hover:text-red-500"
+            className="inline-flex items-center gap-1 rounded-[5px] bg-zinc-100 px-2 py-1 text-zinc-600 hover:bg-zinc-200 hover:text-red-600"
           >
             <X className="h-3.5 w-3.5" />
             {dict.map_clear ?? "Clear"}

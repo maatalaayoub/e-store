@@ -53,19 +53,15 @@ export default function HomePage() {
       <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
       {/*
         Hero layout mode for the header:
-        - 'behind' (default for slider/single/multi/video/countdown and iHerb mobile behind):
-          header is fixed + dark on mobile, static + light on desktop.
-        - 'below' (iHerb mobile below):
-          header stays fixed + light on all screens.
+        - 'full' (slider / single / multi / video / countdown):
+          hero renders behind the header on every breakpoint → header stays
+          transparent + white icons until the user scrolls.
+        - 'all'  (iHerb, or while hero data is still loading):
+          hero renders below the header → header is fixed + solid light.
       */}
       <ShopHeader
         onOpenCart={() => setIsCartOpen(true)}
-        fixedBelow={(() => {
-          const mode = heroData?.type === 'iherb'
-            ? (heroData?.config?.mobile_position || 'behind')
-            : 'behind';
-          return mode === 'behind' ? 'lg' : 'all';
-        })()}
+        fixedBelow={heroData?.type && heroData.type !== 'iherb' ? 'full' : 'all'}
       />
 
       <main className="flex-1">
