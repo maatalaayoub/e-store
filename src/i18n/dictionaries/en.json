@@ -628,6 +628,13 @@
       "title": "Store Settings",
       "subtitle": "Configure your storefront, payments, and operations.",
       "save": "Save changes",
+      "unsaved": {
+        "title": "Unsaved changes",
+        "desc": "You have unsaved changes. Do you want to save them before leaving?",
+        "save": "Save changes",
+        "discard": "Discard changes",
+        "cancel": "Cancel"
+      },
       "sections": {
         "general": "General",
         "storefront": "Storefront",
@@ -776,6 +783,9 @@
       "general": {
         "title": "General",
         "desc": "Basic information about your store.",
+        "group_identity": "Store identity",
+        "group_branding": "Branding & logos",
+        "group_contact": "Contact",
         "store_name": "Store name",
         "store_name_hint": "Shown in the browser tab and emails.",
         "contact_email": "Contact email",
@@ -827,9 +837,11 @@
         "title": "Payments",
         "desc": "Choose how you accept payments from customers.",
         "currency": "Currency",
+        "currency_hint": "Base currency used across the storefront.",
         "stripe": "Stripe API key",
         "stripe_hint": "Used to process card payments.",
-        "cod": "Cash on delivery"
+        "cod": "Cash on delivery",
+        "cod_hint": "Allow customers to pay when the order is delivered."
       },
       "shipping": {
         "title": "Shipping",
@@ -837,7 +849,8 @@
         "origin": "Default origin country",
         "flat": "Flat rate",
         "flat_hint": "Applied when no zone matches.",
-        "free_threshold": "Free shipping threshold"
+        "free_threshold": "Free shipping threshold",
+        "free_threshold_hint": "Orders at or above this amount ship free. Leave empty to disable."
       },
       "notifications": {
         "title": "Notifications",
@@ -854,7 +867,8 @@
         "telegram_new_order": "New order",
         "telegram_order_cancelled": "Order cancelled",
         "telegram_low_stock": "Low stock alerts",
-        "telegram_out_of_stock": "Out of stock alerts"
+        "telegram_out_of_stock": "Out of stock alerts",
+        "telegram_credentials_hint": "Bot token and chat ID are configured under the Integrations tab."
       },
       "integrations": {
         "title": "Integrations",
@@ -868,6 +882,7 @@
         "whatsapp_number": "Business Phone",
         "whatsapp_number_hint": "Include country code, no + or spaces (e.g. +212600000000)",
         "whatsapp_name": "Business Name",
+        "telegram_events_hint": "Choose which events trigger a Telegram alert under the Notifications tab.",
         "saved": "Integrations saved",
         "saving": "Saving…",
         "save_btn": "Save Integrations"
@@ -876,7 +891,9 @@
         "title": "Localization",
         "desc": "Default language and timezone for your storefront.",
         "default_language": "Default language",
-        "timezone": "Timezone"
+        "default_language_hint": "Language used when a visitor has no saved preference.",
+        "timezone": "Timezone",
+        "timezone_hint": "Used when displaying order and report timestamps."
       },
       "messages": {
         "title": "Contact Messages",

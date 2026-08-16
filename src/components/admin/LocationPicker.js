@@ -213,7 +213,7 @@ export default function LocationPicker({ lat, lng, onChange, dict = {} }) {
 
       <div
         ref={containerRef}
-        className="h-72 w-full overflow-hidden rounded-[5px] border border-zinc-200 bg-zinc-100"
+        className="relative z-0 h-72 w-full overflow-hidden rounded-[5px] border border-zinc-200 bg-zinc-100"
       />
 
       <div className="flex items-center justify-between gap-2 text-xs text-zinc-500">

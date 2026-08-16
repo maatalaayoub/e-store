@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } from "react";
 import { useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
 import {
@@ -41,6 +41,9 @@ import {
   Package,
   Menu as MenuIcon,
   Check,
+  Mail,
+  Share2,
+  AlertTriangle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { invalidateBarCache, MarqueePreview, Countdown, SwapStack } from "@/components/shop/AnnouncementBar";
@@ -63,6 +66,7 @@ import {
   DEFAULT_HEADER_MENU_ICON,
   DEFAULT_SIDEBAR_THEME,
 } from "@/lib/storefront-ui";
+import { registerNavGuard } from "@/lib/nav-guard";
 
 const SECTION_DEFS = [
   { id: "general", icon: Store },
@@ -86,6 +90,84 @@ export default function AdminSettingsPage() {
   const dict = useDictionary();
   const t = dict?.admin?.settings ?? {};
   const tSec = t.sections ?? {};
+  const tUnsaved = t.unsaved ?? {};
+
+  // Unsaved-changes guard. The mounted section registers its dirty flag + save
+  // handler; navigation away is intercepted while there are pending edits.
+  const dirtyRef = useRef(false);
+  const saveRef = useRef(null);
+  const pendingRef = useRef(null); // proceed() for the blocked action
+  const [isDirty, setIsDirty] = useState(false);
+  const [showLeave, setShowLeave] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+
+  const register = useCallback((dirty, save) => {
+    dirtyRef.current = dirty;
+    saveRef.current = save;
+    setIsDirty(dirty);
+  }, []);
+
+  const guard = useCallback((proceed) => {
+    if (dirtyRef.current) {
+      pendingRef.current = proceed;
+      setShowLeave(true);
+    } else {
+      proceed();
+    }
+  }, []);
+
+  const guardValue = useMemo(() => ({ register, guard }), [register, guard]);
+
+  // Native prompt covers hard navigation: tab close, refresh, external links.
+  useEffect(() => {
+    if (!isDirty) return undefined;
+    const handler = (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty]);
+
+  // Intercept admin-shell navigation (sidebar links) while there are edits.
+  useEffect(
+    () =>
+      registerNavGuard((proceed) => {
+        if (!dirtyRef.current) return false;
+        pendingRef.current = proceed;
+        setShowLeave(true);
+        return true;
+      }),
+    [],
+  );
+
+  const runPending = useCallback(() => {
+    const proceed = pendingRef.current;
+    pendingRef.current = null;
+    setShowLeave(false);
+    proceed?.();
+  }, []);
+
+  const cancelLeave = useCallback(() => {
+    pendingRef.current = null;
+    setShowLeave(false);
+  }, []);
+
+  const handleSaveLeave = useCallback(async () => {
+    if (!saveRef.current) {
+      runPending();
+      return;
+    }
+    setLeaving(true);
+    try {
+      await saveRef.current();
+      runPending();
+    } catch (err) {
+      toast.error(err?.message ?? 'Failed to save');
+    } finally {
+      setLeaving(false);
+    }
+  }, [runPending]);
 
   // Sync when the URL tab changes (e.g. when admin search navigates here).
   useEffect(() => {
@@ -99,7 +181,7 @@ export default function AdminSettingsPage() {
   if (!dict?.admin?.settings) return <AdminSettingsSkeleton />;
 
   return (
-    <>
+    <UnsavedChangesContext.Provider value={guardValue}>
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-zinc-900">{t.title}</h1>
         <p className="text-sm text-zinc-500 mt-1">{t.subtitle}</p>
@@ -115,7 +197,9 @@ export default function AdminSettingsPage() {
               return (
                 <button
                   key={s.id}
-                  onClick={() => setActive(s.id)}
+                  onClick={() => {
+                    if (s.id !== active) guard(() => setActive(s.id));
+                  }}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
                     isActive
                       ? "bg-blue-50 text-blue-600"
@@ -143,14 +227,26 @@ export default function AdminSettingsPage() {
           {active === "localization" && <LocalizationSection />}
         </section>
       </div>
-    </>
+
+      <UnsavedChangesDialog
+        open={showLeave}
+        t={tUnsaved}
+        saving={leaving}
+        onSave={handleSaveLeave}
+        onDiscard={runPending}
+        onCancel={cancelLeave}
+      />
+    </UnsavedChangesContext.Provider>
   );
 }
 
-function SectionSaveButton({ onSave }) {
+function SectionSaveButton({ onSave, dirty }) {
   const [saving, setSaving] = useState(false);
   const dict = useDictionary();
   const label = dict?.admin?.settings?.save ?? 'Save changes';
+  // When `dirty` is provided the button stays disabled until there are unsaved
+  // changes; when omitted it behaves like a plain always-enabled save button.
+  const dirtyAware = dirty !== undefined;
 
   const handle = async () => {
     setSaving(true);
@@ -168,14 +264,74 @@ function SectionSaveButton({ onSave }) {
     <div className="pt-4 mt-2 border-t border-zinc-100 flex justify-end">
       <button
         onClick={handle}
-        disabled={saving}
-        className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+        disabled={saving || (dirtyAware && !dirty)}
+        className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
       >
         <Save className="h-4 w-4" />
         {saving ? '…' : label}
       </button>
     </div>
   );
+}
+
+/**
+ * Shared loader/saver for the KV-backed settings sections. Loads the given
+ * keys from /api/v1/settings once, tracks the working form plus its saved
+ * baseline (so callers can show a dirty state), and persists via PATCH.
+ *
+ * @param {Record<string,string>} defaults - key → default value map.
+ */
+function useStoreSettings(defaults) {
+  // Freeze the initial defaults once so later re-renders never reset the
+  // saved baseline used for dirty detection.
+  const [initial] = useState(() => defaults);
+  const [form, setForm] = useState(initial);
+  const [saved, setSaved] = useState(initial);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/v1/settings')
+      .then((r) => r.json())
+      .then(({ success, data }) => {
+        if (cancelled || !success || !data) return;
+        const next = { ...initial };
+        for (const key of Object.keys(initial)) {
+          if (data[key] !== undefined && data[key] !== '') next[key] = data[key];
+        }
+        setForm(next);
+        setSaved(next);
+      })
+      .catch(() => {})
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [initial]);
+
+  const setField = useCallback((key, value) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  }, []);
+
+  const save = useCallback(async () => {
+    const res = await fetch('/api/v1/settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(form),
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error ?? 'Failed to save');
+    setSaved(form);
+  }, [form]);
+
+  const dirty = useMemo(
+    () => Object.keys(initial).some((k) => form[k] !== saved[k]),
+    [form, saved, initial],
+  );
+
+  useUnsavedGuard(dirty, save);
+
+  return { form, setField, save, dirty, loading };
 }
 
 function Field({ label, hint, children }) {
@@ -209,6 +365,109 @@ function SectionHeader({ title, description, icon }) {
   );
 }
 
+// Lightweight sub-group divider used to cluster related fields inside a
+// section (e.g. Identity / Branding / Contact within General).
+function GroupHeader({ title, description, icon: Icon }) {
+  return (
+    <div className="pt-6 pb-2 mt-2 first:pt-0 first:mt-0">
+      <div className="flex items-center gap-2">
+        {Icon && <Icon className="h-4 w-4 text-zinc-400" strokeWidth={1.75} />}
+        <h3 className="text-sm font-semibold text-zinc-900">{title}</h3>
+      </div>
+      {description && <p className="text-xs text-zinc-500 mt-0.5">{description}</p>}
+    </div>
+  );
+}
+
+// ── Unsaved-changes guard ──────────────────────────────────────────────────
+// The active section registers its dirty state + save handler here; the page
+// shell uses it to intercept navigation and prompt before losing edits.
+const UnsavedChangesContext = createContext(null);
+
+/**
+ * Called by a settings section to report unsaved edits and how to persist
+ * them. Only the currently mounted section registers at any time.
+ * @param {boolean} dirty
+ * @param {() => Promise<void> | void} onSave
+ */
+function useUnsavedGuard(dirty, onSave) {
+  const ctx = useContext(UnsavedChangesContext);
+  const register = ctx?.register;
+  const saveRef = useRef(onSave);
+  useEffect(() => {
+    saveRef.current = onSave;
+  });
+  useEffect(() => {
+    if (!register) return undefined;
+    register(dirty, () => saveRef.current?.());
+    return () => register(false, null);
+  }, [register, dirty]);
+}
+
+function UnsavedChangesDialog({ open, t, onSave, onDiscard, onCancel, saving }) {
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape' && !saving) onCancel?.();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open, saving, onCancel]);
+
+  if (!open || typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[10100] flex items-center justify-center bg-black/50 px-4"
+      onClick={saving ? undefined : onCancel}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col items-center gap-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-500">
+          <AlertTriangle className="h-6 w-6" />
+        </div>
+        <div className="text-center">
+          <p className="font-semibold text-zinc-900 text-base">{t.title ?? 'Unsaved changes'}</p>
+          <p className="mt-1 text-sm text-zinc-500">
+            {t.desc ?? 'You have unsaved changes. Do you want to save them before leaving?'}
+          </p>
+        </div>
+        <div className="flex w-full flex-col gap-2 pt-1">
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={saving}
+            className="w-full rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-75 inline-flex items-center justify-center gap-2"
+          >
+            {saving ? '…' : (t.save ?? 'Save changes')}
+          </button>
+          <button
+            type="button"
+            onClick={onDiscard}
+            disabled={saving}
+            className="w-full rounded-xl border border-red-200 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+          >
+            {t.discard ?? 'Discard changes'}
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={saving}
+            className="w-full rounded-xl py-2 text-sm font-medium text-zinc-500 hover:text-zinc-800 transition-colors disabled:opacity-50"
+          >
+            {t.cancel ?? 'Cancel'}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 function GeneralSection() {
   const t = useDictionary()?.admin?.settings?.general ?? {};
   const [form, setForm] = useState({
@@ -233,13 +492,14 @@ function GeneralSection() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savedForm, setSavedForm] = useState(null);
 
   useEffect(() => {
     fetch('/api/v1/settings')
       .then((r) => r.json())
       .then(({ success, data }) => {
         if (success && data) {
-          setForm({
+          const next = {
             store_name: data.store_name ?? '',
             store_description: data.store_description ?? '',
             store_logo: data.store_logo ?? '',
@@ -260,7 +520,9 @@ function GeneralSection() {
             social_instagram: data.social_instagram ?? '',
             social_facebook: data.social_facebook ?? '',
             social_tiktok: data.social_tiktok ?? '',
-          });
+          };
+          setForm(next);
+          setSavedForm(next);
         }
       })
       .catch(() => {})
@@ -304,6 +566,7 @@ function GeneralSection() {
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error ?? 'Save failed');
+      setSavedForm(form);
       toast.success(t.saved ?? 'Settings saved');
     } catch (err) {
       toast.error(err?.message ?? 'Failed to save');
@@ -311,6 +574,9 @@ function GeneralSection() {
       setSaving(false);
     }
   };
+
+  const dirty = savedForm ? JSON.stringify(form) !== JSON.stringify(savedForm) : false;
+  useUnsavedGuard(dirty, handleSave);
 
   if (loading) {
     return (
@@ -325,6 +591,7 @@ function GeneralSection() {
   return (
     <>
       <SectionHeader title={t.title} description={t.desc} />
+      <GroupHeader title={t.group_identity ?? 'Store identity'} icon={Store} />
       <Field label={t.store_name} hint={t.store_name_hint}>
         <input
           className={inputClass}
@@ -333,6 +600,16 @@ function GeneralSection() {
           placeholder="My store"
         />
       </Field>
+      <Field label={t.description} hint={t.description_hint}>
+        <textarea
+          rows={3}
+          className={inputClass}
+          value={form.store_description}
+          onChange={handleChange('store_description')}
+          placeholder={t.description_placeholder}
+        />
+      </Field>
+      <GroupHeader title={t.group_branding ?? 'Branding & logos'} icon={ImageIcon} />
       <Field label={t.store_logo ?? 'Store logo'} hint={t.store_logo_hint ?? 'Used in headers, footers, and emails. Upload a transparent PNG for best results.'}>
         <div className="flex flex-col sm:flex-row gap-4 items-start">
           <div className="flex h-20 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50" style={{ width: `${Math.min(Math.max(parseInt(form.store_logo_size || '160', 10) || 160, 80), 320)}px` }}>
@@ -427,15 +704,7 @@ function GeneralSection() {
           />
         </div>
       </Field>
-      <Field label={t.description} hint={t.description_hint}>
-        <textarea
-          rows={3}
-          className={inputClass}
-          value={form.store_description}
-          onChange={handleChange('store_description')}
-          placeholder={t.description_placeholder}
-        />
-      </Field>
+      <GroupHeader title={t.group_contact ?? 'Contact'} icon={Mail} />
       <Field label={t.contact_email} hint={t.contact_email_hint}>
         <input
           type="email"
@@ -487,8 +756,8 @@ function GeneralSection() {
         />
       </Field>
 
+      <GroupHeader title={t.social_title ?? 'Social Media'} icon={Share2} />
       <div className="py-4 border-b border-zinc-100">
-        <h3 className="text-sm font-semibold text-zinc-900 mb-3">{t.social_title ?? 'Social Media'}</h3>
         <div className="space-y-3">
           {[
             {
@@ -561,52 +830,103 @@ function GeneralSection() {
 
 function PaymentsSection() {
   const t = useDictionary()?.admin?.settings?.payments ?? {};
+  const { form, setField, save, dirty, loading } = useStoreSettings({
+    payments_currency: 'MAD',
+    payments_stripe_key: '',
+    payments_cod_enabled: 'true',
+  });
+  const [showKey, setShowKey] = useState(false);
+
+  if (loading) return <AdminSettingsSkeleton />;
+
   return (
     <>
-      <SectionHeader
-        title={t.title}
-        description={t.desc}
-      />
-      <Field label={t.currency}>
-        <select className={inputClass}>
-          <option>USD — US Dollar</option>
-          <option>EUR — Euro</option>
-          <option>MAD — Moroccan Dirham</option>
+      <SectionHeader title={t.title} description={t.desc} />
+      <Field label={t.currency} hint={t.currency_hint ?? 'Base currency used across the storefront.'}>
+        <select
+          className={inputClass}
+          value={form.payments_currency}
+          onChange={(e) => setField('payments_currency', e.target.value)}
+        >
+          <option value="MAD">MAD — Moroccan Dirham</option>
+          <option value="USD">USD — US Dollar</option>
+          <option value="EUR">EUR — Euro</option>
         </select>
       </Field>
       <Field label={t.stripe} hint={t.stripe_hint}>
-        <input
-          type="password"
-          className={inputClass}
-          placeholder="sk_live_..."
+        <div className="relative">
+          <input
+            type={showKey ? 'text' : 'password'}
+            className={`${inputClass} pr-10`}
+            placeholder="sk_live_..."
+            value={form.payments_stripe_key}
+            onChange={(e) => setField('payments_stripe_key', e.target.value)}
+            autoComplete="off"
+          />
+          <button
+            type="button"
+            onClick={() => setShowKey((v) => !v)}
+            className="absolute inset-y-0 right-3 flex items-center text-zinc-400 hover:text-zinc-700"
+            tabIndex={-1}
+          >
+            {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+      </Field>
+      <Field label={t.cod} hint={t.cod_hint ?? 'Allow customers to pay when the order is delivered.'}>
+        <Toggle
+          checked={form.payments_cod_enabled === 'true'}
+          onChange={(v) => setField('payments_cod_enabled', String(v))}
         />
       </Field>
-      <Field label={t.cod}>
-        <Toggle defaultChecked />
-      </Field>
-      <SectionSaveButton />
+      <SectionSaveButton onSave={save} dirty={dirty} />
     </>
   );
 }
 
 function ShippingSection() {
   const t = useDictionary()?.admin?.settings?.shipping ?? {};
+  const { form, setField, save, dirty, loading } = useStoreSettings({
+    shipping_origin: 'Morocco',
+    shipping_flat_rate: '',
+    shipping_free_threshold: '',
+  });
+
+  const handleNumber = (key) => (e) =>
+    setField(key, e.target.value.replace(/[^0-9.]/g, ''));
+
+  if (loading) return <AdminSettingsSkeleton />;
+
   return (
     <>
-      <SectionHeader
-        title={t.title}
-        description={t.desc}
-      />
+      <SectionHeader title={t.title} description={t.desc} />
       <Field label={t.origin}>
-        <input className={inputClass} defaultValue="Morocco" />
+        <input
+          className={inputClass}
+          value={form.shipping_origin}
+          onChange={(e) => setField('shipping_origin', e.target.value)}
+          placeholder="Morocco"
+        />
       </Field>
       <Field label={t.flat} hint={t.flat_hint}>
-        <input className={inputClass} defaultValue="5.00" />
+        <input
+          className={inputClass}
+          inputMode="decimal"
+          value={form.shipping_flat_rate}
+          onChange={handleNumber('shipping_flat_rate')}
+          placeholder="5.00"
+        />
       </Field>
-      <Field label={t.free_threshold}>
-        <input className={inputClass} placeholder="100.00" />
+      <Field label={t.free_threshold} hint={t.free_threshold_hint ?? 'Orders at or above this amount ship free. Leave empty to disable.'}>
+        <input
+          className={inputClass}
+          inputMode="decimal"
+          value={form.shipping_free_threshold}
+          onChange={handleNumber('shipping_free_threshold')}
+          placeholder="100.00"
+        />
       </Field>
-      <SectionSaveButton />
+      <SectionSaveButton onSave={save} dirty={dirty} />
     </>
   );
 }
@@ -626,14 +946,14 @@ function NotificationsSection() {
     telegram_notify_out_of_stock: 'true',
   });
   const [loading, setLoading] = useState(true);
+  const [savedForm, setSavedForm] = useState(null);
 
   useEffect(() => {
     fetch('/api/v1/settings')
       .then((r) => r.json())
       .then(({ success, data }) => {
         if (success && data) {
-          setForm((prev) => ({
-            ...prev,
+          const next = {
             notify_new_order: data.notify_new_order ?? 'true',
             notify_order_cancelled: data.notify_order_cancelled ?? 'true',
             notify_low_stock: data.notify_low_stock ?? 'true',
@@ -644,7 +964,9 @@ function NotificationsSection() {
             telegram_notify_order_cancelled: data.telegram_notify_order_cancelled ?? 'true',
             telegram_notify_low_stock: data.telegram_notify_low_stock ?? 'true',
             telegram_notify_out_of_stock: data.telegram_notify_out_of_stock ?? 'true',
-          }));
+          };
+          setForm(next);
+          setSavedForm(next);
         }
       })
       .catch(() => {})
@@ -680,7 +1002,11 @@ function NotificationsSection() {
     });
     const json = await res.json();
     if (!json.success) throw new Error(json.error || 'Failed to save');
+    setSavedForm(form);
   };
+
+  const dirty = savedForm ? JSON.stringify(form) !== JSON.stringify(savedForm) : false;
+  useUnsavedGuard(dirty, handleSave);
 
   const telegramEnabled = form.telegram_notifications_enabled === 'true';
 
@@ -734,6 +1060,9 @@ function NotificationsSection() {
           </svg>
         }
       />
+      <p className="-mt-1 mb-1 text-xs text-zinc-500">
+        {t.telegram_credentials_hint ?? "Bot token and chat ID are configured under the Integrations tab."}
+      </p>
       <Field label={t.telegram_enabled ?? "Enable Telegram notifications"}>
         <Toggle
           checked={telegramEnabled}
@@ -803,6 +1132,7 @@ function StorefrontSection() {
     return VALID_SUBS.includes(s) ? s : 'hero';
   })();
   const [tab, setTab] = useState(initialSub);
+  const guard = useContext(UnsavedChangesContext)?.guard;
 
   // Sync when the URL sub-tab changes (e.g. via admin search deep-link).
   useEffect(() => {
@@ -837,7 +1167,11 @@ function StorefrontSection() {
               type="button"
               role="tab"
               aria-selected={active}
-              onClick={() => setTab(key)}
+              onClick={() => {
+                if (key === tab) return;
+                if (guard) guard(() => setTab(key));
+                else setTab(key);
+              }}
               className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-200 border ${
                 active
                   ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/25'
@@ -2229,18 +2563,21 @@ function IntegrationsSection() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showToken, setShowToken] = useState(false);
+  const [savedForm, setSavedForm] = useState(null);
 
   useEffect(() => {
     fetch('/api/v1/settings')
       .then((r) => r.json())
       .then(({ success, data }) => {
         if (success && data) {
-          setForm({
+          const next = {
             telegram_bot_token: data.telegram_bot_token ?? '',
             telegram_chat_id: data.telegram_chat_id ?? '',
             whatsapp_number: data.whatsapp_number ?? '',
             whatsapp_business_name: data.whatsapp_business_name ?? '',
-          });
+          };
+          setForm(next);
+          setSavedForm(next);
         }
       })
       .catch(() => {})
@@ -2259,6 +2596,7 @@ function IntegrationsSection() {
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error ?? 'Save failed');
+      setSavedForm(form);
       toast.success(t.saved ?? 'Settings saved');
     } catch (err) {
       toast.error(err.message ?? 'Failed to save');
@@ -2266,6 +2604,9 @@ function IntegrationsSection() {
       setSaving(false);
     }
   };
+
+  const dirty = savedForm ? JSON.stringify(form) !== JSON.stringify(savedForm) : false;
+  useUnsavedGuard(dirty, handleSave);
 
   if (loading) {
     return (
@@ -2292,6 +2633,9 @@ function IntegrationsSection() {
           </svg>
           {t.telegram ?? 'Telegram Bot'}
         </h3>
+        <p className="-mt-1 mb-3 text-xs text-zinc-500">
+          {t.telegram_events_hint ?? 'Choose which events trigger a Telegram alert under the Notifications tab.'}
+        </p>
         <Field label={t.bot_token ?? 'Bot Token'} hint={t.bot_token_hint ?? 'Get it from @BotFather on Telegram'}>
           <div className="relative">
             <input
@@ -2364,28 +2708,40 @@ function IntegrationsSection() {
 
 function LocalizationSection() {
   const t = useDictionary()?.admin?.settings?.localization ?? {};
+  const { form, setField, save, dirty, loading } = useStoreSettings({
+    localization_default_language: 'en',
+    localization_timezone: 'Africa/Casablanca',
+  });
+
+  if (loading) return <AdminSettingsSkeleton />;
+
   return (
     <>
-      <SectionHeader
-        title={t.title}
-        description={t.desc}
-      />
-      <Field label={t.default_language}>
-        <select className={inputClass}>
+      <SectionHeader title={t.title} description={t.desc} />
+      <Field label={t.default_language} hint={t.default_language_hint ?? 'Language used when a visitor has no saved preference.'}>
+        <select
+          className={inputClass}
+          value={form.localization_default_language}
+          onChange={(e) => setField('localization_default_language', e.target.value)}
+        >
           <option value="en">English</option>
           <option value="fr">Français</option>
           <option value="ar">العربية</option>
           <option value="dr">Darija</option>
         </select>
       </Field>
-      <Field label={t.timezone}>
-        <select className={inputClass}>
-          <option>UTC</option>
-          <option>Africa/Casablanca</option>
-          <option>Europe/Paris</option>
+      <Field label={t.timezone} hint={t.timezone_hint ?? 'Used when displaying order and report timestamps.'}>
+        <select
+          className={inputClass}
+          value={form.localization_timezone}
+          onChange={(e) => setField('localization_timezone', e.target.value)}
+        >
+          <option value="UTC">UTC</option>
+          <option value="Africa/Casablanca">Africa/Casablanca</option>
+          <option value="Europe/Paris">Europe/Paris</option>
         </select>
       </Field>
-      <SectionSaveButton />
+      <SectionSaveButton onSave={save} dirty={dirty} />
     </>
   );
 }

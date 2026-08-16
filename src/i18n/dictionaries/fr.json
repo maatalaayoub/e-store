@@ -613,6 +613,13 @@
       "title": "Paramètres de la boutique",
       "subtitle": "Configurez votre boutique, les paiements et les opérations.",
       "save": "Enregistrer",
+      "unsaved": {
+        "title": "Modifications non enregistrées",
+        "desc": "Vous avez des modifications non enregistrées. Voulez-vous les enregistrer avant de quitter ?",
+        "save": "Enregistrer",
+        "discard": "Abandonner les modifications",
+        "cancel": "Annuler"
+      },
       "sections": {
         "general": "Général",
         "storefront": "Vitrine",
@@ -761,6 +768,9 @@
       "general": {
         "title": "Général",
         "desc": "Informations de base sur votre boutique.",
+        "group_identity": "Identité de la boutique",
+        "group_branding": "Image de marque & logos",
+        "group_contact": "Contact",
         "store_name": "Nom de la boutique",
         "store_name_hint": "Affiché dans l'onglet du navigateur et les e-mails.",
         "contact_email": "E-mail de contact",
@@ -812,9 +822,11 @@
         "title": "Paiements",
         "desc": "Choisissez comment accepter les paiements.",
         "currency": "Devise",
+        "currency_hint": "Devise de base utilisée dans toute la boutique.",
         "stripe": "Clé API Stripe",
         "stripe_hint": "Utilisée pour traiter les paiements par carte.",
-        "cod": "Paiement à la livraison"
+        "cod": "Paiement à la livraison",
+        "cod_hint": "Permet aux clients de payer à la livraison de la commande."
       },
       "shipping": {
         "title": "Livraison",
@@ -822,7 +834,8 @@
         "origin": "Pays d'origine par défaut",
         "flat": "Tarif fixe",
         "flat_hint": "Appliqué si aucune zone ne correspond.",
-        "free_threshold": "Seuil de livraison gratuite"
+        "free_threshold": "Seuil de livraison gratuite",
+        "free_threshold_hint": "Les commandes égales ou supérieures à ce montant sont livrées gratuitement. Laisser vide pour désactiver."
       },
       "notifications": {
         "title": "Notifications",
@@ -839,7 +852,8 @@
         "telegram_new_order": "Nouvelle commande",
         "telegram_order_cancelled": "Commande annulée",
         "telegram_low_stock": "Alertes de stock bas",
-        "telegram_out_of_stock": "Alertes de rupture de stock"
+        "telegram_out_of_stock": "Alertes de rupture de stock",
+        "telegram_credentials_hint": "Le token du bot et le Chat ID se configurent dans l'onglet Intégrations."
       },
       "integrations": {
         "title": "Intégrations",
@@ -853,6 +867,7 @@
         "whatsapp_number": "Téléphone professionnel",
         "whatsapp_number_hint": "Avec l'indicatif pays, sans + ni espaces (ex: +212600000000)",
         "whatsapp_name": "Nom de l'entreprise",
+        "telegram_events_hint": "Choisissez quels événements déclenchent une alerte Telegram dans l'onglet Notifications.",
         "saved": "Intégrations enregistrées",
         "saving": "Enregistrement…",
         "save_btn": "Enregistrer les intégrations"
@@ -861,7 +876,9 @@
         "title": "Localisation",
         "desc": "Langue et fuseau horaire par défaut.",
         "default_language": "Langue par défaut",
-        "timezone": "Fuseau horaire"
+        "default_language_hint": "Langue utilisée lorsqu'un visiteur n'a pas de préférence enregistrée.",
+        "timezone": "Fuseau horaire",
+        "timezone_hint": "Utilisé pour afficher les horodatages des commandes et rapports."
       },
       "messages": {
         "title": "Messages de contact",

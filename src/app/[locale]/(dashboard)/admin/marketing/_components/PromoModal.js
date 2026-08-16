@@ -21,7 +21,7 @@ import { toast } from "sonner";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 
 function generateCode(prefix = "") {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ123456789";
   let out = "";
   for (let i = 0; i < 8; i++) out += chars[Math.floor(Math.random() * chars.length)];
   return (prefix + out).toUpperCase().slice(0, 20);

@@ -34,6 +34,7 @@ import AdminSearch from "@/components/layouts/AdminSearch";
 import NotificationBell from "@/components/admin/NotificationBell";
 import { isRtlLocale } from "@/config/constants";
 import { createClient } from "@/lib/supabase/client";
+import { guardNavigation } from "@/lib/nav-guard";
 
 const NAV_ITEMS = [
   { href: "/admin", key: "dashboard", icon: LayoutDashboard, exact: true, permission: "dashboard" },
@@ -235,7 +236,16 @@ export default function AdminShell({ children }) {
       >
         <div className="flex h-16 items-center justify-between border-b border-zinc-200 px-6">
           {logoUrl ? (
-            <Link href={withLocale("/admin")} className="flex items-center">
+            <Link
+              href={withLocale("/admin")}
+              onClick={(e) => {
+                const target = withLocale("/admin");
+                if (guardNavigation(() => router.push(target))) {
+                  e.preventDefault();
+                }
+              }}
+              className="flex items-center"
+            >
               <Image
                 src={logoUrl}
                 alt="LaCérémonie"
@@ -273,7 +283,13 @@ export default function AdminShell({ children }) {
               <Link
                 key={item.href}
                 href={withLocale(item.href)}
-                onClick={() => setIsSidebarOpen(false)}
+                onClick={(e) => {
+                  setIsSidebarOpen(false);
+                  const target = withLocale(item.href);
+                  if (guardNavigation(() => router.push(target))) {
+                    e.preventDefault();
+                  }
+                }}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                   active
                     ? "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
@@ -301,6 +317,12 @@ export default function AdminShell({ children }) {
         <div className="absolute w-full bottom-0 border-t border-zinc-200 p-4">
           <Link
             href={withLocale("/")}
+            onClick={(e) => {
+              const target = withLocale("/");
+              if (guardNavigation(() => router.push(target))) {
+                e.preventDefault();
+              }
+            }}
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
           >
             <LogOut className={`h-5 w-5 ${logoutIconDirectionClass}`} />

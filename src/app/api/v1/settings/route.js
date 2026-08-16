@@ -83,6 +83,17 @@ const ALLOWED_KEYS = [
   'mobile_nav_show_account',
   'mobile_nav_show_orders',
   'mobile_nav_show_menu',
+  // Payments
+  'payments_currency',
+  'payments_stripe_key',
+  'payments_cod_enabled',
+  // Shipping
+  'shipping_origin',
+  'shipping_flat_rate',
+  'shipping_free_threshold',
+  // Localization
+  'localization_default_language',
+  'localization_timezone',
 ];
 
 // Per-key value size limits. Hero configs can hold long JSON (image URLs etc.).
