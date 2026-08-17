@@ -24,9 +24,9 @@ export default function CheckoutActions({
   onOrderWhatsApp,
   orderBtnStyle,   // optional inline style override from section config
   waBtnStyle,      // optional inline style override from section config
+  promoError,      // block submit if a promo is invalid
 }) {
   const t = dict?.checkout ?? {};
-  const disabled = placing || itemsCount === 0;
   const showWaButton =
     showWhatsApp &&
     (whatsAppCountriesOnly === null || whatsAppCountriesOnly.includes(country));
@@ -46,16 +46,23 @@ export default function CheckoutActions({
     address:  t.street_address ?? "Street Address",
   };
 
-  // Compute missing fields from live form data (not from errors state)
+  // Compute missing fields from live form data — used for both the banner
+  // (only after a submit attempt) and the disabled state (always).
   const moroccoOptional = form?.country === "Morocco" ? ["zip", "state"] : [];
   const required = Array.isArray(requiredFields) && requiredFields.length > 0
     ? requiredFields
     : DEFAULT_REQUIRED;
-  const missingFields = hasAttempted && form
-    ? required
-        .filter((f) => !moroccoOptional.includes(f) && !String(form[f] ?? "").trim() && FIELD_LABELS[f])
-        .map((f) => FIELD_LABELS[f])
+  const liveMissing = form
+    ? required.filter((f) => !moroccoOptional.includes(f) && !String(form[f] ?? "").trim() && FIELD_LABELS[f])
     : [];
+  const hasMissingRequired = liveMissing.length > 0;
+  const missingFields = hasAttempted ? liveMissing.map((f) => FIELD_LABELS[f]) : [];
+
+  const disabled =
+    placing ||
+    itemsCount === 0 ||
+    hasMissingRequired ||
+    !!promoError;
 
   const fillRequiredMsg =
     missingFields.length > 0
@@ -90,7 +97,7 @@ export default function CheckoutActions({
           type="button"
           data-role="whatsapp-btn"
           onClick={onOrderWhatsApp}
-          disabled={itemsCount === 0}
+          disabled={disabled}
           className={`${showPlaceOrder ? "mt-3" : ""} w-full rounded-[2rem] py-3.5 text-[13px] font-bold tracking-[0.15em] uppercase text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
           style={{ backgroundColor: "#25D366", ...waBtnStyle }}
         >

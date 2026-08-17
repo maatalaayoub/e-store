@@ -19,6 +19,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } fr
 import { usePathname } from "next/navigation";
 import { useDictionary, useLocale } from "@/components/providers/LocaleProvider";
 import { resolveAnnouncementTranslation } from "@/lib/announcement-locale";
+import { resolveAnnouncementStyle } from "@/lib/announcement-styles";
 import {
   X,
   Copy,
@@ -850,10 +851,14 @@ export default function AnnouncementBar() {
       <div
         key={activeIdx}
         aria-hidden="true"
-        style={{
-          position: 'absolute', inset: 0,
-          backgroundColor: current.bg_color || '#111111',
-        }}
+        style={(() => {
+          const preset = resolveAnnouncementStyle(current.type, current.bg_style, current.bg_style_colors);
+          const base = { position: 'absolute', inset: 0 };
+          if (preset) {
+            return { ...base, background: preset.css };
+          }
+          return { ...base, backgroundColor: current.bg_color || '#111111' };
+        })()}
       />
 
       {/* Content animates in on change */}

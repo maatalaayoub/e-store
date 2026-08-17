@@ -54,9 +54,12 @@ async function loadFavoriteIds() {
 }
 
 function setFavorite(productId, isFav) {
-  if (!favoriteIds) favoriteIds = new Set();
-  if (isFav) favoriteIds.add(productId);
-  else favoriteIds.delete(productId);
+  // Replace the Set with a new instance so useSyncExternalStore subscribers
+  // (compared with Object.is) actually re-render.
+  const next = new Set(favoriteIds ?? []);
+  if (isFav) next.add(productId);
+  else next.delete(productId);
+  favoriteIds = next;
   notify();
 }
 

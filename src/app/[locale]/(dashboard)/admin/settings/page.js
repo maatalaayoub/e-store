@@ -47,6 +47,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { invalidateBarCache, MarqueePreview, Countdown, SwapStack } from "@/components/shop/AnnouncementBar";
+import { ANNOUNCEMENT_STYLE_PRESETS, resolveAnnouncementStyle, getPresetDefaultColors } from "@/lib/announcement-styles";
 import { toast } from "sonner";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { localeMetadata } from "@/i18n/config";
@@ -3642,6 +3643,7 @@ function blankAnnouncement(type = 'promotion') {
   return {
     type, text: '', icon_enabled: true, icon: tp.icon,
     bg_color: tp.bg, text_color: tp.text, font_size: 14, border_enabled: false,
+    bg_style: '', bg_style_colors: '',
     cta_text: '', cta_href: '', promo_code: '',
     cta_display_mode: type === 'social' ? 'static' : 'swap',
     cta_swap_seconds: 4,
@@ -3799,6 +3801,7 @@ function AnnouncementSelect({ value, onChange, options, placeholder }) {
 
 function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle, onEdit, toggling }) {
   const typeInfo = ANNOUNCEMENT_TYPES.find((x) => x.id === value.type) ?? ANNOUNCEMENT_TYPES[0];
+  const preset = resolveAnnouncementStyle(value.type, value.bg_style, value.bg_style_colors);
   return (
     <div
       className={`group w-full min-w-0 max-w-full overflow-hidden rounded-md border transition-all ${
@@ -3813,7 +3816,8 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
           value.is_active ? '' : 'opacity-50 grayscale'
         }`}
         style={{
-          backgroundColor: value.bg_color || typeInfo.bg,
+          background: preset?.css ?? undefined,
+          backgroundColor: preset ? undefined : (value.bg_color ?? typeInfo.bg),
           color: value.text_color || typeInfo.text,
           fontSize: value.font_size ? `${Math.min(value.font_size, 14)}px` : undefined,
           borderBottom: value.border_enabled ? '1px solid rgba(0,0,0,0.15)' : 'none',
@@ -4137,10 +4141,14 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
 
         <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4 space-y-5">
           {/* Preview */}
+          {(() => {
+            const drawerPreset = resolveAnnouncementStyle(value.type, value.bg_style, value.bg_style_colors);
+            return (
           <div
             className="rounded-xl overflow-hidden text-sm font-medium"
             style={{
-              backgroundColor: value.bg_color || '#111',
+              background: drawerPreset?.css ?? undefined,
+              backgroundColor: drawerPreset ? undefined : (value.bg_color ?? '#111'),
               color: value.text_color || '#fff',
               border: value.border_enabled ? '1px solid rgba(0,0,0,0.15)' : 'none',
               fontSize: value.font_size ? `${value.font_size}px` : undefined,
@@ -4212,6 +4220,8 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
               </div>
             )}
           </div>
+            );
+          })()}
 
           {/* Language tab switcher (translatable fields below) */}
           <div className="flex gap-1 p-1 bg-zinc-100 rounded-[5px]">
@@ -4482,14 +4492,131 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
             </div>
           )}
 
+          {/* Pre-built styles */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">
+                {t.prebuilt_styles ?? 'Pre-built styles & colors'}
+              </p>
+              {value.bg_style && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onUpdate('bg_style', '');
+                    onUpdate('bg_style_colors', '');
+                  }}
+                  className="text-xs text-zinc-400 hover:text-zinc-600 underline"
+                >
+                  {t.reset ?? 'Reset'}
+                </button>
+              )}
+            </div>
+            <p className="text-[11px] text-zinc-400 mb-3">
+              {t.prebuilt_styles_hint ?? 'Pick a design, then tune its gradient colors below.'}
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {(ANNOUNCEMENT_STYLE_PRESETS[value.type] ?? []).map((p) => {
+                const selected = value.bg_style === p.id;
+                // For the selected preset, reflect the live color override in the swatch preview.
+                const shown = selected
+                  ? (resolveAnnouncementStyle(value.type, p.id, value.bg_style_colors) ?? p)
+                  : p;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      onUpdate('bg_style', p.id);
+                      onUpdate('bg_style_colors', (p.colors ?? []).join(','));
+                      onUpdate('bg_color', p.solid);
+                      onUpdate('text_color', p.text);
+                    }}
+                    className={`group relative rounded-lg overflow-hidden border transition-all text-start focus:outline-none ${
+                      selected
+                        ? 'border-blue-500 ring-2 ring-blue-500/30'
+                        : 'border-zinc-200 hover:border-zinc-300'
+                    }`}
+                  >
+                    <div
+                      className="h-12 w-full flex items-center justify-center"
+                      style={{ background: shown.css, color: shown.text }}
+                    >
+                      <span className="text-[11px] font-bold tracking-wide">Aa</span>
+                    </div>
+                    <div className="px-2 py-1.5 bg-white">
+                      <p className="text-[11px] font-medium text-zinc-800 truncate">{p.label}</p>
+                    </div>
+                    {selected && (
+                      <span className="absolute top-1 end-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-white">
+                        <Check className="h-2.5 w-2.5" />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Per-stop color inputs — only when a preset is selected */}
+            {value.bg_style && (() => {
+              const activePreset = ANNOUNCEMENT_STYLE_PRESETS[value.type]?.find((p) => p.id === value.bg_style);
+              const defaults = getPresetDefaultColors(value.bg_style) ?? activePreset?.colors ?? [];
+              const parsed = String(value.bg_style_colors ?? '')
+                .split(',')
+                .map((c) => c.trim())
+                .filter(Boolean);
+              const colors = parsed.length >= 2 ? parsed : defaults;
+              const setColorAt = (idx, hex) => {
+                const next = [...colors];
+                next[idx] = hex;
+                onUpdate('bg_style_colors', next.join(','));
+                if (idx === 0) onUpdate('bg_color', hex);
+              };
+              return (
+                <div className="mt-4 rounded-lg border border-zinc-100 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                      {t.gradient_colors ?? 'Gradient colors'}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => onUpdate('bg_style_colors', defaults.join(','))}
+                      className="text-[11px] text-zinc-400 hover:text-zinc-600 underline"
+                    >
+                      {t.reset_colors ?? 'Reset colors'}
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {colors.map((hex, i) => (
+                      <label key={i} className="flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-2 py-1.5">
+                        <input
+                          type="color"
+                          value={hex || '#000000'}
+                          onChange={(e) => setColorAt(i, e.target.value)}
+                          className="h-6 w-8 cursor-pointer rounded-sm border-0 bg-transparent p-0"
+                        />
+                        <span className="text-[10px] font-mono text-zinc-600">{hex}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
           {/* Style */}
           <div>
-            <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-3">{t.style_label ?? 'Style'}</p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div>
-                <label className="block text-xs text-zinc-600 mb-1.5">{t.bg_color ?? 'Background'}</label>
-                <input type="color" value={value.bg_color || '#111111'} onChange={(e) => onUpdate('bg_color', e.target.value)} className="h-10 w-full rounded-[5px] border border-zinc-200 cursor-pointer" />
-              </div>
+            <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-3">
+              {value.bg_style
+                ? (t.style_label_typography ?? 'Text & typography')
+                : (t.style_label ?? 'Style')}
+            </p>
+            <div className={`grid gap-3 ${value.bg_style ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2 sm:grid-cols-4'}`}>
+              {!value.bg_style && (
+                <div>
+                  <label className="block text-xs text-zinc-600 mb-1.5">{t.bg_color ?? 'Background'}</label>
+                  <input type="color" value={value.bg_color || '#111111'} onChange={(e) => onUpdate('bg_color', e.target.value)} className="h-10 w-full rounded-[5px] border border-zinc-200 cursor-pointer" />
+                </div>
+              )}
               <div>
                 <label className="block text-xs text-zinc-600 mb-1.5">{t.text_color ?? 'Text color'}</label>
                 <input type="color" value={value.text_color || '#ffffff'} onChange={(e) => onUpdate('text_color', e.target.value)} className="h-10 w-full rounded-[5px] border border-zinc-200 cursor-pointer" />

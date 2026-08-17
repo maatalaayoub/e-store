@@ -493,6 +493,16 @@ ALTER TABLE announcements ADD COLUMN IF NOT EXISTS scopes jsonb NOT NULL DEFAULT
 -- Shape: { "en": { "text": "...", "cta_text": "...", "marquee_messages": ["..."] }, "fr": {...}, ... }
 ALTER TABLE announcements ADD COLUMN IF NOT EXISTS translations jsonb DEFAULT NULL;
 
+-- Pre-built style preset id (e.g. 'promo-sunset'). Client resolves it to a
+-- gradient + SVG pattern overlay. When null the storefront falls back to the
+-- solid `bg_color` / `text_color`.
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS bg_style text;
+
+-- Optional per-announcement color override for the selected preset.
+-- Stored as a comma-separated list of hex values (e.g. '#ff6b6b,#feca57').
+-- When set, the client uses these colors instead of the preset defaults.
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS bg_style_colors text;
+
 ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
 -- Public can read only currently-active, in-schedule banners.
 -- (Admins also covered by the broader admin policy below.)

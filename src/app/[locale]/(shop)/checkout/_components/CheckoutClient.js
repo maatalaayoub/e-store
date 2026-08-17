@@ -451,6 +451,7 @@ export default function CheckoutClient({ locale, dict }) {
                   form={checkout.form}
                   itemsCount={items.length}
                   country={checkout.form.country}
+                  promoError={promoError}
                   onPlaceOrder={checkout.handlePlaceOrder}
                   onOrderWhatsApp={checkout.handleOrderWhatsApp}
                 />

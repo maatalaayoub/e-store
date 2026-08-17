@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase/service';
 import { getAdminUser } from '@/middlewares/authGuard';
 import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 import { logger } from '@/lib/logger';
+import { isKnownAnnouncementStyleId, parseAnnouncementStyleColors } from '@/lib/announcement-styles';
 
 const ALLOWED_TYPES = ['promotion', 'shipping', 'limited', 'social', 'notification', 'marquee'];
 const ALLOWED_POSITIONS = ['top', 'bottom'];
@@ -130,6 +131,12 @@ function sanitize(a, idx = 0) {
     icon: a.icon ? String(a.icon).slice(0, 32) : null,
     bg_color: safeHex(a.bg_color, '#111111'),
     text_color: safeHex(a.text_color, '#ffffff'),
+    bg_style: isKnownAnnouncementStyleId(a.bg_style) ? a.bg_style : null,
+    bg_style_colors: (() => {
+      if (!isKnownAnnouncementStyleId(a.bg_style)) return null;
+      const parsed = parseAnnouncementStyleColors(a.bg_style_colors);
+      return parsed ? parsed.join(',') : null;
+    })(),
     font_size: a.font_size != null ? Math.max(8, Math.min(32, Number(a.font_size) || 14)) : null,
     border_enabled: !!a.border_enabled,
     cta_text: baseCta ? String(baseCta).slice(0, 80) : null,
@@ -253,6 +260,11 @@ export async function PUT(request) {
       // resume once the migration is applied).
       if (insError && /scopes/.test(insError.message ?? '')) {
         const stripped = rows.map(({ scopes, ...rest }) => rest);
+        ({ error: insError } = await db.from('announcements').insert(stripped));
+      }
+      // Same fallback for the newer `bg_style` column (pre-built style presets).
+      if (insError && /bg_style/.test(insError.message ?? '')) {
+        const stripped = rows.map(({ bg_style, bg_style_colors, ...rest }) => rest);
         ({ error: insError } = await db.from('announcements').insert(stripped));
       }
       if (insError) {
