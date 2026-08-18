@@ -17,6 +17,13 @@ export const productSchema = z.object({
   category_id: z.string().uuid().optional().nullable(),
   status: z.enum(['active', 'draft', 'archived']).default('draft'),
   is_featured: z.boolean().default(false),
+  // Dynamic product wizard: the selected product-type config id. Kept
+  // permissive (validated against the registry server-side) and optional so
+  // legacy products without a type still pass.
+  product_type: z.string().max(50).optional().nullable(),
+  // Type-specific structured attributes; sanitized against the type schema
+  // server-side, so a permissive shape here is enough.
+  attributes: z.record(z.string(), z.any()).optional().nullable(),
   colors: z
     .array(z.object({ name: z.string().min(1), hex: z.string().min(1) }))
     .optional()

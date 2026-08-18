@@ -43,6 +43,24 @@ const PRODUCT_LIST_FALLBACK_SELECT = `
   product_images (id, url, is_main, display_order)
 `.trim();
 
+/** True when Postgres/PostgREST reports an unknown column (safe-rollout path). */
+function isMissingColumnError(error) {
+  return error?.code === '42703' || /column .* does not exist/i.test(error?.message ?? '');
+}
+
+/**
+ * Drop the specific unknown column named in a 42703 error so a write can be
+ * retried on a database that hasn't run the latest migration yet. Returns a
+ * new payload, or null when no known column name could be extracted.
+ */
+function stripUnknownColumns(payload, error) {
+  const match = /column "?([a-z0-9_]+)"?/i.exec(error?.message ?? '');
+  const col = match?.[1];
+  if (!col || !(col in payload)) return null;
+  const { [col]: _removed, ...rest } = payload;
+  return rest;
+}
+
 export class ProductRepository {
   async findAll({ status, featured, limit, offset, ids } = {}) {
     const supabase = await createClient();
@@ -99,23 +117,29 @@ export class ProductRepository {
 
   async create(productData) {
     const supabase = await createClient();
-    const { data, error } = await supabase
-      .from('products')
-      .insert(productData)
-      .select(PRODUCT_SELECT)
-      .single();
+    const attempt = (payload) =>
+      supabase.from('products').insert(payload).select(PRODUCT_SELECT).single();
+
+    let { data, error } = await attempt(productData);
+    if (error && isMissingColumnError(error)) {
+      // Roll out safely if a newer column (e.g. product_type) isn't migrated yet.
+      const stripped = stripUnknownColumns(productData, error);
+      if (stripped) ({ data, error } = await attempt(stripped));
+    }
     if (error) throw error;
     return data;
   }
 
   async update(id, productData) {
     const supabase = await createClient();
-    const { data, error } = await supabase
-      .from('products')
-      .update(productData)
-      .eq('id', id)
-      .select(PRODUCT_SELECT)
-      .single();
+    const attempt = (payload) =>
+      supabase.from('products').update(payload).eq('id', id).select(PRODUCT_SELECT).single();
+
+    let { data, error } = await attempt(productData);
+    if (error && isMissingColumnError(error)) {
+      const stripped = stripUnknownColumns(productData, error);
+      if (stripped) ({ data, error } = await attempt(stripped));
+    }
     if (error) throw error;
     return data;
   }

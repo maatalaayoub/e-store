@@ -6,6 +6,7 @@ import ProductGallery from "./_components/ProductGallery";
 import ProductPurchasePanel from "./_components/ProductPurchasePanel";
 import ProductPageHeader from "./_components/ProductPageHeader";
 import ProductPrice from "./_components/ProductPrice";
+import ProductSpecs from "./_components/ProductSpecs";
 import ProductSections from "@/components/shop/product-sections/ProductSections";
 import { productSectionService } from "@/modules/product-sections/service";
 import { getSectionComponent } from "@/components/shop/product-sections/registry";
@@ -116,6 +117,9 @@ export default async function ProductDetailsPage({ params }) {
                 </p>
               </section>
             )}
+
+            {/* Type-specific specifications (dynamic, schema-driven) */}
+            <ProductSpecs product={product} dict={dict} />
 
             <ProductPurchasePanel
               product={product}

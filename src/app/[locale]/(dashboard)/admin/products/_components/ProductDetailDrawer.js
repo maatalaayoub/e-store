@@ -19,6 +19,7 @@ import {
   Percent,
 } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
+import { buildDisplayAttributes } from "@/lib/product-attributes";
 
 const STATUS_STYLES = {
   active: { pill: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
@@ -360,6 +361,23 @@ export default function ProductDetailDrawer({ product, onClose, onEdit }) {
               </div>
             </div>
           )}
+
+          {/* Type-specific attributes (schema-driven) */}
+          {buildDisplayAttributes(data?.product_type, data?.attributes, dict).map((group) => (
+            <div key={group.id} className="px-5 py-3 border-b border-zinc-50">
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400 mb-2">
+                {group.label}
+              </p>
+              <dl className="space-y-1.5">
+                {group.items.map((item) => (
+                  <div key={item.key} className="flex items-baseline justify-between gap-4">
+                    <dt className="text-xs text-zinc-500 shrink-0">{item.label}</dt>
+                    <dd className="text-sm font-medium text-zinc-800 text-end break-words">{item.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          ))}
 
           {/* Short description */}
           {data?.short_description && (

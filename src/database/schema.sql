@@ -88,6 +88,16 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS sizes  jsonb DEFAULT NULL;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS translations jsonb DEFAULT NULL;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS short_description text;
 
+-- Dynamic product wizard: which product-type config drives this product's
+-- fields/attributes/variants. NULL = legacy/generic product (renders in the
+-- generic wizard path). See src/config/product-types.
+ALTER TABLE products ADD COLUMN IF NOT EXISTS product_type text;
+
+-- Type-specific structured attributes ({ brand, ram, storage, ... }). Shape is
+-- driven by the product type's schema (src/config/product-types/attributes.js)
+-- and sanitized server-side. Avoids a nullable column per possible attribute.
+ALTER TABLE products ADD COLUMN IF NOT EXISTS attributes jsonb;
+
 -- ========================
 -- PRODUCT IMAGES
 -- ========================

@@ -3,13 +3,20 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { createPortal } from "react-dom";
-import { Check, ChevronDown, X, Loader2, AlertCircle, Tag, ImagePlus, ImageOff } from "lucide-react";
+import {
+  Check, ChevronDown, X, Loader2, AlertCircle, Tag, ImagePlus, ImageOff, Search,
+  Shirt, SprayCan, Cpu, Bike, Gauge, Pill, Wrench, Car, WashingMachine, Sofa, Download, Shapes, Package,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import ImageManager from "./ImageManager";
 import SectionsBuilder from "@/components/admin/product-sections/SectionsBuilder";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { RTL_LOCALES } from "@/config/constants";
+import { listProductTypes, getVariantAxes } from "@/config/product-types";
+import { getAttributeSchema } from "@/config/product-types/attributes";
+import { attrLabel } from "@/lib/product-attributes";
+import { compressImageFile } from "@/lib/image-compress";
 import {
   ACCEPTED_CATEGORY_IMAGE_TYPES,
   uploadCategoryImage,
@@ -28,6 +35,12 @@ const SUPPORTED_LANGS = ["en", "fr", "ar", "dr"];
 const LANG_LABELS = { en: "English", fr: "Français", ar: "العربية", dr: "الدارجة" };
 const CATEGORY_LANG_LABELS = { en: "EN", fr: "FR", ar: "AR", dr: "DR" };
 const RTL_LANGS = new Set(RTL_LOCALES);
+
+// Maps the string icon names stored in the product-type config to their
+// lucide-react components. Keeps the config module serializable/server-safe.
+const TYPE_ICONS = {
+  Shirt, SprayCan, Cpu, Bike, Gauge, Pill, Wrench, Car, WashingMachine, Sofa, Download, Shapes, Package,
+};
 
 /**
  * Small 24×24 category icon used in the category picker (trigger + dropdown).
@@ -61,9 +74,61 @@ function emptyTranslations() {
   );
 }
 
+// Renders a single dynamic product attribute from its schema field spec.
+// One component per field type keeps rendering config-driven (no scattered
+// per-attribute conditionals).
+function AttributeField({ field, value, label, optionLabels, onChange }) {
+  const inputCls =
+    "w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+
+  if (field.type === "boolean") {
+    return (
+      <label className="flex items-center gap-2 text-sm text-zinc-700 sm:col-span-2 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={value === true}
+          onChange={(e) => onChange(e.target.checked)}
+          className="h-4 w-4 rounded accent-blue-600"
+        />
+        {label}
+      </label>
+    );
+  }
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-zinc-700 mb-1">{label}</label>
+      {field.type === "select" ? (
+        <select
+          value={value ?? ""}
+          onChange={(e) => onChange(e.target.value)}
+          className={inputCls}
+        >
+          <option value="">—</option>
+          {(field.options ?? []).map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {optionLabels?.[`${field.key}_${opt.value}`] ?? opt.label ?? opt.value}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
+          value={value ?? ""}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={field.placeholder ?? ""}
+          className={inputCls}
+        />
+      )}
+    </div>
+  );
+}
+
 const initialForm = {
   translations: emptyTranslations(),
   category_id: "",
+  product_type: "",
+  attributes: {},
   price: "",
   discountType: "none", // "none" | "price" | "percentage"
   discount_price: "",
@@ -91,6 +156,11 @@ function formReducer(state, action) {
             [action.field]: action.value,
           },
         },
+      };
+    case "set_attribute":
+      return {
+        ...state,
+        attributes: { ...state.attributes, [action.key]: action.value },
       };
     case "reset":
       return { ...initialForm, ...action.payload };
@@ -129,6 +199,8 @@ function productToForm(p) {
   return {
     translations,
     category_id: p.category_id ?? "",
+    product_type: p.product_type ?? "",
+    attributes: p.attributes && typeof p.attributes === "object" ? { ...p.attributes } : {},
     price: p.price != null ? String(p.price) : "",
     discountType,
     discount_price: p.discount_price != null ? String(p.discount_price) : "",
@@ -145,11 +217,14 @@ function productToForm(p) {
 }
 
 async function uploadToStorage(supabase, productId, file, index) {
-  const ext = file.name.split(".").pop();
+  // Downscale + re-encode before upload so Next's image optimizer can fetch
+  // the stored object without timing out on multi-MB originals.
+  const toUpload = await compressImageFile(file).catch(() => file);
+  const ext = toUpload.name.split(".").pop();
   const path = `products/${productId}/${Date.now()}_${index}.${ext}`;
   const { error } = await supabase.storage
     .from("product-images")
-    .upload(path, file, { upsert: false });
+    .upload(path, toUpload, { upsert: false, contentType: toUpload.type });
   if (error) throw error;
   return path;
 }
@@ -170,6 +245,9 @@ export default function ProductFormModal({
   const [existingImages, setExistingImages] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [step, setStep] = useState(0);
+  const [maxReached, setMaxReached] = useState(0);
+  const [typeSearch, setTypeSearch] = useState("");
   const [newCategoryNames, setNewCategoryNames] = useState(() => emptyCategoryNames());
   const [newCategoryLang, setNewCategoryLang] = useState("en");
   const [newCategoryImageFile, setNewCategoryImageFile] = useState(null);
@@ -201,6 +279,77 @@ export default function ProductFormModal({
 
   const isEdit = Boolean(product?.id);
   const [loadingDefaults, setLoadingDefaults] = useState(false);
+
+  // Wizard steps. In create mode the user advances with Next (each step is
+  // gated by validation); in edit mode every step is a freely-clickable tab.
+  const STEPS = [
+    { id: "type", label: t.step_type ?? "Product Type" },
+    { id: "info", label: t.step_info ?? "Product Information" },
+    { id: "pricing", label: t.step_pricing ?? "Pricing & Inventory" },
+    { id: "images", label: t.step_images ?? "Product Images" },
+    { id: "sections", label: t.step_sections ?? "Page Sections", optional: true },
+  ];
+  const lastStep = STEPS.length - 1;
+
+  const hasAnyName = () => SUPPORTED_LANGS.some((l) => form.translations[l]?.name?.trim());
+
+  /** Validate a step's required fields. Returns an error string or null. */
+  function validateStep(index) {
+    if (index === 0) {
+      if (!form.product_type) return t.type_required ?? "Please select a product type to continue.";
+    }
+    if (index === 1) {
+      if (!hasAnyName()) return t.name_required ?? "Product name is required in at least one language.";
+      // Schema-driven required attributes for the selected product type.
+      for (const group of getAttributeSchema(form.product_type)) {
+        for (const field of group.fields) {
+          if (!field.required) continue;
+          const v = form.attributes?.[field.key];
+          if (v == null || v === "" || v === false) {
+            const lbl = attrLabel(dict, field.key, field.label);
+            return (t.attr_required ?? "{field} is required.").replace("{field}", lbl);
+          }
+        }
+      }
+    }
+    if (index === 2) {
+      if (form.price === "" || isNaN(parseFloat(form.price)) || parseFloat(form.price) < 0)
+        return t.price_required ?? "A valid price is required.";
+      if (form.stock === "" || isNaN(parseInt(form.stock, 10)) || parseInt(form.stock, 10) < 0)
+        return t.stock_required ?? "A valid stock quantity is required.";
+    }
+    return null;
+  }
+
+  const canJumpTo = useCallback(
+    (index) => isEdit || index <= maxReached,
+    [isEdit, maxReached],
+  );
+
+  function goToStep(index) {
+    if (index < 0 || index > lastStep) return;
+    if (!canJumpTo(index)) return;
+    setError(null);
+    setStep(index);
+  }
+
+  function goNext() {
+    const err = validateStep(step);
+    if (err) {
+      setError(err);
+      return;
+    }
+    setError(null);
+    const next = Math.min(step + 1, lastStep);
+    setStep(next);
+    setMaxReached((m) => Math.max(m, next));
+  }
+
+  function goBack() {
+    setError(null);
+    setStep((s) => Math.max(0, s - 1));
+  }
+
 
   /**
    * Auto-save sections_config to the server when editing an existing product.
@@ -247,6 +396,9 @@ export default function ProductFormModal({
   useEffect(() => {
     if (open) {
       setMounted(true);
+      setStep(0);
+      setMaxReached(product?.id ? 4 : 0);
+      setTypeSearch("");
       const raf = requestAnimationFrame(() =>
         requestAnimationFrame(() => setAnimOpen(true)));
       return () => cancelAnimationFrame(raf);
@@ -254,15 +406,20 @@ export default function ProductFormModal({
     setAnimOpen(false);
     const t = setTimeout(() => setMounted(false), 300);
     return () => clearTimeout(t);
-  }, [open]);
+  }, [open, product?.id]);
 
-  // Sync form when product changes
+  // Sync form when the modal opens. For edit, load the product; for create,
+  // reset every field so a previously-added product's data never lingers.
   useEffect(() => {
-    if (!open || !product) return;
+    if (!open) return;
     setActiveLang(locale);
-    dispatch({ type: "reset", payload: productToForm(product) });
+    if (product) {
+      dispatch({ type: "reset", payload: productToForm(product) });
+    } else {
+      dispatch({ type: "reset", payload: {} });
+    }
     setExistingImages(
-      product.images
+      product?.images
         ? [...product.images].sort((a, b) => {
             if (a.is_main !== b.is_main) return a.is_main ? -1 : 1;
             return (a.display_order ?? 0) - (b.display_order ?? 0);
@@ -474,6 +631,12 @@ export default function ProductFormModal({
   // ── save ────────────────────────────────────────────────────────────────────
   async function handleSave(e) {
     e.preventDefault();
+    // In create mode, submitting (e.g. pressing Enter) on a non-final step
+    // advances the wizard instead of saving.
+    if (!isEdit && step < lastStep) {
+      goNext();
+      return;
+    }
     setError(null);
     setSaving(true);
 
@@ -483,7 +646,21 @@ export default function ProductFormModal({
       const fallbackTrans = SUPPORTED_LANGS.map((l) => form.translations[l]).find((tr) => tr?.name?.trim());
       const primaryName = primaryTrans.name?.trim() || fallbackTrans?.name?.trim() || "";
       if (!primaryName) {
-        setError("Product name is required in at least one language.");
+        setError(t.name_required ?? "Product name is required in at least one language.");
+        setStep(1);
+        setSaving(false);
+        return;
+      }
+
+      if (form.price === "" || isNaN(parseFloat(form.price)) || parseFloat(form.price) < 0) {
+        setError(t.price_required ?? "A valid price is required.");
+        setStep(2);
+        setSaving(false);
+        return;
+      }
+      if (form.stock === "" || isNaN(parseInt(form.stock, 10)) || parseInt(form.stock, 10) < 0) {
+        setError(t.stock_required ?? "A valid stock quantity is required.");
+        setStep(2);
         setSaving(false);
         return;
       }
@@ -508,6 +685,10 @@ export default function ProductFormModal({
         description: primaryTrans.description?.trim() || fallbackTrans?.description?.trim() || null,
         translations: Object.keys(translationsData).length > 0 ? translationsData : null,
         category_id: form.category_id ? form.category_id.trim() : null,
+        product_type: form.product_type || null,
+        attributes: form.product_type && form.attributes && Object.keys(form.attributes).length > 0
+          ? form.attributes
+          : null,
         price: parseFloat(form.price),
         discount_price:
           form.discountType === "price" && form.discount_price
@@ -520,12 +701,15 @@ export default function ProductFormModal({
         stock: parseInt(form.stock, 10),
         status: form.status,
         is_featured: form.is_featured,
-        // Strip incomplete entries so Zod min(1) never fails
+        // Variant editors are gated by the type's variantAxes — only persist a
+        // variant dimension the selected type actually supports.
         colors: (() => {
+          if (form.product_type && !getVariantAxes(form.product_type).includes("color")) return null;
           const valid = form.colors.filter((c) => c.name.trim() && c.hex.trim());
           return valid.length > 0 ? valid : null;
         })(),
         sizes: (() => {
+          if (form.product_type && !getVariantAxes(form.product_type).includes("size")) return null;
           const valid = form.sizes.map((s) => s.trim()).filter(Boolean);
           return valid.length > 0 ? valid : null;
         })(),
@@ -672,6 +856,64 @@ export default function ProductFormModal({
           </button>
         </div>
 
+        {/* Stepper */}
+        <nav
+          className="border-b border-zinc-100 px-4 sm:px-6 py-3 shrink-0 overflow-x-auto scrollbar-hide"
+          aria-label={t.step_label ?? "Steps"}
+        >
+          <ol className="flex items-center gap-1 sm:gap-2 min-w-max">
+            {STEPS.map((s, i) => {
+              const active = step === i;
+              const reachable = canJumpTo(i);
+              const complete = !active && (isEdit || i < step);
+              return (
+                <li key={s.id} className="flex items-center gap-1 sm:gap-2">
+                  <button
+                    type="button"
+                    onClick={() => goToStep(i)}
+                    disabled={!reachable}
+                    aria-current={active ? "step" : undefined}
+                    className={`group inline-flex items-center gap-2 rounded-full px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium transition-all ${
+                      active
+                        ? "bg-blue-600 text-white shadow-sm shadow-blue-600/25"
+                        : reachable
+                          ? "text-zinc-600 hover:bg-zinc-100"
+                          : "text-zinc-300 cursor-not-allowed"
+                    }`}
+                  >
+                    <span
+                      className={`grid h-5 w-5 sm:h-6 sm:w-6 place-items-center rounded-full text-[11px] font-bold transition-colors ${
+                        active
+                          ? "bg-white/20 text-white"
+                          : complete
+                            ? "bg-emerald-100 text-emerald-600"
+                            : reachable
+                              ? "bg-zinc-200 text-zinc-600 group-hover:bg-zinc-300"
+                              : "bg-zinc-100 text-zinc-300"
+                      }`}
+                    >
+                      {complete ? <Check className="h-3 w-3" strokeWidth={3} /> : i + 1}
+                    </span>
+                    <span className="whitespace-nowrap">{s.label}</span>
+                    {s.optional && (
+                      <span
+                        className={`hidden sm:inline text-[10px] font-normal ${
+                          active ? "text-white/70" : "text-zinc-400"
+                        }`}
+                      >
+                        ({t.step_optional ?? "optional"})
+                      </span>
+                    )}
+                  </button>
+                  {i < lastStep && (
+                    <span className="h-px w-3 sm:w-6 bg-zinc-200 shrink-0" aria-hidden="true" />
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        </nav>
+
         {/* Scrollable body */}
         <form
           id="product-form"
@@ -685,7 +927,94 @@ export default function ProductFormModal({
             </div>
           )}
 
-          {/* ── Details ── */}
+          {/* ── Step 1: Product Type ── */}
+          {step === 0 && (
+          <section className="space-y-4">
+            <div>
+              <h3 className="text-base font-bold text-zinc-900">
+                {t.type_heading ?? "Select product type"}
+              </h3>
+              <p className="text-sm text-zinc-500 mt-0.5">
+                {t.type_subheading ?? "Choose what kind of product you're adding. This tailors the next steps."}
+              </p>
+            </div>
+
+            {/* Search */}
+            <div className="relative">
+              <Search className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+              <input
+                type="text"
+                value={typeSearch}
+                onChange={(e) => setTypeSearch(e.target.value)}
+                placeholder={t.type_search_placeholder ?? "Search product types…"}
+                className="w-full rounded-lg border border-zinc-200 ps-9 pe-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Type cards */}
+            {(() => {
+              const q = typeSearch.trim().toLowerCase();
+              const types = listProductTypes().filter((pt) => {
+                if (!q) return true;
+                const label = (t[pt.labelKey] ?? pt.id).toLowerCase();
+                const desc = (t[pt.descKey] ?? "").toLowerCase();
+                return label.includes(q) || desc.includes(q);
+              });
+              if (types.length === 0) {
+                return (
+                  <p className="rounded-lg border border-dashed border-zinc-200 px-4 py-8 text-center text-sm text-zinc-400">
+                    {t.type_no_results ?? "No product types match your search."}
+                  </p>
+                );
+              }
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {types.map((pt) => {
+                    const Icon = TYPE_ICONS[pt.icon] ?? Package;
+                    const selected = form.product_type === pt.id;
+                    return (
+                      <button
+                        key={pt.id}
+                        type="button"
+                        onClick={() => dispatch({ type: "set", field: "product_type", value: pt.id })}
+                        aria-pressed={selected}
+                        className={`group relative flex items-start gap-3 rounded-xl border p-3 text-start transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          selected
+                            ? "border-blue-500 bg-blue-50/50 ring-1 ring-blue-500/30"
+                            : "border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50"
+                        }`}
+                      >
+                        <span
+                          className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg transition-colors ${
+                            selected ? "bg-blue-600 text-white" : "bg-zinc-100 text-zinc-500 group-hover:bg-zinc-200"
+                          }`}
+                        >
+                          <Icon className="h-5 w-5" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-semibold text-zinc-900">
+                            {t[pt.labelKey] ?? pt.id}
+                          </span>
+                          <span className="block text-xs text-zinc-500 mt-0.5 leading-snug">
+                            {t[pt.descKey] ?? ""}
+                          </span>
+                        </span>
+                        {selected && (
+                          <span className="absolute top-2 end-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white">
+                            <Check className="h-3 w-3" strokeWidth={3} />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </section>
+          )}
+
+          {/* ── Step 2: Product Information ── */}
+          {step === 1 && (
           <section className="space-y-4">
             <h3 className="text-sm font-semibold text-zinc-700 border-b border-zinc-100 pb-2">
               {t.section_details ?? "Product Details"}
@@ -961,6 +1290,36 @@ export default function ProductFormModal({
               />
             </div>
 
+            {/* Dynamic, product-type-specific attributes */}
+            {getAttributeSchema(form.product_type).map((group) => (
+              <div key={group.id} className="space-y-3 pt-2">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-500 border-b border-zinc-100 pb-1.5">
+                  {dict?.admin?.products?.attr_groups?.[group.id] ?? group.label}
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {group.fields.map((field) => (
+                    <AttributeField
+                      key={field.key}
+                      field={field}
+                      value={form.attributes?.[field.key]}
+                      label={attrLabel(dict, field.key, field.label)}
+                      optionLabels={dict?.admin?.products?.attr_options}
+                      onChange={(value) => dispatch({ type: "set_attribute", key: field.key, value })}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </section>
+          )}
+
+          {/* ── Step 3: Pricing & Inventory ── */}
+          {step === 2 && (
+          <section className="space-y-4">
+            <h3 className="text-sm font-semibold text-zinc-700 border-b border-zinc-100 pb-2">
+              {t.section_pricing ?? "Pricing & Inventory"}
+            </h3>
+
             {/* Price + Stock */}
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -1089,8 +1448,10 @@ export default function ProductFormModal({
               </div>
             </div>
           </section>
+          )}
 
-          {/* ── Images ── */}
+          {/* ── Step 4: Images ── */}
+          {step === 3 && (
           <section className="space-y-4">
             <h3 className="text-sm font-semibold text-zinc-700 border-b border-zinc-100 pb-2">
               {t.section_images ?? "Images"}
@@ -1106,14 +1467,17 @@ export default function ProductFormModal({
               onReplaceExisting={handleReplaceExisting}
             />
           </section>
+          )}
 
-          {/* ── Variants (Colors & Sizes) ── */}
+          {/* ── Variants (Colors & Sizes) — schema-gated per product type ── */}
+          {step === 1 && getVariantAxes(form.product_type).length > 0 && (
           <section className="space-y-4">
             <h3 className="text-sm font-semibold text-zinc-700 border-b border-zinc-100 pb-2">
               {t.section_variants ?? "Variants"} <span className="text-xs font-normal text-zinc-400">({t.variants_optional ?? "optional"})</span>
             </h3>
 
             {/* Colors */}
+            {getVariantAxes(form.product_type).includes("color") && (
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-2">
                 {t.colors_label ?? "Colors"}
@@ -1166,8 +1530,10 @@ export default function ProductFormModal({
                 </button>
               </div>
             </div>
+            )}
 
             {/* Sizes */}
+            {getVariantAxes(form.product_type).includes("size") && (
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-2">
                 {t.sizes_label ?? "Sizes"}
@@ -1209,9 +1575,12 @@ export default function ProductFormModal({
                 </button>
               </div>
             </div>
+            )}
           </section>
+          )}
 
-          {/* ── Page Sections ── */}
+          {/* ── Step 5: Page Sections (optional) ── */}
+          {step === 4 && (
           <section className="space-y-4">
             <h3 className="text-sm font-semibold text-zinc-700 border-b border-zinc-100 pb-2">
               {t.section_page_sections ?? "Product Page Sections"}
@@ -1246,26 +1615,55 @@ export default function ProductFormModal({
               />
             )}
           </section>
+          )}
         </form>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 border-t border-zinc-100 px-6 py-4 shrink-0">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-          >
-            {t.cancel ?? "Cancel"}
-          </button>
-          <button
-            type="submit"
-            form="product-form"
-            disabled={saving}
-            className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-          >
-            {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-            {saving ? (t.saving ?? "Saving…") : isEdit ? (t.save ?? "Save changes") : (t.save_new ?? "Add product")}
-          </button>
+        <div className="flex items-center justify-between gap-3 border-t border-zinc-100 px-6 py-4 shrink-0">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            >
+              {t.cancel ?? "Cancel"}
+            </button>
+            {step > 0 && (
+              <button
+                type="button"
+                onClick={goBack}
+                className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+              >
+                {t.step_back ?? "Back"}
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {step < lastStep && (
+              <button
+                type="button"
+                onClick={goNext}
+                className={
+                  isEdit
+                    ? "rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                    : "flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                }
+              >
+                {t.step_next ?? "Next"}
+              </button>
+            )}
+            {(isEdit || step === lastStep) && (
+              <button
+                type="submit"
+                form="product-form"
+                disabled={saving}
+                className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+              >
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                {saving ? (t.saving ?? "Saving…") : isEdit ? (t.save ?? "Save changes") : (t.save_new ?? "Add product")}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>,

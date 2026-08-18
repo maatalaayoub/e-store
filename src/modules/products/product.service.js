@@ -101,6 +101,22 @@ export class ProductService {
 async function sanitizeProductWritePayload(data) {
   const payload = { ...data };
 
+  if (Object.prototype.hasOwnProperty.call(payload, 'product_type')) {
+    const { isKnownProductType } = await import('@/config/product-types');
+    payload.product_type = isKnownProductType(payload.product_type)
+      ? payload.product_type
+      : null;
+  }
+
+  // Attributes are only meaningful for a known product type, and must be
+  // filtered/coerced against that type's schema — never trusted as-is.
+  if (Object.prototype.hasOwnProperty.call(payload, 'attributes')) {
+    const { sanitizeAttributes } = await import('@/lib/product-attributes');
+    payload.attributes = payload.product_type
+      ? sanitizeAttributes(payload.product_type, payload.attributes)
+      : null;
+  }
+
   if (Object.prototype.hasOwnProperty.call(payload, 'sections_config')) {
     const { sanitizeSections } = await import('@/modules/product-sections/sanitize');
     payload.sections_config = Array.isArray(payload.sections_config)
