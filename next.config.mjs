@@ -39,6 +39,8 @@ const nextConfig = {
     'localhost',
     '192.168.8.102',
     '192.168.8.102:3000',
+    '192.168.8.163',
+    '192.168.8.163:3000',
   ],
   images: {
     remotePatterns: [

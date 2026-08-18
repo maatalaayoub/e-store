@@ -318,7 +318,7 @@ function AnnouncementContent({ a, dict }) {
   const Icon = (a.icon_enabled && a.icon && a.type !== 'social') ? (ICONS[a.icon] ?? null) : null;
 
   const textNode = (
-    <span style={{ fontSize: a.font_size ? `${a.font_size}px` : undefined }}>
+    <span className="truncate min-w-0" style={{ fontSize: a.font_size ? `${a.font_size}px` : undefined }}>
       {a.text}
     </span>
   );
@@ -344,7 +344,13 @@ function AnnouncementContent({ a, dict }) {
   const swapSeconds = Math.max(1, Math.min(30, Number(a.cta_swap_seconds) || 4));
 
   const inner = (
-    <span className="inline-flex items-center gap-4 flex-wrap justify-center">
+    <span
+      className={`inline-flex items-center justify-center min-w-0 max-w-full ${
+        a.type === 'limited'
+          ? 'flex-col sm:flex-row gap-1.5 sm:gap-4'
+          : 'flex-nowrap gap-2 sm:gap-4'
+      }`}
+    >
       {Icon && <Icon className="h-4 w-4 shrink-0" />}
 
       {swapMode && ctaNode ? (
@@ -833,14 +839,22 @@ export default function AnnouncementBar() {
       : "border-t border-black/10"
     : "";
 
+  // Height: social bars are taller; limited offers grow to two rows on
+  // small screens (CTA on top, countdown below) then collapse to one row on sm+.
+  const heightClass =
+    current.type === 'social'
+      ? 'h-16'
+      : current.type === 'limited'
+        ? 'min-h-[3.75rem] sm:min-h-0 sm:h-10'
+        : 'h-10';
+
   return (
     <div
       ref={barRef}
       role="region"
       aria-label="Site announcement"
-      className={`${stickyClass} ${borderClass} transition-[height,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] overflow-hidden`}
+      className={`${stickyClass} ${borderClass} ${heightClass} transition-[height,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] overflow-hidden`}
       style={{
-        height: current.type === 'social' ? "4rem" : "2.5rem",
         bottom: positionTop ? undefined : 'var(--mobile-nav-h, 0px)',
         transform: scrollHidden
           ? (positionTop ? 'translateY(-100%)' : 'translateY(100%)')
@@ -864,11 +878,11 @@ export default function AnnouncementBar() {
       {/* Content animates in on change */}
       <div
         key={`content-${activeIdx}`}
-        className="relative flex flex-col justify-center"
-        style={{ height: '100%', color: current.text_color || '#ffffff', animation: 'announce-bar-in 0.4s cubic-bezier(0.22,1,0.36,1) both' }}
+        className="relative flex flex-col justify-center min-h-full"
+        style={{ color: current.text_color || '#ffffff', animation: 'announce-bar-in 0.4s cubic-bezier(0.22,1,0.36,1) both' }}
       >
       {current.type === 'marquee' ? (
-        <div className="relative flex items-center justify-center w-full py-1.5 text-sm">
+        <div className="relative flex items-center justify-center w-full h-full py-1.5 text-sm">
           <div className="flex-1 min-w-0">
             <MarqueePreview a={current} />
           </div>
@@ -877,7 +891,7 @@ export default function AnnouncementBar() {
               type="button"
               onClick={() => handleDismiss(current.id)}
               aria-label="Dismiss"
-              className="absolute end-2 sm:end-4 inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-white/15 active:scale-90 transition-all shrink-0"
+              className="absolute end-2 sm:end-4 top-1/2 -translate-y-1/2 inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-white/15 active:scale-90 transition-all shrink-0"
             >
               <X className="h-4 w-4" />
             </button>
@@ -921,38 +935,36 @@ export default function AnnouncementBar() {
           </div>
         </div>
       ) : (
-        <div className="grid items-center h-full px-2 sm:px-4 text-sm" style={{ gridTemplateColumns: 'auto 1fr auto' }}>
-          {/* Left: prev button (or spacer) */}
-          <div className="flex items-center">
-            {visible.length > 1 && (
-              <button
-                type="button"
-                onClick={goPrev}
-                aria-label="Previous announcement"
-                className="hidden sm:inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-white/15 active:scale-90 transition-all shrink-0"
-              >
-                <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
-              </button>
-            )}
-          </div>
-
-          {/* Center: always truly centered */}
+        <div className="relative flex items-center justify-center min-h-full px-9 sm:px-14 py-2 sm:py-0 text-sm">
+          {/* Center: always truly centered regardless of side controls */}
           <div
-            className="flex items-center justify-center min-w-0"
+            className="flex items-center justify-center min-w-0 max-w-full"
             aria-live="polite"
             aria-atomic="true"
           >
             <AnnouncementContent a={current} dict={dict} />
           </div>
 
+          {/* Left: prev button */}
+          {visible.length > 1 && (
+            <button
+              type="button"
+              onClick={goPrev}
+              aria-label="Previous announcement"
+              className="absolute start-2 sm:start-4 top-1/2 -translate-y-1/2 hidden sm:inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-white/15 active:scale-90 transition-all"
+            >
+              <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
+            </button>
+          )}
+
           {/* Right: next + dismiss */}
-          <div className="flex items-center gap-1">
+          <div className="absolute end-2 sm:end-4 top-1/2 -translate-y-1/2 flex items-center gap-1">
             {visible.length > 1 && (
               <button
                 type="button"
                 onClick={goNext}
                 aria-label="Next announcement"
-                className="hidden sm:inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-white/15 active:scale-90 transition-all shrink-0"
+                className="hidden sm:inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-white/15 active:scale-90 transition-all"
               >
                 <ChevronRight className="h-4 w-4 rtl:rotate-180" />
               </button>
@@ -962,7 +974,7 @@ export default function AnnouncementBar() {
                 type="button"
                 onClick={() => handleDismiss(current.id)}
                 aria-label="Dismiss"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-white/15 active:scale-90 transition-all shrink-0"
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-white/15 active:scale-90 transition-all"
               >
                 <X className="h-4 w-4" />
               </button>
