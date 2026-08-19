@@ -558,7 +558,24 @@
         "sizes_label": "Sizes",
         "add_size": "+ Add size",
         "size_placeholder": "Size (e.g. M, 42, XL)",
-        "attr_required": "{field} is required."
+        "attr_required": "{field} is required.",
+        "device_type_label": "Device type",
+        "device_type_required": "Please select a device type.",
+        "variants_config": "Configuration variants",
+        "variants_ram": "RAM",
+        "variants_storage": "Storage",
+        "variants_has": "This product has {dim} variants",
+        "variants_pick_options": "Pick the available options:",
+        "variants_custom_placeholder": "Add custom option…",
+        "variants_add": "Add",
+        "variants_combos": "Configurations",
+        "variants_combos_hint": "Set an additional price, stock and SKU per configuration. Untick to hide a configuration from buyers.",
+        "variants_additional_price": "Additional price",
+        "variants_sku": "SKU",
+        "variants_available": "Available"
+      },
+      "device_types": {
+        "tv": "TV", "smartphone": "Smartphone", "tablet": "Tablet", "smartwatch": "Smartwatch", "laptop": "Laptop", "desktop": "Desktop PC", "console": "Gaming Console", "monitor": "Monitor", "camera": "Camera", "headphones": "Headphones / Earbuds", "speaker": "Speaker", "router": "Router", "keyboard": "Keyboard", "mouse": "Mouse", "printer": "Printer", "other": "Other device"
       },
       "attr_groups": {
         "details": "Details", "general": "General", "hardware": "Hardware", "specs": "Specifications"
@@ -567,6 +584,7 @@
         "brand": "Brand", "gender": "Gender", "material": "Material", "fit": "Fit", "season": "Season", "pattern": "Pattern", "care_instructions": "Care instructions",
         "fragrance_type": "Fragrance type", "volume": "Volume", "concentration": "Concentration", "fragrance_family": "Fragrance family", "top_notes": "Top notes", "middle_notes": "Middle notes", "base_notes": "Base notes", "country_of_origin": "Country of origin",
         "model": "Model", "warranty": "Warranty", "operating_system": "Operating system", "connectivity": "Connectivity", "ram": "RAM", "storage": "Storage", "processor": "Processor", "screen_size": "Screen size", "resolution": "Resolution", "battery_capacity": "Battery capacity",
+        "display_technology": "Display technology", "refresh_rate": "Refresh rate", "gpu": "GPU", "megapixels": "Megapixels", "lens": "Lens", "bluetooth": "Bluetooth", "wifi": "Wi-Fi", "sim_support": "SIM support", "ports": "Ports", "charging_type": "Charging type", "water_resistance": "Water resistance", "edition": "Edition", "generation": "Generation", "controller_included": "Controller included", "print_technology": "Print technology", "switch_type": "Switch type", "camera": "Camera",
         "bike_type": "Bike type", "frame_material": "Frame material", "frame_size": "Frame size", "wheel_size": "Wheel size", "gears": "Number of gears", "brake_type": "Brake type", "suspension": "Suspension", "weight": "Weight",
         "year": "Year", "engine_capacity": "Engine capacity", "fuel_type": "Fuel type", "transmission": "Transmission", "mileage": "Mileage", "horsepower": "Horsepower", "condition": "Condition",
         "body_type": "Body type", "vin": "VIN", "engine": "Engine", "doors": "Doors",
@@ -585,7 +603,9 @@
         "transmission_manual": "Manual", "transmission_automatic": "Automatic",
         "condition_new": "New", "condition_used": "Used", "condition_refurbished": "Refurbished",
         "form_capsules": "Capsules", "form_powder": "Powder", "form_tablets": "Tablets", "form_liquid": "Liquid", "form_gummies": "Gummies",
-        "delivery_method_instant": "Instant", "delivery_method_email": "Email", "delivery_method_manual": "Manual"
+        "delivery_method_instant": "Instant", "delivery_method_email": "Email", "delivery_method_manual": "Manual",
+        "display_technology_led": "LED", "display_technology_oled": "OLED", "display_technology_qled": "QLED", "display_technology_lcd": "LCD", "display_technology_amoled": "AMOLED", "display_technology_ips": "IPS",
+        "sim_support_single": "Single SIM", "sim_support_dual": "Dual SIM", "sim_support_esim": "eSIM", "sim_support_none": "No SIM"
       }
     },
     "orders": {

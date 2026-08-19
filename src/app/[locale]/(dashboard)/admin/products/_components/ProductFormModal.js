@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import {
   Check, ChevronDown, X, Loader2, AlertCircle, Tag, ImagePlus, ImageOff, Search,
   Shirt, SprayCan, Cpu, Bike, Gauge, Pill, Wrench, Car, WashingMachine, Sofa, Download, Shapes, Package,
+  Tv, Smartphone, Tablet, Watch, Laptop, HardDrive, Gamepad2, Monitor, Camera, Headphones, Speaker, Router, Keyboard, Mouse, Printer,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -14,9 +15,10 @@ import SectionsBuilder from "@/components/admin/product-sections/SectionsBuilder
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { RTL_LOCALES } from "@/config/constants";
 import { listProductTypes, getVariantAxes } from "@/config/product-types";
-import { getAttributeSchema } from "@/config/product-types/attributes";
+import { getAttributeSchema, getDeviceTypes, getVariantDimensions } from "@/config/product-types/attributes";
 import { attrLabel } from "@/lib/product-attributes";
 import { compressImageFile } from "@/lib/image-compress";
+import VariantBuilder from "./VariantBuilder";
 import {
   ACCEPTED_CATEGORY_IMAGE_TYPES,
   uploadCategoryImage,
@@ -40,6 +42,11 @@ const RTL_LANGS = new Set(RTL_LOCALES);
 // lucide-react components. Keeps the config module serializable/server-safe.
 const TYPE_ICONS = {
   Shirt, SprayCan, Cpu, Bike, Gauge, Pill, Wrench, Car, WashingMachine, Sofa, Download, Shapes, Package,
+};
+
+// Icons for the electronics device-type picker.
+const DEVICE_ICONS = {
+  Tv, Smartphone, Tablet, Watch, Laptop, HardDrive, Gamepad2, Monitor, Camera, Headphones, Speaker, Router, Keyboard, Mouse, Printer, Cpu,
 };
 
 /**
@@ -129,6 +136,7 @@ const initialForm = {
   category_id: "",
   product_type: "",
   attributes: {},
+  variants: null,
   price: "",
   discountType: "none", // "none" | "price" | "percentage"
   discount_price: "",
@@ -211,6 +219,7 @@ function productToForm(p) {
     is_featured: p.is_featured ?? false,
     colors: Array.isArray(p.colors) ? p.colors : [],
     sizes: Array.isArray(p.sizes) ? p.sizes : [],
+    variants: p.variants && typeof p.variants === "object" ? p.variants : null,
     use_default_sections: p.use_default_sections !== false,
     sections_config: Array.isArray(p.sections_config) ? p.sections_config : [],
   };
@@ -300,8 +309,12 @@ export default function ProductFormModal({
     }
     if (index === 1) {
       if (!hasAnyName()) return t.name_required ?? "Product name is required in at least one language.";
+      // Electronics requires a device type before its specs can be filled.
+      if (form.product_type === "electronics" && !form.attributes?.device_type) {
+        return t.device_type_required ?? "Please select a device type.";
+      }
       // Schema-driven required attributes for the selected product type.
-      for (const group of getAttributeSchema(form.product_type)) {
+      for (const group of getAttributeSchema(form.product_type, form.attributes?.device_type)) {
         for (const field of group.fields) {
           if (!field.required) continue;
           const v = form.attributes?.[field.key];
@@ -713,6 +726,11 @@ export default function ProductFormModal({
           const valid = form.sizes.map((s) => s.trim()).filter(Boolean);
           return valid.length > 0 ? valid : null;
         })(),
+        // RAM/Storage configuration variants — only for types/devices that
+        // support them; sanitized + repriced server-side.
+        variants: getVariantDimensions(form.product_type, form.attributes?.device_type).length > 0
+          ? form.variants
+          : null,
         // Dynamic Product Sections — server sanitizes the array further.
         use_default_sections: form.use_default_sections !== false,
         sections_config:
@@ -1290,8 +1308,48 @@ export default function ProductFormModal({
               />
             </div>
 
+            {/* Electronics: pick a device type before showing its specs */}
+            {form.product_type === "electronics" && (
+              <div className="space-y-3 pt-2">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-500 border-b border-zinc-100 pb-1.5">
+                  {t.device_type_label ?? "Device type"}
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {getDeviceTypes("electronics").map((d) => {
+                    const Icon = DEVICE_ICONS[d.icon] ?? Cpu;
+                    const selected = form.attributes?.device_type === d.id;
+                    return (
+                      <button
+                        key={d.id}
+                        type="button"
+                        onClick={() => dispatch({ type: "set_attribute", key: "device_type", value: d.id })}
+                        aria-pressed={selected}
+                        className={`group relative flex items-center gap-2 rounded-lg border p-2.5 text-start transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          selected
+                            ? "border-blue-500 bg-blue-50/50 ring-1 ring-blue-500/30"
+                            : "border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50"
+                        }`}
+                      >
+                        <span
+                          className={`grid h-8 w-8 shrink-0 place-items-center rounded-md transition-colors ${
+                            selected ? "bg-blue-600 text-white" : "bg-zinc-100 text-zinc-500 group-hover:bg-zinc-200"
+                          }`}
+                        >
+                          <Icon className="h-4 w-4" />
+                        </span>
+                        <span className="min-w-0 flex-1 text-xs font-medium text-zinc-800 truncate">
+                          {dict?.admin?.products?.device_types?.[d.id] ?? d.label}
+                        </span>
+                        {selected && <Check className="h-3.5 w-3.5 shrink-0 text-blue-600" strokeWidth={3} />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Dynamic, product-type-specific attributes */}
-            {getAttributeSchema(form.product_type).map((group) => (
+            {getAttributeSchema(form.product_type, form.attributes?.device_type).map((group) => (
               <div key={group.id} className="space-y-3 pt-2">
                 <h4 className="text-xs font-semibold uppercase tracking-wide text-zinc-500 border-b border-zinc-100 pb-1.5">
                   {dict?.admin?.products?.attr_groups?.[group.id] ?? group.label}
@@ -1465,6 +1523,21 @@ export default function ProductFormModal({
               onRemoveExisting={handleRemoveExisting}
               onSetExistingMain={handleSetExistingMain}
               onReplaceExisting={handleReplaceExisting}
+            />
+          </section>
+          )}
+
+          {/* ── RAM / Storage configuration variants (electronics devices) ── */}
+          {step === 1 && getVariantDimensions(form.product_type, form.attributes?.device_type).length > 0 && (
+          <section className="space-y-4">
+            <h3 className="text-sm font-semibold text-zinc-700 border-b border-zinc-100 pb-2">
+              {t.variants_config ?? "Configuration variants"} <span className="text-xs font-normal text-zinc-400">({t.variants_optional ?? "optional"})</span>
+            </h3>
+            <VariantBuilder
+              dimensions={getVariantDimensions(form.product_type, form.attributes?.device_type)}
+              value={form.variants}
+              onChange={(next) => dispatch({ type: "set", field: "variants", value: next })}
+              t={t}
             />
           </section>
           )}

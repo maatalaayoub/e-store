@@ -560,7 +560,24 @@
         "use_default_layout": "استعمل التخطيط الافتراضي",
         "use_default_layout_hint": "رث الأقسام العامة المحددة ف إعدادات المتجر.",
         "sections_empty": "زيد أقسام باش تخصص صفحة هاد المنتج.",
-        "attr_required": "{field} مطلوب."
+        "attr_required": "{field} مطلوب.",
+        "device_type_label": "نوع الجهاز",
+        "device_type_required": "عفاك ختار نوع الجهاز.",
+        "variants_config": "متغيرات الكونفيكوراسيون",
+        "variants_ram": "الرام",
+        "variants_storage": "التخزين",
+        "variants_has": "هاد المنتج عندو متغيرات {dim}",
+        "variants_pick_options": "ختار الخيارات المتاحة:",
+        "variants_custom_placeholder": "زيد خيار مخصص…",
+        "variants_add": "زيد",
+        "variants_combos": "الكونفيكوراسيونات",
+        "variants_combos_hint": "حدد ثمن زائد، المخزون وSKU لكل كونفيكوراسيون. نحّي العلامة باش تخبّي واحد على الشراية.",
+        "variants_additional_price": "ثمن زائد",
+        "variants_sku": "SKU",
+        "variants_available": "متاح"
+      },
+      "device_types": {
+        "tv": "تلفزة", "smartphone": "تيليفون ذكي", "tablet": "طابلي", "smartwatch": "مانيط ذكية", "laptop": "بي سي محمول", "desktop": "بي سي مكتبي", "console": "كونصول ألعاب", "monitor": "شاشة", "camera": "كاميرا", "headphones": "سماعات", "speaker": "بافّاط", "router": "راوتر", "keyboard": "كلافيي", "mouse": "فارة", "printer": "طابعة", "other": "جهاز آخر"
       },
       "attr_groups": {
         "details": "التفاصيل", "general": "عام", "hardware": "العتاد", "specs": "المواصفات"
@@ -587,7 +604,9 @@
         "transmission_manual": "يدوي", "transmission_automatic": "أوتوماتيك",
         "condition_new": "جديد", "condition_used": "مستعمل", "condition_refurbished": "مجدّد",
         "form_capsules": "كبسولات", "form_powder": "بودرة", "form_tablets": "أقراص", "form_liquid": "سائل", "form_gummies": "علكات",
-        "delivery_method_instant": "فوري", "delivery_method_email": "إيميل", "delivery_method_manual": "يدوي"
+        "delivery_method_instant": "فوري", "delivery_method_email": "إيميل", "delivery_method_manual": "يدوي",
+        "display_technology_led": "LED", "display_technology_oled": "OLED", "display_technology_qled": "QLED", "display_technology_lcd": "LCD", "display_technology_amoled": "AMOLED", "display_technology_ips": "IPS",
+        "sim_support_single": "شريحة وحدة", "sim_support_dual": "جوج شرايّط", "sim_support_esim": "eSIM", "sim_support_none": "بلا شريحة"
       }
     },
     "orders": {

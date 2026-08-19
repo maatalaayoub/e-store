@@ -26,6 +26,70 @@ const CONDITION = [sel('new', 'New'), sel('used', 'Used'), sel('refurbished', 'R
 const FUEL = [sel('petrol', 'Petrol'), sel('diesel', 'Diesel'), sel('electric', 'Electric'), sel('hybrid', 'Hybrid')];
 const TRANSMISSION = [sel('manual', 'Manual'), sel('automatic', 'Automatic')];
 
+/**
+ * Electronics uses a second level of specialization: the seller picks a device
+ * type (TV, Smartphone, …) and only that device's relevant specs are shown.
+ * Fields are referenced by key from FIELD_LIBRARY so specs stay reusable and
+ * new device types can be added without touching the UI.
+ */
+const FIELD_LIBRARY = {
+  brand: t('brand', 'text', 'Brand'),
+  model: t('model', 'text', 'Model'),
+  screen_size: t('screen_size', 'text', 'Screen size', { placeholder: 'e.g. 6.7"' }),
+  resolution: t('resolution', 'text', 'Resolution'),
+  display_technology: t('display_technology', 'select', 'Display technology', {
+    options: [sel('led', 'LED'), sel('oled', 'OLED'), sel('qled', 'QLED'), sel('lcd', 'LCD'), sel('amoled', 'AMOLED'), sel('ips', 'IPS')],
+  }),
+  refresh_rate: t('refresh_rate', 'text', 'Refresh rate', { placeholder: 'e.g. 120 Hz' }),
+  ram: t('ram', 'text', 'RAM', { placeholder: 'e.g. 8 GB' }),
+  storage: t('storage', 'text', 'Storage', { placeholder: 'e.g. 256 GB' }),
+  processor: t('processor', 'text', 'Processor'),
+  gpu: t('gpu', 'text', 'GPU'),
+  battery_capacity: t('battery_capacity', 'text', 'Battery capacity', { placeholder: 'e.g. 5000 mAh' }),
+  camera: t('camera', 'text', 'Camera'),
+  megapixels: t('megapixels', 'text', 'Megapixels'),
+  lens: t('lens', 'text', 'Lens'),
+  operating_system: t('operating_system', 'text', 'Operating system'),
+  connectivity: t('connectivity', 'text', 'Connectivity'),
+  bluetooth: t('bluetooth', 'text', 'Bluetooth'),
+  wifi: t('wifi', 'text', 'Wi-Fi'),
+  sim_support: t('sim_support', 'select', 'SIM support', {
+    options: [sel('single', 'Single SIM'), sel('dual', 'Dual SIM'), sel('esim', 'eSIM'), sel('none', 'No SIM')],
+  }),
+  ports: t('ports', 'text', 'Ports'),
+  weight: t('weight', 'text', 'Weight'),
+  dimensions: t('dimensions', 'text', 'Dimensions'),
+  charging_type: t('charging_type', 'text', 'Charging type'),
+  water_resistance: t('water_resistance', 'text', 'Water resistance'),
+  warranty: t('warranty', 'text', 'Warranty'),
+  edition: t('edition', 'text', 'Edition'),
+  generation: t('generation', 'text', 'Generation'),
+  controller_included: t('controller_included', 'boolean', 'Controller included'),
+  power: t('power', 'text', 'Power'),
+  print_technology: t('print_technology', 'text', 'Print technology'),
+  switch_type: t('switch_type', 'text', 'Switch type'),
+};
+
+const dev = (id, icon, label, fields) => ({ id, icon, label, fields });
+export const ELECTRONICS_DEVICE_TYPES = [
+  dev('tv', 'Tv', 'TV', ['brand', 'model', 'screen_size', 'resolution', 'display_technology', 'refresh_rate', 'operating_system', 'connectivity', 'ports', 'warranty']),
+  dev('smartphone', 'Smartphone', 'Smartphone', ['brand', 'model', 'screen_size', 'resolution', 'ram', 'storage', 'processor', 'battery_capacity', 'camera', 'operating_system', 'sim_support', 'connectivity', 'charging_type', 'water_resistance', 'warranty']),
+  dev('tablet', 'Tablet', 'Tablet', ['brand', 'model', 'screen_size', 'resolution', 'ram', 'storage', 'processor', 'battery_capacity', 'operating_system', 'sim_support', 'connectivity', 'warranty']),
+  dev('smartwatch', 'Watch', 'Smartwatch', ['brand', 'model', 'screen_size', 'battery_capacity', 'connectivity', 'bluetooth', 'water_resistance', 'operating_system', 'warranty']),
+  dev('laptop', 'Laptop', 'Laptop', ['brand', 'model', 'screen_size', 'resolution', 'ram', 'storage', 'processor', 'gpu', 'battery_capacity', 'operating_system', 'connectivity', 'weight', 'warranty']),
+  dev('desktop', 'HardDrive', 'Desktop PC', ['brand', 'model', 'ram', 'storage', 'processor', 'gpu', 'operating_system', 'connectivity', 'ports', 'warranty']),
+  dev('console', 'Gamepad2', 'Gaming Console', ['brand', 'model', 'storage', 'edition', 'generation', 'connectivity', 'controller_included', 'warranty']),
+  dev('monitor', 'Monitor', 'Monitor', ['brand', 'model', 'screen_size', 'resolution', 'display_technology', 'refresh_rate', 'ports', 'connectivity', 'warranty']),
+  dev('camera', 'Camera', 'Camera', ['brand', 'model', 'megapixels', 'lens', 'resolution', 'battery_capacity', 'connectivity', 'weight', 'warranty']),
+  dev('headphones', 'Headphones', 'Headphones / Earbuds', ['brand', 'model', 'bluetooth', 'battery_capacity', 'connectivity', 'water_resistance', 'charging_type', 'warranty']),
+  dev('speaker', 'Speaker', 'Speaker', ['brand', 'model', 'power', 'bluetooth', 'battery_capacity', 'connectivity', 'warranty']),
+  dev('router', 'Router', 'Router', ['brand', 'model', 'wifi', 'ports', 'connectivity', 'warranty']),
+  dev('keyboard', 'Keyboard', 'Keyboard', ['brand', 'model', 'switch_type', 'connectivity', 'bluetooth', 'warranty']),
+  dev('mouse', 'Mouse', 'Mouse', ['brand', 'model', 'connectivity', 'bluetooth', 'warranty']),
+  dev('printer', 'Printer', 'Printer', ['brand', 'model', 'print_technology', 'connectivity', 'warranty']),
+  dev('other', 'Cpu', 'Other device', ['brand', 'model', 'connectivity', 'warranty']),
+];
+
 export const ATTRIBUTE_SCHEMAS = {
   clothing: [
     {
@@ -67,29 +131,9 @@ export const ATTRIBUTE_SCHEMAS = {
     },
   ],
   electronics: [
-    {
-      id: 'general',
-      label: 'General',
-      fields: [
-        t('brand', 'text', 'Brand'),
-        t('model', 'text', 'Model'),
-        t('warranty', 'text', 'Warranty'),
-        t('operating_system', 'text', 'Operating system'),
-        t('connectivity', 'text', 'Connectivity'),
-      ],
-    },
-    {
-      id: 'hardware',
-      label: 'Hardware',
-      fields: [
-        t('ram', 'text', 'RAM', { placeholder: 'e.g. 8 GB' }),
-        t('storage', 'text', 'Storage', { placeholder: 'e.g. 256 GB' }),
-        t('processor', 'text', 'Processor'),
-        t('screen_size', 'text', 'Screen size', { placeholder: 'e.g. 6.7"' }),
-        t('resolution', 'text', 'Resolution'),
-        t('battery_capacity', 'text', 'Battery capacity', { placeholder: 'e.g. 5000 mAh' }),
-      ],
-    },
+    // Electronics fields are resolved dynamically from the selected device
+    // type (see ELECTRONICS_DEVICE_TYPES + getAttributeSchema). This static
+    // entry is intentionally empty so a device must be picked first.
   ],
   bicycles: [
     {
@@ -244,19 +288,61 @@ export const ATTRIBUTE_SCHEMAS = {
   other: [],
 };
 
-/** Returns the attribute group list for a product type, or [] when unknown. */
-export function getAttributeSchema(typeId) {
+/** Device types for a product type (only electronics for now), or []. */
+export function getDeviceTypes(typeId) {
+  return typeId === 'electronics' ? ELECTRONICS_DEVICE_TYPES : [];
+}
+
+/**
+ * Which configurable variant dimensions a product supports (['ram','storage']).
+ * Derived from the selected electronics device's own field list so it stays a
+ * single source of truth — a device that has no RAM field gets no RAM variants.
+ */
+export function getVariantDimensions(typeId, subtype) {
+  if (typeId !== 'electronics' || !subtype) return [];
+  const device = ELECTRONICS_DEVICE_TYPES.find((d) => d.id === subtype);
+  if (!device) return [];
+  const dims = [];
+  if (device.fields.includes('ram')) dims.push('ram');
+  if (device.fields.includes('storage')) dims.push('storage');
+  return dims;
+}
+
+// Suggested option presets for the RAM / Storage variant builders. Sellers can
+// pick from these or type their own — nothing here is enforced.
+export const RAM_OPTION_PRESETS = ['2 GB', '4 GB', '6 GB', '8 GB', '12 GB', '16 GB', '24 GB', '32 GB', '64 GB'];
+export const STORAGE_OPTION_PRESETS = ['32 GB', '64 GB', '128 GB', '256 GB', '512 GB', '1 TB', '2 TB'];
+
+/** Build the electronics attribute groups for a selected device type. */
+function electronicsGroups(subtype) {
+  const device = ELECTRONICS_DEVICE_TYPES.find((d) => d.id === subtype);
+  if (!device) return [];
+  return [
+    {
+      id: 'specs',
+      label: 'Specifications',
+      fields: device.fields.map((k) => FIELD_LIBRARY[k]).filter(Boolean),
+    },
+  ];
+}
+
+/**
+ * Returns the attribute group list for a product type. Electronics resolves
+ * from the selected device subtype; other types use their static schema.
+ */
+export function getAttributeSchema(typeId, subtype) {
+  if (typeId === 'electronics') return electronicsGroups(subtype);
   return ATTRIBUTE_SCHEMAS[typeId] ?? [];
 }
 
 /** Flat list of every field for a type (across groups). */
-export function getAttributeFields(typeId) {
-  return getAttributeSchema(typeId).flatMap((g) => g.fields);
+export function getAttributeFields(typeId, subtype) {
+  return getAttributeSchema(typeId, subtype).flatMap((g) => g.fields);
 }
 
 /** Map of key → field spec for a type. */
-export function getAttributeFieldMap(typeId) {
+export function getAttributeFieldMap(typeId, subtype) {
   const map = {};
-  for (const f of getAttributeFields(typeId)) map[f.key] = f;
+  for (const f of getAttributeFields(typeId, subtype)) map[f.key] = f;
   return map;
 }

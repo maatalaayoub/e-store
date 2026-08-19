@@ -98,6 +98,11 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS product_type text;
 -- and sanitized server-side. Avoids a nullable column per possible attribute.
 ALTER TABLE products ADD COLUMN IF NOT EXISTS attributes jsonb;
 
+-- Configurable RAM/Storage/combination variants with per-combo additional
+-- price, stock, SKU and availability. Sanitized server-side; base price stays
+-- on products.price. See src/lib/product-variants.js.
+ALTER TABLE products ADD COLUMN IF NOT EXISTS variants jsonb;
+
 -- ========================
 -- PRODUCT IMAGES
 -- ========================

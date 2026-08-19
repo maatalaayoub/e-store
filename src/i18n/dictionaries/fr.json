@@ -560,7 +560,24 @@
         "use_default_layout": "Utiliser la mise en page par défaut",
         "use_default_layout_hint": "Hériter des sections globales définies dans les paramètres de la boutique.",
         "sections_empty": "Ajoutez des sections pour personnaliser la page de ce produit.",
-        "attr_required": "{field} est requis."
+        "attr_required": "{field} est requis.",
+        "device_type_label": "Type d'appareil",
+        "device_type_required": "Veuillez sélectionner un type d'appareil.",
+        "variants_config": "Variantes de configuration",
+        "variants_ram": "RAM",
+        "variants_storage": "Stockage",
+        "variants_has": "Ce produit a des variantes de {dim}",
+        "variants_pick_options": "Choisissez les options disponibles :",
+        "variants_custom_placeholder": "Ajouter une option personnalisée…",
+        "variants_add": "Ajouter",
+        "variants_combos": "Configurations",
+        "variants_combos_hint": "Définissez un prix supplémentaire, un stock et un SKU par configuration. Décochez pour masquer une configuration aux acheteurs.",
+        "variants_additional_price": "Prix supplémentaire",
+        "variants_sku": "SKU",
+        "variants_available": "Disponible"
+      },
+      "device_types": {
+        "tv": "Téléviseur", "smartphone": "Smartphone", "tablet": "Tablette", "smartwatch": "Montre connectée", "laptop": "Ordinateur portable", "desktop": "Ordinateur de bureau", "console": "Console de jeu", "monitor": "Écran", "camera": "Appareil photo", "headphones": "Casque / Écouteurs", "speaker": "Enceinte", "router": "Routeur", "keyboard": "Clavier", "mouse": "Souris", "printer": "Imprimante", "other": "Autre appareil"
       },
       "attr_groups": {
         "details": "Détails", "general": "Général", "hardware": "Matériel", "specs": "Spécifications"
@@ -569,6 +586,7 @@
         "brand": "Marque", "gender": "Genre", "material": "Matière", "fit": "Coupe", "season": "Saison", "pattern": "Motif", "care_instructions": "Entretien",
         "fragrance_type": "Type de parfum", "volume": "Volume", "concentration": "Concentration", "fragrance_family": "Famille olfactive", "top_notes": "Notes de tête", "middle_notes": "Notes de cœur", "base_notes": "Notes de fond", "country_of_origin": "Pays d'origine",
         "model": "Modèle", "warranty": "Garantie", "operating_system": "Système d'exploitation", "connectivity": "Connectivité", "ram": "RAM", "storage": "Stockage", "processor": "Processeur", "screen_size": "Taille d'écran", "resolution": "Résolution", "battery_capacity": "Capacité de la batterie",
+        "display_technology": "Technologie d'affichage", "refresh_rate": "Taux de rafraîchissement", "gpu": "GPU", "megapixels": "Mégapixels", "lens": "Objectif", "bluetooth": "Bluetooth", "wifi": "Wi-Fi", "sim_support": "Prise en charge SIM", "ports": "Ports", "charging_type": "Type de charge", "water_resistance": "Résistance à l'eau", "edition": "Édition", "generation": "Génération", "controller_included": "Manette incluse", "print_technology": "Technologie d'impression", "switch_type": "Type de switch", "camera": "Appareil photo",
         "bike_type": "Type de vélo", "frame_material": "Matériau du cadre", "frame_size": "Taille du cadre", "wheel_size": "Taille des roues", "gears": "Nombre de vitesses", "brake_type": "Type de frein", "suspension": "Suspension", "weight": "Poids",
         "year": "Année", "engine_capacity": "Cylindrée", "fuel_type": "Carburant", "transmission": "Transmission", "mileage": "Kilométrage", "horsepower": "Puissance", "condition": "État",
         "body_type": "Type de carrosserie", "vin": "VIN", "engine": "Moteur", "doors": "Portes",
@@ -587,7 +605,9 @@
         "transmission_manual": "Manuelle", "transmission_automatic": "Automatique",
         "condition_new": "Neuf", "condition_used": "Occasion", "condition_refurbished": "Reconditionné",
         "form_capsules": "Gélules", "form_powder": "Poudre", "form_tablets": "Comprimés", "form_liquid": "Liquide", "form_gummies": "Gommes",
-        "delivery_method_instant": "Instantané", "delivery_method_email": "E-mail", "delivery_method_manual": "Manuel"
+        "delivery_method_instant": "Instantané", "delivery_method_email": "E-mail", "delivery_method_manual": "Manuel",
+        "display_technology_led": "LED", "display_technology_oled": "OLED", "display_technology_qled": "QLED", "display_technology_lcd": "LCD", "display_technology_amoled": "AMOLED", "display_technology_ips": "IPS",
+        "sim_support_single": "Simple SIM", "sim_support_dual": "Double SIM", "sim_support_esim": "eSIM", "sim_support_none": "Sans SIM"
       }
     },
     "orders": {

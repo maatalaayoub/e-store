@@ -24,6 +24,9 @@ export const productSchema = z.object({
   // Type-specific structured attributes; sanitized against the type schema
   // server-side, so a permissive shape here is enough.
   attributes: z.record(z.string(), z.any()).optional().nullable(),
+  // RAM/Storage/combination variants; sanitized server-side (structure,
+  // numeric clamps, availability), so a permissive shape is enough here.
+  variants: z.any().optional().nullable(),
   colors: z
     .array(z.object({ name: z.string().min(1), hex: z.string().min(1) }))
     .optional()

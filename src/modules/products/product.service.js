@@ -117,6 +117,13 @@ async function sanitizeProductWritePayload(data) {
       : null;
   }
 
+  // RAM/Storage/combination variants — structure + numeric clamps enforced
+  // server-side so client prices/stock are never trusted.
+  if (Object.prototype.hasOwnProperty.call(payload, 'variants')) {
+    const { sanitizeVariants } = await import('@/lib/product-variants');
+    payload.variants = sanitizeVariants(payload.variants);
+  }
+
   if (Object.prototype.hasOwnProperty.call(payload, 'sections_config')) {
     const { sanitizeSections } = await import('@/modules/product-sections/sanitize');
     payload.sections_config = Array.isArray(payload.sections_config)
