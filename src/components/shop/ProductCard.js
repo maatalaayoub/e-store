@@ -95,6 +95,14 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
 
   const fmt = (n) => formatPrice(n);
 
+  // Split a formatted price into numeric amount + currency symbol so the
+  // symbol can be rendered smaller than the amount.
+  const priceParts = (n) => {
+    const s = fmt(n).replace(/\u200E/g, '').trim();
+    const i = s.lastIndexOf(' ');
+    return i === -1 ? { amount: s, sym: '' } : { amount: s.slice(0, i), sym: s.slice(i + 1) };
+  };
+
   // Image: prefer main_image, fallback to image, then null
   const imgSrc = product.main_image ?? product.image ?? null;
 
@@ -126,7 +134,7 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
     [CARD_LAYOUTS.SHOWCASE]: "group flex flex-col h-full rounded-[18px] bg-zinc-50 hover:bg-zinc-100/80 transition-colors duration-300 p-2 sm:p-2.5 overflow-hidden",
     [CARD_LAYOUTS.BOUTIQUE]: "group flex flex-col h-full rounded-[20px] border border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)] transition-all duration-300 p-3 sm:p-4 overflow-hidden",
     [CARD_LAYOUTS.FLOATING]: "group flex flex-col h-full",
-    [CARD_LAYOUTS.RETAIL]:   "group flex h-full flex-col bg-white rounded-[12px] overflow-hidden border border-zinc-100",
+    [CARD_LAYOUTS.RETAIL]:   "group flex h-full flex-col bg-white rounded-[5px] overflow-hidden border border-zinc-100",
   }[cardLayout];
 
   const imgWrapperClass = cardLayout === CARD_LAYOUTS.BORDERED || cardLayout === CARD_LAYOUTS.SHADOW
@@ -274,7 +282,7 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             loading="lazy"
-            className={`transition-transform duration-700 ease-out group-hover:scale-105 ${isRetail ? 'object-contain p-3 sm:p-4' : isFloating ? 'object-contain p-3' : 'object-cover'}`}
+            className={`transition-transform duration-700 ease-out group-hover:scale-105 ${isFloating ? 'object-contain p-3' : 'object-cover'}`}
           />
         ) : (
           <div className="h-full w-full bg-zinc-100" />
@@ -482,7 +490,7 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
       )}
 
       {isRetail && (
-        <div className="flex flex-col gap-1.5 px-2.5 pt-2.5 pb-3 sm:px-3 sm:pt-3">
+        <div className="flex flex-1 flex-col gap-1.5 px-2.5 pt-2.5 pb-3 sm:px-3 sm:pt-3">
           {/* Category */}
           {(product.category?.name || product.category_name) && (
             <span className="text-[10px] sm:text-[11px] font-medium text-zinc-400 uppercase tracking-wider leading-none line-clamp-1">
@@ -497,7 +505,7 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
           </Link>
           {/* Short description */}
           {shouldShowShortDescription && (
-            <p className="line-clamp-2 min-h-[2.5em] -mt-3 text-[10px] sm:text-[11px] leading-snug text-zinc-400">
+            <p className="line-clamp-2 min-h-[2.5em] text-[10px] sm:text-[11px] leading-snug text-zinc-400">
               {shortDescription}
             </p>
           )}
@@ -511,42 +519,60 @@ export default function ProductCard({ product: rawProduct, onAdded, buttonStyle,
               )}
             </div>
           )}
-          {/* Price */}
-          <div className="mt-auto flex items-baseline gap-1.5" dir="ltr">
-            {hasDiscount ? (
-              <>
-                <span className="text-[13px] sm:text-[14px] font-bold text-red-600 leading-none">{fmt(effectivePrice)}</span>
-                <span className="text-[11px] text-zinc-400 line-through leading-none">{fmt(originalPrice)}</span>
-              </>
-            ) : (
-              <span className="text-[13px] sm:text-[14px] font-bold text-zinc-900 leading-none">{fmt(originalPrice)}</span>
-            )}
+          {/* Bottom block: current price + Add button share one line; old price sits below */}
+          <div className="mt-auto pt-2">
+            <div className="flex items-center justify-between gap-1.5 sm:gap-2">
+              <div className="relative flex-none">
+                <span
+                  dir="ltr"
+                  className={`whitespace-nowrap font-bold leading-none text-[clamp(12px,3.4vw,14px)] ${hasDiscount ? 'text-red-600' : 'text-zinc-900'}`}
+                >
+                  {priceParts(hasDiscount ? effectivePrice : originalPrice).amount}
+                  <span className="ms-0.5 align-baseline text-[0.5em] font-semibold">
+                    {priceParts(hasDiscount ? effectivePrice : originalPrice).sym}
+                  </span>
+                </span>
+                {/* Old price anchored directly beneath the new price */}
+                {hasDiscount && (
+                  <span
+                    dir="ltr"
+                    className="absolute left-0 top-full mt-0.5 whitespace-nowrap text-[clamp(9px,2.4vw,11px)] leading-none text-zinc-400 line-through"
+                  >
+                    {priceParts(originalPrice).amount}
+                    <span className="ms-0.5 align-baseline text-[0.5em] font-semibold">
+                      {priceParts(originalPrice).sym}
+                    </span>
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                data-no-global-progress="true"
+                onClick={handleAdd}
+                disabled={isOutOfStock}
+                className={`inline-flex flex-none items-center gap-1.5 rounded-[5px] px-3 py-2 font-semibold leading-none text-[clamp(11px,3vw,12px)] transition-all duration-200 active:scale-[0.97] sm:px-3.5 ${
+                  isOutOfStock
+                    ? 'cursor-not-allowed bg-zinc-100 text-zinc-400'
+                    : added
+                    ? 'bg-green-500 text-white border-green-500 border'
+                    : 'border pcard-btn-outline'
+                }`}
+              >
+                {isOutOfStock ? (
+                  <span className="line-clamp-1">{outOfStockText}</span>
+                ) : added ? (
+                  <Check className="h-3.5 w-3.5 flex-shrink-0" />
+                ) : (
+                  <>
+                    <ShoppingCart className="h-3.5 w-3.5 flex-shrink-0" />
+                    {tHome.add ?? 'Add'}
+                  </>
+                )}
+              </button>
+            </div>
+            {/* Fixed spacer reserves room for the old price → all cards stay the same height */}
+            <div className="min-h-[14px]" aria-hidden="true" />
           </div>
-          {/* Add button */}
-          <button
-            type="button"
-            data-no-global-progress="true"
-            onClick={handleAdd}
-            disabled={isOutOfStock}
-            className={`mt-4 inline-flex w-fit items-center gap-1.5 rounded-[8px] px-3 sm:px-3.5 py-2 text-[11px] sm:text-xs font-semibold transition-all duration-200 active:scale-[0.97] ${
-              isOutOfStock
-                ? 'cursor-not-allowed bg-zinc-100 text-zinc-400'
-                : added
-                ? 'bg-green-500 text-white border-green-500 border'
-                : 'border pcard-btn-outline'
-            }`}
-          >
-            {isOutOfStock ? (
-              <span className="line-clamp-1">{outOfStockText}</span>
-            ) : added ? (
-              <Check className="h-3.5 w-3.5" />
-            ) : (
-              <>
-                <ShoppingCart className="h-3.5 w-3.5 flex-shrink-0" />
-                {tHome.add ?? 'Add'}
-              </>
-            )}
-          </button>
         </div>
       )}
 
