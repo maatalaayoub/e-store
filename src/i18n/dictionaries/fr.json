@@ -1356,6 +1356,7 @@
     "id_copy_failed": "Échec de la copie"
   },
   "checkout": {
+    "title": "Paiement",
     "contact_info": "Coordonnées",
     "required": "Obligatoire",
     "required_marker": "* Obligatoire",

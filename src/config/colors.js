@@ -115,12 +115,17 @@ export function findColorById(id) {
 
 /**
  * Localized display name for a stored color `{ name, hex }`.
- * Matches the hex to the predefined palette and returns its locale name,
- * falling back to the stored English name for custom/legacy colors.
+ * First tries an exact hex match, then falls back to a case-insensitive name
+ * match so legacy colors saved with a different hex (e.g. #000000 for Black)
+ * still get translated. Returns the stored English name as a last resort.
  */
 export function localizeColorName(color, locale = "en") {
   if (!color) return "";
-  const predefined = findColorByHex(color.hex);
+  const predefined =
+    findColorByHex(color.hex) ??
+    PREDEFINED_COLORS.find(
+      (c) => c.name.toLowerCase() === (color.name ?? "").toLowerCase(),
+    );
   if (!predefined) return color.name ?? "";
   return predefined.translations?.[locale] ?? predefined.name;
 }

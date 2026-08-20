@@ -1371,6 +1371,10 @@
     "id_copy_failed": "Failed to copy"
   },
   "checkout": {
+    "title": "Checkout",
+    "contact_info": "Contact Information",
+    "required": "Required",
+    "required_marker": "* Required",
     "phone_label": "Phone Number",
     "shipping_address": "Shipping Address",
     "full_name": "Full Name",

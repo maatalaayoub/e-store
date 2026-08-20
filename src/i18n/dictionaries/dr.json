@@ -1357,6 +1357,7 @@
     "id_copy_failed": "ما تنسخاش"
   },
   "checkout": {
+    "title": "الخلاص",
     "contact_info": "معلومات التواصل",
     "required": "ضروري",
     "required_marker": "* ضروري",
