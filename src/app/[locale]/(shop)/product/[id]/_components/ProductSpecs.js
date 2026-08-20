@@ -21,7 +21,8 @@ export default function ProductSpecs({ product, dict }) {
 
   // Ensure RAM/Storage rows exist even when the plain attribute wasn't filled.
   if (ramOpts || storageOpts) {
-    const target = groups.find((g) => g.id !== "device") ?? groups[groups.length - 1];    const ensureRow = (key, opts) => {
+    const target = groups.find((g) => g.id !== "device") ?? groups[groups.length - 1];
+    const ensureRow = (key, opts) => {
       if (!opts) return;
       const exists = groups.some((g) => g.items.some((it) => it.key === key));
       if (!exists) {
