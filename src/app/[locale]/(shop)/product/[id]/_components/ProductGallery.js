@@ -33,33 +33,8 @@ export default function ProductGallery({ images = [], productName, productId }) 
   const current = list[idx];
 
   return (
-    <div className="relative flex gap-3">
-      {/* LEFT: vertical thumbnail strip (desktop only) */}
-      {list.length > 1 && (
-        <div className="hidden lg:flex flex-col gap-2 w-[5.5rem] shrink-0">
-          {list.map((img, i) => (
-            <button
-              key={img.id || i}
-              onClick={() => setIdx(i)}
-              className={`relative h-[5.5rem] w-full overflow-hidden rounded-xl bg-zinc-100 transition-all ${
-                i === idx
-                  ? "ring-2 ring-zinc-900"
-                  : "ring-1 ring-zinc-200 hover:ring-zinc-400"
-              }`}
-            >
-              <Image
-                src={img.url}
-                alt={`${productName} ${i + 1}`}
-                fill
-                sizes="64px"
-                className="object-cover object-center"
-              />
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* CENTER: main image */}
+    <div className="relative flex flex-col gap-3">
+      {/* TOP: main image */}
       <div className="relative flex-1 aspect-square overflow-hidden rounded-2xl bg-zinc-100">
         <Image
           key={idx}
@@ -111,28 +86,52 @@ export default function ProductGallery({ images = [], productName, productId }) 
             </button>
           </>
         )}
+
+        {/* Desktop share / wishlist / arrows floating on the right side */}
+        <div className="hidden lg:flex absolute right-3 top-3 flex-col gap-2">
+          <button
+            type="button"
+            aria-label="Share"
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-200 bg-white/90 backdrop-blur-sm text-zinc-500 hover:border-zinc-300 hover:text-zinc-900"
+          >
+            <Share2 className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={toggleFavorite}
+            aria-label="Add to wishlist"
+            className={`flex h-10 w-10 items-center justify-center rounded-lg border transition-colors bg-white/90 backdrop-blur-sm ${isFavorited ? "border-red-200 text-red-500" : "border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-red-400"}`}
+          >
+            <Heart className="h-4 w-4" fill={isFavorited ? "currentColor" : "none"} strokeWidth={1.5} />
+          </button>
+        </div>
       </div>
 
-      {/* RIGHT: Share / Wishlist + prev-next arrows (desktop) */}
-      <div className="hidden lg:flex flex-col gap-2 shrink-0">
-        <button
-          type="button"
-          aria-label="Share"
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-zinc-900"
-        >
-          <Share2 className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          onClick={toggleFavorite}
-          aria-label="Add to wishlist"
-          className={`flex h-10 w-10 items-center justify-center rounded-lg border transition-colors ${isFavorited ? "border-red-200 text-red-500" : "border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:text-red-400"}`}
-        >
-          <Heart className="h-4 w-4" fill={isFavorited ? "currentColor" : "none"} strokeWidth={1.5} />
-        </button>
-
-        {list.length > 1 && (
-          <div className="mt-auto flex flex-col gap-2">
+      {/* BOTTOM: horizontal thumbnail strip (desktop) + vertical side arrows */}
+      {list.length > 1 && (
+        <div className="hidden lg:flex items-center gap-3">
+          <div className="flex flex-1 gap-2 overflow-x-auto py-1 px-1 scrollbar-hide">
+            {list.map((img, i) => (
+              <button
+                key={img.id || i}
+                onClick={() => setIdx(i)}
+                className={`relative h-[5.5rem] w-[5.5rem] flex-none overflow-hidden rounded-xl bg-zinc-100 transition-all ${
+                  i === idx
+                    ? "ring-2 ring-zinc-900"
+                    : "ring-1 ring-zinc-200 hover:ring-zinc-400"
+                }`}
+              >
+                <Image
+                  src={img.url}
+                  alt={`${productName} ${i + 1}`}
+                  fill
+                  sizes="88px"
+                  className="object-cover object-center"
+                />
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-col gap-2">
             <button
               onClick={prev}
               aria-label="Previous"
@@ -148,8 +147,8 @@ export default function ProductGallery({ images = [], productName, productId }) 
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Mobile thumbnail row */}
       {list.length > 1 && (
