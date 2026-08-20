@@ -296,6 +296,9 @@ export default function CheckoutClient({ locale, dict }) {
                               )}
                             </div>
                           )}
+                          {item.selectedVariant?.label && (
+                            <p className="text-xs font-medium text-zinc-700">{item.selectedVariant.label}</p>
+                          )}
                           <div className="flex flex-wrap items-center gap-2">
                             {isPercentagePromo ? (
                               <>

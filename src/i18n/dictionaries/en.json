@@ -1313,6 +1313,8 @@
     "delivery": "Delivery T&C",
     "color": "Color",
     "size": "Size",
+    "ram": "RAM",
+    "storage": "Storage",
     "size_chart": "View Size Chart",
     "quantity": "Quantity",
     "total": "Total",

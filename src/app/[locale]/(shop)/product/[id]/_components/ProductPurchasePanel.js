@@ -6,6 +6,7 @@ import { Check, Minus, Plus, ShoppingCart } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { useProductQtyStore } from "@/store/useProductQtyStore";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
+import { hasVariants, findVariantCombo, computeVariantPrice } from "@/lib/product-variants";
 
 export default function ProductPurchasePanel({
   product,
@@ -18,6 +19,59 @@ export default function ProductPurchasePanel({
 }) {
   const [selectedColor, setSelectedColor] = useState(hasColors ? colors[0] : null);
   const [selectedSize, setSelectedSize] = useState(hasSizes ? sizes[0] : null);
+
+  // ── RAM / Storage configuration variants ──
+  const variants = product?.variants && typeof product.variants === "object" ? product.variants : null;
+  const hasVar = hasVariants(variants);
+  const ramEnabled = hasVar && variants.ram_enabled;
+  const storageEnabled = hasVar && variants.storage_enabled;
+
+  /** First available combo, used to seed the default selection. */
+  const firstCombo = hasVar
+    ? (variants.combos.find((c) => c.available !== false && Number(c.stock) > 0) ?? variants.combos[0])
+    : null;
+  const [selRam, setSelRam] = useState(ramEnabled ? firstCombo?.ram ?? variants.ram_options[0] : null);
+  const [selStorage, setSelStorage] = useState(storageEnabled ? firstCombo?.storage ?? variants.storage_options[0] : null);
+
+  /** Is a specific option value reachable given the current other-dimension pick? */
+  const optionAvailable = (dim, value) => {
+    if (!hasVar) return true;
+    return variants.combos.some((c) => {
+      if (c.available === false || Number(c.stock) <= 0) return false;
+      if (dim === "ram") return c.ram === value && (!storageEnabled || c.storage === selStorage);
+      return c.storage === value && (!ramEnabled || c.ram === selRam);
+    });
+  };
+
+  const pickRam = (value) => {
+    setSelRam(value);
+    // Keep storage valid for the new RAM; fall back to the first available.
+    if (storageEnabled) {
+      const stillOk = variants.combos.some(
+        (c) => c.ram === value && c.storage === selStorage && c.available !== false && Number(c.stock) > 0,
+      );
+      if (!stillOk) {
+        const alt = variants.combos.find((c) => c.ram === value && c.available !== false && Number(c.stock) > 0);
+        if (alt) setSelStorage(alt.storage);
+      }
+    }
+  };
+  const pickStorage = (value) => {
+    setSelStorage(value);
+    if (ramEnabled) {
+      const stillOk = variants.combos.some(
+        (c) => c.storage === value && c.ram === selRam && c.available !== false && Number(c.stock) > 0,
+      );
+      if (!stillOk) {
+        const alt = variants.combos.find((c) => c.storage === value && c.available !== false && Number(c.stock) > 0);
+        if (alt) setSelRam(alt.ram);
+      }
+    }
+  };
+
+  const selectedCombo = hasVar ? findVariantCombo(variants, { ram: selRam, storage: selStorage }) : null;
+  const variantLabel = [ramEnabled ? selRam : null, storageEnabled ? selStorage : null].filter(Boolean).join(" / ");
+
   const [added, setAdded] = useState(false);
   const { addItem } = useCartStore();
   const { getQty, setQty: storeSetQty } = useProductQtyStore();
@@ -31,19 +85,46 @@ export default function ProductPurchasePanel({
   const locale = params?.locale || "en";
   const tProduct = dict?.product ?? {};
 
-  const isOutOfStock = product.stock <= 0;
   const { formatPrice } = useCurrency();
+
+  // Effective unit price + stock reflect the selected configuration.
+  const unitPrice = hasVar
+    ? computeVariantPrice(product.effective_price, selectedCombo)
+    : Number(product.effective_price);
+  const effectiveStock = hasVar ? Number(selectedCombo?.stock ?? 0) : Number(product.stock ?? 0);
+  const isOutOfStock = hasVar
+    ? !selectedCombo || selectedCombo.available === false || effectiveStock <= 0
+    : effectiveStock <= 0;
+
+  /** Product clone carrying the configuration-adjusted price for the cart. */
+  const cartProduct = hasVar
+    ? {
+        ...product,
+        effective_price: unitPrice,
+        price: Math.round(((Number(product.price) || 0) + (selectedCombo?.additional_price ?? 0)) * 100) / 100,
+        stock: effectiveStock,
+      }
+    : product;
+  const selectedVariant = hasVar
+    ? {
+        ram: ramEnabled ? selRam : null,
+        storage: storageEnabled ? selStorage : null,
+        additional_price: selectedCombo?.additional_price ?? 0,
+        sku: selectedCombo?.sku || null,
+        label: variantLabel,
+      }
+    : null;
 
   const handleAdd = () => {
     if (isOutOfStock) return;
-    addItem(product, { quantity: qty, selectedColor, selectedSize });
+    addItem(cartProduct, { quantity: qty, selectedColor, selectedSize, selectedVariant });
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
   };
 
   const handleCheckout = () => {
     if (isOutOfStock) return;
-    addItem(product, { quantity: qty, selectedColor, selectedSize });
+    addItem(cartProduct, { quantity: qty, selectedColor, selectedSize, selectedVariant });
     router.push(`/${locale}/checkout`);
   };
 
@@ -156,6 +237,69 @@ export default function ProductPurchasePanel({
         </div>
       )}
 
+      {/* RAM / Storage configuration variants */}
+      {ramEnabled && (
+        <div>
+          <p className="text-sm text-zinc-700 mb-3">
+            {tProduct.ram ?? "RAM"}: <span className="font-semibold text-zinc-900">{selRam}</span>
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {variants.ram_options.map((opt) => {
+              const active = selRam === opt;
+              const avail = optionAvailable("ram", opt);
+              return (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => pickRam(opt)}
+                  disabled={!avail}
+                  className={`min-w-[3.25rem] rounded-lg border px-4 py-2 text-sm font-medium transition-all ${
+                    active
+                      ? "border-zinc-900 bg-zinc-50 text-zinc-900"
+                      : avail
+                      ? "border-zinc-200 text-zinc-700 hover:border-zinc-400"
+                      : "border-zinc-100 text-zinc-300 line-through cursor-not-allowed"
+                  }`}
+                >
+                  {opt}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {storageEnabled && (
+        <div>
+          <p className="text-sm text-zinc-700 mb-3">
+            {tProduct.storage ?? "Storage"}: <span className="font-semibold text-zinc-900">{selStorage}</span>
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {variants.storage_options.map((opt) => {
+              const active = selStorage === opt;
+              const avail = optionAvailable("storage", opt);
+              return (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => pickStorage(opt)}
+                  disabled={!avail}
+                  className={`min-w-[3.25rem] rounded-lg border px-4 py-2 text-sm font-medium transition-all ${
+                    active
+                      ? "border-zinc-900 bg-zinc-50 text-zinc-900"
+                      : avail
+                      ? "border-zinc-200 text-zinc-700 hover:border-zinc-400"
+                      : "border-zinc-100 text-zinc-300 line-through cursor-not-allowed"
+                  }`}
+                >
+                  {opt}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Quantity + Total */}
       <div>
         <div className="flex items-center justify-between mb-3">
@@ -163,7 +307,7 @@ export default function ProductPurchasePanel({
           <p className="text-sm text-zinc-500">
             {tProduct.total ?? "Total"}:{" "}
             <span className="text-lg font-bold text-zinc-900">
-              {formatPrice(Number(product.effective_price) * qty)}
+              {formatPrice(unitPrice * qty)}
             </span>
           </p>
         </div>
@@ -178,15 +322,15 @@ export default function ProductPurchasePanel({
             </button>
             <span className="w-10 text-center font-medium text-zinc-900">{qty}</span>
             <button
-              onClick={() => setQty((q) => Math.min(product.stock, q + 1))}
-              disabled={isOutOfStock || qty >= product.stock}
+              onClick={() => setQty((q) => Math.min(effectiveStock, q + 1))}
+              disabled={isOutOfStock || qty >= effectiveStock}
               className="flex h-full w-10 items-center justify-center text-zinc-500 hover:text-zinc-900 disabled:opacity-40"
             >
               <Plus className="h-4 w-4" />
             </button>
           </div>
           <span className="text-xs text-zinc-500">
-            {isOutOfStock ? (tProduct.out_of_stock ?? "Out of stock") : `${product.stock} ${tProduct.available ?? "available"}`}
+            {isOutOfStock ? (tProduct.out_of_stock ?? "Out of stock") : `${effectiveStock} ${tProduct.available ?? "available"}`}
           </span>
         </div>
       </div>

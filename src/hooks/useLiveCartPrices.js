@@ -44,7 +44,10 @@ export function useLiveCartPrices(locale = 'en') {
         for (const item of items) {
           const live = liveById.get(item.id);
           if (!live) continue;
-          const livePrice = Number(live.effective_price ?? live.price ?? 0);
+          // Add the selected configuration's fixed surcharge to the canonical
+          // base price so variant lines don't read as a price mismatch.
+          const surcharge = Number(item.selectedVariant?.additional_price ?? 0);
+          const livePrice = Number(live.effective_price ?? live.price ?? 0) + surcharge;
           const cachedPrice = Number(item.effective_price ?? item.price ?? 0);
           if (Math.abs(livePrice - cachedPrice) > PRICE_TOLERANCE) {
             next[item.lineKey] = { cached: cachedPrice, live: livePrice, name: live.name };

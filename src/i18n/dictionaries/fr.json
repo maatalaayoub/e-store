@@ -1298,6 +1298,8 @@
     "delivery": "CGV Livraison",
     "color": "Couleur",
     "size": "Taille",
+    "ram": "RAM",
+    "storage": "Stockage",
     "size_chart": "Voir le guide des tailles",
     "quantity": "Quantité",
     "total": "Total",

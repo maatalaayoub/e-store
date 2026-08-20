@@ -206,6 +206,7 @@ export function useCheckoutForm({
             quantity: item.quantity ?? 1,
             selected_color: item.selectedColor ?? item.selected_color ?? null,
             selected_size:  item.selectedSize  ?? item.selected_size  ?? null,
+            selected_variant: item.selectedVariant ?? item.selected_variant ?? null,
           })),
           // Record the customer's selected-country currency so the admin order
           // list can display the converted amount. Fall back to the global
@@ -254,9 +255,11 @@ export function useCheckoutForm({
         const qty = item.quantity ?? 1;
         const color = item.selectedColor?.name ?? item.selected_color?.name ?? null;
         const size  = item.selectedSize ?? item.selected_size ?? null;
+        const variantLabel = item.selectedVariant?.label ?? item.selected_variant?.label ?? null;
         const variantParts = [];
         if (color) variantParts.push(`Color: ${color}`);
         if (size)  variantParts.push(`Size: ${size}`);
+        if (variantLabel) variantParts.push(variantLabel);
         const variantSuffix = variantParts.length ? `\n   ↳ ${variantParts.join(' • ')}` : '';
         return `- ${resolved.name} x${qty} = ${formatPrice(price * qty)}${variantSuffix}`;
       }),

@@ -3,15 +3,16 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { CART_STORAGE_KEY } from "@/config/constants";
 
 /**
- * Build a stable per-line key from the product id + selected color + size so
- * that the same product picked with two different variants becomes two
- * separate cart lines (e.g. "Red / M" vs "Red / L").
+ * Build a stable per-line key from the product id + selected color + size +
+ * configuration variant (RAM/Storage) so the same product picked with
+ * different variants becomes separate cart lines.
  */
-export function makeCartLineKey(productId, color, size) {
+export function makeCartLineKey(productId, color, size, variant) {
   const cName = color?.name ?? "";
   const cHex = color?.hex ?? "";
   const sLabel = size ?? "";
-  return `${productId}::${cName}|${cHex}::${sLabel}`;
+  const vLabel = variant?.label ?? "";
+  return `${productId}::${cName}|${cHex}::${sLabel}::${vLabel}`;
 }
 
 function normalizeOpts(opts) {
@@ -62,12 +63,13 @@ export const useCartStore = create(
       items: [],
       addItem: (product, opts) =>
         set((state) => {
-          const { quantity = 1, selectedColor, selectedSize } = normalizeOpts(opts);
+          const { quantity = 1, selectedColor, selectedSize, selectedVariant } = normalizeOpts(opts);
           // Variant info can be provided either via `opts` or attached
           // directly to the product object (legacy callers).
           const color = selectedColor ?? product.selectedColor ?? null;
           const size = selectedSize ?? product.selectedSize ?? null;
-          const lineKey = makeCartLineKey(product.id, color, size);
+          const variant = selectedVariant ?? product.selectedVariant ?? null;
+          const lineKey = makeCartLineKey(product.id, color, size, variant);
 
           const existing = state.items.find((i) => i.lineKey === lineKey);
           if (existing) {
@@ -86,6 +88,7 @@ export const useCartStore = create(
             lineKey,
             selectedColor: color,
             selectedSize: size,
+            selectedVariant: variant,
             quantity: clampToStock(product.stock, quantity),
           };
           return { items: [...state.items, newItem] };

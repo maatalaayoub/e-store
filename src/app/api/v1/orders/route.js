@@ -12,6 +12,7 @@ import { getAdminUser, getStaffDataWindow, applyStaffDateWindow } from '@/middle
 import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 import { computeEffectivePrice } from '@/lib/price';
 import { computePromoDiscount } from '@/lib/promo';
+import { hasVariants, findVariantCombo } from '@/lib/product-variants';
 import { logger } from '@/lib/logger';
 import { getRequestDeviceId } from '@/lib/device-id';
 import {
@@ -179,6 +180,7 @@ export async function POST(req) {
         quantity,
         selected_color: raw?.selected_color ?? null,
         selected_size: raw?.selected_size ?? null,
+        selected_variant: raw?.selected_variant ?? null,
       });
     }
 
@@ -248,7 +250,7 @@ export async function POST(req) {
     const productIds = normalizedItems.map((i) => i.id);
     const { data: productRows, error: productErr } = await db
       .from('products')
-      .select('id, name, price, discount_price, discount_percentage, stock, status, category_id')
+      .select('id, name, price, discount_price, discount_percentage, stock, status, category_id, variants')
       .in('id', productIds);
 
     if (productErr) throw productErr;
@@ -278,7 +280,32 @@ export async function POST(req) {
           { status: 409 }
         );
       }
-      item.unit_price_mad = effectivePriceMad(product);
+      // Configuration variants (RAM/Storage): reprice from the canonical combo
+      // and validate its availability + stock. Client-sent surcharge is ignored.
+      let variantSurcharge = 0;
+      if (hasVariants(product.variants) && item.selected_variant) {
+        const combo = findVariantCombo(product.variants, {
+          ram: item.selected_variant.ram ?? null,
+          storage: item.selected_variant.storage ?? null,
+        });
+        if (!combo || combo.available === false) {
+          return NextResponse.json(
+            { success: false, error: `Selected configuration unavailable for: ${product.name}` },
+            { status: 409 }
+          );
+        }
+        if (Number(combo.stock ?? 0) < item.quantity) {
+          return NextResponse.json(
+            { success: false, error: `Insufficient stock for: ${product.name}`, productId: product.id, available: combo.stock },
+            { status: 409 }
+          );
+        }
+        variantSurcharge = Number(combo.additional_price ?? 0);
+        // Persist the server-validated variant label on the line's size field
+        // so it shows in admin/order views without a schema change.
+        item.selected_size = [item.selected_variant.ram, item.selected_variant.storage].filter(Boolean).join(' / ') || item.selected_size;
+      }
+      item.unit_price_mad = Math.round((effectivePriceMad(product) + variantSurcharge) * 100) / 100;
       item.name = product.name;
       item.category_id = product.category_id;
       serverTotalMad += item.unit_price_mad * item.quantity;

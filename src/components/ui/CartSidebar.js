@@ -207,6 +207,9 @@ export default function CartSidebar({ isOpen, onClose }) {
                         )}
                       </div>
                     )}
+                    {item.selectedVariant?.label && (
+                      <p className="text-[11px] font-medium text-zinc-700">{item.selectedVariant.label}</p>
+                    )}
                     {item.category && (
                       <p className="text-[11px] text-zinc-400 uppercase tracking-wide">
                         {item.category}
