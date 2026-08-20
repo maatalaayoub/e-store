@@ -269,10 +269,10 @@ function SectionSaveButton({ onSave, dirty }) {
       <button
         onClick={handle}
         disabled={saving || (dirtyAware && !dirty)}
-        className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
+        className="flex items-center gap-2 rounded-[5px] bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        <Save className="h-4 w-4" />
-        {saving ? '…' : label}
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+        {saving ? (dict?.admin?.settings?.saving ?? 'Saving…') : label}
       </button>
     </div>
   );
@@ -445,9 +445,10 @@ function UnsavedChangesDialog({ open, t, onSave, onDiscard, onCancel, saving }) 
             type="button"
             onClick={onSave}
             disabled={saving}
-            className="w-full rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-75 inline-flex items-center justify-center gap-2"
+            className="w-full rounded-[5px] bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-75 inline-flex items-center justify-center gap-2"
           >
-            {saving ? '…' : (t.save ?? 'Save changes')}
+            {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+            {saving ? (t.saving ?? 'Saving…') : (t.save ?? 'Save changes')}
           </button>
           <button
             type="button"
@@ -822,10 +823,10 @@ function GeneralSection() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+          className="flex items-center gap-2 rounded-[5px] bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
         >
-          <Save className="h-4 w-4" />
-          {saving ? '…' : (t.save ?? 'Save changes')}
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {saving ? (t.saving ?? 'Saving…') : (t.save ?? 'Save changes')}
         </button>
       </div>
     </>
@@ -1509,7 +1510,7 @@ function HeaderSidebarSection() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          className="inline-flex items-center gap-2 rounded-[5px] bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
         >
           {saving ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -1736,7 +1737,7 @@ function MobileNavSection() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          className="inline-flex items-center gap-2 rounded-[5px] bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
         >
           {saving ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -2205,8 +2206,9 @@ function CarouselSection() {
             type="button"
             onClick={save}
             disabled={saving}
-            className="rounded-lg bg-zinc-900 px-5 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:opacity-60 transition-colors"
+            className="inline-flex items-center gap-2 rounded-[5px] bg-zinc-900 px-5 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:opacity-60 transition-colors"
           >
+            {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             {saving ? 'Saving…' : 'Save'}
           </button>
         </div>
@@ -2394,11 +2396,11 @@ function LayoutSection() {
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+          className="flex items-center gap-2 rounded-[5px] bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
         >
-          <Save className="h-4 w-4" />
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           <span className="hidden sm:inline">{saving ? (tL.saving ?? 'Saving…') : (tL.save ?? 'Save Layout')}</span>
-          <span className="sm:hidden">{saving ? '...' : (tL.save_short ?? 'Save')}</span>
+          <span className="sm:hidden">{saving ? (tL.saving ?? 'Saving…') : (tL.save_short ?? 'Save')}</span>
         </button>
       </div>
     </div>
@@ -2689,11 +2691,11 @@ function DisplaySection() {
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+          className="flex items-center gap-2 rounded-[5px] bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
         >
-          <Save className="h-4 w-4" />
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           <span className="hidden sm:inline">{saving ? (tD.saving ?? 'Saving…') : (tD.save ?? 'Save Display Settings')}</span>
-          <span className="sm:hidden">{saving ? '...' : (tD.save_short ?? 'Save')}</span>
+          <span className="sm:hidden">{saving ? (tD.saving ?? 'Saving…') : (tD.save_short ?? 'Save')}</span>
         </button>
       </div>
     </div>
@@ -2844,9 +2846,9 @@ function IntegrationsSection() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+          className="flex items-center gap-2 rounded-[5px] bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
         >
-          <Save className="h-4 w-4" />
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {saving ? (t.saving ?? 'Saving…') : (t.save_btn ?? 'Save Integrations')}
         </button>
       </div>
@@ -3605,8 +3607,8 @@ function HeroSection() {
       {/* ── Save button ──────────────────────────────────────────────── */}
       <div className="flex justify-end pt-2 border-t border-zinc-100">
         <button onClick={save} disabled={saving}
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60">
-          <Save className="h-4 w-4" />
+          className="flex items-center gap-2 rounded-[5px] bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60">
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {saving ? (t.saving ?? 'Saving…') : (t.save_hero ?? 'Save Hero Settings')}
         </button>
       </div>
@@ -4869,7 +4871,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
           <button
             onClick={() => onSaveRow(handleClose)}
             disabled={saving}
-            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60 transition-colors">
+            className="flex-1 inline-flex items-center justify-center gap-2 rounded-[5px] bg-blue-600 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60 transition-colors">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {saving ? (t.saving ?? 'Saving…') : (t.save ?? 'Save')}
           </button>
@@ -5295,10 +5297,10 @@ function ProductSectionsSection() {
         <button
           onClick={save}
           disabled={saving || loading}
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+          className="flex items-center gap-2 rounded-[5px] bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
         >
-          <Save className="h-4 w-4" />
-          {saving ? "Saving..." : (dict?.admin?.settings?.save ?? "Save changes")}
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {saving ? (dict?.admin?.settings?.saving ?? "Saving…") : (dict?.admin?.settings?.save ?? "Save changes")}
         </button>
       </div>
     </>

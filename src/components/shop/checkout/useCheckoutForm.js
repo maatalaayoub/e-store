@@ -265,44 +265,60 @@ export function useCheckoutForm({
     }
   }, [validate, items, placing, createOrder, locale, onStripeRedirect]);
 
-  const handleOrderWhatsApp = useCallback(() => {
+  const handleOrderWhatsApp = useCallback(async () => {
     const e = validate();
     if (Object.keys(e).length) { setErrors(e); return; }
     if (!Array.isArray(items) || items.length === 0) return;
-    const discountLine = promo?.discount_amount > 0
-      ? `*Discount (${promo.code}): -${formatPrice(promo.discount_amount)}*`
-      : null;
-    const finalTotal = Math.max(0, subtotal - (promo?.discount_amount ?? 0));
-    const lines = [
-      `*New Order*`,
-      ``,
-      `*Customer:* ${form.fullName}`,
-      `*Phone:* ${form.phone}`,
-      `*City:* ${form.city}`,
-      `*Address:* ${form.address}`,
-      ``,
-      `*Items:*`,
-      ...items.map((item) => {
-        const resolved = resolveProductTranslation(item, locale);
-        const price = parsePrice(item.effective_price ?? item.price);
-        const qty = item.quantity ?? 1;
-        const color = item.selectedColor?.name ?? item.selected_color?.name ?? null;
-        const size  = item.selectedSize ?? item.selected_size ?? null;
-        const variantLabel = item.selectedVariant?.label ?? item.selected_variant?.label ?? null;
-        const variantParts = [];
-        if (color) variantParts.push(`Color: ${color}`);
-        if (size)  variantParts.push(`Size: ${size}`);
-        if (variantLabel) variantParts.push(variantLabel);
-        const variantSuffix = variantParts.length ? `\n   ↳ ${variantParts.join(' • ')}` : '';
-        return `- ${resolved.name} x${qty} = ${formatPrice(price * qty)}${variantSuffix}`;
-      }),
-      ``,
-      discountLine,
-      `*Total: ${formatPrice(finalTotal)}*`,
-    ].filter(Boolean);
-    const msg = encodeURIComponent(lines.join("\n"));
-    window.open(`https://wa.me/${whatsappNumber || WHATSAPP_NUMBER}?text=${msg}`, "_blank", "noopener,noreferrer");
-  }, [validate, items, form, subtotal, formatPrice, locale, promo, whatsappNumber]);
+    if (placing) return;
+    setPlacing(true);
+    try {
+      const order = await createOrder();
+      const orderNo = order?.order_number;
+      const discountLine = promo?.discount_amount > 0
+        ? `*Discount (${promo.code}): -${formatPrice(promo.discount_amount)}*`
+        : null;
+      const finalTotal = Math.max(0, subtotal - (promo?.discount_amount ?? 0));
+      const lines = [
+        `*New Order*`,
+        orderNo ? `*Order:* #${orderNo}` : null,
+        ``,
+        `*Customer:* ${form.fullName}`,
+        `*Phone:* ${form.phone}`,
+        `*City:* ${form.city}`,
+        `*Address:* ${form.address}`,
+        ``,
+        `*Items:*`,
+        ...items.map((item) => {
+          const resolved = resolveProductTranslation(item, locale);
+          const price = parsePrice(item.effective_price ?? item.price);
+          const qty = item.quantity ?? 1;
+          const color = item.selectedColor?.name ?? item.selected_color?.name ?? null;
+          const size  = item.selectedSize ?? item.selected_size ?? null;
+          const variantLabel = item.selectedVariant?.label ?? item.selected_variant?.label ?? null;
+          const variantParts = [];
+          if (color) variantParts.push(`Color: ${color}`);
+          if (size)  variantParts.push(`Size: ${size}`);
+          if (variantLabel) variantParts.push(variantLabel);
+          const variantSuffix = variantParts.length ? `\n   ↳ ${variantParts.join(' • ')}` : '';
+          return `- ${resolved.name} x${qty} = ${formatPrice(price * qty)}${variantSuffix}`;
+        }),
+        ``,
+        discountLine,
+        `*Total: ${formatPrice(finalTotal)}*`,
+      ].filter(Boolean);
+      const msg = encodeURIComponent(lines.join("\n"));
+      const url = `https://wa.me/${whatsappNumber || WHATSAPP_NUMBER}?text=${msg}`;
+      // Order is recorded — clear the cart, then redirect this tab to WhatsApp.
+      onStripeRedirect?.();
+      window.location.href = url;
+    } catch (err) {
+      setErrors((prev) => ({
+        ...prev,
+        submit: err?.message || "Failed to place order. Please try again.",
+      }));
+      setPlacing(false);
+    }
+  }, [validate, items, placing, createOrder, form, subtotal, formatPrice, locale, promo, whatsappNumber, onStripeRedirect]);
 
   return {
     form,
