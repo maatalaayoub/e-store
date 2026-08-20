@@ -25,13 +25,15 @@ export default function CheckoutActions({
   orderBtnStyle,   // optional inline style override from section config
   waBtnStyle,      // optional inline style override from section config
   promoError,      // block submit if a promo is invalid
+  showStripe = false,   // render the "Pay by card" (Stripe) button
+  onPayStripe,
 }) {
   const t = dict?.checkout ?? {};
   const showWaButton =
     showWhatsApp &&
     (whatsAppCountriesOnly === null || whatsAppCountriesOnly.includes(country));
 
-  if (!showPlaceOrder && !showWaButton) return null;
+  if (!showPlaceOrder && !showWaButton && !showStripe) return null;
 
   // Only show the validation banner after user has attempted to submit
   const hasAttempted = errors && Object.values(errors).some(Boolean);
@@ -106,6 +108,22 @@ export default function CheckoutActions({
             <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.117 1.524 5.847L.057 23.012a.75.75 0 00.931.931l5.165-1.467A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.73 9.73 0 01-4.964-1.356l-.355-.212-3.668 1.042 1.042-3.668-.212-.355A9.73 9.73 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
           </svg>
           {t.order_whatsapp ?? "Order via WhatsApp"}
+        </button>
+      )}
+      {showStripe && (
+        <button
+          type="button"
+          data-role="stripe-btn"
+          onClick={onPayStripe}
+          disabled={disabled}
+          className={`${showPlaceOrder || showWaButton ? "mt-3" : ""} w-full rounded-[2rem] py-3.5 text-[13px] font-bold tracking-[0.15em] uppercase text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
+          style={{ backgroundColor: "#635bff" }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 shrink-0">
+            <rect x="2" y="5" width="20" height="14" rx="2" />
+            <line x1="2" y1="10" x2="22" y2="10" />
+          </svg>
+          {placing ? (t.processing ?? "Processing…") : (t.pay_by_card ?? "Pay by Card")}
         </button>
       )}
     </div>

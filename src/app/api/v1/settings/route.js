@@ -85,8 +85,12 @@ const ALLOWED_KEYS = [
   'mobile_nav_show_menu',
   // Payments
   'payments_currency',
-  'payments_stripe_key',
   'payments_cod_enabled',
+  // Order fulfillment methods
+  'order_whatsapp_enabled',
+  'order_whatsapp_number',
+  'order_whatsapp_all_countries',
+  'order_online_enabled',
   // Shipping
   'shipping_origin',
   'shipping_flat_rate',

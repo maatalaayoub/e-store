@@ -1253,6 +1253,84 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- ========================================================================
+-- STRIPE CONNECT INTEGRATION (idempotent)
+-- Stores the connection between THIS deployment (a single store/tenant) and
+-- the store owner's own Stripe account, established via Stripe Connect OAuth.
+-- Each deployment is one tenant, keyed by `store_id` (default 'default').
+-- Secret material (OAuth tokens) is stored ENCRYPTED and is only ever handled
+-- server-side — RLS grants NO client access, so only the service role reads it.
+-- ========================================================================
+CREATE TABLE IF NOT EXISTS stripe_connections (
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  store_id text NOT NULL DEFAULT 'default' UNIQUE,          -- tenant identity for this deployment
+  stripe_account_id text,                                    -- connected account id (acct_...)
+  environment text NOT NULL DEFAULT 'test'
+    CHECK (environment IN ('test', 'live')),
+  status text NOT NULL DEFAULT 'disconnected'
+    CHECK (status IN ('disconnected', 'connected', 'revoked', 'error')),
+  access_token_encrypted  text,                              -- encrypted OAuth access token (never sent to client)
+  refresh_token_encrypted text,                              -- encrypted OAuth refresh token (never sent to client)
+  scope text,
+  livemode boolean,                                          -- true when the connected account is in live mode
+  account_email text,
+  account_name text,
+  metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+  webhook_status text NOT NULL DEFAULT 'inactive'
+    CHECK (webhook_status IN ('inactive', 'active', 'error')),
+  connected_at   timestamp with time zone,
+  last_synced_at timestamp with time zone,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_stripe_connections_account
+  ON stripe_connections(stripe_account_id) WHERE stripe_account_id IS NOT NULL;
+
+CREATE OR REPLACE TRIGGER stripe_connections_updated_at
+  BEFORE UPDATE ON stripe_connections
+  FOR EACH ROW EXECUTE PROCEDURE public.set_updated_at();
+
+ALTER TABLE stripe_connections ENABLE ROW LEVEL SECURITY;
+-- No policies on purpose: only the service-role key (server API routes) may
+-- touch this table. The browser must never read Stripe credentials.
+
+-- Idempotency ledger for incoming Stripe webhook events. Every processed
+-- event id is recorded so a duplicate delivery is ignored (Stripe may send
+-- the same event more than once). Only the service role writes here.
+CREATE TABLE IF NOT EXISTS stripe_events (
+  id text PRIMARY KEY,                                       -- Stripe event id (evt_...)
+  type text NOT NULL,
+  account_id text,                                           -- connected account the event belongs to
+  processed_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_stripe_events_type ON stripe_events(type);
+
+ALTER TABLE stripe_events ENABLE ROW LEVEL SECURITY;
+-- No policies: service-role only.
+
+-- Per-order payment tracking. Existing rows default to cash-on-delivery so the
+-- change is backward compatible. `payment_status` is updated only from verified
+-- Stripe webhook events (see the webhook handler) — never from a success page.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method text DEFAULT 'cod';
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_status text DEFAULT 'unpaid';
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS stripe_payment_intent_id text;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'orders_payment_method_chk') THEN
+    ALTER TABLE orders ADD CONSTRAINT orders_payment_method_chk
+      CHECK (payment_method IN ('cod', 'stripe', 'whatsapp'));
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'orders_payment_status_chk') THEN
+    ALTER TABLE orders ADD CONSTRAINT orders_payment_status_chk
+      CHECK (payment_status IN ('unpaid', 'pending', 'paid', 'failed', 'refunded', 'cancelled'));
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS orders_stripe_pi_idx
+  ON orders (stripe_payment_intent_id) WHERE stripe_payment_intent_id IS NOT NULL;
+
 CREATE OR REPLACE TRIGGER team_members_updated_at
   BEFORE UPDATE ON team_members
   FOR EACH ROW EXECUTE PROCEDURE public.set_updated_at();

@@ -82,6 +82,27 @@ export default function CheckoutClient({ locale, dict, buyNow = false }) {
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoError, setPromoError] = useState(null);
 
+  // Storefront order-method availability (controlled from Admin → Settings →
+  // Order Methods). Defaults keep COD available if the config can't be loaded.
+  const [payCfg, setPayCfg] = useState({
+    cod_enabled: true,
+    whatsapp_enabled: false,
+    whatsapp_number: "",
+    whatsapp_all_countries: false,
+    online_enabled: false,
+    stripe_enabled: false,
+  });
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/v1/checkout/payment-config")
+      .then((r) => r.json())
+      .then((json) => {
+        if (!cancelled && json?.success && json.data) setPayCfg(json.data);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
   const checkout = useCheckoutForm({
     items,
     subtotal,
@@ -90,10 +111,15 @@ export default function CheckoutClient({ locale, dict, buyNow = false }) {
     rate,
     formatPrice,
     promo,
+    whatsappNumber: payCfg.whatsapp_number,
     onOrderSuccess: (orderId) => {
       if (isBuyNow) clearBuyNow();
       else clearCart();
       router.push(`/${locale}/order-confirmed?id=${orderId}`);
+    },
+    onStripeRedirect: () => {
+      if (isBuyNow) clearBuyNow();
+      else clearCart();
     },
   });
 
@@ -502,6 +528,11 @@ export default function CheckoutClient({ locale, dict, buyNow = false }) {
                   promoError={promoError}
                   onPlaceOrder={checkout.handlePlaceOrder}
                   onOrderWhatsApp={checkout.handleOrderWhatsApp}
+                  showPlaceOrder={payCfg.cod_enabled}
+                  showWhatsApp={payCfg.whatsapp_enabled}
+                  whatsAppCountriesOnly={payCfg.whatsapp_all_countries ? null : ["Morocco"]}
+                  showStripe={payCfg.stripe_enabled}
+                  onPayStripe={checkout.handlePayWithStripe}
                 />
               </div>
             </div>

@@ -68,6 +68,7 @@ import {
   DEFAULT_SIDEBAR_THEME,
 } from "@/lib/storefront-ui";
 import { registerNavGuard } from "@/lib/nav-guard";
+import StripeConnectCard from "@/components/admin/StripeConnectCard";
 
 const SECTION_DEFS = [
   { id: "general", icon: Store },
@@ -75,6 +76,7 @@ const SECTION_DEFS = [
   { id: "announcements", icon: Megaphone },
   { id: "product_sections", icon: Blocks },
   { id: "payments", icon: CreditCard },
+  { id: "order_methods", icon: ShoppingCart },
   { id: "shipping", icon: Truck },
   { id: "notifications", icon: Bell },
   { id: "integrations", icon: Zap },
@@ -222,6 +224,7 @@ export default function AdminSettingsPage() {
           {active === "announcements" && <AnnouncementsSection />}
           {active === "product_sections" && <ProductSectionsSection />}
           {active === "payments" && <PaymentsSection />}
+          {active === "order_methods" && <OrderMethodsSection />}
           {active === "shipping" && <ShippingSection />}
           {active === "notifications" && <NotificationsSection />}
           {active === "integrations" && <IntegrationsSection />}
@@ -833,53 +836,197 @@ function PaymentsSection() {
   const t = useDictionary()?.admin?.settings?.payments ?? {};
   const { form, setField, save, dirty, loading } = useStoreSettings({
     payments_currency: 'MAD',
-    payments_stripe_key: '',
     payments_cod_enabled: 'true',
   });
-  const [showKey, setShowKey] = useState(false);
 
   if (loading) return <AdminSettingsSkeleton />;
 
   return (
     <>
       <SectionHeader title={t.title} description={t.desc} />
-      <Field label={t.currency} hint={t.currency_hint ?? 'Base currency used across the storefront.'}>
-        <select
-          className={inputClass}
-          value={form.payments_currency}
-          onChange={(e) => setField('payments_currency', e.target.value)}
-        >
-          <option value="MAD">MAD — Moroccan Dirham</option>
-          <option value="USD">USD — US Dollar</option>
-          <option value="EUR">EUR — Euro</option>
-        </select>
-      </Field>
-      <Field label={t.stripe} hint={t.stripe_hint}>
-        <div className="relative">
-          <input
-            type={showKey ? 'text' : 'password'}
-            className={`${inputClass} pr-10`}
-            placeholder="sk_live_..."
-            value={form.payments_stripe_key}
-            onChange={(e) => setField('payments_stripe_key', e.target.value)}
-            autoComplete="off"
-          />
-          <button
-            type="button"
-            onClick={() => setShowKey((v) => !v)}
-            className="absolute inset-y-0 right-3 flex items-center text-zinc-400 hover:text-zinc-700"
-            tabIndex={-1}
+
+      {/* Base currency */}
+      <div className="mt-2 rounded-[5px] border border-zinc-200 bg-white">
+        <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-sm">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">
+              {t.storefront_group ?? 'Storefront'}
+            </p>
+            <h3 className="mt-1 text-sm font-semibold tracking-tight text-zinc-900">{t.currency}</h3>
+            <p className="mt-0.5 text-[13px] text-zinc-500">
+              {t.currency_hint ?? 'Base currency used across the storefront.'}
+            </p>
+          </div>
+          <select
+            className="w-full rounded-[5px] border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 sm:w-64"
+            value={form.payments_currency}
+            onChange={(e) => setField('payments_currency', e.target.value)}
           >
-            {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </button>
+            <option value="MAD">MAD — Moroccan Dirham</option>
+            <option value="USD">USD — US Dollar</option>
+            <option value="EUR">EUR — Euro</option>
+          </select>
         </div>
-      </Field>
-      <Field label={t.cod} hint={t.cod_hint ?? 'Allow customers to pay when the order is delivered.'}>
-        <Toggle
-          checked={form.payments_cod_enabled === 'true'}
-          onChange={(v) => setField('payments_cod_enabled', String(v))}
+      </div>
+
+      {/* Card payments provider */}
+      <p className="mb-3 mt-6 text-[11px] font-medium uppercase tracking-wider text-zinc-400">
+        {t.methods ?? 'Payment methods'}
+      </p>
+      <div className="space-y-3">
+        <StripeConnectCard />
+      </div>
+
+      <SectionSaveButton onSave={save} dirty={dirty} />
+    </>
+  );
+}
+
+function MethodCard({ icon, iconClass, title, desc, enabled, onToggle, t, children }) {
+  return (
+    <div className="rounded-[5px] border border-zinc-200 bg-white">
+      <div className="flex items-center justify-between gap-4 p-5">
+        <div className="flex items-center gap-3">
+          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[5px] ${iconClass}`}>
+            {icon}
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold tracking-tight text-zinc-900">{title}</h3>
+            <p className="mt-0.5 text-[13px] text-zinc-500">{desc}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <span
+            className={`hidden rounded-[5px] px-2 py-1 text-[11px] font-medium sm:inline ${
+              enabled ? 'bg-emerald-50 text-emerald-700' : 'bg-zinc-100 text-zinc-500'
+            }`}
+          >
+            {enabled ? (t.enabled ?? 'Enabled') : (t.disabled ?? 'Disabled')}
+          </span>
+          <Toggle checked={enabled} onChange={onToggle} />
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function WhatsAppGlyph() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-[18px] w-[18px]">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.117 1.524 5.847L.057 23.012a.75.75 0 00.931.931l5.165-1.467A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.73 9.73 0 01-4.964-1.356l-.355-.212-3.668 1.042 1.042-3.668-.212-.355A9.73 9.73 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
+    </svg>
+  );
+}
+
+function OrderMethodsSection() {
+  const t = useDictionary()?.admin?.settings?.order_methods ?? {};
+  const { form, setField, save, dirty, loading } = useStoreSettings({
+    payments_cod_enabled: 'true',
+    order_whatsapp_enabled: 'false',
+    order_whatsapp_number: '',
+    order_whatsapp_all_countries: 'false',
+    order_online_enabled: 'true',
+  });
+
+  if (loading) return <AdminSettingsSkeleton />;
+
+  const codOn = form.payments_cod_enabled === 'true';
+  const waOn = form.order_whatsapp_enabled === 'true';
+  const onlineOn = form.order_online_enabled === 'true';
+
+  return (
+    <>
+      <SectionHeader title={t.title} description={t.desc} />
+      <div className="mt-2 space-y-3">
+        {/* Normal order — cash on delivery */}
+        <MethodCard
+          icon={<Truck className="h-[18px] w-[18px]" />}
+          iconClass="bg-zinc-100 text-zinc-600"
+          title={t.cod_title ?? 'Normal Order (Cash on Delivery)'}
+          desc={t.cod_desc ?? 'Customer pays in cash when the order is delivered.'}
+          enabled={codOn}
+          onToggle={(v) => setField('payments_cod_enabled', String(v))}
+          t={t}
         />
-      </Field>
+
+        {/* Order via WhatsApp */}
+        <MethodCard
+          icon={<WhatsAppGlyph />}
+          iconClass="bg-[#25D366]/10 text-[#25D366]"
+          title={t.whatsapp_title ?? 'Order via WhatsApp'}
+          desc={t.whatsapp_desc ?? 'Customer sends the order to your WhatsApp to finalize manually.'}
+          enabled={waOn}
+          onToggle={(v) => setField('order_whatsapp_enabled', String(v))}
+          t={t}
+        >
+          {waOn && (
+            <div className="space-y-4 border-t border-zinc-100 px-5 py-4">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-6">
+                <div>
+                  <label className="text-sm font-medium text-zinc-900">
+                    {t.whatsapp_number ?? 'WhatsApp number'}
+                  </label>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    {t.whatsapp_number_hint ?? 'International format, digits only (e.g. 2126XXXXXXXX).'}
+                  </p>
+                </div>
+                <div className="sm:col-span-2">
+                  <input
+                    className="w-full rounded-[5px] border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                    inputMode="numeric"
+                    placeholder="2126XXXXXXXX"
+                    value={form.order_whatsapp_number}
+                    onChange={(e) => setField('order_whatsapp_number', e.target.value.replace(/[^0-9]/g, ''))}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-zinc-900">
+                    {t.whatsapp_all_countries ?? 'Show for all countries'}
+                  </p>
+                  <p className="mt-0.5 text-[13px] text-zinc-500">
+                    {t.whatsapp_all_countries_hint ?? 'When off, WhatsApp ordering is shown only to customers in Morocco.'}
+                  </p>
+                </div>
+                <Toggle
+                  checked={form.order_whatsapp_all_countries === 'true'}
+                  onChange={(v) => setField('order_whatsapp_all_countries', String(v))}
+                />
+              </div>
+            </div>
+          )}
+        </MethodCard>
+
+        {/* Online payment (Stripe / providers) */}
+        <MethodCard
+          icon={<CreditCard className="h-[18px] w-[18px]" />}
+          iconClass="bg-[#635bff]/10 text-[#635bff]"
+          title={t.online_title ?? 'Online Payment'}
+          desc={t.online_desc ?? 'Accept card payments online through Stripe.'}
+          enabled={onlineOn}
+          onToggle={(v) => setField('order_online_enabled', String(v))}
+          t={t}
+        >
+          {onlineOn && (
+            <div className="border-t border-zinc-100 px-5 py-4">
+              <p className="text-[13px] text-zinc-500">
+                {t.online_config_hint ?? 'Connect and manage your Stripe account in the Payments tab.'}
+              </p>
+              <a
+                href="?tab=payments"
+                className="mt-3 inline-flex items-center gap-2 rounded-[5px] border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-800 transition-colors hover:bg-zinc-50"
+              >
+                <CreditCard className="h-4 w-4" />
+                {t.online_configure ?? 'Configure Stripe'}
+              </a>
+            </div>
+          )}
+        </MethodCard>
+      </div>
+
       <SectionSaveButton onSave={save} dirty={dirty} />
     </>
   );

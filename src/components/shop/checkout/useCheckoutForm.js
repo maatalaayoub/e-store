@@ -54,8 +54,10 @@ export function useCheckoutForm({
   rate,
   formatPrice,
   onOrderSuccess,
+  onStripeRedirect,
   requiredFields,
   promo,
+  whatsappNumber,
 }) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState({});
@@ -170,58 +172,57 @@ export function useCheckoutForm({
   }, [form, requiredFields]);
 
   /* ── Submit handlers ────────────────────────────────────────────────────── */
+  // Creates the order server-side (pricing recomputed there) and returns
+  // { id, order_number }. Shared by the COD and Stripe payment paths.
+  const createOrder = useCallback(async () => {
+    const idempotencyKey =
+      (globalThis.crypto?.randomUUID?.() ??
+        `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    const res = await fetch("/api/v1/orders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
+      },
+      body: JSON.stringify({
+        shipping: {
+          full_name: form.fullName,
+          phone: form.phone,
+          address: form.address,
+          city: form.city,
+          state: form.state,
+          zip: form.zip,
+          country: form.country,
+        },
+        items: items.map((item) => ({
+          id: item.id,
+          quantity: item.quantity ?? 1,
+          selected_color: item.selectedColor ?? item.selected_color ?? null,
+          selected_size:  item.selectedSize  ?? item.selected_size  ?? null,
+          selected_variant: item.selectedVariant ?? item.selected_variant ?? null,
+        })),
+        // Display-only currency hint; canonical pricing stays MAD server-side.
+        currency_code: COUNTRY_CURRENCY[form.country] ?? currency?.code ?? 'MAD',
+        exchange_rate: rate,
+        promo_code_id: promo?.promo_code_id ?? null,
+      }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || `Order failed (${res.status})`);
+    }
+    return json.data;
+  }, [form, items, currency, rate, promo]);
+
   const handlePlaceOrder = useCallback(async () => {
     const e = validate();
     if (Object.keys(e).length) { setErrors(e); return; }
     if (!Array.isArray(items) || items.length === 0) return;
     if (placing) return; // double-submit guard
     setPlacing(true);
-    // Stable idempotency key for this submit. A network retry inside the
-    // same submit attempt reuses it; a fresh submit gets a new key.
-    const idempotencyKey =
-      (globalThis.crypto?.randomUUID?.() ??
-        `${Date.now()}-${Math.random().toString(36).slice(2)}`);
     try {
-      const res = await fetch("/api/v1/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Idempotency-Key": idempotencyKey,
-        },
-        body: JSON.stringify({
-          shipping: {
-            full_name: form.fullName,
-            phone: form.phone,
-            address: form.address,
-            city: form.city,
-            state: form.state,
-            zip: form.zip,
-            country: form.country,
-          },
-          // unit_price_mad / total_mad are accepted by the server for backward
-          // compatibility but ignored — pricing is recomputed server-side from
-          // the canonical products table. We send them anyway for telemetry.
-          items: items.map((item) => ({
-            id: item.id,
-            quantity: item.quantity ?? 1,
-            selected_color: item.selectedColor ?? item.selected_color ?? null,
-            selected_size:  item.selectedSize  ?? item.selected_size  ?? null,
-            selected_variant: item.selectedVariant ?? item.selected_variant ?? null,
-          })),
-          // Record the customer's selected-country currency so the admin order
-          // list can display the converted amount. Fall back to the global
-          // currency if the country isn't in the mapping.
-          currency_code: COUNTRY_CURRENCY[form.country] ?? currency?.code ?? 'MAD',
-          exchange_rate: rate,
-          promo_code_id: promo?.promo_code_id ?? null,
-        }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok || !json.success) {
-        const message = json.error || `Order failed (${res.status})`;
-        throw new Error(message);
-      }
-      onOrderSuccess?.(json.data.id);
+      const data = await createOrder();
+      onOrderSuccess?.(data.id);
     } catch (err) {
       setErrors((prev) => ({
         ...prev,
@@ -230,7 +231,39 @@ export function useCheckoutForm({
     } finally {
       setPlacing(false);
     }
-  }, [validate, items, form, currency, rate, onOrderSuccess, placing]);
+  }, [validate, items, placing, createOrder, onOrderSuccess]);
+
+  // Stripe path: create the order, then start a Checkout Session on the
+  // store's connected account and redirect to the hosted payment page.
+  const handlePayWithStripe = useCallback(async () => {
+    const e = validate();
+    if (Object.keys(e).length) { setErrors(e); return; }
+    if (!Array.isArray(items) || items.length === 0) return;
+    if (placing) return;
+    setPlacing(true);
+    try {
+      const data = await createOrder();
+      const res = await fetch(`/api/v1/orders/${data.id}/pay`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locale }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.success || !json.data?.url) {
+        throw new Error(json.error || "payment_init_failed");
+      }
+      // Order persisted and session created — clear the cart, then navigate to
+      // Stripe. Keep `placing` true so buttons stay disabled during redirect.
+      onStripeRedirect?.();
+      window.location.href = json.data.url;
+    } catch (err) {
+      setErrors((prev) => ({
+        ...prev,
+        submit: err?.message || "Failed to start payment. Please try again.",
+      }));
+      setPlacing(false);
+    }
+  }, [validate, items, placing, createOrder, locale, onStripeRedirect]);
 
   const handleOrderWhatsApp = useCallback(() => {
     const e = validate();
@@ -268,8 +301,8 @@ export function useCheckoutForm({
       `*Total: ${formatPrice(finalTotal)}*`,
     ].filter(Boolean);
     const msg = encodeURIComponent(lines.join("\n"));
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank", "noopener,noreferrer");
-  }, [validate, items, form, subtotal, formatPrice, locale, promo]);
+    window.open(`https://wa.me/${whatsappNumber || WHATSAPP_NUMBER}?text=${msg}`, "_blank", "noopener,noreferrer");
+  }, [validate, items, form, subtotal, formatPrice, locale, promo, whatsappNumber]);
 
   return {
     form,
@@ -284,6 +317,7 @@ export function useCheckoutForm({
     cities,
     selectedIso,
     handlePlaceOrder,
+    handlePayWithStripe,
     handleOrderWhatsApp,
   };
 }

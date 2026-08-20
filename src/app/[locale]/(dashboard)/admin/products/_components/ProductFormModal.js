@@ -12,7 +12,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import ImageManager from "./ImageManager";
 import SectionsBuilder from "@/components/admin/product-sections/SectionsBuilder";
-import { useDictionary } from "@/components/providers/LocaleProvider";
+import { useDictionary, useLocale } from "@/components/providers/LocaleProvider";
 import { RTL_LOCALES } from "@/config/constants";
 import { listProductTypes, getVariantAxes } from "@/config/product-types";
 import { getAttributeSchema, getDeviceTypes, getVariantDimensions } from "@/config/product-types/attributes";
@@ -282,9 +282,9 @@ export default function ProductFormModal({
 
   const params = useParams();
   const locale = params?.locale || "en";
-  const isRtl = RTL_LANGS.has(locale);
   const [activeLang, setActiveLang] = useState(locale);
   const dict = useDictionary();
+  const { dir } = useLocale();
   const t = dict?.admin?.products?.form ?? {};
   // Category-icon labels are shared with the manager modal; reuse those keys
   // rather than duplicating them under `form.*`.
@@ -855,15 +855,16 @@ export default function ProductFormModal({
         onClick={handleClose}
       />
 
-      {/* Panel — slides in from right on LTR desktop, left on RTL desktop, up from bottom on mobile */}
+      {/* Panel — slides in from right on desktop for both LTR and RTL, up from bottom on mobile */}
       <div
         ref={panelRef}
         className={`
-          relative mt-auto ${isRtl ? "me-auto" : "ms-auto"} flex w-full flex-col bg-white shadow-2xl overflow-hidden
+          relative mt-auto flex w-full flex-col bg-white shadow-2xl overflow-hidden
           transition-transform duration-300
           h-[92dvh] rounded-t-2xl max-w-full
           sm:h-full sm:max-w-2xl sm:rounded-none
-          ${animOpen ? "translate-y-0 sm:translate-x-0" : `translate-y-full sm:translate-y-0 ${isRtl ? "sm:-translate-x-full" : "sm:translate-x-full"}`}
+          ltr:ms-auto rtl:me-auto
+          ${animOpen ? "translate-y-0 sm:translate-x-0" : "translate-y-full sm:translate-y-0 sm:translate-x-full"}
         `}
         style={{ transitionTimingFunction: animOpen ? "cubic-bezier(0.32,0.72,0,1)" : "cubic-bezier(0.72,0,0.68,1)" }}
       >
