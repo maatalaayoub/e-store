@@ -7,6 +7,7 @@ import { useCartStore } from "@/store/useCartStore";
 import { useProductQtyStore } from "@/store/useProductQtyStore";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
 import { hasVariants, findVariantCombo, computeVariantPrice } from "@/lib/product-variants";
+import { localizeColorName } from "@/config/colors";
 
 export default function ProductPurchasePanel({
   product,
@@ -74,6 +75,7 @@ export default function ProductPurchasePanel({
 
   const [added, setAdded] = useState(false);
   const { addItem } = useCartStore();
+  const setBuyNow = useCartStore((s) => s.setBuyNow);
   const { getQty, setQty: storeSetQty } = useProductQtyStore();
   const qty = getQty(product.id);
   const setQty = (updater) => {
@@ -124,8 +126,9 @@ export default function ProductPurchasePanel({
 
   const handleCheckout = () => {
     if (isOutOfStock) return;
-    addItem(cartProduct, { quantity: qty, selectedColor, selectedSize, selectedVariant });
-    router.push(`/${locale}/checkout`);
+    // Buy Now checks out only this product — the persistent cart is untouched.
+    setBuyNow(cartProduct, { quantity: qty, selectedColor, selectedSize, selectedVariant });
+    router.push(`/${locale}/checkout?buyNow=1`);
   };
 
   return (
@@ -135,11 +138,12 @@ export default function ProductPurchasePanel({
         <div>
           <p className="text-sm text-zinc-700 mb-3">
             {tProduct.color ?? "Color"}:{" "}
-            <span className="font-semibold text-zinc-900">{selectedColor?.name}</span>
+            <span className="font-semibold text-zinc-900">{localizeColorName(selectedColor, locale)}</span>
           </p>
           <div className="flex flex-wrap gap-3">
             {colors.map((c) => {
               const active = selectedColor?.name === c.name && selectedColor?.hex === c.hex;
+              const colorName = localizeColorName(c, locale);
               // Decide checkmark color based on brightness of the swatch
               const hex6 = c.hex.replace("#", "");
               const brightness =
@@ -156,8 +160,8 @@ export default function ProductPurchasePanel({
                   <button
                     type="button"
                     onClick={() => setSelectedColor(c)}
-                    aria-label={c.name}
-                    title={c.name}
+                    aria-label={colorName}
+                    title={colorName}
                     style={{
                       backgroundColor: c.hex,
                       boxShadow: active

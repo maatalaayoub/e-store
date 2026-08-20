@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useParams } from "next/navigation";
 import { X, Check, ShoppingCart } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { localizeColorName } from "@/config/colors";
 
 /**
  * VariantPickerModal
@@ -33,6 +35,8 @@ export default function VariantPickerModal({
   const dict = useDictionary();
   const tProduct = dict?.product ?? {};
   const tCommon = dict?.common ?? {};
+  const params = useParams();
+  const locale = params?.locale || "en";
   const { formatPrice } = useCurrency();
 
   const hasColors = colors.length > 0;
@@ -134,7 +138,7 @@ export default function VariantPickerModal({
                 <p className="text-sm text-zinc-700">
                   {tProduct.color ?? "Color"}:{" "}
                   <span className="font-semibold text-zinc-900">
-                    {selectedColor?.name ?? "—"}
+                    {selectedColor ? localizeColorName(selectedColor, locale) : "—"}
                   </span>
                 </p>
                 {submitted && missingColor && (
@@ -147,6 +151,7 @@ export default function VariantPickerModal({
                 {colors.map((c) => {
                   const active =
                     selectedColor?.name === c.name && selectedColor?.hex === c.hex;
+                  const colorName = localizeColorName(c, locale);
                   const hex6 = String(c.hex ?? "").replace("#", "");
                   const brightness =
                     hex6.length >= 6
@@ -162,8 +167,8 @@ export default function VariantPickerModal({
                       type="button"
                       key={`${c.name}-${c.hex}`}
                       onClick={() => setSelectedColor(c)}
-                      title={c.name}
-                      aria-label={c.name}
+                      title={colorName}
+                      aria-label={colorName}
                       style={{
                         backgroundColor: c.hex,
                         boxShadow: active

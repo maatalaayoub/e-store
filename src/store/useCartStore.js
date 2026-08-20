@@ -28,6 +28,28 @@ function clampToStock(stock, qty) {
 }
 
 /**
+ * Build a normalized cart line item from a product + options. Shared by both
+ * the persistent cart (`addItem`) and the one-off "Buy Now" flow (`setBuyNow`)
+ * so both produce identical shapes the checkout can consume.
+ */
+function buildLineItem(product, opts) {
+  const { quantity = 1, selectedColor, selectedSize, selectedVariant } = normalizeOpts(opts);
+  const color = selectedColor ?? product.selectedColor ?? null;
+  const size = selectedSize ?? product.selectedSize ?? null;
+  const variant = selectedVariant ?? product.selectedVariant ?? null;
+  const lineKey = makeCartLineKey(product.id, color, size, variant);
+  return {
+    ...slimItem(product),
+    lineKey,
+    selectedColor: color,
+    selectedSize: size,
+    selectedVariant: variant,
+    quantity: clampToStock(product.stock, quantity),
+  };
+}
+
+
+/**
  * Strip the cart item down to only the fields the UI / checkout flow
  * actually reads. Keeping the full product blob (with long_description,
  * metadata, all images, related categories\u2026) in `localStorage` caused
@@ -61,6 +83,9 @@ export const useCartStore = create(
   persist(
     (set) => ({
       items: [],
+      // One-off "Buy Now" line item, kept separate from the persistent cart so
+      // an immediate purchase never mixes with (or disturbs) the saved cart.
+      buyNowItem: null,
       addItem: (product, opts) =>
         set((state) => {
           const { quantity = 1, selectedColor, selectedSize, selectedVariant } = normalizeOpts(opts);
@@ -83,15 +108,7 @@ export const useCartStore = create(
             };
           }
 
-          const newItem = {
-            ...slimItem(product),
-            lineKey,
-            selectedColor: color,
-            selectedSize: size,
-            selectedVariant: variant,
-            quantity: clampToStock(product.stock, quantity),
-          };
-          return { items: [...state.items, newItem] };
+          return { items: [...state.items, buildLineItem(product, opts)] };
         }),
       removeItem: (lineKey) =>
         set((state) => ({
@@ -106,11 +123,20 @@ export const useCartStore = create(
           ),
         })),
       clearCart: () => set({ items: [] }),
+      // ── Buy Now (direct checkout, bypasses the cart) ──
+      setBuyNow: (product, opts) => set({ buyNowItem: buildLineItem(product, opts) }),
+      updateBuyNowQuantity: (quantity) =>
+        set((state) =>
+          state.buyNowItem
+            ? { buyNowItem: { ...state.buyNowItem, quantity: clampToStock(state.buyNowItem.stock, quantity) } }
+            : state,
+        ),
+      clearBuyNow: () => set({ buyNowItem: null }),
     }),
     {
       name: CART_STORAGE_KEY,
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ items: state.items }),
+      partialize: (state) => ({ items: state.items, buyNowItem: state.buyNowItem }),
       version: 2,
       migrate: (persistedState) => {
         if (!persistedState || !Array.isArray(persistedState.items)) {

@@ -19,6 +19,8 @@ import { getAttributeSchema, getDeviceTypes, getVariantDimensions } from "@/conf
 import { attrLabel } from "@/lib/product-attributes";
 import { compressImageFile } from "@/lib/image-compress";
 import VariantBuilder from "./VariantBuilder";
+import ColorPicker from "@/components/admin/ColorPicker";
+import { findColorByHex } from "@/config/colors";
 import {
   ACCEPTED_CATEGORY_IMAGE_TYPES,
   uploadCategoryImage,
@@ -217,7 +219,15 @@ function productToForm(p) {
     stock: p.stock != null ? String(p.stock) : "",
     status: p.status ?? "draft",
     is_featured: p.is_featured ?? false,
-    colors: Array.isArray(p.colors) ? p.colors : [],
+    // Normalize stored colors: try to match hex → predefined name so the
+    // color picker shows the correct name & swatch when editing a product.
+    colors: Array.isArray(p.colors)
+      ? p.colors.map((c) => {
+          if (!c?.hex) return c;
+          const predefined = findColorByHex(c.hex);
+          return predefined ? { name: predefined.name, hex: predefined.hex } : c;
+        })
+      : [],
     sizes: Array.isArray(p.sizes) ? p.sizes : [],
     variants: p.variants && typeof p.variants === "object" ? p.variants : null,
     use_default_sections: p.use_default_sections !== false,
@@ -1555,53 +1565,12 @@ export default function ProductFormModal({
               <label className="block text-sm font-medium text-zinc-700 mb-2">
                 {t.colors_label ?? "Colors"}
               </label>
-              <div className="space-y-2">
-                {form.colors.map((c, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={c.hex}
-                      onChange={(e) => {
-                        const next = [...form.colors];
-                        next[idx] = { ...next[idx], hex: e.target.value };
-                        dispatch({ type: "set", field: "colors", value: next });
-                      }}
-                      className="h-9 w-12 rounded border border-zinc-200 cursor-pointer"
-                    />
-                    <input
-                      type="text"
-                      value={c.name}
-                      onChange={(e) => {
-                        const next = [...form.colors];
-                        next[idx] = { ...next[idx], name: e.target.value };
-                        dispatch({ type: "set", field: "colors", value: next });
-                      }}
-                      placeholder={t.color_name_placeholder ?? "Color name (e.g. Royal Brown)"}
-                      className="flex-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = form.colors.filter((_, i) => i !== idx);
-                        dispatch({ type: "set", field: "colors", value: next });
-                      }}
-                      className="rounded-lg p-2 text-zinc-400 hover:bg-red-50 hover:text-red-600"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = [...form.colors, { name: "", hex: "#000000" }];
-                    dispatch({ type: "set", field: "colors", value: next });
-                  }}
-                  className="text-sm font-medium text-blue-600 hover:text-blue-700"
-                >
-                  {t.add_color ?? "+ Add color"}
-                </button>
-              </div>
+              <ColorPicker
+                value={form.colors}
+                onChange={(next) => dispatch({ type: "set", field: "colors", value: next })}
+                t={t}
+                locale={locale}
+              />
             </div>
             )}
 

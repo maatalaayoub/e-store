@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,6 +8,7 @@ import { ArrowLeft, ArrowRight, Trash2, Minus, Plus, Tag, Loader2, X } from "luc
 import { useCartStore } from "@/store/useCartStore";
 import { isRtlLocale } from "@/config/constants";
 import { resolveProductTranslation } from "@/lib/product-locale";
+import { localizeColorName } from "@/config/colors";
 import { useCurrency } from "@/components/providers/CurrencyProvider";
 import { parsePrice } from "@/lib/price";
 import { computePromoDiscount } from "@/lib/promo";
@@ -35,9 +36,32 @@ function useStoreLogo() {
   return logo;
 }
 
-export default function CheckoutClient({ locale, dict }) {
+export default function CheckoutClient({ locale, dict, buyNow = false }) {
   const router = useRouter();
-  const { items, clearCart, removeItem, updateQuantity } = useCartStore();
+  const cart = useCartStore();
+  const {
+    clearCart,
+    buyNowItem,
+    clearBuyNow,
+    updateBuyNowQuantity,
+  } = cart;
+
+  // Buy Now mode checks out a single product held outside the persistent cart.
+  // Falls back to the regular cart if the buy-now item is missing (e.g. a
+  // refresh after it was consumed) so the page never dead-ends.
+  const isBuyNow = buyNow && !!buyNowItem;
+  const items = useMemo(
+    () => (isBuyNow ? [buyNowItem] : cart.items),
+    [isBuyNow, buyNowItem, cart.items],
+  );
+
+  const removeItem = isBuyNow
+    ? () => clearBuyNow()
+    : cart.removeItem;
+  const updateQuantity = isBuyNow
+    ? (_lineKey, quantity) => updateBuyNowQuantity(quantity)
+    : cart.updateQuantity;
+
   const tCheckout = dict?.checkout ?? {};
   const tCart = dict?.cart ?? {};
   const tProduct = dict?.product ?? {};
@@ -67,7 +91,8 @@ export default function CheckoutClient({ locale, dict }) {
     formatPrice,
     promo,
     onOrderSuccess: (orderId) => {
-      clearCart();
+      if (isBuyNow) clearBuyNow();
+      else clearCart();
       router.push(`/${locale}/order-confirmed?id=${orderId}`);
     },
   });
@@ -241,6 +266,26 @@ export default function CheckoutClient({ locale, dict }) {
                 <h3 className="text-xs font-semibold uppercase tracking-widest text-zinc-400 mb-3">
                   {tCheckout.order_summary ?? "Order Summary"}
                 </h3>
+                {/* Buy-now notice + option to switch to the full cart. */}
+                {isBuyNow && (
+                  <div className="mb-3 flex flex-col gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-xs text-zinc-600">
+                      {tCheckout.buy_now_notice ?? "You're buying this item now. Your cart is not included."}
+                    </p>
+                    {cart.items.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/${locale}/checkout`)}
+                        className="shrink-0 text-xs font-semibold text-zinc-900 underline underline-offset-2 hover:text-zinc-600"
+                      >
+                        {(tCheckout.checkout_cart_instead ?? "Checkout my cart instead ({count})").replace(
+                          "{count}",
+                          String(cart.items.reduce((n, i) => n + i.quantity, 0)),
+                        )}
+                      </button>
+                    )}
+                  </div>
+                )}
                 <div className="divide-y divide-zinc-100 rounded-xl border border-zinc-200 overflow-hidden">
                 {items.length === 0 ? (
                   <p className="py-8 text-sm text-zinc-400 text-center">{tCart.empty_state_title ?? "Your cart is empty"}</p>
@@ -288,7 +333,7 @@ export default function CheckoutClient({ locale, dict }) {
                                       style={{ backgroundColor: selectedColor.hex }}
                                     />
                                   )}
-                                  <span>{tProduct.color ?? "Color"}: <span className="font-medium text-zinc-700">{selectedColor.name}</span></span>
+                                  <span>{tProduct.color ?? "Color"}: <span className="font-medium text-zinc-700">{localizeColorName(selectedColor, locale)}</span></span>
                                 </span>
                               )}
                               {selectedSize && (
