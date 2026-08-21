@@ -330,6 +330,7 @@ const TYPE_HANDLERS = {
         show_coupon: safeBool(raw.config?.show_coupon, base.config.show_coupon),
         show_place_order: safeBool(raw.config?.show_place_order, base.config.show_place_order),
         show_whatsapp: safeBool(raw.config?.show_whatsapp, base.config.show_whatsapp),
+        show_stripe: safeBool(raw.config?.show_stripe, base.config.show_stripe),
         show_summary: safeBool(raw.config?.show_summary, base.config.show_summary),
         whatsapp_countries: waCountries,
         label_color: safeHex(raw.config?.label_color),

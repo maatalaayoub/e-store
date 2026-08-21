@@ -55,8 +55,18 @@ export class ProductService {
     return normalizeProduct(raw, locale);
   }
 
+  /** Resolve a product by UUID or SEO slug (used by public product pages). */
+  async getProductByIdOrSlug(idOrSlug, locale) {
+    if (!idOrSlug) return null;
+    const raw = await productRepository.findByIdOrSlug(idOrSlug);
+    return normalizeProduct(raw, locale);
+  }
+
   async createProduct(data) {
     const payload = await sanitizeProductWritePayload(data);
+    if (Object.prototype.hasOwnProperty.call(payload, 'slug') || payload.name) {
+      payload.slug = await ensureUniqueSlug(payload.slug || payload.name, null);
+    }
     const raw = await productRepository.create(payload);
     return normalizeProduct(raw);
   }
@@ -64,6 +74,11 @@ export class ProductService {
   async updateProduct(id, data) {
     if (!id) throw new Error('Product ID required');
     const payload = await sanitizeProductWritePayload(data);
+    // Only (re)compute the slug when the admin submitted the field, so partial
+    // updates that omit `slug` never disturb the existing value.
+    if (Object.prototype.hasOwnProperty.call(payload, 'slug')) {
+      payload.slug = await ensureUniqueSlug(payload.slug || payload.name, id);
+    }
     const raw = await productRepository.update(id, payload);
     return normalizeProduct(raw);
   }
@@ -135,7 +150,37 @@ async function sanitizeProductWritePayload(data) {
     payload.sections_config = null;
   }
 
+  // SEO overrides — strip HTML, clamp lengths, drop invalid URLs.
+  if (Object.prototype.hasOwnProperty.call(payload, 'seo')) {
+    const { sanitizeProductSeo } = await import('@/lib/seo/sanitize');
+    payload.seo = sanitizeProductSeo(payload.seo);
+  }
+
   return payload;
+}
+
+/**
+ * Turn a base slug into one that is unique across products. Appends `-2`,
+ * `-3`, … until no collision remains. `excludeId` skips the product being
+ * updated so re-saving without changing the slug is a no-op.
+ */
+async function ensureUniqueSlug(baseSlug, excludeId) {
+  const { normalizeProductSlug } = await import('@/lib/seo/sanitize');
+  const base = normalizeProductSlug(baseSlug);
+  if (!base) return null;
+
+  let candidate = base;
+  let n = 1;
+  // Bounded loop — practical collisions are rare.
+  while (await productRepository.slugExists(candidate, excludeId)) {
+    n += 1;
+    candidate = `${base}-${n}`;
+    if (n > 50) {
+      candidate = `${base}-${Date.now().toString(36)}`;
+      break;
+    }
+  }
+  return candidate;
 }
 
 export const productService = new ProductService();

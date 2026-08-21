@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Check, Minus, Plus, ShoppingCart } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
@@ -77,6 +77,7 @@ export default function ProductPurchasePanel({
   const { addItem } = useCartStore();
   const setBuyNow = useCartStore((s) => s.setBuyNow);
   const { getQty, setQty: storeSetQty } = useProductQtyStore();
+  const setSelection = useProductQtyStore((s) => s.setSelection);
   const qty = getQty(product.id);
   const setQty = (updater) => {
     const next = typeof updater === "function" ? updater(qty) : updater;
@@ -116,6 +117,30 @@ export default function ProductPurchasePanel({
         label: variantLabel,
       }
     : null;
+
+  // Publish the current selection so the inline checkout section builds its
+  // order line (and price) from exactly what the shopper picked here.
+  useEffect(() => {
+    setSelection(product.id, {
+      selectedColor: hasColors ? selectedColor : null,
+      selectedSize: hasSizes ? selectedSize : null,
+      selectedVariant,
+      unitPrice,
+      basePrice: cartProduct.price,
+      stock: effectiveStock,
+    });
+  }, [
+    product.id,
+    hasColors,
+    hasSizes,
+    selectedColor,
+    selectedSize,
+    selectedVariant,
+    unitPrice,
+    cartProduct.price,
+    effectiveStock,
+    setSelection,
+  ]);
 
   const handleAdd = () => {
     if (isOutOfStock) return;

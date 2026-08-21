@@ -100,6 +100,7 @@ function buildIndex({ dict, locale, t }) {
   const notifSet = settings.notifications ?? {};
   const intg = settings.integrations ?? {};
   const loc = settings.localization ?? {};
+  const seoSet = settings.seo ?? {};
   const productSectionsSet = settings.product_sections ?? {};
   const settingsTitle = settings.title ?? "Settings";
   const storefrontTitle = sec.storefront ?? "Storefront";
@@ -133,6 +134,7 @@ function buildIndex({ dict, locale, t }) {
     { id: "set-shipping",         group: groupSettings, icon: Truck,        label: sec.shipping         ?? "Shipping",         description: settingsTitle, href: wl("/admin/settings?tab=shipping"),         keywords: ["shipping", "delivery", "rates", "zones", "flat rate", "origin country", ship.title] },
     { id: "set-notifications",    group: groupSettings, icon: Bell,         label: sec.notifications    ?? "Notifications",    description: settingsTitle, href: wl("/admin/settings?tab=notifications"),    keywords: ["notifications", "alerts", "telegram", "new order", "low stock", "out of stock", notifSet.title] },
     { id: "set-integrations",     group: groupSettings, icon: Zap,          label: sec.integrations     ?? "Integrations",     description: settingsTitle, href: wl("/admin/settings?tab=integrations"),     keywords: ["integrations", "api", "webhooks", "telegram", "whatsapp", intg.title] },
+    { id: "set-seo",              group: groupSettings, icon: Search,       label: sec.seo              ?? "SEO",              description: settingsTitle, href: wl("/admin/settings?tab=seo"),              keywords: ["seo", "search engine", "meta", "title", "description", "open graph", "og", "sitemap", "robots", "keywords", "canonical", seoSet.title] },
     { id: "set-localization",     group: groupSettings, icon: Globe,        label: sec.localization     ?? "Localization",     description: settingsTitle, href: wl("/admin/settings?tab=localization"),     keywords: ["localization", "language", "currency", "i18n", "timezone", loc.title] },
 
     // ─── Storefront sub-tabs (deep-linked via ?tab=storefront&sub=) ─────────

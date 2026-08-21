@@ -103,6 +103,20 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS attributes jsonb;
 -- on products.price. See src/lib/product-variants.js.
 ALTER TABLE products ADD COLUMN IF NOT EXISTS variants jsonb;
 
+-- SEO: human-friendly URL slug (nullable, unique when present). The product
+-- page resolves by UUID *or* slug; canonical/sitemap prefer the slug. When
+-- NULL the product still resolves by its UUID. See src/lib/seo.
+ALTER TABLE products ADD COLUMN IF NOT EXISTS slug text;
+CREATE UNIQUE INDEX IF NOT EXISTS products_slug_key ON products (slug) WHERE slug IS NOT NULL;
+
+-- SEO overrides + per-locale SEO. Manual values override the auto-generated
+-- fallbacks derived from product data. Sanitized server-side
+-- (src/lib/seo/sanitize.js). Shape:
+--   { title, description, keywords, canonical_url, og_title, og_description,
+--     og_image, no_index, no_follow,
+--     translations: { en: { title, description, keywords, og_title, og_description }, ... } }
+ALTER TABLE products ADD COLUMN IF NOT EXISTS seo jsonb;
+
 -- ========================
 -- PRODUCT IMAGES
 -- ========================

@@ -111,6 +111,21 @@ const ALLOWED_KEYS = [
   // Localization
   'localization_default_language',
   'localization_timezone',
+  // SEO (store-wide defaults)
+  'seo_site_name',
+  'seo_site_url',
+  'seo_default_title',
+  'seo_title_template',
+  'seo_default_description',
+  'seo_default_keywords',
+  'seo_og_title',
+  'seo_og_description',
+  'seo_og_image',
+  'seo_twitter_card',
+  'seo_twitter_site',
+  'seo_default_index',
+  'seo_default_follow',
+  'seo_favicon',
 ];
 
 // Per-key value size limits. Hero configs can hold long JSON (image URLs etc.).

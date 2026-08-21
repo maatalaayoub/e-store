@@ -33,6 +33,15 @@ import {
   canonicalCategoryName,
   categoryTranslationsPayload,
 } from "@/lib/category-locale";
+import { resolveProductSeo, slugify } from "@/lib/seo/resolve";
+import { analyzeProductSeo, summarizeFindings } from "@/lib/seo/analyze";
+import { SEO_LIMITS } from "@/lib/seo/constants";
+import {
+  SeoSearchPreview,
+  SeoSocialPreview,
+  SeoFindings,
+  SeoScoreBadges,
+} from "@/components/admin/seo/SeoPreview";
 
 // ── helpers ─────────────────────────────────────────────────────────────────────
 const SUPPORTED_LANGS = ["en", "fr", "ar", "dr"];
@@ -81,6 +90,21 @@ function emptyTranslations() {
   return Object.fromEntries(
     SUPPORTED_LANGS.map((l) => [l, { name: "", short_description: "", description: "" }])
   );
+}
+
+// Per-locale SEO override buckets (title/description/keywords/OG text).
+function emptySeoTranslations() {
+  return Object.fromEntries(SUPPORTED_LANGS.map((l) => [l, {}]));
+}
+
+function emptySeo() {
+  return {
+    canonical_url: "",
+    og_image: "",
+    no_index: false,
+    no_follow: false,
+    translations: emptySeoTranslations(),
+  };
 }
 
 // Renders a single dynamic product attribute from its schema field spec.
@@ -150,6 +174,8 @@ const initialForm = {
   sizes: [],  // ["S", "M", ...]
   use_default_sections: true,
   sections_config: [],
+  slug: "",
+  seo: emptySeo(),
 };
 
 function formReducer(state, action) {
@@ -164,6 +190,22 @@ function formReducer(state, action) {
           [action.lang]: {
             ...state.translations[action.lang],
             [action.field]: action.value,
+          },
+        },
+      };
+    case "set_seo":
+      return { ...state, seo: { ...state.seo, [action.field]: action.value } };
+    case "set_seo_translation":
+      return {
+        ...state,
+        seo: {
+          ...state.seo,
+          translations: {
+            ...state.seo.translations,
+            [action.lang]: {
+              ...state.seo.translations[action.lang],
+              [action.field]: action.value,
+            },
           },
         },
       };
@@ -232,7 +274,65 @@ function productToForm(p) {
     variants: p.variants && typeof p.variants === "object" ? p.variants : null,
     use_default_sections: p.use_default_sections !== false,
     sections_config: Array.isArray(p.sections_config) ? p.sections_config : [],
+    slug: p.slug ?? "",
+    seo: seoToForm(p.seo),
   };
+}
+
+// Normalize a stored product.seo JSONB into the form's seo shape (always a
+// full 4-language translations map so inputs stay controlled).
+function seoToForm(seo) {
+  const base = seo && typeof seo === "object" ? seo : {};
+  const translations = emptySeoTranslations();
+  const stored = base.translations && typeof base.translations === "object" ? base.translations : {};
+  SUPPORTED_LANGS.forEach((l) => {
+    const block = stored[l];
+    translations[l] = block && typeof block === "object" ? { ...block } : {};
+  });
+  return {
+    canonical_url: base.canonical_url ?? "",
+    og_image: base.og_image ?? "",
+    no_index: base.no_index === true,
+    no_follow: base.no_follow === true,
+    translations,
+  };
+}
+
+const SEO_LOCALE_FIELDS = ["title", "description", "keywords", "og_title", "og_description"];
+
+// Turn the form's seo shape into the persisted payload. The primary locale's
+// values are mirrored into base fields so other locales fall back to a real
+// translation instead of only the auto-generated default.
+function buildSeoPayload(seo, primaryLocale) {
+  if (!seo) return null;
+  const out = {};
+  const canonical = seo.canonical_url?.trim?.();
+  const ogImage = seo.og_image?.trim?.();
+  if (canonical) out.canonical_url = canonical;
+  if (ogImage) out.og_image = ogImage;
+  if (seo.no_index) out.no_index = true;
+  if (seo.no_follow) out.no_follow = true;
+
+  const translations = {};
+  SUPPORTED_LANGS.forEach((l) => {
+    const block = seo.translations?.[l] ?? {};
+    const cleaned = {};
+    SEO_LOCALE_FIELDS.forEach((f) => {
+      const v = typeof block[f] === "string" ? block[f].trim() : "";
+      if (v) cleaned[f] = v;
+    });
+    if (Object.keys(cleaned).length) translations[l] = cleaned;
+  });
+  if (Object.keys(translations).length) out.translations = translations;
+
+  const primaryBlock = translations[primaryLocale] ?? Object.values(translations)[0];
+  if (primaryBlock) {
+    SEO_LOCALE_FIELDS.forEach((f) => {
+      if (primaryBlock[f]) out[f] = primaryBlock[f];
+    });
+  }
+
+  return Object.keys(out).length ? out : null;
 }
 
 async function uploadToStorage(supabase, productId, file, index) {
@@ -299,6 +399,24 @@ export default function ProductFormModal({
 
   const isEdit = Boolean(product?.id);
   const [loadingDefaults, setLoadingDefaults] = useState(false);
+  // Site name used only to render an approximate SEO title/preview.
+  const [seoSiteName, setSeoSiteName] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    fetch("/api/v1/display-settings")
+      .then((r) => r.json())
+      .then((json) => {
+        if (cancelled) return;
+        const data = json?.data ?? json ?? {};
+        if (data.store_name) setSeoSiteName(data.store_name);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   // Wizard steps. In create mode the user advances with Next (each step is
   // gated by validation); in edit mode every step is a freely-clickable tab.
@@ -308,6 +426,7 @@ export default function ProductFormModal({
     { id: "pricing", label: t.step_pricing ?? "Pricing & Inventory" },
     { id: "images", label: t.step_images ?? "Product Images" },
     { id: "sections", label: t.step_sections ?? "Page Sections", optional: true },
+    { id: "seo", label: t.step_seo ?? "SEO", optional: true },
   ];
   const lastStep = STEPS.length - 1;
 
@@ -748,6 +867,10 @@ export default function ProductFormModal({
           form.use_default_sections === false && Array.isArray(form.sections_config)
             ? form.sections_config
             : null,
+        // SEO slug — server sanitizes + guarantees uniqueness (falls back to
+        // an auto slug derived from the product name when left blank).
+        slug: form.slug?.trim() || null,
+        seo: buildSeoPayload(form.seo, locale),
       };
 
       // 1. Create or update product
@@ -1660,7 +1783,293 @@ export default function ProductFormModal({
             )}
           </section>
           )}
+
+          {/* ── Step 6: SEO (optional) ── */}
+          {step === 5 && (() => {
+            const tSeo = t.seo ?? {};
+            const activeSeo = form.seo.translations[activeLang] ?? {};
+            const previewName =
+              form.translations[activeLang]?.name?.trim() ||
+              SUPPORTED_LANGS.map((l) => form.translations[l]?.name).find((n) => n?.trim()) ||
+              "";
+            const mainImg =
+              existingImages.find((i) => i.is_main)?.url ||
+              existingImages[0]?.url ||
+              pendingImages.find((p) => p.isMain)?.preview ||
+              pendingImages[0]?.preview ||
+              null;
+            const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
+            const liveSeo = {
+              canonical_url: form.seo.canonical_url,
+              og_image: form.seo.og_image,
+              no_index: form.seo.no_index,
+              no_follow: form.seo.no_follow,
+              title: activeSeo.title,
+              description: activeSeo.description,
+              keywords: activeSeo.keywords,
+              og_title: activeSeo.og_title,
+              og_description: activeSeo.og_description,
+            };
+            const resolved = resolveProductSeo({
+              product: {
+                id: product?.id,
+                slug: form.slug,
+                name: previewName,
+                short_description: form.translations[activeLang]?.short_description,
+                description: form.translations[activeLang]?.description,
+                main_image: liveSeo.og_image || mainImg,
+                seo: liveSeo,
+              },
+              locale: activeLang,
+              store: { siteName: seoSiteName, defaultIndex: true, defaultFollow: true },
+              siteUrl,
+            });
+            const findings = analyzeProductSeo({ resolved });
+            const summary = summarizeFindings(findings);
+            const findingLabels = tSeo.findings ?? {};
+            const setSeo = (field, value) => dispatch({ type: "set_seo", field, value });
+            const setSeoTr = (field, value) =>
+              dispatch({ type: "set_seo_translation", lang: activeLang, field, value });
+            const inputCls =
+              "w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+            const isRtl = RTL_LANGS.has(activeLang);
+            const counter = (len, max) => (
+              <span className={`text-[11px] ${len > max ? "text-red-500" : "text-zinc-400"}`}>
+                {len}/{max}
+              </span>
+            );
+
+            return (
+              <section className="space-y-5">
+                <div className="flex items-center justify-between gap-3 border-b border-zinc-100 pb-2">
+                  <h3 className="text-sm font-semibold text-zinc-700">
+                    {tSeo.section_title ?? "Search engine optimization"}
+                  </h3>
+                  <SeoScoreBadges
+                    summary={summary}
+                    labels={{
+                      errors: tSeo.badge_issues ?? "issues",
+                      warnings: tSeo.badge_warnings ?? "warnings",
+                      passed: tSeo.badge_passed ?? "passed",
+                    }}
+                  />
+                </div>
+                <p className="text-xs text-zinc-500">
+                  {tSeo.section_hint ??
+                    "Leave fields empty to auto-generate them from the product. Manual values always take priority."}
+                </p>
+
+                {/* Language tabs (shared with the info step) */}
+                <div className="flex flex-wrap gap-1.5">
+                  {SUPPORTED_LANGS.map((lang) => {
+                    const isActive = activeLang === lang;
+                    const hasContent = SEO_LOCALE_FIELDS.some((f) => form.seo.translations[lang]?.[f]?.trim?.());
+                    return (
+                      <button
+                        key={lang}
+                        type="button"
+                        onClick={() => setActiveLang(lang)}
+                        className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium ${
+                          isActive
+                            ? "bg-blue-600 text-white"
+                            : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+                        }`}
+                      >
+                        {hasContent && <Check className="h-3 w-3" />}
+                        {LANG_LABELS[lang]}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Localized SEO fields */}
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-sm font-medium text-zinc-700">
+                        {tSeo.meta_title ?? "SEO title"}
+                      </label>
+                      {counter((resolved.title ?? "").length, SEO_LIMITS.title.max)}
+                    </div>
+                    <input
+                      type="text"
+                      dir={isRtl ? "rtl" : "ltr"}
+                      value={activeSeo.title ?? ""}
+                      onChange={(e) => setSeoTr("title", e.target.value)}
+                      placeholder={resolved.title || (tSeo.meta_title_ph ?? "Auto from product name")}
+                      className={inputCls}
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-sm font-medium text-zinc-700">
+                        {tSeo.meta_description ?? "Meta description"}
+                      </label>
+                      {counter((resolved.description ?? "").length, SEO_LIMITS.description.max)}
+                    </div>
+                    <textarea
+                      rows={3}
+                      dir={isRtl ? "rtl" : "ltr"}
+                      value={activeSeo.description ?? ""}
+                      onChange={(e) => setSeoTr("description", e.target.value)}
+                      placeholder={resolved.description || (tSeo.meta_description_ph ?? "Auto from product description")}
+                      className={`${inputCls} resize-none`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 mb-1">
+                      {tSeo.keywords ?? "Keywords"}
+                    </label>
+                    <input
+                      type="text"
+                      dir={isRtl ? "rtl" : "ltr"}
+                      value={activeSeo.keywords ?? ""}
+                      onChange={(e) => setSeoTr("keywords", e.target.value)}
+                      placeholder={tSeo.keywords_ph ?? "Optional, comma-separated"}
+                      className={inputCls}
+                    />
+                    <p className="text-[11px] text-zinc-400 mt-1">
+                      {tSeo.keywords_hint ?? "Optional supporting data — not a ranking factor."}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-700 mb-1">
+                        {tSeo.og_title ?? "Social (OG) title"}
+                      </label>
+                      <input
+                        type="text"
+                        dir={isRtl ? "rtl" : "ltr"}
+                        value={activeSeo.og_title ?? ""}
+                        onChange={(e) => setSeoTr("og_title", e.target.value)}
+                        placeholder={tSeo.og_title_ph ?? "Defaults to SEO title"}
+                        className={inputCls}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-700 mb-1">
+                        {tSeo.og_description ?? "Social (OG) description"}
+                      </label>
+                      <input
+                        type="text"
+                        dir={isRtl ? "rtl" : "ltr"}
+                        value={activeSeo.og_description ?? ""}
+                        onChange={(e) => setSeoTr("og_description", e.target.value)}
+                        placeholder={tSeo.og_description_ph ?? "Defaults to meta description"}
+                        className={inputCls}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Non-localized fields */}
+                <div className="space-y-4 border-t border-zinc-100 pt-4">
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 mb-1">
+                      {tSeo.slug ?? "URL slug"}
+                    </label>
+                    <div className="flex items-center gap-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm">
+                      <span className="text-zinc-400 truncate">/{activeLang}/product/</span>
+                      <input
+                        type="text"
+                        value={form.slug}
+                        onChange={(e) => dispatch({ type: "set", field: "slug", value: slugify(e.target.value) })}
+                        placeholder={slugify(previewName) || (tSeo.slug_ph ?? "auto")}
+                        className="flex-1 min-w-0 border-0 p-0 text-sm focus:outline-none focus:ring-0"
+                      />
+                    </div>
+                    <p className="text-[11px] text-zinc-400 mt-1">
+                      {tSeo.slug_hint ?? "Leave empty to auto-generate. Must be unique — the system appends a number on conflicts."}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 mb-1">
+                      {tSeo.canonical ?? "Canonical URL"}
+                    </label>
+                    <input
+                      type="url"
+                      value={form.seo.canonical_url}
+                      onChange={(e) => setSeo("canonical_url", e.target.value)}
+                      placeholder={tSeo.canonical_ph ?? "Leave empty to use the default product URL"}
+                      className={inputCls}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 mb-1">
+                      {tSeo.og_image ?? "Social share image URL"}
+                    </label>
+                    <input
+                      type="url"
+                      value={form.seo.og_image}
+                      onChange={(e) => setSeo("og_image", e.target.value)}
+                      placeholder={tSeo.og_image_ph ?? "Defaults to the product's main image"}
+                      className={inputCls}
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap gap-4">
+                    <label className="flex items-center gap-2 text-sm text-zinc-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.seo.no_index === true}
+                        onChange={(e) => setSeo("no_index", e.target.checked)}
+                        className="h-4 w-4 rounded accent-blue-600"
+                      />
+                      {tSeo.no_index ?? "Hide this product from search engines (noindex)"}
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-zinc-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.seo.no_follow === true}
+                        onChange={(e) => setSeo("no_follow", e.target.checked)}
+                        className="h-4 w-4 rounded accent-blue-600"
+                      />
+                      {tSeo.no_follow ?? "Don't follow links on this page (nofollow)"}
+                    </label>
+                  </div>
+                </div>
+
+                {/* Previews */}
+                <div className="space-y-3 border-t border-zinc-100 pt-4">
+                  <p className="text-xs font-medium text-zinc-500">
+                    {tSeo.search_preview ?? "Search result preview"}
+                  </p>
+                  <SeoSearchPreview
+                    title={resolved.title}
+                    url={resolved.canonical}
+                    description={resolved.description}
+                  />
+                  <p className="text-xs font-medium text-zinc-500 pt-1">
+                    {tSeo.social_preview ?? "Social share preview"}
+                  </p>
+                  <SeoSocialPreview
+                    title={resolved.ogTitle}
+                    description={resolved.ogDescription}
+                    image={resolved.ogImage}
+                    siteName={seoSiteName}
+                    url={resolved.canonical}
+                  />
+                </div>
+
+                {/* Validation */}
+                {findings.length > 0 && (
+                  <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-4 space-y-2">
+                    <p className="text-xs font-medium text-zinc-500">
+                      {tSeo.recommendations ?? "Recommendations"}
+                    </p>
+                    <SeoFindings findings={findings} labels={findingLabels} />
+                  </div>
+                )}
+              </section>
+            );
+          })()}
         </form>
+
 
         {/* Footer */}
         <div className="flex items-center justify-between gap-3 border-t border-zinc-100 px-6 py-4 shrink-0">

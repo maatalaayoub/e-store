@@ -782,7 +782,11 @@ function CheckoutEditor({ section, onChange, get, setContent, setConfig, isRTL }
         <Toggle label="Show order summary" value={cfg.show_summary !== false} onChange={(v) => setConfig("show_summary", v)} />
         <Toggle label="Show 'Place Order' button" value={cfg.show_place_order !== false} onChange={(v) => setConfig("show_place_order", v)} />
         <Toggle label="Show 'Order via WhatsApp' button" value={cfg.show_whatsapp !== false} onChange={(v) => setConfig("show_whatsapp", v)} />
+        <Toggle label="Show 'Pay by card' (Stripe) button" value={cfg.show_stripe !== false} onChange={(v) => setConfig("show_stripe", v)} />
       </div>
+      <p className="-mt-1 text-xs text-zinc-500">
+        Payment buttons also depend on Settings → Order Methods. A method is shown only when enabled both here and there.
+      </p>
 
       {/* WhatsApp country restriction */}
       {cfg.show_whatsapp !== false && (

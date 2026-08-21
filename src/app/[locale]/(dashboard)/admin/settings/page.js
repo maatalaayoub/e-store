@@ -44,6 +44,7 @@ import {
   Mail,
   Share2,
   AlertTriangle,
+  Search,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { invalidateBarCache, MarqueePreview, Countdown, SwapStack } from "@/components/shop/AnnouncementBar";
@@ -69,6 +70,10 @@ import {
 } from "@/lib/storefront-ui";
 import { registerNavGuard } from "@/lib/nav-guard";
 import StripeConnectCard from "@/components/admin/StripeConnectCard";
+import {
+  SeoSearchPreview,
+  SeoSocialPreview,
+} from "@/components/admin/seo/SeoPreview";
 
 const SECTION_DEFS = [
   { id: "general", icon: Store },
@@ -80,6 +85,7 @@ const SECTION_DEFS = [
   { id: "shipping", icon: Truck },
   { id: "notifications", icon: Bell },
   { id: "integrations", icon: Zap },
+  { id: "seo", icon: Search },
   { id: "localization", icon: Globe },
 ];
 
@@ -228,6 +234,7 @@ export default function AdminSettingsPage() {
           {active === "shipping" && <ShippingSection />}
           {active === "notifications" && <NotificationsSection />}
           {active === "integrations" && <IntegrationsSection />}
+          {active === "seo" && <SeoSection />}
           {active === "localization" && <LocalizationSection />}
         </section>
       </div>
@@ -480,6 +487,7 @@ function GeneralSection() {
     store_description: '',
     store_logo: '',
     store_logo_dark: '',
+    seo_favicon: '',
     contact_email: '',
     contact_phone: '',
     contact_whatsapp: '',
@@ -498,6 +506,7 @@ function GeneralSection() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedForm, setSavedForm] = useState(null);
+  const [group, setGroup] = useState('identity');
 
   useEffect(() => {
     fetch('/api/v1/settings')
@@ -509,6 +518,7 @@ function GeneralSection() {
             store_description: data.store_description ?? '',
             store_logo: data.store_logo ?? '',
             store_logo_dark: data.store_logo_dark ?? '',
+            seo_favicon: data.seo_favicon ?? '',
             store_logo_size: data.store_logo_size ?? '160',
             store_logo_height: data.store_logo_height ?? '40',
             contact_email: data.contact_email ?? '',
@@ -593,10 +603,41 @@ function GeneralSection() {
     );
   }
 
+  const GROUPS = [
+    { id: 'identity', label: t.group_identity ?? 'Store identity', icon: <Store className="h-4 w-4" /> },
+    { id: 'branding', label: t.group_branding ?? 'Branding & logos', icon: <ImageIcon className="h-4 w-4" /> },
+    { id: 'contact', label: t.group_contact ?? 'Contact', icon: <Mail className="h-4 w-4" /> },
+    { id: 'social', label: t.social_title ?? 'Social Media', icon: <Share2 className="h-4 w-4" /> },
+  ];
+
   return (
     <>
       <SectionHeader title={t.title} description={t.desc} />
-      <GroupHeader title={t.group_identity ?? 'Store identity'} icon={Store} />
+
+      <div className="mb-5 flex flex-wrap gap-2">
+        {GROUPS.map((g) => {
+          const active = group === g.id;
+          return (
+            <button
+              key={g.id}
+              type="button"
+              onClick={() => setGroup(g.id)}
+              className={`inline-flex items-center gap-2 rounded-[5px] border px-3.5 py-2 text-sm font-medium transition-colors ${
+                active
+                  ? 'border-zinc-900 bg-zinc-900 text-white'
+                  : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50'
+              }`}
+            >
+              {g.icon}
+              <span>{g.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="rounded-[5px] border border-zinc-200 bg-white p-5">
+      {group === 'identity' && (
+        <>
       <Field label={t.store_name} hint={t.store_name_hint}>
         <input
           className={inputClass}
@@ -614,10 +655,14 @@ function GeneralSection() {
           placeholder={t.description_placeholder}
         />
       </Field>
-      <GroupHeader title={t.group_branding ?? 'Branding & logos'} icon={ImageIcon} />
+        </>
+      )}
+
+      {group === 'branding' && (
+        <>
       <Field label={t.store_logo ?? 'Store logo'} hint={t.store_logo_hint ?? 'Used in headers, footers, and emails. Upload a transparent PNG for best results.'}>
         <div className="flex flex-col sm:flex-row gap-4 items-start">
-          <div className="flex h-20 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50" style={{ width: `${Math.min(Math.max(parseInt(form.store_logo_size || '160', 10) || 160, 80), 320)}px` }}>
+          <div className="flex h-20 items-center justify-center rounded-[5px] border border-zinc-200 bg-zinc-50" style={{ width: `${Math.min(Math.max(parseInt(form.store_logo_size || '160', 10) || 160, 80), 320)}px` }}>
             {form.store_logo ? (
               <img src={form.store_logo} alt="Store logo" className="max-h-full max-w-full object-contain p-2" style={{ maxHeight: `${Math.min(Math.max(parseInt(form.store_logo_height || '40', 10) || 40, 20), 120)}px` }} />
             ) : (
@@ -625,7 +670,7 @@ function GeneralSection() {
             )}
           </div>
           <div className="flex flex-col gap-2">
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-[5px] border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
               <Loader2 className={`h-4 w-4 ${uploadingLogo.store_logo ? 'animate-spin' : 'hidden'}`} />
               <span>{uploadingLogo.store_logo ? (t.uploading ?? 'Uploading…') : (t.upload_logo ?? 'Upload logo')}</span>
               <input type="file" accept="image/*" className="hidden" onChange={(e) => handleLogoUpload(e, 'store_logo')} />
@@ -644,7 +689,7 @@ function GeneralSection() {
       </Field>
       <Field label={t.store_logo_dark ?? 'Store logo (dark version)'} hint={t.store_logo_dark_hint ?? 'Used on dark backgrounds like the footer. Upload a white/light version.'}>
         <div className="flex flex-col sm:flex-row gap-4 items-start">
-          <div className="flex h-20 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-900" style={{ width: `${Math.min(Math.max(parseInt(form.store_logo_size || '160', 10) || 160, 80), 320)}px` }}>
+          <div className="flex h-20 items-center justify-center rounded-[5px] border border-zinc-200 bg-zinc-900" style={{ width: `${Math.min(Math.max(parseInt(form.store_logo_size || '160', 10) || 160, 80), 320)}px` }}>
             {form.store_logo_dark ? (
               <img src={form.store_logo_dark} alt="Store logo dark" className="max-h-full max-w-full object-contain p-2" style={{ maxHeight: `${Math.min(Math.max(parseInt(form.store_logo_height || '40', 10) || 40, 20), 120)}px` }} />
             ) : (
@@ -652,7 +697,7 @@ function GeneralSection() {
             )}
           </div>
           <div className="flex flex-col gap-2">
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-[5px] border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
               <Loader2 className={`h-4 w-4 ${uploadingLogo.store_logo_dark ? 'animate-spin' : 'hidden'}`} />
               <span>{uploadingLogo.store_logo_dark ? (t.uploading ?? 'Uploading…') : (t.upload_logo_dark ?? 'Upload dark logo')}</span>
               <input type="file" accept="image/*" className="hidden" onChange={(e) => handleLogoUpload(e, 'store_logo_dark')} />
@@ -664,6 +709,33 @@ function GeneralSection() {
                 className="text-xs text-red-600 hover:text-red-700 text-left"
               >
                 {t.remove_logo ?? 'Remove logo'}
+              </button>
+            )}
+          </div>
+        </div>
+      </Field>
+      <Field label={t.favicon ?? 'Favicon'} hint={t.favicon_hint ?? 'Small icon shown in browser tabs and search results. Also used as the SEO favicon. Square PNG/ICO/SVG recommended.'}>
+        <div className="flex flex-col sm:flex-row gap-4 items-start">
+          <div className="flex h-16 w-16 items-center justify-center rounded-[5px] border border-zinc-200 bg-zinc-50">
+            {form.seo_favicon ? (
+              <img src={form.seo_favicon} alt="Favicon" className="max-h-full max-w-full object-contain p-2" />
+            ) : (
+              <span className="text-[10px] text-zinc-400">{t.no_favicon ?? 'None'}</span>
+            )}
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-[5px] border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
+              <Loader2 className={`h-4 w-4 ${uploadingLogo.seo_favicon ? 'animate-spin' : 'hidden'}`} />
+              <span>{uploadingLogo.seo_favicon ? (t.uploading ?? 'Uploading…') : (t.upload_favicon ?? 'Upload favicon')}</span>
+              <input type="file" accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/svg+xml,.ico" className="hidden" onChange={(e) => handleLogoUpload(e, 'seo_favicon')} />
+            </label>
+            {form.seo_favicon && (
+              <button
+                type="button"
+                onClick={() => setForm((prev) => ({ ...prev, seo_favicon: '' }))}
+                className="text-xs text-red-600 hover:text-red-700 text-left"
+              >
+                {t.remove_favicon ?? 'Remove favicon'}
               </button>
             )}
           </div>
@@ -709,7 +781,11 @@ function GeneralSection() {
           />
         </div>
       </Field>
-      <GroupHeader title={t.group_contact ?? 'Contact'} icon={Mail} />
+        </>
+      )}
+
+      {group === 'contact' && (
+        <>
       <Field label={t.contact_email} hint={t.contact_email_hint}>
         <input
           type="email"
@@ -760,8 +836,11 @@ function GeneralSection() {
           }
         />
       </Field>
+        </>
+      )}
 
-      <GroupHeader title={t.social_title ?? 'Social Media'} icon={Share2} />
+      {group === 'social' && (
+        <>
       <div className="py-4 border-b border-zinc-100">
         <div className="space-y-3">
           {[
@@ -800,7 +879,7 @@ function GeneralSection() {
             },
           ].map(({ key, icon }) => (
             <div key={key} className="flex items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-600">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[5px] bg-zinc-100 text-zinc-600">
                 {icon}
               </div>
               <input
@@ -817,6 +896,9 @@ function GeneralSection() {
             </div>
           ))}
         </div>
+      </div>
+        </>
+      )}
       </div>
 
       <div className="pt-4 mt-2 border-t border-zinc-100 flex justify-end">
@@ -3118,6 +3200,120 @@ function IntegrationsSection() {
           {saving ? (t.saving ?? 'Saving…') : (t.save_btn ?? 'Save Integrations')}
         </button>
       </div>
+    </>
+  );
+}
+
+function SeoSection() {
+  const t = useDictionary()?.admin?.settings?.seo ?? {};
+  const { form, setField, save, dirty, loading } = useStoreSettings({
+    seo_site_name: '',
+    seo_site_url: '',
+    seo_favicon: '',
+    seo_default_title: '',
+    seo_title_template: '%s | %site%',
+    seo_default_description: '',
+    seo_default_keywords: '',
+    seo_og_title: '',
+    seo_og_description: '',
+    seo_og_image: '',
+    seo_twitter_card: 'summary_large_image',
+    seo_twitter_site: '',
+    seo_default_index: 'true',
+    seo_default_follow: 'true',
+  });
+
+  if (loading) return <AdminSettingsSkeleton />;
+
+  const siteName = form.seo_site_name?.trim();
+  const previewTitle = form.seo_default_title?.trim() || siteName || 'My store';
+  const previewUrl = (form.seo_site_url?.trim() || 'https://example.com').replace(/\/+$/, '');
+  const previewDesc =
+    form.seo_default_description?.trim() ||
+    (t.no_description ?? 'Add a default meta description so search engines have something to show.');
+  const socialTitle = form.seo_og_title?.trim() || previewTitle;
+  const socialDesc = form.seo_og_description?.trim() || previewDesc;
+
+  const Toggle = ({ field, label, hint }) => {
+    const on = form[field] !== 'false';
+    return (
+      <Field label={label} hint={hint}>
+        <button
+          type="button"
+          onClick={() => setField(field, on ? 'false' : 'true')}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${on ? 'bg-blue-600' : 'bg-zinc-300'}`}
+          aria-pressed={on}
+        >
+          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${on ? 'translate-x-6' : 'translate-x-1'}`} />
+        </button>
+      </Field>
+    );
+  };
+
+  return (
+    <>
+      <SectionHeader title={t.title ?? 'SEO'} description={t.desc ?? 'Control how your store appears in search engines and when shared on social media.'} />
+
+      <GroupHeader title={t.identity ?? 'Site identity'} description={t.identity_hint} icon={Store} />
+      <Field label={t.site_name ?? 'Site / company name'} hint={t.site_name_hint ?? 'Used as the default title and in social share cards.'}>
+        <input className={inputClass} value={form.seo_site_name} onChange={(e) => setField('seo_site_name', e.target.value)} placeholder="My store" />
+      </Field>
+      <Field label={t.site_url ?? 'Site URL'} hint={t.site_url_hint ?? 'The canonical public address, e.g. https://mystore.com. Falls back to the deployment URL.'}>
+        <input className={inputClass} value={form.seo_site_url} onChange={(e) => setField('seo_site_url', e.target.value)} placeholder="https://mystore.com" />
+      </Field>
+      <Field label={t.favicon ?? 'Favicon URL'} hint={t.favicon_hint ?? 'Small icon shown in browser tabs and search results.'}>
+        <input className={inputClass} value={form.seo_favicon} onChange={(e) => setField('seo_favicon', e.target.value)} placeholder="https://…/favicon.ico" />
+      </Field>
+
+      <GroupHeader title={t.search_appearance ?? 'Search appearance'} description={t.search_appearance_hint} icon={Search} />
+      <Field label={t.default_title ?? 'Default SEO title'} hint={t.default_title_hint ?? 'Used for the homepage and any page without its own title.'}>
+        <input className={inputClass} value={form.seo_default_title} onChange={(e) => setField('seo_default_title', e.target.value)} placeholder={siteName || 'My store'} />
+      </Field>
+      <Field label={t.title_template ?? 'Title template'} hint={t.title_template_hint ?? 'How page titles are framed. %s = page title, %site% = site name.'}>
+        <input className={inputClass} value={form.seo_title_template} onChange={(e) => setField('seo_title_template', e.target.value)} placeholder="%s | %site%" />
+      </Field>
+      <Field label={t.default_description ?? 'Default meta description'} hint={t.default_description_hint ?? 'Shown under the title in search results (aim for 70–160 characters).'}>
+        <textarea className={`${inputClass} resize-none`} rows={3} value={form.seo_default_description} onChange={(e) => setField('seo_default_description', e.target.value)} />
+      </Field>
+      <Field label={t.default_keywords ?? 'Default keywords'} hint={t.default_keywords_hint ?? 'Optional, comma-separated. Used for internal organization — not a ranking factor.'}>
+        <input className={inputClass} value={form.seo_default_keywords} onChange={(e) => setField('seo_default_keywords', e.target.value)} placeholder="shoes, sneakers, running" />
+      </Field>
+
+      <div className="mt-4">
+        <p className="text-xs font-medium text-zinc-500 mb-2">{t.search_preview ?? 'Search result preview'}</p>
+        <SeoSearchPreview title={previewTitle} url={previewUrl} description={previewDesc} favicon={form.seo_favicon} />
+      </div>
+
+      <GroupHeader title={t.social ?? 'Social sharing (Open Graph / X)'} description={t.social_hint} icon={Share2} />
+      <Field label={t.og_title ?? 'Default OG title'} hint={t.og_title_hint ?? 'Defaults to the SEO title when empty.'}>
+        <input className={inputClass} value={form.seo_og_title} onChange={(e) => setField('seo_og_title', e.target.value)} placeholder={previewTitle} />
+      </Field>
+      <Field label={t.og_description ?? 'Default OG description'} hint={t.og_description_hint ?? 'Defaults to the meta description when empty.'}>
+        <textarea className={`${inputClass} resize-none`} rows={2} value={form.seo_og_description} onChange={(e) => setField('seo_og_description', e.target.value)} />
+      </Field>
+      <Field label={t.og_image ?? 'Default OG image URL'} hint={t.og_image_hint ?? 'Shown when your store is shared. Recommended 1200×630.'}>
+        <input className={inputClass} value={form.seo_og_image} onChange={(e) => setField('seo_og_image', e.target.value)} placeholder="https://…/share.jpg" />
+      </Field>
+      <Field label={t.twitter_card ?? 'X (Twitter) card type'}>
+        <select className={inputClass} value={form.seo_twitter_card} onChange={(e) => setField('seo_twitter_card', e.target.value)}>
+          <option value="summary_large_image">{t.card_large ?? 'Large image'}</option>
+          <option value="summary">{t.card_summary ?? 'Summary'}</option>
+        </select>
+      </Field>
+      <Field label={t.twitter_site ?? 'X (Twitter) handle'} hint={t.twitter_site_hint ?? 'e.g. @mystore'}>
+        <input className={inputClass} value={form.seo_twitter_site} onChange={(e) => setField('seo_twitter_site', e.target.value)} placeholder="@mystore" />
+      </Field>
+
+      <div className="mt-4">
+        <p className="text-xs font-medium text-zinc-500 mb-2">{t.social_preview ?? 'Social share preview'}</p>
+        <SeoSocialPreview title={socialTitle} description={socialDesc} image={form.seo_og_image} siteName={siteName} url={previewUrl} />
+      </div>
+
+      <GroupHeader title={t.indexing ?? 'Search engine indexing'} description={t.indexing_hint} icon={Globe} />
+      <Toggle field="seo_default_index" label={t.allow_index ?? 'Allow search engines to index the store'} hint={t.allow_index_hint ?? 'Turn off to keep the whole store out of search results.'} />
+      <Toggle field="seo_default_follow" label={t.allow_follow ?? 'Allow search engines to follow links'} hint={t.allow_follow_hint} />
+
+      <SectionSaveButton onSave={save} dirty={dirty} />
     </>
   );
 }

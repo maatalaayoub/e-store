@@ -37,30 +37,39 @@ export default function InlineCheckoutSection({ section, product, locale, dict, 
   const showCoupon = cfg.show_coupon !== false;
   const showPlaceOrder = cfg.show_place_order !== false;
   const showWhatsApp = cfg.show_whatsapp !== false;
+  const showStripe = cfg.show_stripe !== false;
   const whatsappCountries = Array.isArray(cfg.whatsapp_countries)
     ? cfg.whatsapp_countries
     : null;
   const showSummary = cfg.show_summary !== false;
 
   const qty = useProductQtyStore((s) => s.getQty(product?.id));
-  const isOutOfStock = (product?.stock ?? 0) <= 0;
+  // Variant/color/size selection published by ProductPurchasePanel. Carries the
+  // configuration-adjusted unit price so the summary + order match the picker.
+  const selection = useProductQtyStore((s) => s.selections[product?.id] ?? null);
+  const isOutOfStock = (selection?.stock ?? product?.stock ?? 0) <= 0;
 
-  // ── Build the order line item from the current product ───────────────────
+  // ── Build the order line item from the current product + selection ───────
   const items = useMemo(() => {
     if (!product?.id) return [];
     return [
       {
         id: product.id,
         quantity: qty,
-        price: product.price,
-        effective_price: product.effective_price ?? product.price,
+        price: selection?.basePrice ?? product.price,
+        effective_price: selection?.unitPrice ?? product.effective_price ?? product.price,
         name: product.name,
         translations: product.translations,
         images: product.images,
-        stock: product.stock,
+        stock: selection?.stock ?? product.stock,
+        // Pass the picked variant so the server reprices the line correctly
+        // and the order records what the customer chose.
+        selectedColor: selection?.selectedColor ?? null,
+        selectedSize: selection?.selectedSize ?? null,
+        selectedVariant: selection?.selectedVariant ?? null,
       },
     ];
-  }, [product, qty]);
+  }, [product, qty, selection]);
 
   const subtotal = items.reduce(
     (acc, it) => acc + parsePrice(it.effective_price ?? it.price) * it.quantity,
@@ -78,6 +87,28 @@ export default function InlineCheckoutSection({ section, product, locale, dict, 
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoError, setPromoError] = useState(null);
 
+  // Storefront order-method availability (Admin → Settings → Order Methods).
+  // Mirrors the main checkout page so both stay in lockstep. Defaults keep COD
+  // available if the config can't be loaded.
+  const [payCfg, setPayCfg] = useState({
+    cod_enabled: true,
+    whatsapp_enabled: false,
+    whatsapp_number: "",
+    whatsapp_all_countries: false,
+    online_enabled: false,
+    stripe_enabled: false,
+  });
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/v1/checkout/payment-config")
+      .then((r) => r.json())
+      .then((json) => {
+        if (!cancelled && json?.success && json.data) setPayCfg(json.data);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
   const checkout = useCheckoutForm({
     items,
     subtotal,
@@ -87,6 +118,7 @@ export default function InlineCheckoutSection({ section, product, locale, dict, 
     formatPrice,
     requiredFields,
     promo,
+    whatsappNumber: payCfg.whatsapp_number,
     onOrderSuccess: (orderId) => {
       router.push(`/${locale}/order-confirmed?id=${orderId}`);
     },
@@ -221,6 +253,12 @@ export default function InlineCheckoutSection({ section, product, locale, dict, 
   if (cfg.whatsapp_btn_bg)           waBtnStyle.backgroundColor = cfg.whatsapp_btn_bg;
   if (cfg.whatsapp_btn_text_color)   waBtnStyle.color = cfg.whatsapp_btn_text_color;
 
+  // Section-configured countries win; otherwise follow the global "all
+  // countries" order-methods toggle (Morocco-only when off), like the checkout page.
+  const waCountriesOnly = whatsappCountries != null
+    ? whatsappCountries
+    : (payCfg.whatsapp_all_countries ? null : ["Morocco"]);
+
   const defaultClass = !hasBorder && !hasBackground ? 'rounded-2xl border border-zinc-200 bg-white' : '';
 
   return (
@@ -315,6 +353,13 @@ export default function InlineCheckoutSection({ section, product, locale, dict, 
                         </span>
                       )}
                     </div>
+                    {(selection?.selectedColor?.name || selection?.selectedVariant?.label || selection?.selectedSize) && (
+                      <span className="text-xs text-zinc-500 truncate">
+                        {[selection?.selectedColor?.name, selection?.selectedVariant?.label || selection?.selectedSize]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    )}
                     <span className="text-xs text-zinc-500">
                       {tCheckout.quantity ?? tProduct.quantity ?? "Qty"}: <span className="font-medium text-zinc-700">{qty}</span>
                     </span>
@@ -409,11 +454,13 @@ export default function InlineCheckoutSection({ section, product, locale, dict, 
               itemsCount={isOutOfStock ? 0 : items.length}
               country={checkout.form.country}
               promoError={promoError}
-              showPlaceOrder={showPlaceOrder}
-              showWhatsApp={showWhatsApp}
-              whatsAppCountriesOnly={whatsappCountries}
+              showPlaceOrder={showPlaceOrder && payCfg.cod_enabled}
+              showWhatsApp={showWhatsApp && payCfg.whatsapp_enabled}
+              whatsAppCountriesOnly={waCountriesOnly}
+              showStripe={showStripe && payCfg.stripe_enabled}
               onPlaceOrder={isOutOfStock ? undefined : checkout.handlePlaceOrder}
               onOrderWhatsApp={isOutOfStock ? undefined : checkout.handleOrderWhatsApp}
+              onPayStripe={isOutOfStock ? undefined : checkout.handlePayWithStripe}
               orderBtnStyle={Object.keys(orderBtnStyle).length ? orderBtnStyle : undefined}
               waBtnStyle={Object.keys(waBtnStyle).length ? waBtnStyle : undefined}
             />

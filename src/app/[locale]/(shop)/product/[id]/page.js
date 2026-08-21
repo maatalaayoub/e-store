@@ -2,6 +2,14 @@ import { notFound } from "next/navigation";
 import { ChevronRight, Star } from "lucide-react";
 import { productService } from "@/modules/products/product.service";
 import { getDictionary } from "@/i18n/getDictionary";
+import { getSeoSettings } from "@/lib/seo/settings";
+import { buildProductMetadata } from "@/lib/seo/metadata";
+import {
+  buildProductJsonLd,
+  buildBreadcrumbJsonLd,
+  jsonLdScript,
+} from "@/lib/seo/jsonld";
+import { resolveProductSeo, absoluteUrl } from "@/lib/seo/resolve";
 import ProductGallery from "./_components/ProductGallery";
 import ProductPurchasePanel from "./_components/ProductPurchasePanel";
 import ProductPageHeader from "./_components/ProductPageHeader";
@@ -13,17 +21,54 @@ import { getSectionComponent } from "@/components/shop/product-sections/registry
 import ShopPerks from "@/components/shop/ShopPerks";
 import ShopFooter from "@/components/shop/ShopFooter";
 
+export async function generateMetadata({ params }) {
+  const { locale, id } = await params;
+  try {
+    const [product, store] = await Promise.all([
+      productService.getProductByIdOrSlug(id, locale),
+      getSeoSettings(),
+    ]);
+    if (!product || product.status !== "active") return {};
+    return buildProductMetadata({ product, locale, store, siteUrl: store.siteUrl });
+  } catch {
+    return {};
+  }
+}
+
 export default async function ProductDetailsPage({ params }) {
   const { locale, id } = await params;
   const dict = await getDictionary(locale);
 
   let product;
   try {
-    product = await productService.getProductById(id, locale);
+    product = await productService.getProductByIdOrSlug(id, locale);
     if (!product || product.status !== "active") return notFound();
   } catch {
     return notFound();
   }
+
+  const store = await getSeoSettings();
+  const seoResolved = resolveProductSeo({
+    product,
+    locale,
+    store,
+    siteUrl: store.siteUrl,
+  });
+  const productJsonLd = buildProductJsonLd({
+    product,
+    url: seoResolved.canonical,
+    currency: store.currency,
+    image: seoResolved.ogImage,
+  });
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd({
+    items: [
+      { name: dict?.product?.homepage ?? "Homepage", url: absoluteUrl(store.siteUrl, `/${locale}`) },
+      ...(product.category
+        ? [{ name: product.category, url: absoluteUrl(store.siteUrl, `/${locale}`) }]
+        : []),
+      { name: product.name, url: seoResolved.canonical },
+    ],
+  });
 
   const isDiscounted = product.effective_price < product.price;
 
@@ -47,6 +92,19 @@ export default async function ProductDetailsPage({ params }) {
   return (
     <div className="min-h-screen bg-white">
       <ProductPageHeader />
+
+      {productJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: jsonLdScript(productJsonLd) }}
+        />
+      )}
+      {breadcrumbJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: jsonLdScript(breadcrumbJsonLd) }}
+        />
+      )}
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-20 pb-10 lg:py-10 lg:pt-20">
         <nav className="flex items-center gap-1.5 text-sm text-zinc-500 mb-8">

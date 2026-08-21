@@ -12,6 +12,8 @@ import { notFound } from 'next/navigation';
 import { locales } from '@/i18n/config';
 import { getDictionary } from '@/i18n/getDictionary';
 import { getDisplaySettings } from '@/lib/display-settings';
+import { getSeoSettings } from '@/lib/seo/settings';
+import { buildBaseMetadata } from '@/lib/seo/metadata';
 import LocaleProvider from '@/components/providers/LocaleProvider';
 import CurrencyProvider from '@/components/providers/CurrencyProvider';
 import CartAuthSync from '@/components/providers/CartAuthSync';
@@ -28,6 +30,19 @@ import { Toaster } from 'sonner';
  */
 export async function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
+}
+
+/**
+ * Store-wide base metadata (metadataBase, title template, default OG/Twitter,
+ * robots, favicon). Individual pages override fields as needed. Reading the
+ * store SEO settings here means every route gets sane defaults even if it
+ * doesn't export its own metadata.
+ */
+export async function generateMetadata({ params }) {
+  const { locale } = await params;
+  if (!locales.includes(locale)) return {};
+  const store = await getSeoSettings();
+  return buildBaseMetadata({ store, siteUrl: store.siteUrl });
 }
 
 export default async function LocaleLayout({ children, params }) {

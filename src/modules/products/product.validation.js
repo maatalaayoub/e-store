@@ -6,6 +6,33 @@ const translationEntry = z.object({
   description: z.string().optional().nullable(),
 });
 
+const seoLocaleEntry = z
+  .object({
+    title: z.string().optional().nullable(),
+    description: z.string().optional().nullable(),
+    keywords: z.string().optional().nullable(),
+    og_title: z.string().optional().nullable(),
+    og_description: z.string().optional().nullable(),
+  })
+  .partial();
+
+// Permissive shape — sanitized/clamped server-side in src/lib/seo/sanitize.js.
+const seoSchema = z
+  .object({
+    title: z.string().optional().nullable(),
+    description: z.string().optional().nullable(),
+    keywords: z.string().optional().nullable(),
+    canonical_url: z.string().optional().nullable(),
+    og_title: z.string().optional().nullable(),
+    og_description: z.string().optional().nullable(),
+    og_image: z.string().optional().nullable(),
+    no_index: z.boolean().optional().nullable(),
+    no_follow: z.boolean().optional().nullable(),
+    translations: z.record(z.string(), seoLocaleEntry).optional().nullable(),
+  })
+  .partial();
+
+
 export const productSchema = z.object({
   name: z.string().min(2).max(200),
   short_description: z.string().optional().nullable(),
@@ -33,6 +60,9 @@ export const productSchema = z.object({
     .nullable(),
   sizes: z.array(z.string().min(1)).optional().nullable(),
   translations: z.record(z.string(), translationEntry).optional().nullable(),
+  // SEO — human-friendly slug + manual overrides (sanitized server-side).
+  slug: z.string().max(120).optional().nullable(),
+  seo: seoSchema.optional().nullable(),
   // Dynamic Product Sections — see src/modules/product-sections.
   // The sections array is sanitized server-side before persisting; here we
   // only need a permissive shape so legitimate payloads pass validation.

@@ -115,6 +115,74 @@ export class ProductRepository {
     return data;
   }
 
+  /** Resolve a product by its UUID or, failing that, its SEO slug. */
+  async findByIdOrSlug(idOrSlug) {
+    if (!idOrSlug) return null;
+    const supabase = await createClient();
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+
+    const column = isUuid ? 'id' : 'slug';
+    const { data, error } = await supabase
+      .from('products')
+      .select(PRODUCT_SELECT)
+      .eq(column, idOrSlug)
+      .maybeSingle();
+
+    // A newer install may not have the slug column yet — treat as not found
+    // rather than throwing, so lookups degrade gracefully.
+    if (error) {
+      if (!isUuid && isMissingColumnError(error)) return null;
+      throw error;
+    }
+    if (data || isUuid) return data;
+
+    // Fall back to UUID lookup in case a slug-looking value is actually an id.
+    const byId = await supabase
+      .from('products')
+      .select(PRODUCT_SELECT)
+      .eq('id', idOrSlug)
+      .maybeSingle();
+    if (byId.error) return null;
+    return byId.data;
+  }
+
+  /** True when another product already uses `slug` (excluding `excludeId`). */
+  async slugExists(slug, excludeId) {
+    if (!slug) return false;
+    const supabase = await createClient();
+    let query = supabase.from('products').select('id').eq('slug', slug).limit(1);
+    if (excludeId) query = query.neq('id', excludeId);
+    const { data, error } = await query;
+    if (error) {
+      // Column not migrated yet → treat as no collision.
+      if (isMissingColumnError(error)) return false;
+      throw error;
+    }
+    return Array.isArray(data) && data.length > 0;
+  }
+
+  /** Minimal set of active products for building sitemap.xml. */
+  async findAllForSitemap() {
+    const supabase = await createClient();
+    const run = (select) =>
+      supabase
+        .from('products')
+        .select(select)
+        .eq('status', 'active')
+        .order('updated_at', { ascending: false })
+        .limit(5000);
+
+    let { data, error } = await run('id, slug, updated_at');
+    if (error && isMissingColumnError(error)) {
+      ({ data, error } = await run('id, updated_at'));
+    }
+    if (error && isMissingColumnError(error)) {
+      ({ data, error } = await run('id'));
+    }
+    if (error) throw error;
+    return data ?? [];
+  }
+
   async create(productData) {
     const supabase = await createClient();
     const attempt = (payload) =>

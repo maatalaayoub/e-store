@@ -165,26 +165,58 @@ export async function downloadInvoicePdf(order) {
   doc.setDrawColor(228, 228, 231);
   doc.line(pageW - margin - 70, finalY, pageW - margin, finalY);
 
+  const labelX = pageW - margin - 70;
+  const valueX = pageW - margin;
+
+  // Promo discount, when applied. `total_amount` is already the discounted
+  // total, so the pre-discount subtotal is total + discount.
+  const promoDiscountBase = Number(order.promo_discount_amount ?? 0);
+  const hasPromo = promoDiscountBase > 0;
+  const promoCode = order.promo_codes?.code ?? null;
+  const totalBase = Number(order.total_amount);
+  const subtotalBase = totalBase + promoDiscountBase;
+
+  let rowY = finalY + 7;
+
+  if (hasPromo) {
+    doc.setFont("Cairo", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(113, 113, 122);
+    doc.text("SUBTOTAL", labelX, rowY);
+    doc.setTextColor(39, 39, 42);
+    doc.text(`${(subtotalBase * rate).toFixed(2)} ${currency}`, valueX, rowY, { align: "right" });
+
+    rowY += 6;
+    doc.setTextColor(113, 113, 122);
+    const discountLabel = promoCode ? `DISCOUNT (${promoCode})` : "DISCOUNT";
+    doc.text(discountLabel, labelX, rowY);
+    doc.setTextColor(22, 163, 74);
+    doc.text(`-${(promoDiscountBase * rate).toFixed(2)} ${currency}`, valueX, rowY, { align: "right" });
+
+    rowY += 8;
+  }
+
   doc.setFont("Cairo", "normal");
   doc.setFontSize(10);
   doc.setTextColor(113, 113, 122);
-  doc.text("TOTAL", pageW - margin - 70, finalY + 7);
+  doc.text("TOTAL", labelX, rowY);
 
   doc.setFont("Cairo", "bold");
   doc.setFontSize(14);
   doc.setTextColor(24, 24, 27);
   doc.text(
-    `${(Number(order.total_amount) * rate).toFixed(2)} ${currency}`,
-    pageW - margin,
-    finalY + 7,
+    `${(totalBase * rate).toFixed(2)} ${currency}`,
+    valueX,
+    rowY,
     { align: "right" }
   );
 
+  rowY += 6;
   doc.setFont("Cairo", "normal");
   doc.setFontSize(8);
   doc.setTextColor(161, 161, 170);
-  doc.text("STATUS", pageW - margin - 70, finalY + 13);
-  doc.text(String(order.status).toUpperCase(), pageW - margin, finalY + 13, { align: "right" });
+  doc.text("STATUS", labelX, rowY);
+  doc.text(String(order.status).toUpperCase(), valueX, rowY, { align: "right" });
 
   // ── Footer: logo centered + thank-you text ─────────────────────────────
   const pageH = doc.internal.pageSize.getHeight();

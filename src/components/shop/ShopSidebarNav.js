@@ -200,15 +200,22 @@ export default function ShopSidebarNav({ isOpen, onClose }) {
                   <Link
                     href={`/${locale}/admin`}
                     onClick={onClose}
-                    className={`flex items-center gap-4 mt-1 mx-0 px-4 py-3 rounded-xl text-base font-semibold active:scale-[0.98] transition-all shadow-sm ${theme.accent}`}
+                    className={`group mt-2 flex items-center gap-3 rounded-[5px] px-3 py-2.5 transition-colors active:scale-[0.99] ${theme.accent}`}
                   >
-                    <span className={`flex h-6 w-6 items-center justify-center rounded-md ${theme.accentBadge}`}>
-                      <Settings2 className="h-4 w-4 shrink-0" strokeWidth={2} />
+                    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[5px] ${theme.accentBadge}`}>
+                      <Settings2 className="h-4 w-4" strokeWidth={2} />
                     </span>
-                    <span className="flex-1">{tNav.dashboard ?? "Dashboard"}</span>
-                    <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${theme.accentBadge}`}>
-                      Admin
+                    <span className="flex flex-1 flex-col leading-tight">
+                      <span className="text-[15px] font-semibold">{tNav.dashboard ?? "Dashboard"}</span>
+                      <span className="text-[11px] font-medium uppercase tracking-wider opacity-70">
+                        {tNav.admin_panel ?? "Admin panel"}
+                      </span>
                     </span>
+                    {isRtl ? (
+                      <ChevronLeft className="h-4 w-4 shrink-0 opacity-60 transition-transform group-hover:-translate-x-0.5" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 shrink-0 opacity-60 transition-transform group-hover:translate-x-0.5" />
+                    )}
                   </Link>
                 )}
               </div>

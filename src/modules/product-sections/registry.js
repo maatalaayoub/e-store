@@ -202,6 +202,9 @@ export const SECTION_REGISTRY = Object.freeze({
         show_coupon: true,
         show_place_order: true,
         show_whatsapp: true,
+        // Card payment (Stripe). Only rendered when Stripe is also enabled in
+        // Admin → Settings → Order Methods.
+        show_stripe: true,
         // null = show WhatsApp button regardless of country.
         // Otherwise an array like ['Morocco'] restricts it to listed countries.
         whatsapp_countries: ['Morocco'],
