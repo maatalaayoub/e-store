@@ -1022,7 +1022,10 @@
         "whatsapp_shipped": "تشحن الطلب",
         "whatsapp_delivered": "توصل الطلب",
         "whatsapp_cancelled": "تلغى الطلب",
-        "whatsapp_invoice_ready": "الفاتورة واجدة"
+        "whatsapp_invoice_ready": "الفاتورة واجدة",
+        "tab_admin": "المشرف",
+        "tab_telegram": "تيليغرام",
+        "tab_whatsapp": "واتساب"
       },
       "integrations": {
         "title": "التكاملات",

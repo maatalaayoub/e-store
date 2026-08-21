@@ -1023,7 +1023,10 @@
         "whatsapp_shipped": "Commande expédiée",
         "whatsapp_delivered": "Commande livrée",
         "whatsapp_cancelled": "Commande annulée",
-        "whatsapp_invoice_ready": "Facture prête"
+        "whatsapp_invoice_ready": "Facture prête",
+        "tab_admin": "Admin",
+        "tab_telegram": "Telegram",
+        "tab_whatsapp": "WhatsApp"
       },
       "integrations": {
         "title": "Intégrations",

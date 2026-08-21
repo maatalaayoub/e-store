@@ -36,6 +36,8 @@ export default function HeroIherb({ config = {}, locale = 'en' }) {
 
   const trackRef = useRef(null);
   const [active, setActive] = useState(0);
+  // Once the user navigates manually, stop the autoplay for good.
+  const [interacted, setInteracted] = useState(false);
 
   const t = translations[locale] || translations.en || {};
   const title = t.title ?? '';
@@ -86,6 +88,7 @@ export default function HeroIherb({ config = {}, locale = 'en' }) {
   };
 
   const goTo = (i) => {
+    setInteracted(true);
     const el = trackRef.current;
     if (!el) return;
     el.scrollTo({ left: i * el.clientWidth, behavior: 'smooth' });
@@ -102,13 +105,13 @@ export default function HeroIherb({ config = {}, locale = 'en' }) {
   }
   // Advance/rewind by a whole visible set so hidden slides are revealed and the
   // images inside the current set are fully replaced.
-  const goNext = () => setActive((a) => (a + visibleCount) % total);
-  const goPrev = () => setActive((a) => (a - visibleCount + total) % total);
+  const goNext = () => { setInteracted(true); setActive((a) => (a + visibleCount) % total); };
+  const goPrev = () => { setInteracted(true); setActive((a) => (a - visibleCount + total) % total); };
 
   // Auto-advance the hero at the admin-configured interval.
   // Desktop pages through whole sets; mobile scrolls to the next slide.
   useEffect(() => {
-    if (!autoplay || total <= 1 || typeof window === 'undefined') return undefined;
+    if (!autoplay || interacted || total <= 1 || typeof window === 'undefined') return undefined;
     const ms = Math.max(1000, (Number(autoplay_interval) || 5) * 1000);
     const mq = window.matchMedia('(min-width: 1024px)');
     let id = null;
@@ -132,7 +135,7 @@ export default function HeroIherb({ config = {}, locale = 'en' }) {
     mq.addEventListener?.('change', start);
     return () => { stop(); mq.removeEventListener?.('change', start); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoplay, autoplay_interval, total, canPage, visibleCount]);
+  }, [autoplay, autoplay_interval, total, canPage, visibleCount, interacted]);
 
   // ── Overlay renderers (shared between mobile carousel & desktop grid) ──
   const MainOverlay = () =>
@@ -182,6 +185,8 @@ export default function HeroIherb({ config = {}, locale = 'en' }) {
         <div
           ref={trackRef}
           onScroll={onScroll}
+          onPointerDown={() => setInteracted(true)}
+          onTouchStart={() => setInteracted(true)}
           className="flex snap-x snap-mandatory overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {slides.map((s, i) => (
@@ -231,9 +236,9 @@ export default function HeroIherb({ config = {}, locale = 'en' }) {
               type="button"
               onClick={goPrev}
               aria-label="Previous slides"
-              className="absolute left-0 top-1/2 z-20 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-zinc-800 shadow-lg ring-1 ring-black/5 transition hover:bg-white hover:scale-105"
+              className="group/nav absolute left-2 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200/70 bg-white/70 text-zinc-700 backdrop-blur-md transition-all duration-200 hover:h-12 hover:w-12 hover:bg-white hover:text-zinc-900 hover:shadow-xl"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7 rtl:rotate-180">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 rtl:rotate-180 transition-transform duration-200 group-hover/nav:-translate-x-0.5">
                 <path d="M15 18l-6-6 6-6" />
               </svg>
             </button>
@@ -241,9 +246,9 @@ export default function HeroIherb({ config = {}, locale = 'en' }) {
               type="button"
               onClick={goNext}
               aria-label="Next slides"
-              className="absolute right-0 top-1/2 z-20 flex h-14 w-14 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-zinc-800 shadow-lg ring-1 ring-black/5 transition hover:bg-white hover:scale-105"
+              className="group/nav absolute right-2 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200/70 bg-white/70 text-zinc-700 backdrop-blur-md transition-all duration-200 hover:h-12 hover:w-12 hover:bg-white hover:text-zinc-900 hover:shadow-xl"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7 rtl:rotate-180">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 rtl:rotate-180 transition-transform duration-200 group-hover/nav:translate-x-0.5">
                 <path d="M9 18l6-6-6-6" />
               </svg>
             </button>
@@ -252,7 +257,7 @@ export default function HeroIherb({ config = {}, locale = 'en' }) {
 
         <div className={`grid gap-4 ${previews.length > 0 ? 'grid-cols-[2fr_1fr]' : 'grid-cols-1'}`}>
           {/* Left: sliding main banner */}
-          <div className="relative overflow-hidden rounded-xl bg-zinc-100">
+          <div className="relative overflow-hidden rounded-lg bg-zinc-100">
             <HeroLink href={activeSlide.href} className="group relative block aspect-[16/9] w-full overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -275,7 +280,7 @@ export default function HeroIherb({ config = {}, locale = 'en' }) {
                 <HeroLink
                   key={p.key}
                   href={p.href}
-                  className="group relative flex-1 overflow-hidden rounded-xl bg-zinc-100 min-h-[160px]"
+                  className="group relative flex-1 overflow-hidden rounded-lg bg-zinc-100 min-h-[160px]"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img

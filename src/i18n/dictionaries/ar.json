@@ -1023,7 +1023,10 @@
         "whatsapp_shipped": "تم شحن الطلب",
         "whatsapp_delivered": "تم تسليم الطلب",
         "whatsapp_cancelled": "تم إلغاء الطلب",
-        "whatsapp_invoice_ready": "الفاتورة جاهزة"
+        "whatsapp_invoice_ready": "الفاتورة جاهزة",
+        "tab_admin": "المشرف",
+        "tab_telegram": "تيليغرام",
+        "tab_whatsapp": "واتساب"
       },
       "integrations": {
         "title": "التكاملات",

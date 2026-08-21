@@ -1038,7 +1038,10 @@
         "whatsapp_shipped": "Order shipped",
         "whatsapp_delivered": "Order delivered",
         "whatsapp_cancelled": "Order cancelled",
-        "whatsapp_invoice_ready": "Invoice ready"
+        "whatsapp_invoice_ready": "Invoice ready",
+        "tab_admin": "Admin",
+        "tab_telegram": "Telegram",
+        "tab_whatsapp": "WhatsApp"
       },
       "integrations": {
         "title": "Integrations",
