@@ -11,8 +11,6 @@ import { PUBLIC_KEYS } from '@/lib/display-settings';
 const ALLOWED_KEYS = [
   'telegram_bot_token',
   'telegram_chat_id',
-  'whatsapp_number',
-  'whatsapp_business_name',
   'product_card_button_style',
   'product_card_filled_bg',
   'product_card_filled_text',

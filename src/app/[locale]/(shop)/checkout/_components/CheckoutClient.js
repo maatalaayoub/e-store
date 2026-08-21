@@ -521,6 +521,7 @@ export default function CheckoutClient({ locale, dict, buyNow = false }) {
                 <CheckoutActions
                   dict={dict}
                   placing={checkout.placing}
+                  placingAction={checkout.placingAction}
                   errors={checkout.errors}
                   form={checkout.form}
                   itemsCount={items.length}

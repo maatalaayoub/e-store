@@ -152,7 +152,7 @@ export default function ProductGallery({ images = [], productName, productId }) 
 
       {/* Mobile thumbnail row */}
       {list.length > 1 && (
-        <div className="absolute left-0 right-0 top-full mt-4 flex gap-2 overflow-x-auto px-0.5 py-1 lg:hidden">
+        <div className="absolute left-0 right-0 top-full mt-4 flex gap-2 overflow-x-auto px-0.5 py-1 scrollbar-hide lg:hidden">
           {list.map((img, i) => (
             <button
               key={img.id || i}

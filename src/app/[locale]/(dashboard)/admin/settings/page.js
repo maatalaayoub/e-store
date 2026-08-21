@@ -2794,11 +2794,10 @@ function DisplaySection() {
 
 function IntegrationsSection() {
   const t = useDictionary()?.admin?.settings?.integrations ?? {};
+  const [platform, setPlatform] = useState('telegram');
   const [form, setForm] = useState({
     telegram_bot_token: '',
     telegram_chat_id: '',
-    whatsapp_number: '',
-    whatsapp_business_name: '',
     whatsapp_access_token: '',
     whatsapp_phone_number_id: '',
     whatsapp_business_account_id: '',
@@ -2821,8 +2820,6 @@ function IntegrationsSection() {
           const next = {
             telegram_bot_token: data.telegram_bot_token ?? '',
             telegram_chat_id: data.telegram_chat_id ?? '',
-            whatsapp_number: data.whatsapp_number ?? '',
-            whatsapp_business_name: data.whatsapp_business_name ?? '',
             whatsapp_access_token: '',
             whatsapp_phone_number_id: data.whatsapp_phone_number_id ?? '',
             whatsapp_business_account_id: data.whatsapp_business_account_id ?? '',
@@ -2891,178 +2888,194 @@ function IntegrationsSection() {
     return (
       <div className="space-y-4 animate-pulse">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-10 rounded-lg bg-zinc-100" />
+          <div key={i} className="h-10 rounded-[5px] bg-zinc-100" />
         ))}
       </div>
     );
   }
 
+  const TelegramIcon = (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-blue-500" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/>
+    </svg>
+  );
+  const WhatsAppIcon = (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-green-500" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+    </svg>
+  );
+
+  const telegramConfigured = Boolean(form.telegram_bot_token && form.telegram_chat_id);
+  const whatsappConfigured =
+    form.whatsapp_notifications_enabled === 'true' &&
+    (waTokenSet || Boolean(form.whatsapp_access_token)) &&
+    Boolean(form.whatsapp_phone_number_id);
+
+  const PLATFORMS = [
+    { id: 'telegram', label: t.telegram ?? 'Telegram', icon: TelegramIcon, configured: telegramConfigured },
+    { id: 'whatsapp', label: t.whatsapp ?? 'WhatsApp', icon: WhatsAppIcon, configured: whatsappConfigured },
+  ];
+
   return (
     <>
       <SectionHeader
         title={t.title ?? 'Integrations'}
-        description={t.desc ?? 'Connect Telegram and WhatsApp Business to receive order notifications.'}
+        description={t.desc ?? 'Connect a platform to notify customers and your team about orders.'}
       />
 
-      {/* Telegram */}
-      <div className="mb-6">
-        <h3 className="text-sm font-semibold text-zinc-700 mb-3 flex items-center gap-2">
-          <svg viewBox="0 0 24 24" className="h-4 w-4 fill-blue-500" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/>
-          </svg>
-          {t.telegram ?? 'Telegram Bot'}
-        </h3>
-        <p className="-mt-1 mb-3 text-xs text-zinc-500">
-          {t.telegram_events_hint ?? 'Choose which events trigger a Telegram alert under the Notifications tab.'}
-        </p>
-        <Field label={t.bot_token ?? 'Bot Token'} hint={t.bot_token_hint ?? 'Get it from @BotFather on Telegram'}>
-          <div className="relative">
-            <input
-              className={`${inputClass} pr-10`}
-              type={showToken ? 'text' : 'password'}
-              placeholder={form.telegram_bot_token ? undefined : '1234567890:ABCdef...'}
-              value={form.telegram_bot_token}
-              onChange={handleChange('telegram_bot_token')}
-              autoComplete="off"
-            />
+      {/* Platform selector */}
+      <div className="mb-5 flex flex-wrap gap-2">
+        {PLATFORMS.map((p) => {
+          const active = platform === p.id;
+          return (
             <button
+              key={p.id}
               type="button"
-              onClick={() => setShowToken((v) => !v)}
-              className="absolute inset-y-0 right-3 flex items-center text-zinc-400 hover:text-zinc-700"
-              tabIndex={-1}
+              onClick={() => setPlatform(p.id)}
+              className={`inline-flex items-center gap-2 rounded-[5px] border px-3.5 py-2 text-sm font-medium transition-colors ${
+                active
+                  ? 'border-zinc-900 bg-zinc-900 text-white'
+                  : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50'
+              }`}
             >
-              {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {p.icon}
+              <span>{p.label}</span>
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${
+                  p.configured ? 'bg-green-500' : active ? 'bg-white/40' : 'bg-zinc-300'
+                }`}
+              />
             </button>
-          </div>
-        </Field>
-        <Field label={t.chat_id ?? 'Chat ID'} hint={t.chat_id_hint ?? 'The chat or group ID to receive order alerts'}>
-          <input
-            className={inputClass}
-            placeholder="-100123456789"
-            value={form.telegram_chat_id}
-            onChange={handleChange('telegram_chat_id')}
-          />
-        </Field>
+          );
+        })}
       </div>
 
-      {/* WhatsApp Business */}
-      <div className="mb-6">
-        <h3 className="text-sm font-semibold text-zinc-700 mb-3 flex items-center gap-2">
-          <svg viewBox="0 0 24 24" className="h-4 w-4 fill-green-500" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-          </svg>
-          {t.whatsapp ?? 'WhatsApp Business'}
-        </h3>
-        <Field label={t.whatsapp_number ?? 'Business Phone'} hint={t.whatsapp_number_hint ?? 'Include country code, no + or spaces (e.g. +212600000000)'}>
-          <input
-            className={inputClass}
-            placeholder="+212600000000"
-            value={form.whatsapp_number}
-            onChange={handleChange('whatsapp_number')}
-          />
-        </Field>
-        <Field label={t.whatsapp_name ?? 'Business Name'}>
-          <input
-            className={inputClass}
-            placeholder="My store"
-            value={form.whatsapp_business_name}
-            onChange={handleChange('whatsapp_business_name')}
-          />
-        </Field>
-      </div>
+      {/* Platform panel */}
+      <div className="rounded-[5px] border border-zinc-200 bg-white p-5">
+        {platform === 'telegram' && (
+          <>
+            <p className="mb-4 text-xs text-zinc-500">
+              {t.telegram_events_hint ?? 'Choose which events trigger a Telegram alert under the Notifications tab.'}
+            </p>
+            <Field label={t.bot_token ?? 'Bot Token'} hint={t.bot_token_hint ?? 'Get it from @BotFather on Telegram'}>
+              <div className="relative">
+                <input
+                  className={`${inputClass} pr-10`}
+                  type={showToken ? 'text' : 'password'}
+                  placeholder={form.telegram_bot_token ? undefined : '1234567890:ABCdef...'}
+                  value={form.telegram_bot_token}
+                  onChange={handleChange('telegram_bot_token')}
+                  autoComplete="off"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowToken((v) => !v)}
+                  className="absolute inset-y-0 right-3 flex items-center text-zinc-400 hover:text-zinc-700"
+                  tabIndex={-1}
+                >
+                  {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </Field>
+            <Field label={t.chat_id ?? 'Chat ID'} hint={t.chat_id_hint ?? 'The chat or group ID to receive order alerts'}>
+              <input
+                className={inputClass}
+                placeholder="-100123456789"
+                value={form.telegram_chat_id}
+                onChange={handleChange('telegram_chat_id')}
+              />
+            </Field>
+          </>
+        )}
 
-      {/* WhatsApp Business Cloud API */}
-      <div className="mb-6">
-        <h3 className="text-sm font-semibold text-zinc-700 mb-1 flex items-center gap-2">
-          <svg viewBox="0 0 24 24" className="h-4 w-4 fill-green-600" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-          </svg>
-          {t.wa_cloud ?? 'WhatsApp Business Cloud API'}
-        </h3>
-        <p className="-mt-0.5 mb-3 text-xs text-zinc-500">
-          {t.wa_cloud_desc ?? 'Send automated order updates to customers via the WhatsApp Business Cloud API. Configure which events are sent under the Notifications tab.'}
-        </p>
+        {platform === 'whatsapp' && (
+          <>
+            <p className="mb-4 text-xs text-zinc-500">
+              {t.wa_cloud_desc ?? 'Send automated order updates to customers via the WhatsApp Business Cloud API. Configure which events are sent under the Notifications tab.'}
+            </p>
 
-        <Field label={t.wa_enabled ?? 'Enable WhatsApp notifications'}>
-          <Toggle
-            checked={form.whatsapp_notifications_enabled === 'true'}
-            onChange={(v) => setField('whatsapp_notifications_enabled', String(v))}
-          />
-        </Field>
+            <Field label={t.wa_enabled ?? 'Enable WhatsApp notifications'}>
+              <Toggle
+                checked={form.whatsapp_notifications_enabled === 'true'}
+                onChange={(v) => setField('whatsapp_notifications_enabled', String(v))}
+              />
+            </Field>
 
-        <Field
-          label={t.wa_access_token ?? 'Access Token'}
-          hint={waTokenSet
-            ? (t.wa_access_token_set_hint ?? 'A token is saved. Leave blank to keep it, or enter a new one to replace it.')
-            : (t.wa_access_token_hint ?? 'Permanent access token from Meta \u2192 WhatsApp \u2192 API Setup')}
-        >
-          <div className="relative">
-            <input
-              className={`${inputClass} pr-10`}
-              type={showWaToken ? 'text' : 'password'}
-              placeholder={waTokenSet ? '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022 (saved)' : 'EAAG...'}
-              value={form.whatsapp_access_token}
-              onChange={handleChange('whatsapp_access_token')}
-              autoComplete="off"
-            />
-            <button
-              type="button"
-              onClick={() => setShowWaToken((v) => !v)}
-              className="absolute inset-y-0 right-3 flex items-center text-zinc-400 hover:text-zinc-700"
-              tabIndex={-1}
+            <Field
+              label={t.wa_access_token ?? 'Access Token'}
+              hint={waTokenSet
+                ? (t.wa_access_token_set_hint ?? 'A token is saved. Leave blank to keep it, or enter a new one to replace it.')
+                : (t.wa_access_token_hint ?? 'Permanent access token from Meta \u2192 WhatsApp \u2192 API Setup')}
             >
-              {showWaToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
-          </div>
-        </Field>
+              <div className="relative">
+                <input
+                  className={`${inputClass} pr-10`}
+                  type={showWaToken ? 'text' : 'password'}
+                  placeholder={waTokenSet ? '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022 (saved)' : 'EAAG...'}
+                  value={form.whatsapp_access_token}
+                  onChange={handleChange('whatsapp_access_token')}
+                  autoComplete="off"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowWaToken((v) => !v)}
+                  className="absolute inset-y-0 right-3 flex items-center text-zinc-400 hover:text-zinc-700"
+                  tabIndex={-1}
+                >
+                  {showWaToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </Field>
 
-        <Field label={t.wa_phone_number_id ?? 'Phone Number ID'} hint={t.wa_phone_number_id_hint ?? 'Found in Meta \u2192 WhatsApp \u2192 API Setup'}>
-          <input
-            className={inputClass}
-            placeholder="123456789012345"
-            value={form.whatsapp_phone_number_id}
-            onChange={(e) => setField('whatsapp_phone_number_id', e.target.value.replace(/[^0-9]/g, ''))}
-            inputMode="numeric"
-          />
-        </Field>
+            <Field label={t.wa_phone_number_id ?? 'Phone Number ID'} hint={t.wa_phone_number_id_hint ?? 'Found in Meta \u2192 WhatsApp \u2192 API Setup'}>
+              <input
+                className={inputClass}
+                placeholder="123456789012345"
+                value={form.whatsapp_phone_number_id}
+                onChange={(e) => setField('whatsapp_phone_number_id', e.target.value.replace(/[^0-9]/g, ''))}
+                inputMode="numeric"
+              />
+            </Field>
 
-        <Field label={t.wa_business_account_id ?? 'WhatsApp Business Account ID'} hint={t.wa_business_account_id_hint ?? 'Optional \u2014 required for template management'}>
-          <input
-            className={inputClass}
-            placeholder="123456789012345"
-            value={form.whatsapp_business_account_id}
-            onChange={(e) => setField('whatsapp_business_account_id', e.target.value.replace(/[^0-9]/g, ''))}
-            inputMode="numeric"
-          />
-        </Field>
+            <Field label={t.wa_business_account_id ?? 'WhatsApp Business Account ID'} hint={t.wa_business_account_id_hint ?? 'Optional \u2014 required for template management'}>
+              <input
+                className={inputClass}
+                placeholder="123456789012345"
+                value={form.whatsapp_business_account_id}
+                onChange={(e) => setField('whatsapp_business_account_id', e.target.value.replace(/[^0-9]/g, ''))}
+                inputMode="numeric"
+              />
+            </Field>
 
-        <Field label={t.wa_default_cc ?? 'Default country code'} hint={t.wa_default_cc_hint ?? 'Calling code (digits only, e.g. 212) used for customer numbers saved without one.'}>
-          <input
-            className={inputClass}
-            placeholder="212"
-            value={form.whatsapp_default_country_code}
-            onChange={(e) => setField('whatsapp_default_country_code', e.target.value.replace(/[^0-9]/g, ''))}
-            inputMode="numeric"
-          />
-        </Field>
+            <Field label={t.wa_default_cc ?? 'Default country code'} hint={t.wa_default_cc_hint ?? 'Calling code (digits only, e.g. 212) used for customer numbers saved without one.'}>
+              <input
+                className={inputClass}
+                placeholder="212"
+                value={form.whatsapp_default_country_code}
+                onChange={(e) => setField('whatsapp_default_country_code', e.target.value.replace(/[^0-9]/g, ''))}
+                inputMode="numeric"
+              />
+            </Field>
 
-        <div className="mt-2">
-          <button
-            type="button"
-            onClick={handleTest}
-            disabled={testing || saving}
-            className="inline-flex items-center gap-2 rounded-[5px] border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
-          >
-            {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            {testing ? (t.wa_testing ?? 'Testing\u2026') : (t.wa_test ?? 'Test connection')}
-          </button>
-          <p className="mt-1.5 text-xs text-zinc-500">
-            {t.wa_test_hint ?? 'Tests the saved credentials. Save first if you just changed them.'}
-          </p>
-        </div>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={handleTest}
+                disabled={testing || saving}
+                className="inline-flex items-center gap-2 rounded-[5px] border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
+              >
+                {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {testing ? (t.wa_testing ?? 'Testing\u2026') : (t.wa_test ?? 'Test connection')}
+              </button>
+              <p className="text-xs text-zinc-500">
+                {t.wa_test_hint ?? 'Tests the saved credentials. Save first if you just changed them.'}
+              </p>
+            </div>
+          </>
+        )}
       </div>
 
-      <div className="pt-2 border-t border-zinc-100 flex justify-end">
+      <div className="mt-5 flex justify-end">
         <button
           onClick={handleSave}
           disabled={saving}

@@ -132,7 +132,7 @@ export default function CartSidebar({ isOpen, onClose }) {
             </div>
             <button
               onClick={onClose}
-              className="mt-2 rounded-full bg-zinc-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-zinc-700 transition-colors active:scale-95"
+              className="mt-2 rounded-[5px] bg-zinc-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-zinc-700 transition-colors active:scale-95"
             >
               {t.continue_shopping || "Continue shopping"}
             </button>
@@ -281,13 +281,13 @@ export default function CartSidebar({ isOpen, onClose }) {
               <Link
                 href={`/${locale}/checkout`}
                 onClick={onClose}
-                className="block w-full rounded-xl bg-zinc-900 py-3.5 text-center text-sm font-semibold text-white shadow-md transition-all hover:bg-zinc-700 hover:-translate-y-0.5 hover:shadow-lg active:scale-95"
+                className="block w-full rounded-[5px] bg-zinc-900 py-3.5 text-center text-sm font-semibold text-white transition-all hover:bg-zinc-700 hover:-translate-y-0.5 active:scale-95"
               >
                 {t.checkout || "Checkout"} — {formatPrice(subtotal)}
               </Link>
               <button
                 onClick={onClose}
-                className="w-full rounded-xl border border-zinc-200 py-3 text-center text-sm font-medium text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50 transition-colors"
+                className="w-full rounded-[5px] border border-zinc-200 py-3 text-center text-sm font-medium text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50 transition-colors"
               >
                 {t.continue_shopping || "Continue shopping"}
               </button>

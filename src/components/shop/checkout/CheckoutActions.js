@@ -14,6 +14,7 @@ const DEFAULT_REQUIRED = ["phone", "fullName", "address", "city", "country"];
 export default function CheckoutActions({
   dict,
   placing,
+  placingAction,
   errors,
   form,
   requiredFields,
@@ -68,6 +69,11 @@ export default function CheckoutActions({
     hasMissingRequired ||
     !!promoError;
 
+  // Only the button whose action is in flight shows a spinner/loading label.
+  const orderLoading = placingAction === 'order';
+  const waLoading = placingAction === 'whatsapp';
+  const stripeLoading = placingAction === 'stripe';
+
   const fillRequiredMsg =
     missingFields.length > 0
       ? (t.fill_required ?? "Please fill in the required fields: {fields}").replace(
@@ -93,7 +99,7 @@ export default function CheckoutActions({
           className="w-full rounded-[2rem] border border-zinc-900 py-3.5 text-[13px] font-bold tracking-[0.15em] uppercase text-zinc-900 hover:bg-zinc-900 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           style={orderBtnStyle}
         >
-          {placing ? (t.placing_order ?? "Placing Order…") : (t.place_order ?? "Place Order")}
+          {orderLoading ? (t.placing_order ?? "Placing Order…") : (t.place_order ?? "Place Order")}
         </button>
       )}
       {showWaButton && (
@@ -105,7 +111,7 @@ export default function CheckoutActions({
           className={`${showPlaceOrder ? "mt-3" : ""} w-full rounded-[2rem] py-3.5 text-[13px] font-bold tracking-[0.15em] uppercase text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
           style={{ backgroundColor: "#25D366", ...waBtnStyle }}
         >
-          {placing ? (
+          {waLoading ? (
             <Loader2 className="h-5 w-5 shrink-0 animate-spin" />
           ) : (
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5 shrink-0">
@@ -113,7 +119,7 @@ export default function CheckoutActions({
               <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.117 1.524 5.847L.057 23.012a.75.75 0 00.931.931l5.165-1.467A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.73 9.73 0 01-4.964-1.356l-.355-.212-3.668 1.042 1.042-3.668-.212-.355A9.73 9.73 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
             </svg>
           )}
-          {placing ? (t.placing_order ?? "Placing Order…") : (t.order_whatsapp ?? "Order via WhatsApp")}
+          {waLoading ? (t.placing_order ?? "Placing Order…") : (t.order_whatsapp ?? "Order via WhatsApp")}
         </button>
       )}
       {showStripe && (
@@ -129,7 +135,7 @@ export default function CheckoutActions({
             <rect x="2" y="5" width="20" height="14" rx="2" />
             <line x1="2" y1="10" x2="22" y2="10" />
           </svg>
-          {placing ? (t.processing ?? "Processing…") : (t.pay_by_card ?? "Pay by Card")}
+          {stripeLoading ? (t.processing ?? "Processing…") : (t.pay_by_card ?? "Pay by Card")}
         </button>
       )}
     </div>

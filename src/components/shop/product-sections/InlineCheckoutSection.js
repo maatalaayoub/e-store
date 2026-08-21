@@ -402,6 +402,7 @@ export default function InlineCheckoutSection({ section, product, locale, dict, 
             <CheckoutActions
               dict={dict}
               placing={checkout.placing}
+              placingAction={checkout.placingAction}
               errors={checkout.errors}
               form={checkout.form}
               requiredFields={requiredFields}

@@ -62,6 +62,9 @@ export function useCheckoutForm({
   const [form, setForm] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState({});
   const [placing, setPlacing] = useState(false);
+  // Which action is in flight ('order' | 'stripe' | 'whatsapp' | null) so only
+  // the clicked button shows a loading state.
+  const [placingAction, setPlacingAction] = useState(null);
   const [hydrated, setHydrated] = useState(false);
 
   /* ── Autofill: IP country + logged-in profile ───────────────────────────── */
@@ -220,6 +223,7 @@ export function useCheckoutForm({
     if (!Array.isArray(items) || items.length === 0) return;
     if (placing) return; // double-submit guard
     setPlacing(true);
+    setPlacingAction('order');
     try {
       const data = await createOrder();
       onOrderSuccess?.(data.id);
@@ -230,6 +234,7 @@ export function useCheckoutForm({
       }));
     } finally {
       setPlacing(false);
+      setPlacingAction(null);
     }
   }, [validate, items, placing, createOrder, onOrderSuccess]);
 
@@ -241,6 +246,7 @@ export function useCheckoutForm({
     if (!Array.isArray(items) || items.length === 0) return;
     if (placing) return;
     setPlacing(true);
+    setPlacingAction('stripe');
     try {
       const data = await createOrder();
       const res = await fetch(`/api/v1/orders/${data.id}/pay`, {
@@ -262,6 +268,7 @@ export function useCheckoutForm({
         submit: err?.message || "Failed to start payment. Please try again.",
       }));
       setPlacing(false);
+      setPlacingAction(null);
     }
   }, [validate, items, placing, createOrder, locale, onStripeRedirect]);
 
@@ -271,6 +278,7 @@ export function useCheckoutForm({
     if (!Array.isArray(items) || items.length === 0) return;
     if (placing) return;
     setPlacing(true);
+    setPlacingAction('whatsapp');
     try {
       const order = await createOrder();
       const orderNo = order?.order_number;
@@ -317,6 +325,7 @@ export function useCheckoutForm({
         submit: err?.message || "Failed to place order. Please try again.",
       }));
       setPlacing(false);
+      setPlacingAction(null);
     }
   }, [validate, items, placing, createOrder, form, subtotal, formatPrice, locale, promo, whatsappNumber, onStripeRedirect]);
 
@@ -329,6 +338,7 @@ export function useCheckoutForm({
     errors,
     setErrors,
     placing,
+    placingAction,
     hydrated,
     cities,
     selectedIso,
