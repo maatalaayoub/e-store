@@ -158,8 +158,8 @@ export default function AdminMessagesPage() {
   const statusBadge = (status) => {
     const s = STATUS_STYLES[status] ?? STATUS_STYLES.new;
     return (
-      <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${s.badge}`}>
-        <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
+      <span className={`inline-flex items-center gap-1.5 rounded-[3px] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${s.badge}`}>
+        <span className={`h-1.5 w-1.5 rounded-[3px] ${s.dot}`} />
         {t[`status_${status}`] ?? status}
       </span>
     );
@@ -199,7 +199,7 @@ export default function AdminMessagesPage() {
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-zinc-900">{t.title ?? "Contact Messages"}</h1>
             {count > 0 && (
-              <span className="inline-flex items-center rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-700">
+              <span className="inline-flex items-center rounded-[3px] bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-700">
                 {count}
               </span>
             )}
@@ -211,7 +211,7 @@ export default function AdminMessagesPage() {
       </div>
 
       {/* Toolbar: filters + bulk actions */}
-      <div className="flex flex-col gap-3 rounded-xl border border-zinc-100 bg-white p-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-[3px] border border-zinc-100 bg-white p-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-1.5 px-1" role="tablist" aria-label="Message filters">
           {STATUS_FILTERS.map((f) => {
             const active = filter === f;
@@ -225,7 +225,7 @@ export default function AdminMessagesPage() {
                   setFilter(f);
                   setSelectedIds([]);
                 }}
-                className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
+                className={`inline-flex items-center gap-2 whitespace-nowrap rounded-[3px] px-3.5 py-1.5 text-xs font-medium transition-colors ${
                   active
                     ? "bg-blue-600 text-white shadow-sm"
                     : "text-zinc-600 hover:bg-zinc-100"
@@ -241,7 +241,7 @@ export default function AdminMessagesPage() {
           {messages.length > 0 && (
             <button
               onClick={toggleSelectAll}
-              className={`inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-[3px] transition-colors ${
                 selectedIds.length > 0
                   ? "bg-blue-50 text-blue-600 hover:bg-blue-100"
                   : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
@@ -265,7 +265,7 @@ export default function AdminMessagesPage() {
               </span>
               <button
                 onClick={() => setBulkDeleteOpen(true)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-[3px] text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
                 title={t.delete_selected ?? "Delete selected"}
                 aria-label={t.delete_selected ?? "Delete selected"}
               >
@@ -284,7 +284,7 @@ export default function AdminMessagesPage() {
         </div>
       ) : messages.length === 0 ? (
         <div className="rounded-[3px] border border-zinc-200 bg-white p-12 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-zinc-100">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-[3px] bg-zinc-100">
             <Mail className="h-6 w-6 text-zinc-400" />
           </div>
           <p className="text-sm text-zinc-500">{t.empty ?? "No messages yet."}</p>
@@ -308,7 +308,7 @@ export default function AdminMessagesPage() {
                     <button
                       type="button"
                       onClick={() => toggleSelect(m.id)}
-                      className={`mt-1 shrink-0 rounded p-0.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
+                      className={`mt-1 shrink-0 rounded-[3px] p-0.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
                         selectedIds.includes(m.id)
                           ? "text-blue-600 hover:text-blue-700"
                           : "text-zinc-400 hover:text-zinc-600"
@@ -331,7 +331,7 @@ export default function AdminMessagesPage() {
 
                     {/* Avatar */}
                     <div
-                      className={`hidden sm:flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${avatarClass(m.name || m.email)}`}
+                      className={`hidden sm:flex h-10 w-10 shrink-0 items-center justify-center rounded-[3px] text-sm font-semibold ${avatarClass(m.name || m.email)}`}
                       aria-hidden="true"
                     >
                       {getInitials(m.name)}
@@ -351,7 +351,7 @@ export default function AdminMessagesPage() {
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                         <a
                           href={`mailto:${m.email}`}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 font-medium text-blue-700 hover:bg-blue-100 hover:border-blue-300 transition-colors"
+                          className="inline-flex items-center gap-1.5 rounded-[3px] border border-blue-200 bg-blue-50 px-2.5 py-1 font-medium text-blue-700 hover:bg-blue-100 hover:border-blue-300 transition-colors"
                         >
                           <Mail className="h-3 w-3" />
                           <span className="truncate max-w-[16rem]">{m.email}</span>
@@ -359,7 +359,7 @@ export default function AdminMessagesPage() {
                         {m.phone && (
                           <a
                             href={`tel:${m.phone}`}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 font-medium text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 transition-colors"
+                            className="inline-flex items-center gap-1.5 rounded-[3px] border border-emerald-200 bg-emerald-50 px-2.5 py-1 font-medium text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 transition-colors"
                           >
                             {m.phone}
                           </a>
@@ -396,7 +396,7 @@ export default function AdminMessagesPage() {
                           )}
                         </button>
                         {isOpen && (
-                          <div className="mt-2 rounded-lg border border-zinc-100 bg-zinc-50 p-3 text-sm text-zinc-700 whitespace-pre-wrap">
+                          <div className="mt-2 rounded-[3px] border border-zinc-100 bg-zinc-50 p-3 text-sm text-zinc-700 whitespace-pre-wrap">
                             {m.message}
                           </div>
                         )}
@@ -410,7 +410,7 @@ export default function AdminMessagesPage() {
                       <button
                         onClick={() => updateStatus(m.id, "read")}
                         title={t.mark_read ?? "Mark as read"}
-                        className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 transition-colors"
+                        className="inline-flex items-center gap-1.5 rounded-[3px] px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 transition-colors"
                       >
                         <Eye className="h-3.5 w-3.5" />
                         <span className="hidden sm:inline">{t.mark_read ?? "Read"}</span>
@@ -420,7 +420,7 @@ export default function AdminMessagesPage() {
                       <button
                         onClick={() => updateStatus(m.id, "replied")}
                         title={t.mark_replied ?? "Mark as replied"}
-                        className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+                        className="inline-flex items-center gap-1.5 rounded-[3px] px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
                       >
                         <MessageCircle className="h-3.5 w-3.5" />
                         <span className="hidden sm:inline">{t.mark_replied ?? "Replied"}</span>
@@ -430,7 +430,7 @@ export default function AdminMessagesPage() {
                       <button
                         onClick={() => updateStatus(m.id, "archived")}
                         title={t.mark_archived ?? "Archive"}
-                        className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 transition-colors"
+                        className="inline-flex items-center gap-1.5 rounded-[3px] px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 transition-colors"
                       >
                         <Archive className="h-3.5 w-3.5" />
                         <span className="hidden sm:inline">{t.mark_archived ?? "Archive"}</span>
@@ -440,7 +440,7 @@ export default function AdminMessagesPage() {
                       <button
                         onClick={() => updateStatus(m.id, "new")}
                         title={t.mark_new ?? "Mark as new"}
-                        className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                        className="inline-flex items-center gap-1.5 rounded-[3px] px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"
                       >
                         <RotateCcw className="h-3.5 w-3.5" />
                         <span className="hidden sm:inline">{t.mark_new ?? "New"}</span>
@@ -449,7 +449,7 @@ export default function AdminMessagesPage() {
                     <button
                       onClick={() => setDeleteId(m.id)}
                       title={t.delete ?? "Delete"}
-                      className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
+                      className="inline-flex items-center gap-1.5 rounded-[3px] px-2.5 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                       <span className="hidden sm:inline">{t.delete ?? "Delete"}</span>

@@ -214,7 +214,7 @@ export default function InlineCheckoutSection({ section, product, locale, dict, 
   if (!product?.id) return null;
   if (!checkout.hydrated) {
     return (
-      <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+      <div className="rounded-[2px] border border-zinc-200 bg-white p-6">
         <div className="h-6 w-1/3 animate-pulse rounded bg-zinc-100" />
         <div className="mt-4 h-32 animate-pulse rounded bg-zinc-100" />
       </div>
@@ -237,7 +237,7 @@ export default function InlineCheckoutSection({ section, product, locale, dict, 
   if (cfg.background === 'custom' && cfg.background_color) outerStyle.backgroundColor = cfg.background_color;
   if (hasBorder) {
     outerStyle.border = `${Number(cfg.border_width)}px solid ${cfg.border_color}`;
-    outerStyle.borderRadius = '0.75rem';
+    outerStyle.borderRadius = '2px';
     outerStyle.overflow = 'hidden';
   }
   if (cfg.label_color)              outerStyle['--co-label']        = cfg.label_color;
@@ -259,7 +259,7 @@ export default function InlineCheckoutSection({ section, product, locale, dict, 
     ? whatsappCountries
     : (payCfg.whatsapp_all_countries ? null : ["Morocco"]);
 
-  const defaultClass = !hasBorder && !hasBackground ? 'rounded-2xl border border-zinc-200 bg-white' : '';
+  const defaultClass = !hasBorder && !hasBackground ? 'rounded-[2px] border border-zinc-200 bg-white' : '';
 
   return (
     <div

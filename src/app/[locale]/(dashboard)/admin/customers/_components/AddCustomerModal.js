@@ -115,13 +115,13 @@ export default function AddCustomerModal({ isOpen, onClose, onCreated }) {
       <form
         onSubmit={handleSubmit}
         onClick={(e) => e.stopPropagation()}
-        className={`bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transition-transform duration-200 ${
+        className={`bg-white rounded-[3px] shadow-2xl w-full max-w-lg overflow-hidden transition-transform duration-200 ${
           isOpen ? "translate-y-0" : "translate-y-2"
         }`}
       >
         <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-zinc-100">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+            <div className="flex h-11 w-11 items-center justify-center rounded-[3px] bg-blue-50 text-blue-600">
               <UserPlus className="h-5 w-5" />
             </div>
             <div>
@@ -138,7 +138,7 @@ export default function AddCustomerModal({ isOpen, onClose, onCreated }) {
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100"
+            className="flex h-9 w-9 items-center justify-center rounded-[3px] text-zinc-500 hover:bg-zinc-100"
             aria-label={dict?.common?.close ?? "Close"}
           >
             <X className="h-5 w-5" />
@@ -147,7 +147,7 @@ export default function AddCustomerModal({ isOpen, onClose, onCreated }) {
 
         <div className="px-5 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
           {error && (
-            <p className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            <p className="rounded-[3px] border border-rose-100 bg-rose-50 px-3 py-2 text-sm text-rose-700">
               {error}
             </p>
           )}
@@ -158,7 +158,7 @@ export default function AddCustomerModal({ isOpen, onClose, onCreated }) {
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
+                className="w-full rounded-[3px] border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
                 autoComplete="off"
               />
             </Field>
@@ -168,7 +168,7 @@ export default function AddCustomerModal({ isOpen, onClose, onCreated }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
+                className="w-full rounded-[3px] border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
                 autoComplete="off"
               />
             </Field>
@@ -180,7 +180,7 @@ export default function AddCustomerModal({ isOpen, onClose, onCreated }) {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
+                  className="w-full rounded-[3px] border border-zinc-200 px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
                   autoComplete="new-password"
                 />
                 <button
@@ -201,7 +201,7 @@ export default function AddCustomerModal({ isOpen, onClose, onCreated }) {
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
+                className="w-full rounded-[3px] border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </Field>
             <Field label={tA.city ?? "City"}>
@@ -209,7 +209,7 @@ export default function AddCustomerModal({ isOpen, onClose, onCreated }) {
                 type="text"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
+                className="w-full rounded-[3px] border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </Field>
             <Field label={tA.address ?? "Address"} className="sm:col-span-2">
@@ -217,7 +217,7 @@ export default function AddCustomerModal({ isOpen, onClose, onCreated }) {
                 type="text"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
+                className="w-full rounded-[3px] border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </Field>
             <Field label={tA.country ?? "Country"} className="sm:col-span-2">
@@ -225,7 +225,7 @@ export default function AddCustomerModal({ isOpen, onClose, onCreated }) {
                 type="text"
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
+                className="w-full rounded-[3px] border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </Field>
           </div>
@@ -236,14 +236,14 @@ export default function AddCustomerModal({ isOpen, onClose, onCreated }) {
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+            className="rounded-[3px] border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
           >
             {dict?.common?.cancel ?? "Cancel"}
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-75"
+            className="inline-flex items-center gap-2 rounded-[3px] bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-75"
           >
             {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
             {tA.submit ?? "Create customer"}

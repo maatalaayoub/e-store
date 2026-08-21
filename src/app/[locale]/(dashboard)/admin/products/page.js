@@ -53,7 +53,7 @@ function ConfirmModal({
       onClick={onCancel}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        className="w-full max-w-md rounded-[3px] bg-white shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -82,7 +82,7 @@ function ConfirmModal({
               <span>Linked orders ({orders.length})</span>
               <span className="text-zinc-300 font-normal normal-case tracking-normal">Click to open</span>
             </div>
-            <ul className="rounded-xl border border-zinc-200 bg-zinc-50/60 divide-y divide-zinc-200 max-h-56 overflow-y-auto">
+            <ul className="rounded-[3px] border border-zinc-200 bg-zinc-50/60 divide-y divide-zinc-200 max-h-56 overflow-y-auto">
               {orders.map((o) => (
                 <li key={o.id}>
                   <button
@@ -122,7 +122,7 @@ function ConfirmModal({
         <div className="flex justify-end gap-2 px-6 py-4 bg-zinc-50 border-t border-zinc-100">
           <button
             onClick={onCancel}
-            className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 transition-colors"
+            className="rounded-[3px] border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 transition-colors"
           >
             {cancelLabel}
           </button>
@@ -200,7 +200,7 @@ function ActionMenu({ product, onEdit, onDelete, onSetStatus, disabled }) {
         <div
           ref={panelRef}
           style={{ position: "fixed", top: coords.top, left: coords.left, width: 176, zIndex: 10000 }}
-          className="rounded-xl border border-zinc-200 bg-white shadow-xl py-1 flex flex-col"
+          className="rounded-[3px] border border-zinc-200 bg-white shadow-xl py-1 flex flex-col"
         >
           <button
             onClick={() => pick(onEdit)}
@@ -678,14 +678,14 @@ export default function AdminProductsPage() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setCategoriesModalOpen(true)}
-            className="flex items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            className="flex items-center justify-center gap-2 rounded-[3px] border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
           >
             <Tag className="h-4 w-4" />
             {t.manage_categories ?? "Manage Categories"}
           </button>
           <button
             onClick={openCreate}
-            className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className="flex items-center justify-center gap-2 rounded-[3px] bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
             <Plus className="h-4 w-4" />
             {t.add}
@@ -694,7 +694,7 @@ export default function AdminProductsPage() {
       </div>
 
       {/* CARD */}
-      <div className="rounded-xl border border-zinc-100 bg-white">
+      <div className="rounded-[3px] border border-zinc-100 bg-white">
         {/* TABS + SEARCH */}
         <div className="flex flex-col gap-4 border-b border-zinc-100 px-4 sm:px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-1">
@@ -702,7 +702,7 @@ export default function AdminProductsPage() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                className={`rounded-[3px] px-3 py-1.5 text-sm font-medium transition-colors ${
                   activeTab === tab
                     ? "bg-blue-50 text-blue-600"
                     : "text-zinc-600 hover:bg-zinc-50"
@@ -720,13 +720,13 @@ export default function AdminProductsPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t.search}
-                className="w-full sm:w-64 rounded-lg border border-zinc-200 bg-white pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
+                className="w-full sm:w-64 rounded-[3px] border border-zinc-200 bg-white pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
             <button
               ref={filterBtnRef}
               onClick={openFilter}
-              className={`relative flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+              className={`relative flex items-center gap-2 rounded-[3px] border px-3 py-2 text-sm font-medium transition-colors ${
                 filterOpen || activeFilterCount > 0
                   ? "border-blue-300 bg-blue-50 text-blue-700"
                   : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
@@ -745,7 +745,7 @@ export default function AdminProductsPage() {
               <div
                 ref={filterPanelRef}
                 style={{ position: "fixed", top: filterCoords.top, left: filterCoords.left, width: 240, zIndex: 9999 }}
-                className="rounded-xl border border-zinc-200 bg-white shadow-xl p-4 flex flex-col gap-4"
+                className="rounded-[3px] border border-zinc-200 bg-white shadow-xl p-4 flex flex-col gap-4"
               >
                 {/* Category */}
                 {uniqueCategories.length > 0 && (
@@ -755,7 +755,7 @@ export default function AdminProductsPage() {
                       <button
                         type="button"
                         onClick={() => setFilterCategory("")}
-                        className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
+                        className={`rounded-[3px] px-3 py-1 text-xs font-medium border transition-colors ${
                           !filterCategory ? "bg-blue-600 text-white border-blue-600" : "bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50"
                         }`}
                       >
@@ -766,7 +766,7 @@ export default function AdminProductsPage() {
                           key={cat}
                           type="button"
                           onClick={() => setFilterCategory(cat === filterCategory ? "" : cat)}
-                          className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
+                          className={`rounded-[3px] px-3 py-1 text-xs font-medium border transition-colors ${
                             filterCategory === cat ? "bg-blue-600 text-white border-blue-600" : "bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50"
                           }`}
                         >

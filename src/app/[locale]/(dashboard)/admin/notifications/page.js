@@ -335,13 +335,13 @@ export default function AdminNotificationsPage() {
       </div>
 
       {/* Toolbar: tabs + actions */}
-      <div className="mb-4 flex flex-col gap-3 rounded-xl border border-zinc-100 bg-white p-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-4 flex flex-col gap-3 rounded-[3px] border border-zinc-100 bg-white p-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-1.5 px-1">
           {TAB_KEYS.map((tab) => (
             <button
               key={tab}
               onClick={() => handleTabChange(tab)}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
+              className={`rounded-[3px] px-3.5 py-1.5 text-xs font-medium transition-colors ${
                 activeTab === tab
                   ? "bg-blue-600 text-white shadow-sm"
                   : "text-zinc-600 hover:bg-zinc-100"
@@ -360,7 +360,7 @@ export default function AdminNotificationsPage() {
           {notifications.length > 0 && (
             <button
               onClick={toggleSelectAll}
-              className={`inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-[3px] transition-colors ${
                 selectedIds.length > 0
                   ? "bg-blue-50 text-blue-600 hover:bg-blue-100"
                   : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
@@ -384,7 +384,7 @@ export default function AdminNotificationsPage() {
               </span>
               <button
                 onClick={() => setBulkDeleteOpen(true)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-[3px] text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
                 title={t.delete_selected ?? "Delete selected"}
                 aria-label={t.delete_selected ?? "Delete selected"}
               >
@@ -395,7 +395,7 @@ export default function AdminNotificationsPage() {
           {selectedIds.length === 0 && unreadCount > 0 && (
             <button
               onClick={markAllAsRead}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-[3px] text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
               title={t.mark_all_read ?? "Mark all as read"}
               aria-label={t.mark_all_read ?? "Mark all as read"}
             >
@@ -405,7 +405,7 @@ export default function AdminNotificationsPage() {
           {selectedIds.length === 0 && notifications.some((n) => n.read) && (
             <button
               onClick={clearRead}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-red-50 hover:text-red-600"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-[3px] text-zinc-500 transition-colors hover:bg-red-50 hover:text-red-600"
               title={t.clear_read ?? "Clear read"}
               aria-label={t.clear_read ?? "Clear read"}
             >
@@ -416,7 +416,7 @@ export default function AdminNotificationsPage() {
       </div>
 
       {/* List */}
-      <div className="rounded-xl border border-zinc-100 bg-white">
+      <div className="rounded-[3px] border border-zinc-100 bg-white">
         {filtered.length === 0 && !loading && (
           <div className="flex flex-col items-center justify-center py-16 text-zinc-400">
             <Bell className="mb-3 h-12 w-12 opacity-40" />
@@ -468,7 +468,7 @@ export default function AdminNotificationsPage() {
                     e.stopPropagation();
                     toggleSelect(n.id);
                   }}
-                  className={`mt-1 shrink-0 rounded p-0.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
+                  className={`mt-1 shrink-0 rounded-[3px] p-0.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
                     selectedIds.includes(n.id)
                       ? "text-blue-600 hover:text-blue-700"
                       : "text-zinc-400 hover:text-zinc-600"
@@ -489,7 +489,7 @@ export default function AdminNotificationsPage() {
                   )}
                 </button>
                 <div
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white ${meta.color}`}
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[3px] text-white ${meta.color}`}
                 >
                   <Icon className="h-5 w-5" />
                 </div>
@@ -499,7 +499,7 @@ export default function AdminNotificationsPage() {
                       <p className="text-sm font-semibold text-zinc-900">
                         {title}
                         {isUnread && (
-                          <span className="ms-2 inline-block h-2 w-2 rounded-full bg-blue-600" />
+                          <span className="ms-2 inline-block h-2 w-2 rounded-[3px] bg-blue-600" />
                         )}
                       </p>
                       <p className="mt-1 text-sm text-zinc-600">{description}</p>
@@ -513,7 +513,7 @@ export default function AdminNotificationsPage() {
                             e.stopPropagation();
                             markAsRead(n.id);
                           }}
-                          className="rounded p-1.5 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700"
+                          className="rounded-[3px] p-1.5 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700"
                           title={t.mark_read}
                           aria-label={t.mark_read}
                         >
@@ -526,7 +526,7 @@ export default function AdminNotificationsPage() {
                           e.stopPropagation();
                           setDeleteId(n.id);
                         }}
-                        className="rounded p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600"
+                        className="rounded-[3px] p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600"
                         title={t.delete}
                         aria-label={t.delete}
                       >
@@ -573,7 +573,7 @@ export default function AdminNotificationsPage() {
             <button
               onClick={() => fetchNotifications(false)}
               disabled={loading}
-              className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-[3px] px-4 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 disabled:opacity-50"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {t.load_more ?? "Load more"}

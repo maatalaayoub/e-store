@@ -80,9 +80,9 @@ function StatusSelect({ value, disabled, onChange, labels = {} }) {
         type="button"
         disabled={disabled}
         onClick={openDropdown}
-        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-opacity disabled:opacity-60 disabled:cursor-not-allowed ${style.pill}`}
+        className={`inline-flex items-center gap-1.5 rounded-[3px] border px-3 py-1 text-xs font-medium transition-opacity disabled:opacity-60 disabled:cursor-not-allowed ${style.pill}`}
       >
-        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${style.dot}`} />
+        <span className={`h-1.5 w-1.5 rounded-[3px] shrink-0 ${style.dot}`} />
         <span>{label(value)}</span>
         {!disabled && <ChevronDown className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`} />}
       </button>
@@ -90,7 +90,7 @@ function StatusSelect({ value, disabled, onChange, labels = {} }) {
       {open && !disabled && createPortal(
         <div
           style={{ position: "fixed", top: coords.top, left: coords.left, width: coords.width, zIndex: 9999 }}
-          className="rounded-xl border border-zinc-100 bg-white shadow-xl py-1.5 pb-2"
+          className="rounded-[3px] border border-zinc-100 bg-white shadow-xl py-1.5 pb-2"
         >
           {STATUS_OPTIONS.map((s) => {
             const st = STATUS_STYLES[s] ?? { dot: "bg-zinc-400" };
@@ -101,7 +101,7 @@ function StatusSelect({ value, disabled, onChange, labels = {} }) {
                 onMouseDown={(e) => { e.preventDefault(); onChange(s); setOpen(false); }}
                 className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors hover:bg-zinc-50 ${s === value ? "text-zinc-900" : "text-zinc-600"}`}
               >
-                <span className={`h-2 w-2 rounded-full shrink-0 ${st.dot}`} />
+                <span className={`h-2 w-2 rounded-[3px] shrink-0 ${st.dot}`} />
                 <span className="flex-1 text-left">{label(s)}</span>
                 {s === value && <Check className="h-3 w-3 text-zinc-400 shrink-0" />}
               </button>
@@ -276,13 +276,13 @@ function OrderDrawer({ order, onClose, onStatusChanged }) {
       />
 
       {/*
-        Mobile  → bottom sheet: slides up from bottom, rounded top corners, max 85vh
+        Mobile  → bottom sheet: slides up from bottom, rounded-[3px] top corners, max 85vh
         Desktop → side drawer:  slides in from right, full height, max-w-md
       */}
       <div
         className={`
           fixed z-[10002] bg-white shadow-2xl flex flex-col overflow-hidden transition-transform duration-300
-          bottom-0 left-0 right-0 max-h-[85vh] rounded-t-2xl
+          bottom-0 left-0 right-0 max-h-[85vh] rounded-t-[3px]
           sm:bottom-auto sm:top-0 sm:left-auto sm:right-0 sm:h-full sm:max-h-none sm:w-full sm:max-w-md sm:rounded-none
           ${open ? "translate-y-0 sm:translate-x-0" : "translate-y-full sm:translate-y-0 sm:translate-x-full"}
         `}
@@ -290,7 +290,7 @@ function OrderDrawer({ order, onClose, onStatusChanged }) {
       >
         {/* Mobile drag handle */}
         <div className="flex justify-center pt-3 pb-1 sm:hidden" aria-hidden="true">
-          <div className="h-1 w-10 rounded-full bg-zinc-200" />
+          <div className="h-1 w-10 rounded-[3px] bg-zinc-200" />
         </div>
 
         {/* Header */}
@@ -302,7 +302,7 @@ function OrderDrawer({ order, onClose, onStatusChanged }) {
               {data.promo_code_id && (
                 <Link
                   href={`/${locale}/admin/marketing?promo=${data.promo_code_id}`}
-                  className="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[11px] font-semibold uppercase text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
+                  className="inline-flex items-center gap-1 rounded-[3px] bg-emerald-50 px-1.5 py-0.5 text-[11px] font-semibold uppercase text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
                   title={promoAppliedLabel}
                 >
                   <Tag className="h-3 w-3" />
@@ -312,13 +312,13 @@ function OrderDrawer({ order, onClose, onStatusChanged }) {
             </h2>
           </div>
           <div className="flex items-center gap-3">
-            <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${style.pill}`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${style.dot}`} />
+            <span className={`inline-flex items-center gap-1.5 rounded-[3px] border px-3 py-1 text-xs font-medium ${style.pill}`}>
+              <span className={`h-1.5 w-1.5 rounded-[3px] ${style.dot}`} />
               {tTabs[data.status] ?? data.status}
             </span>
             <button
               onClick={handleClose}
-              className="hidden sm:flex p-1.5 rounded-lg text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
+              className="hidden sm:flex p-1.5 rounded-[3px] text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
@@ -365,13 +365,13 @@ function OrderDrawer({ order, onClose, onStatusChanged }) {
               /* Skeleton */
               <ul className="flex flex-col gap-2">
                 {[1, 2].map((n) => (
-                  <li key={n} className="flex items-center gap-3 rounded-xl bg-zinc-50 px-4 py-3 animate-pulse">
-                    <div className="h-7 w-7 rounded-lg bg-zinc-200 shrink-0" />
+                  <li key={n} className="flex items-center gap-3 rounded-[3px] bg-zinc-50 px-4 py-3 animate-pulse">
+                    <div className="h-7 w-7 rounded-[3px] bg-zinc-200 shrink-0" />
                     <div className="flex-1 flex flex-col gap-1.5">
-                      <div className="h-3 w-2/3 rounded bg-zinc-200" />
-                      <div className="h-2.5 w-1/2 rounded bg-zinc-100" />
+                      <div className="h-3 w-2/3 rounded-[3px] bg-zinc-200" />
+                      <div className="h-2.5 w-1/2 rounded-[3px] bg-zinc-100" />
                     </div>
-                    <div className="h-3 w-12 rounded bg-zinc-200 shrink-0" />
+                    <div className="h-3 w-12 rounded-[3px] bg-zinc-200 shrink-0" />
                   </li>
                 ))}
               </ul>
@@ -397,7 +397,7 @@ function OrderDrawer({ order, onClose, onStatusChanged }) {
                   const colorHex  = item.selected_color?.hex ?? null;
                   const sizeLabel = item.selected_size ?? null;
                   return (
-                    <li key={i} className="flex items-start justify-between gap-3 rounded-xl bg-zinc-50 px-3 py-3">
+                    <li key={i} className="flex items-start justify-between gap-3 rounded-[3px] bg-zinc-50 px-3 py-3">
                       <div className="flex items-start gap-3 min-w-0">
                         {imageUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -405,10 +405,10 @@ function OrderDrawer({ order, onClose, onStatusChanged }) {
                             src={imageUrl}
                             alt=""
                             loading="lazy"
-                            className="h-12 w-12 shrink-0 rounded-lg object-cover bg-zinc-200"
+                            className="h-12 w-12 shrink-0 rounded-[3px] object-cover bg-zinc-200"
                           />
                         ) : (
-                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-zinc-200 text-zinc-500">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[3px] bg-zinc-200 text-zinc-500">
                             <Package className="h-5 w-5" />
                           </div>
                         )}
@@ -428,7 +428,7 @@ function OrderDrawer({ order, onClose, onStatusChanged }) {
                                   {colorHex && (
                                     <span
                                       aria-hidden="true"
-                                      className="inline-block h-3 w-3 rounded-full border border-zinc-200"
+                                      className="inline-block h-3 w-3 rounded-[3px] border border-zinc-200"
                                       style={{ backgroundColor: colorHex }}
                                     />
                                   )}
@@ -477,7 +477,7 @@ function OrderDrawer({ order, onClose, onStatusChanged }) {
               type="button"
               disabled={sendingInvoice}
               onClick={handleSendInvoice}
-              className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-green-200 bg-white px-3 py-2.5 text-sm font-semibold text-green-700 hover:bg-green-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              className="w-full inline-flex items-center justify-center gap-1.5 rounded-[3px] border border-green-200 bg-white px-3 py-2.5 text-sm font-semibold text-green-700 hover:bg-green-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
             >
               {sendingInvoice ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
               <span>{tD.send_invoice_whatsapp ?? "Send invoice via WhatsApp"}</span>
@@ -488,7 +488,7 @@ function OrderDrawer({ order, onClose, onStatusChanged }) {
             if (status === "cancelled") {
               return (
                 <div className="px-5 pb-4">
-                  <div className="flex items-center gap-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-700">
+                  <div className="flex items-center gap-2 rounded-[3px] border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-700">
                     <XCircle className="h-4 w-4 shrink-0" />
                     <span>
                       {tD.cancelled_note ?? "This order has been cancelled."}
@@ -505,7 +505,7 @@ function OrderDrawer({ order, onClose, onStatusChanged }) {
                     type="button"
                     disabled={submitting}
                     onClick={() => setPendingCancel(true)}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-[3px] border border-red-200 bg-white px-3 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     <XCircle className="h-4 w-4" />
                     <span>{tD.cancel ?? "Cancel"}</span>
@@ -514,7 +514,7 @@ function OrderDrawer({ order, onClose, onStatusChanged }) {
                     type="button"
                     disabled={submitting}
                     onClick={() => handleUpdateStatus("confirmed")}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-[3px] bg-emerald-600 px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                   >
                     {submitting ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -532,7 +532,7 @@ function OrderDrawer({ order, onClose, onStatusChanged }) {
                   type="button"
                   disabled={submitting}
                   onClick={() => setPendingCancel(true)}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-[3px] border border-red-200 bg-white px-3 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <XCircle className="h-4 w-4" />
                   <span>{tD.cancel ?? "Cancel"}</span>
@@ -542,7 +542,7 @@ function OrderDrawer({ order, onClose, onStatusChanged }) {
                   type="button"
                   disabled={submitting}
                   onClick={openChangeMenu}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-[3px] bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                 >
                   {submitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -562,7 +562,7 @@ function OrderDrawer({ order, onClose, onStatusChanged }) {
       {changeMenuOpen && !submitting && createPortal(
         <div
           style={{ position: "fixed", top: changeCoords.top, left: changeCoords.left, width: changeCoords.width, zIndex: 10003 }}
-          className="rounded-xl border border-zinc-100 bg-white shadow-xl py-1.5"
+          className="rounded-[3px] border border-zinc-100 bg-white shadow-xl py-1.5"
         >
           {STATUS_OPTIONS
             .filter((s) => s !== data.status && s !== "cancelled")
@@ -575,7 +575,7 @@ function OrderDrawer({ order, onClose, onStatusChanged }) {
                   onMouseDown={(e) => { e.preventDefault(); handleUpdateStatus(s); }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
                 >
-                  <span className={`h-2 w-2 rounded-full shrink-0 ${st.dot}`} />
+                  <span className={`h-2 w-2 rounded-[3px] shrink-0 ${st.dot}`} />
                   <span className="flex-1 text-left">{tTabs[s] ?? s}</span>
                 </button>
               );
@@ -713,16 +713,6 @@ export default function AdminOrdersPage() {
   /* ── Price helpers ── */
   /** Base admin price is always in MAD (DH) */
   const formatMAD = (amount) => `${Number(amount ?? 0).toFixed(2)} DH`;
-
-  /**
-   * Show the customer-facing price using exchange_rate stored at order time.
-   * exchange_rate = 1 MAD → customer currency
-   */
-  const formatCustomerCurrency = (totalMad, currencyCode, rate) => {
-    if (!currencyCode || currencyCode === "MAD") return null;
-    const converted = Number(totalMad ?? 0) * Number(rate ?? 1);
-    return `≈ ${converted.toFixed(2)} ${currencyCode}`;
-  };
 
   /* ── Stats ── */
   const totalRevenue = orders.reduce((s, o) => s + Number(o.total_amount ?? 0), 0);
@@ -875,11 +865,11 @@ export default function AdminOrdersPage() {
           <button
             onClick={loadData}
             disabled={loading}
-            className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-[3px] border border-zinc-200 bg-white px-3 h-10 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </button>
-          <button className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-50">
+          <button className="flex items-center gap-2 rounded-[3px] border border-zinc-200 bg-white px-4 h-10 text-sm font-medium text-zinc-900 hover:bg-zinc-50">
             <Download className="h-4 w-4" />
             {t.export ?? "Export"}
           </button>
@@ -889,7 +879,7 @@ export default function AdminOrdersPage() {
       {/* STATS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {stats.map((stat, idx) => (
-          <div key={idx} className="rounded-xl border border-zinc-100 bg-white p-5">
+          <div key={idx} className="rounded-[3px] border border-zinc-100 bg-white p-5">
             <p className="text-sm font-medium text-zinc-500 mb-1">{stat.label}</p>
             <h3 className="text-xl font-bold text-zinc-900">{stat.value}</h3>
           </div>
@@ -897,14 +887,14 @@ export default function AdminOrdersPage() {
       </div>
 
       {/* CARD */}
-      <div className="rounded-xl border border-zinc-100 bg-white">
+      <div className="rounded-[3px] border border-zinc-100 bg-white">
         <div className="flex flex-col gap-4 border-b border-zinc-100 px-4 sm:px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-1">
             {TAB_KEYS.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                className={`rounded-[3px] px-3 py-1.5 text-sm font-medium transition-colors ${
                   activeTab === tab ? "bg-blue-50 text-blue-600" : "text-zinc-600 hover:bg-zinc-50"
                 }`}
               >
@@ -920,13 +910,13 @@ export default function AdminOrdersPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t.search ?? "Search orders…"}
-                className="w-full sm:w-64 rounded-lg border border-zinc-200 bg-white pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
+                className="w-full sm:w-64 rounded-[3px] border border-zinc-200 bg-white pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
             <button
               ref={filterBtnRef}
               onClick={openFilter}
-              className={`relative flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+              className={`relative flex items-center gap-2 rounded-[3px] border px-3 py-2 text-sm font-medium transition-colors ${
                 filterOpen || activeFilterCount > 0
                   ? "border-blue-300 bg-blue-50 text-blue-700"
                   : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"
@@ -935,7 +925,7 @@ export default function AdminOrdersPage() {
               <Filter className="h-4 w-4" />
               <span className="hidden sm:inline">{dict?.common?.filter ?? "Filter"}</span>
               {activeFilterCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-[3px] bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">
                   {activeFilterCount}
                 </span>
               )}
@@ -950,7 +940,7 @@ export default function AdminOrdersPage() {
                 disabled={visibleIds.length === 0}
                 title={allVisibleSelected ? (t.deselect ?? "Deselect") : (t.select_all ?? "Select all")}
                 aria-label={allVisibleSelected ? (t.deselect ?? "Deselect") : (t.select_all ?? "Select all")}
-                className={`sm:hidden flex h-9 w-9 items-center justify-center rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                className={`sm:hidden flex h-9 w-9 items-center justify-center rounded-[3px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                   visibleSelectedCount > 0
                     ? "text-blue-600 hover:bg-blue-50"
                     : "text-zinc-500 hover:bg-zinc-100"
@@ -966,7 +956,7 @@ export default function AdminOrdersPage() {
               </button>
               {selectedIds.length > 0 && (
                 <>
-                  <span className="whitespace-nowrap rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                  <span className="whitespace-nowrap rounded-[3px] bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
                     {selectedIds.length} {t.selected ?? "selected"}
                   </span>
                   <button
@@ -974,7 +964,7 @@ export default function AdminOrdersPage() {
                     onClick={() => setBulkDeleteOpen(true)}
                     title={t.delete_selected ?? "Delete selected"}
                     aria-label={t.delete_selected ?? "Delete selected"}
-                    className="flex h-9 w-9 items-center justify-center rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+                    className="flex h-9 w-9 items-center justify-center rounded-[3px] text-red-600 hover:bg-red-50 transition-colors"
                   >
                     <Trash2 className="h-5 w-5" />
                   </button>
@@ -986,7 +976,7 @@ export default function AdminOrdersPage() {
               <div
                 ref={filterPanelRef}
                 style={{ position: "fixed", top: filterCoords.top, left: filterCoords.left, width: 240, zIndex: 9999 }}
-                className="rounded-xl border border-zinc-200 bg-white shadow-xl p-4 flex flex-col gap-4"
+                className="rounded-[3px] border border-zinc-200 bg-white shadow-xl p-4 flex flex-col gap-4"
               >
                 {/* Date range */}
                 <div>
@@ -997,7 +987,7 @@ export default function AdminOrdersPage() {
                         key={opt}
                         type="button"
                         onClick={() => setDateRange(opt)}
-                        className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
+                        className={`rounded-[3px] px-3 py-1 text-xs font-medium border transition-colors ${
                           dateRange === opt
                             ? "bg-blue-600 text-white border-blue-600"
                             : "bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50"
@@ -1023,7 +1013,7 @@ export default function AdminOrdersPage() {
                         key={opt}
                         type="button"
                         onClick={() => setCancelledBy(opt)}
-                        className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
+                        className={`rounded-[3px] px-3 py-1 text-xs font-medium border transition-colors ${
                           cancelledBy === opt
                             ? "bg-blue-600 text-white border-blue-600"
                             : "bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50"
@@ -1058,7 +1048,7 @@ export default function AdminOrdersPage() {
               <div key={i} className="py-4 flex gap-4 animate-pulse">
                 <div className="h-4 w-24 bg-zinc-100 rounded" />
                 <div className="h-4 w-32 bg-zinc-100 rounded" />
-                <div className="h-4 w-20 bg-zinc-100 rounded ml-auto" />
+                <div className="h-4 w-20 bg-zinc-100 rounded-[3px] ml-auto" />
               </div>
             ))}
           </div>
@@ -1067,7 +1057,7 @@ export default function AdminOrdersPage() {
         {/* EMPTY STATE */}
         {!loading && filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center text-center px-6 py-16">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-400 mb-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-[3px] bg-zinc-100 text-zinc-400 mb-3">
               <ShoppingCart className="h-6 w-6" />
             </div>
             <p className="font-medium text-zinc-900 mb-1">{t.empty_title ?? "No orders yet"}</p>
@@ -1081,7 +1071,6 @@ export default function AdminOrdersPage() {
             {filtered.map((o) => {
               const customer = o.shipping_address?.full_name ?? "Guest";
               const date = new Date(o.created_at).toLocaleDateString();
-              const customerAmt = formatCustomerCurrency(o.total_amount, o.currency_code, o.exchange_rate);
               return (
                 <li key={o.id} id={`order-row-${o.id}`} className={`px-4 py-4 flex gap-3 cursor-pointer hover:bg-zinc-50 active:bg-zinc-100 transition-colors ${selectedIds.includes(o.id) ? "bg-blue-50/50" : ""}`} onClick={() => {
                   if (selectedIds.length > 0) { toggleSelect(o.id); return; }
@@ -1107,7 +1096,7 @@ export default function AdminOrdersPage() {
                         <Link
                           href={`/${locale}/admin/marketing?promo=${o.promo_code_id}`}
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
+                          className="inline-flex items-center gap-1 rounded-[3px] bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
                           title={t.promo_applied ?? "Promo code applied"}
                         >
                           <Tag className="h-2.5 w-2.5" />
@@ -1134,7 +1123,6 @@ export default function AdminOrdersPage() {
                         </span>
                       )}
                       <span className="text-sm font-semibold text-zinc-900">{formatMAD(o.total_amount)}</span>
-                      {customerAmt && <span className="ml-1.5 text-xs text-zinc-400">{customerAmt}</span>}
                     </div>
                     <StatusSelect
                       value={o.status}
@@ -1179,7 +1167,6 @@ export default function AdminOrdersPage() {
                   <th className="px-6 py-3 font-medium">{tH.customer ?? "Customer"}</th>
                   <th className="px-6 py-3 font-medium">{tH.date ?? "Date"}</th>
                   <th className="px-6 py-3 font-medium">Total (DH)</th>
-                  <th className="px-6 py-3 font-medium">Customer Currency</th>
                   <th className="px-6 py-3 font-medium">{tH.status ?? "Status"}</th>
                 </tr>
               </thead>
@@ -1188,7 +1175,6 @@ export default function AdminOrdersPage() {
                   const customer = o.shipping_address?.full_name ?? "Guest";
                   const country  = o.shipping_address?.country ?? "";
                   const date     = new Date(o.created_at).toLocaleDateString();
-                  const customerAmt = formatCustomerCurrency(o.total_amount, o.currency_code, o.exchange_rate);
                   return (
                     <tr key={o.id} id={`order-row-${o.id}`} className={`hover:bg-zinc-50 cursor-pointer ${selectedIds.includes(o.id) ? "bg-blue-50/40" : ""}`} onClick={() => {
                       if (selectedIds.length > 0) { toggleSelect(o.id); return; }
@@ -1215,7 +1201,7 @@ export default function AdminOrdersPage() {
                             <Link
                               href={`/${locale}/admin/marketing?promo=${o.promo_code_id}`}
                               onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
+                              className="inline-flex items-center gap-1 rounded-[3px] bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
                               title={t.promo_applied ?? "Promo code applied"}
                             >
                               <Tag className="h-2.5 w-2.5" />
@@ -1236,9 +1222,6 @@ export default function AdminOrdersPage() {
                           </span>
                         )}
                         {formatMAD(o.total_amount)}
-                      </td>
-                      <td className="px-6 py-4 text-zinc-500 whitespace-nowrap">
-                        {customerAmt ?? <span className="text-zinc-300">—</span>}
                       </td>
                       <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                         <StatusSelect

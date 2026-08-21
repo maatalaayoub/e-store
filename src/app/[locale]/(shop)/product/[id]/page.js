@@ -176,9 +176,6 @@ export default async function ProductDetailsPage({ params }) {
               </section>
             )}
 
-            {/* Type-specific specifications (dynamic, schema-driven) */}
-            <ProductSpecs product={product} dict={dict} />
-
             <ProductPurchasePanel
               product={product}
               colors={colors}
@@ -195,6 +192,9 @@ export default async function ProductDetailsPage({ params }) {
                 <CheckoutCmp section={checkoutSection} product={product} locale={locale} dict={dict} compact={true} />
               </div>
             )}
+
+            {/* Type-specific specifications (dynamic, schema-driven) */}
+            <ProductSpecs product={product} dict={dict} />
           </div>
         </div>
 

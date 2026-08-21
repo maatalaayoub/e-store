@@ -45,7 +45,7 @@ export default function ProductSpecs({ product, dict }) {
       <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-900 mb-3">
         {specsTitle}
       </h2>
-      <div className="overflow-hidden rounded-[5px] border border-zinc-200">
+      <div className="overflow-hidden rounded-[2px] border border-zinc-200">
         {groups.map((group, gi) => (
           <div key={group.id} className={gi > 0 ? "border-t border-zinc-200" : undefined}>
             {groups.length > 1 && group.label !== specsTitle && (

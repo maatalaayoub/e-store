@@ -57,14 +57,14 @@ export default function AdminDashboard() {
         <div className="flex flex-wrap gap-3">
           <Link
             href={`/${locale}/admin/settings`}
-            className="flex items-center gap-2 rounded-lg bg-white border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-50"
+            className="flex items-center gap-2 rounded-[3px] bg-white border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-50"
           >
             <Settings className="h-4 w-4" />
             {t.customize}
           </Link>
           <Link
             href={`/${locale}/admin/products`}
-            className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className="flex items-center gap-2 rounded-[3px] bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
             <Plus className="h-4 w-4" />
             {t.add_product}
@@ -75,7 +75,7 @@ export default function AdminDashboard() {
       {/* STATS GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {stats.map((stat, idx) => (
-          <div key={idx} className="rounded-xl border border-zinc-100 bg-white p-6">
+          <div key={idx} className="rounded-[3px] border border-zinc-100 bg-white p-6">
             <p className="text-sm font-medium text-zinc-500 mb-1">{stat.label}</p>
             <h3 className={`text-2xl font-bold text-zinc-900 whitespace-nowrap ${loading ? "animate-pulse text-zinc-300" : ""}`}>
               {stat.value}
@@ -88,7 +88,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* RECENT PRODUCTS TABLE */}
-      <div className="rounded-xl border border-zinc-100 bg-white flex flex-col">
+      <div className="rounded-[3px] border border-zinc-100 bg-white flex flex-col">
         <div className="border-b border-zinc-100 px-6 py-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-zinc-900">{t.recent_title}</h2>
           <Link

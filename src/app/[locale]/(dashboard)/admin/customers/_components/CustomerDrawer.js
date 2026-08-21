@@ -212,13 +212,13 @@ export default function CustomerDrawer({ customerId, isOpen, onClose, onChanged 
       >
         {/* Mobile handle */}
         <div className="flex justify-center pt-3 pb-1 sm:hidden" aria-hidden="true">
-          <div className="h-1 w-10 rounded-full bg-zinc-200" />
+          <div className="h-1 w-10 rounded-[3px] bg-zinc-200" />
         </div>
 
         {/* Header */}
         <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-zinc-100">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-bold text-sm">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[3px] bg-blue-100 text-blue-700 font-bold text-sm">
               {getInitials(displayName)}
             </div>
             <div className="min-w-0">
@@ -230,13 +230,13 @@ export default function CustomerDrawer({ customerId, isOpen, onClose, onChanged 
               </h2>
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
                 {isGuest && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                  <span className="inline-flex items-center gap-1 rounded-[3px] border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
                     <UserRound className="h-3 w-3" />
                     {tD.guest_badge ?? "No account"}
                   </span>
                 )}
                 {profile?.is_banned && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700">
+                  <span className="inline-flex items-center gap-1 rounded-[3px] border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700">
                     <Ban className="h-3 w-3" />
                     {tD.banned ?? "Banned"}
                   </span>
@@ -247,7 +247,7 @@ export default function CustomerDrawer({ customerId, isOpen, onClose, onChanged 
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100"
+            className="flex h-9 w-9 items-center justify-center rounded-[3px] text-zinc-500 hover:bg-zinc-100"
             aria-label={dict?.common?.close ?? "Close"}
           >
             <X className="h-5 w-5" />
@@ -262,7 +262,7 @@ export default function CustomerDrawer({ customerId, isOpen, onClose, onChanged 
             </div>
           )}
           {!loading && error && (
-            <div className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            <div className="rounded-[3px] border border-rose-100 bg-rose-50 px-3 py-2 text-sm text-rose-700">
               {error}
             </div>
           )}
@@ -364,7 +364,7 @@ export default function CustomerDrawer({ customerId, isOpen, onClose, onChanged 
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                               <span
-                                className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${badge}`}
+                                className={`inline-flex items-center rounded-[3px] border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${badge}`}
                               >
                                 {statusLabel}
                               </span>
@@ -379,7 +379,7 @@ export default function CustomerDrawer({ customerId, isOpen, onClose, onChanged 
                                 key={idx}
                                 className="flex items-center gap-3 px-3 py-2"
                               >
-                                <div className="h-10 w-10 shrink-0 rounded-md bg-zinc-100 overflow-hidden flex items-center justify-center text-zinc-400">
+                                <div className="h-10 w-10 shrink-0 rounded-[3px] bg-zinc-100 overflow-hidden flex items-center justify-center text-zinc-400">
                                   {it.product_image ? (
                                     // eslint-disable-next-line @next/next/no-img-element
                                     <img
@@ -440,7 +440,7 @@ export default function CustomerDrawer({ customerId, isOpen, onClose, onChanged 
                           </p>
                         </div>
                         {d.is_banned && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700 shrink-0">
+                          <span className="inline-flex items-center gap-1 rounded-[3px] border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700 shrink-0">
                             <Ban className="h-3 w-3" />
                             {tD.banned ?? "Banned"}
                           </span>
@@ -469,7 +469,7 @@ export default function CustomerDrawer({ customerId, isOpen, onClose, onChanged 
               <button
                 type="button"
                 onClick={() => setUnbanOpen(true)}
-                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                className="inline-flex items-center gap-2 rounded-[3px] bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
               >
                 <ShieldCheck className="h-4 w-4" />
                 {isGuest
@@ -485,7 +485,7 @@ export default function CustomerDrawer({ customerId, isOpen, onClose, onChanged 
               <button
                 type="button"
                 onClick={() => setBanOpen(true)}
-                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                className="inline-flex items-center gap-2 rounded-[3px] bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
               >
                 <Ban className="h-4 w-4" />
                 {isGuest
@@ -505,11 +505,11 @@ export default function CustomerDrawer({ customerId, isOpen, onClose, onChanged 
             onClick={banSubmitting ? undefined : () => setBanOpen(false)}
           >
             <div
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-4"
+              className="bg-white rounded-[3px] shadow-2xl w-full max-w-md p-6 flex flex-col gap-4"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-500">
+                <div className="flex h-12 w-12 items-center justify-center rounded-[3px] bg-red-50 text-red-500">
                   <Ban className="h-6 w-6" />
                 </div>
                 <div>
@@ -534,7 +534,7 @@ export default function CustomerDrawer({ customerId, isOpen, onClose, onChanged 
                   onChange={(e) => setBanReason(e.target.value)}
                   rows={3}
                   placeholder={tD.ban_reason_placeholder ?? "Optional note visible to admins only"}
-                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
+                  className="mt-1 w-full rounded-[3px] border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
                 />
               </label>
               {!isGuest && (
@@ -543,7 +543,7 @@ export default function CustomerDrawer({ customerId, isOpen, onClose, onChanged 
                     type="checkbox"
                     checked={banDevices}
                     onChange={(e) => setBanDevices(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-red-600 focus:ring-red-600"
+                    className="mt-0.5 h-4 w-4 rounded-[3px] border-zinc-300 text-red-600 focus:ring-red-600"
                   />
                   <span>
                     {tD.ban_devices ??
@@ -556,7 +556,7 @@ export default function CustomerDrawer({ customerId, isOpen, onClose, onChanged 
                   type="button"
                   onClick={() => setBanOpen(false)}
                   disabled={banSubmitting}
-                  className="flex-1 rounded-xl border border-zinc-200 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+                  className="flex-1 rounded-[3px] border border-zinc-200 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
                 >
                   {dict?.common?.cancel ?? "Cancel"}
                 </button>
@@ -564,7 +564,7 @@ export default function CustomerDrawer({ customerId, isOpen, onClose, onChanged 
                   type="button"
                   onClick={submitBan}
                   disabled={banSubmitting}
-                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-75"
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-[3px] bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-75"
                 >
                   {banSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                   {isGuest
@@ -621,7 +621,7 @@ function Section({ title, children }) {
 
 function StatTile({ label, value }) {
   return (
-    <div className="rounded-lg border border-zinc-100 bg-white px-3 py-2">
+    <div className="rounded-[3px] border border-zinc-100 bg-white px-3 py-2">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
         {label}
       </p>
@@ -650,7 +650,7 @@ function SignalPill({ kind, dict }) {
   const cls = SIGNAL_STYLES[kind] ?? "bg-zinc-100 text-zinc-700 border-zinc-200";
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${cls}`}
+      className={`inline-flex items-center gap-1 rounded-[3px] border px-2 py-0.5 text-[11px] font-semibold ${cls}`}
     >
       {label}
     </span>

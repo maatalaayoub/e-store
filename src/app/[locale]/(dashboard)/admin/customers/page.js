@@ -169,7 +169,7 @@ export default function AdminCustomersPage() {
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-zinc-900">{t.title}</h1>
             {customers.length > 0 && (
-              <span className="inline-flex items-center rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-700">
+              <span className="inline-flex items-center rounded-[3px] bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-700">
                 {customers.length}
               </span>
             )}
@@ -178,7 +178,7 @@ export default function AdminCustomersPage() {
         </div>
         <button
           onClick={() => setAddOpen(true)}
-          className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="flex items-center justify-center gap-2 rounded-[3px] bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
         >
           <UserPlus className="h-4 w-4" />
           {t.add}
@@ -189,7 +189,7 @@ export default function AdminCustomersPage() {
         {statCards.map((stat, idx) => (
           <div
             key={idx}
-            className="rounded-xl border border-zinc-100 bg-white p-5"
+            className="rounded-[3px] border border-zinc-100 bg-white p-5"
           >
             <p className="text-sm font-medium text-zinc-500 mb-1">{stat.label}</p>
             <h3 className="text-xl font-bold text-zinc-900">{stat.value}</h3>
@@ -200,7 +200,7 @@ export default function AdminCustomersPage() {
         ))}
       </div>
 
-      <div className="rounded-xl border border-zinc-100 bg-white">
+      <div className="rounded-[3px] border border-zinc-100 bg-white">
         <div className="flex flex-col gap-4 border-b border-zinc-100 px-4 sm:px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-base font-semibold text-zinc-900">{t.all}</h2>
           <div className="flex items-center gap-2">
@@ -211,10 +211,10 @@ export default function AdminCustomersPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t.search}
-                className="w-full sm:w-64 rounded-lg border border-zinc-200 bg-white pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
+                className="w-full sm:w-64 rounded-[3px] border border-zinc-200 bg-white pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
-            <button className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
+            <button className="flex items-center gap-2 rounded-[3px] border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
               <Filter className="h-4 w-4" />
               <span className="hidden sm:inline">{dict?.common?.filter}</span>
             </button>
@@ -230,7 +230,7 @@ export default function AdminCustomersPage() {
         {/* EMPTY STATE */}
         {filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center text-center px-6 py-16">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-400 mb-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-[3px] bg-zinc-100 text-zinc-400 mb-3">
               <UsersIcon className="h-6 w-6" />
             </div>
             <p className="font-medium text-zinc-900 mb-1">
@@ -266,7 +266,7 @@ export default function AdminCustomersPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center font-bold text-xs ${avatarClass(
+                      className={`h-10 w-10 shrink-0 rounded-[3px] flex items-center justify-center font-bold text-xs ${avatarClass(
                         c.name || c.email
                       )}`}
                     >
@@ -276,13 +276,13 @@ export default function AdminCustomersPage() {
                       <p className="font-medium text-zinc-900 text-sm truncate flex items-center gap-1.5">
                         {c.name}
                         {c.kind === "guest" && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+                          <span className="inline-flex items-center gap-1 rounded-[3px] border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
                             <UserRound className="h-2.5 w-2.5" />
                             {t.guest ?? "Guest"}
                           </span>
                         )}
                         {c.is_banned && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">
+                          <span className="inline-flex items-center gap-1 rounded-[3px] border border-rose-200 bg-rose-50 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">
                             <Ban className="h-2.5 w-2.5" />
                             {t.banned ?? "Banned"}
                           </span>
@@ -293,26 +293,22 @@ export default function AdminCustomersPage() {
                       </p>
                     </div>
                   </div>
-                  <span className="text-sm font-medium text-blue-600 shrink-0">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSelectedId(c.id);
+                    }}
+                    className="rounded-[3px] border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors shrink-0"
+                  >
                     {dict?.common?.view}
-                  </span>
+                  </button>
                 </div>
 
                 <div className="flex flex-wrap gap-1.5">
-                  {c.email && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
-                      <Mail className="h-3 w-3" />
-                      {c.email}
-                    </span>
-                  )}
-                  {c.phone && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                      <Phone className="h-3 w-3" />
-                      {c.phone}
-                    </span>
-                  )}
                   {(c.city || c.country) && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-xs font-medium text-zinc-700">
+                    <span className="inline-flex items-center gap-1.5 rounded-[3px] border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-xs font-medium text-zinc-700">
                       <MapPin className="h-3 w-3" />
                       {[c.city, c.country].filter(Boolean).join(", ")}
                     </span>
@@ -357,7 +353,6 @@ export default function AdminCustomersPage() {
               <thead className="bg-white text-xs uppercase text-zinc-400 border-b border-zinc-100">
                 <tr>
                   <th className="px-6 py-3 font-medium">{tH.name}</th>
-                  <th className="px-6 py-3 font-medium">{t.contact ?? "Contact"}</th>
                   <th className="px-6 py-3 font-medium">{t.location ?? "Location"}</th>
                   <th className="px-6 py-3 font-medium text-center">{tH.orders}</th>
                   <th className="px-6 py-3 font-medium">{tH.spent}</th>
@@ -375,7 +370,7 @@ export default function AdminCustomersPage() {
                     <td className="px-6 py-4 align-top">
                       <div className="flex items-center gap-3 min-w-0">
                         <div
-                          className={`h-9 w-9 shrink-0 rounded-full flex items-center justify-center font-bold text-xs ${avatarClass(
+                          className={`h-9 w-9 shrink-0 rounded-[3px] flex items-center justify-center font-bold text-xs ${avatarClass(
                             c.name || c.email
                           )}`}
                         >
@@ -385,13 +380,13 @@ export default function AdminCustomersPage() {
                           <p className="font-medium text-zinc-900 truncate flex items-center gap-1.5">
                             {c.name}
                             {c.kind === "guest" && (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+                              <span className="inline-flex items-center gap-1 rounded-[3px] border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
                                 <UserRound className="h-2.5 w-2.5" />
                                 {t.guest ?? "Guest"}
                               </span>
                             )}
                             {c.is_banned && (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">
+                              <span className="inline-flex items-center gap-1 rounded-[3px] border border-rose-200 bg-rose-50 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">
                                 <Ban className="h-2.5 w-2.5" />
                                 {t.banned ?? "Banned"}
                               </span>
@@ -412,25 +407,6 @@ export default function AdminCustomersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 align-top">
-                      <div className="flex flex-col gap-1.5">
-                        {c.email && (
-                          <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
-                            <Mail className="h-3 w-3" />
-                            {c.email}
-                          </span>
-                        )}
-                        {c.phone && (
-                          <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                            <Phone className="h-3 w-3" />
-                            {c.phone}
-                          </span>
-                        )}
-                        {!c.email && !c.phone && (
-                          <span className="text-xs text-zinc-400">—</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 align-top">
                       {c.city || c.country ? (
                         <span className="inline-flex items-center gap-1.5 text-sm text-zinc-700">
                           <MapPin className="h-3.5 w-3.5 text-zinc-400" />
@@ -442,7 +418,7 @@ export default function AdminCustomersPage() {
                     </td>
                     <td className="px-6 py-4 text-center align-top">
                       <span
-                        className={`inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                        className={`inline-flex items-center justify-center rounded-[3px] px-2.5 py-0.5 text-xs font-semibold ${
                           c.orders > 0
                             ? "bg-zinc-100 text-zinc-800"
                             : "bg-zinc-50 text-zinc-400"
@@ -458,9 +434,17 @@ export default function AdminCustomersPage() {
                       {formatDate(c.joined_at, locale)}
                     </td>
                     <td className="px-6 py-4 text-right align-top">
-                      <span className="text-sm font-medium text-blue-600">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setSelectedId(c.id);
+                        }}
+                        className="rounded-[3px] border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors"
+                      >
                         {dict?.common?.view}
-                      </span>
+                      </button>
                     </td>
                   </tr>
                 ))}
