@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase/service';
 import { requireAdmin } from '@/middlewares/authGuard';
 import { assertSameOrigin, rateLimitOrReject } from '@/lib/request-guard';
 import { invalidateTelegramConfig } from '@/lib/telegram';
+import { invalidateWhatsAppConfig, encryptWhatsAppToken } from '@/lib/whatsapp';
 import { logger } from '@/lib/logger';
 import { PUBLIC_KEYS } from '@/lib/display-settings';
 
@@ -69,6 +70,20 @@ const ALLOWED_KEYS = [
   'telegram_notify_order_cancelled',
   'telegram_notify_low_stock',
   'telegram_notify_out_of_stock',
+  // WhatsApp Business Cloud API integration
+  'whatsapp_access_token',
+  'whatsapp_phone_number_id',
+  'whatsapp_business_account_id',
+  'whatsapp_notifications_enabled',
+  'whatsapp_default_country_code',
+  // WhatsApp per-event notification toggles
+  'whatsapp_notify_created',
+  'whatsapp_notify_confirmed',
+  'whatsapp_notify_processing',
+  'whatsapp_notify_shipped',
+  'whatsapp_notify_delivered',
+  'whatsapp_notify_cancelled',
+  'whatsapp_notify_invoice_ready',
   'store_logo_size',
   'store_logo_height',
   // Storefront header + sidebar
@@ -107,8 +122,13 @@ const VALUE_MAX = {
   hero_video_config:     6000,
   hero_countdown_config: 5000,
   hero_iherb_config:     60000,
+  whatsapp_access_token: 1000,
 };
 const DEFAULT_VALUE_MAX = 1000;
+
+// Keys whose stored value is a secret: encrypted at rest, never returned to
+// the client, and left untouched on PATCH when an empty value is submitted.
+const SECRET_KEYS = new Set(['whatsapp_access_token']);
 
 /**
  * GET /api/v1/settings
@@ -132,7 +152,13 @@ export async function GET() {
     for (const key of ALLOWED_KEYS) {
       if (!(key in settings)) settings[key] = '';
     }
-    return NextResponse.json({ success: true, data: settings });
+    // Never expose secret values. Report only whether each secret is configured.
+    const secretsSet = {};
+    for (const key of SECRET_KEYS) {
+      secretsSet[key] = Boolean(settings[key]);
+      settings[key] = '';
+    }
+    return NextResponse.json({ success: true, data: settings, secretsSet });
   } catch (err) {
     if (err?.statusCode === 401 || err?.message?.toLowerCase().includes('unauthorized') || err?.message?.toLowerCase().includes('logged in')) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
@@ -158,13 +184,20 @@ export async function PATCH(req) {
     const body = await req.json();
     const upserts = Object.entries(body)
       .filter(([k]) => ALLOWED_KEYS.includes(k))
-      .map(([key, value]) => ({
-        key,
+      // For secrets, an empty value means "leave unchanged" — never overwrite
+      // a stored credential with a blank on partial saves.
+      .filter(([k, value]) => !(SECRET_KEYS.has(k) && String(value ?? '') === ''))
+      .map(([key, value]) => {
         // Hard-bound the stored value so a typo / pasted blob can't bloat
         // the settings table. Config keys get a larger allowance for JSON.
-        value: String(value ?? '').slice(0, VALUE_MAX[key] ?? DEFAULT_VALUE_MAX),
-        updated_at: new Date().toISOString(),
-      }));
+        const bounded = String(value ?? '').slice(0, VALUE_MAX[key] ?? DEFAULT_VALUE_MAX);
+        return {
+          key,
+          // Secrets are encrypted at rest before being written.
+          value: SECRET_KEYS.has(key) ? encryptWhatsAppToken(bounded) : bounded,
+          updated_at: new Date().toISOString(),
+        };
+      });
 
     if (upserts.length === 0) {
       return NextResponse.json({ success: false, error: 'No valid keys provided' }, { status: 400 });
@@ -180,6 +213,16 @@ export async function PATCH(req) {
     // next order picks up the new token/chat without a server restart.
     if (upserts.some((u) => u.key === 'telegram_bot_token' || u.key === 'telegram_chat_id')) {
       invalidateTelegramConfig();
+    }
+
+    // Same for WhatsApp Cloud API credentials / enable flag.
+    if (upserts.some((u) => (
+      u.key === 'whatsapp_access_token' ||
+      u.key === 'whatsapp_phone_number_id' ||
+      u.key === 'whatsapp_business_account_id' ||
+      u.key === 'whatsapp_notifications_enabled'
+    ))) {
+      invalidateWhatsAppConfig();
     }
 
     // Any change to a public display key must bust the SSR cache of the

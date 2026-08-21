@@ -1093,6 +1093,14 @@ function NotificationsSection() {
     telegram_notify_order_cancelled: 'true',
     telegram_notify_low_stock: 'true',
     telegram_notify_out_of_stock: 'true',
+    whatsapp_notifications_enabled: 'false',
+    whatsapp_notify_created: 'true',
+    whatsapp_notify_confirmed: 'true',
+    whatsapp_notify_processing: 'true',
+    whatsapp_notify_shipped: 'true',
+    whatsapp_notify_delivered: 'true',
+    whatsapp_notify_cancelled: 'true',
+    whatsapp_notify_invoice_ready: 'true',
   });
   const [loading, setLoading] = useState(true);
   const [savedForm, setSavedForm] = useState(null);
@@ -1113,6 +1121,14 @@ function NotificationsSection() {
             telegram_notify_order_cancelled: data.telegram_notify_order_cancelled ?? 'true',
             telegram_notify_low_stock: data.telegram_notify_low_stock ?? 'true',
             telegram_notify_out_of_stock: data.telegram_notify_out_of_stock ?? 'true',
+            whatsapp_notifications_enabled: data.whatsapp_notifications_enabled ?? 'false',
+            whatsapp_notify_created: data.whatsapp_notify_created ?? 'true',
+            whatsapp_notify_confirmed: data.whatsapp_notify_confirmed ?? 'true',
+            whatsapp_notify_processing: data.whatsapp_notify_processing ?? 'true',
+            whatsapp_notify_shipped: data.whatsapp_notify_shipped ?? 'true',
+            whatsapp_notify_delivered: data.whatsapp_notify_delivered ?? 'true',
+            whatsapp_notify_cancelled: data.whatsapp_notify_cancelled ?? 'true',
+            whatsapp_notify_invoice_ready: data.whatsapp_notify_invoice_ready ?? 'true',
           };
           setForm(next);
           setSavedForm(next);
@@ -1142,6 +1158,15 @@ function NotificationsSection() {
       telegram_notify_order_cancelled: form.telegram_notify_order_cancelled,
       telegram_notify_low_stock: form.telegram_notify_low_stock,
       telegram_notify_out_of_stock: form.telegram_notify_out_of_stock,
+      // whatsapp_notifications_enabled is owned by the Integrations tab; not
+      // written here so the two screens don't overwrite each other.
+      whatsapp_notify_created: form.whatsapp_notify_created,
+      whatsapp_notify_confirmed: form.whatsapp_notify_confirmed,
+      whatsapp_notify_processing: form.whatsapp_notify_processing,
+      whatsapp_notify_shipped: form.whatsapp_notify_shipped,
+      whatsapp_notify_delivered: form.whatsapp_notify_delivered,
+      whatsapp_notify_cancelled: form.whatsapp_notify_cancelled,
+      whatsapp_notify_invoice_ready: form.whatsapp_notify_invoice_ready,
     };
 
     const res = await fetch('/api/v1/settings', {
@@ -1158,6 +1183,7 @@ function NotificationsSection() {
   useUnsavedGuard(dirty, handleSave);
 
   const telegramEnabled = form.telegram_notifications_enabled === 'true';
+  const whatsappEnabled = form.whatsapp_notifications_enabled === 'true';
 
   if (loading) return <AdminSettingsSkeleton />;
 
@@ -1244,6 +1270,70 @@ function NotificationsSection() {
           checked={form.telegram_notify_out_of_stock === 'true'}
           onChange={handleToggle('telegram_notify_out_of_stock')}
           disabled={!telegramEnabled}
+        />
+      </Field>
+
+      <div className="my-6 border-t border-zinc-100" />
+
+      <SectionHeader
+        title={t.whatsapp_title ?? "WhatsApp"}
+        description={t.whatsapp_desc ?? "Notify customers about their order on WhatsApp."}
+        icon={
+          <svg viewBox="0 0 24 24" className="h-5 w-5 fill-green-500" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+          </svg>
+        }
+      />
+      <p className="-mt-1 mb-1 text-xs text-zinc-500">
+        {t.whatsapp_credentials_hint ?? "Enable WhatsApp and set credentials under the Integrations tab."}
+      </p>
+      <Field label={t.whatsapp_created ?? "Order placed"}>
+        <Toggle
+          checked={form.whatsapp_notify_created === 'true'}
+          onChange={handleToggle('whatsapp_notify_created')}
+          disabled={!whatsappEnabled}
+        />
+      </Field>
+      <Field label={t.whatsapp_confirmed ?? "Order confirmed"}>
+        <Toggle
+          checked={form.whatsapp_notify_confirmed === 'true'}
+          onChange={handleToggle('whatsapp_notify_confirmed')}
+          disabled={!whatsappEnabled}
+        />
+      </Field>
+      <Field label={t.whatsapp_processing ?? "Order processing"}>
+        <Toggle
+          checked={form.whatsapp_notify_processing === 'true'}
+          onChange={handleToggle('whatsapp_notify_processing')}
+          disabled={!whatsappEnabled}
+        />
+      </Field>
+      <Field label={t.whatsapp_shipped ?? "Order shipped"}>
+        <Toggle
+          checked={form.whatsapp_notify_shipped === 'true'}
+          onChange={handleToggle('whatsapp_notify_shipped')}
+          disabled={!whatsappEnabled}
+        />
+      </Field>
+      <Field label={t.whatsapp_delivered ?? "Order delivered"}>
+        <Toggle
+          checked={form.whatsapp_notify_delivered === 'true'}
+          onChange={handleToggle('whatsapp_notify_delivered')}
+          disabled={!whatsappEnabled}
+        />
+      </Field>
+      <Field label={t.whatsapp_cancelled ?? "Order cancelled"}>
+        <Toggle
+          checked={form.whatsapp_notify_cancelled === 'true'}
+          onChange={handleToggle('whatsapp_notify_cancelled')}
+          disabled={!whatsappEnabled}
+        />
+      </Field>
+      <Field label={t.whatsapp_invoice_ready ?? "Invoice ready"}>
+        <Toggle
+          checked={form.whatsapp_notify_invoice_ready === 'true'}
+          onChange={handleToggle('whatsapp_notify_invoice_ready')}
+          disabled={!whatsappEnabled}
         />
       </Field>
       <SectionSaveButton onSave={handleSave} />
@@ -2709,25 +2799,39 @@ function IntegrationsSection() {
     telegram_chat_id: '',
     whatsapp_number: '',
     whatsapp_business_name: '',
+    whatsapp_access_token: '',
+    whatsapp_phone_number_id: '',
+    whatsapp_business_account_id: '',
+    whatsapp_notifications_enabled: 'false',
+    whatsapp_default_country_code: '',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showToken, setShowToken] = useState(false);
+  const [showWaToken, setShowWaToken] = useState(false);
+  const [waTokenSet, setWaTokenSet] = useState(false);
+  const [testing, setTesting] = useState(false);
   const [savedForm, setSavedForm] = useState(null);
 
   useEffect(() => {
     fetch('/api/v1/settings')
       .then((r) => r.json())
-      .then(({ success, data }) => {
+      .then(({ success, data, secretsSet }) => {
         if (success && data) {
           const next = {
             telegram_bot_token: data.telegram_bot_token ?? '',
             telegram_chat_id: data.telegram_chat_id ?? '',
             whatsapp_number: data.whatsapp_number ?? '',
             whatsapp_business_name: data.whatsapp_business_name ?? '',
+            whatsapp_access_token: '',
+            whatsapp_phone_number_id: data.whatsapp_phone_number_id ?? '',
+            whatsapp_business_account_id: data.whatsapp_business_account_id ?? '',
+            whatsapp_notifications_enabled: data.whatsapp_notifications_enabled ?? 'false',
+            whatsapp_default_country_code: data.whatsapp_default_country_code ?? '',
           };
           setForm(next);
           setSavedForm(next);
+          setWaTokenSet(Boolean(secretsSet?.whatsapp_access_token));
         }
       })
       .catch(() => {})
@@ -2735,6 +2839,7 @@ function IntegrationsSection() {
   }, []);
 
   const handleChange = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
+  const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
   const handleSave = async () => {
     setSaving(true);
@@ -2746,12 +2851,36 @@ function IntegrationsSection() {
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error ?? 'Save failed');
-      setSavedForm(form);
+      // If a new access token was submitted, it is now stored (masked) — clear
+      // it from the form state so it is never held or re-sent from the client.
+      if (form.whatsapp_access_token) setWaTokenSet(true);
+      const cleared = { ...form, whatsapp_access_token: '' };
+      setForm(cleared);
+      setSavedForm(cleared);
       toast.success(t.saved ?? 'Settings saved');
     } catch (err) {
       toast.error(err.message ?? 'Failed to save');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleTest = async () => {
+    setTesting(true);
+    try {
+      const res = await fetch('/api/v1/admin/whatsapp/test', { method: 'POST' });
+      const json = await res.json();
+      if (json.ok) {
+        const name = json.data?.verified_name || json.data?.display_phone_number || '';
+        toast.success((t.wa_test_ok ?? 'WhatsApp connection OK') + (name ? ` — ${name}` : ''));
+      } else {
+        const reasons = t.wa_test_errors ?? {};
+        toast.error(reasons[json.error] ?? (t.wa_test_failed ?? 'WhatsApp connection failed'));
+      }
+    } catch {
+      toast.error(t.wa_test_failed ?? 'WhatsApp connection failed');
+    } finally {
+      setTesting(false);
     }
   };
 
@@ -2840,6 +2969,97 @@ function IntegrationsSection() {
             onChange={handleChange('whatsapp_business_name')}
           />
         </Field>
+      </div>
+
+      {/* WhatsApp Business Cloud API */}
+      <div className="mb-6">
+        <h3 className="text-sm font-semibold text-zinc-700 mb-1 flex items-center gap-2">
+          <svg viewBox="0 0 24 24" className="h-4 w-4 fill-green-600" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+          </svg>
+          {t.wa_cloud ?? 'WhatsApp Business Cloud API'}
+        </h3>
+        <p className="-mt-0.5 mb-3 text-xs text-zinc-500">
+          {t.wa_cloud_desc ?? 'Send automated order updates to customers via the WhatsApp Business Cloud API. Configure which events are sent under the Notifications tab.'}
+        </p>
+
+        <Field label={t.wa_enabled ?? 'Enable WhatsApp notifications'}>
+          <Toggle
+            checked={form.whatsapp_notifications_enabled === 'true'}
+            onChange={(v) => setField('whatsapp_notifications_enabled', String(v))}
+          />
+        </Field>
+
+        <Field
+          label={t.wa_access_token ?? 'Access Token'}
+          hint={waTokenSet
+            ? (t.wa_access_token_set_hint ?? 'A token is saved. Leave blank to keep it, or enter a new one to replace it.')
+            : (t.wa_access_token_hint ?? 'Permanent access token from Meta \u2192 WhatsApp \u2192 API Setup')}
+        >
+          <div className="relative">
+            <input
+              className={`${inputClass} pr-10`}
+              type={showWaToken ? 'text' : 'password'}
+              placeholder={waTokenSet ? '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022 (saved)' : 'EAAG...'}
+              value={form.whatsapp_access_token}
+              onChange={handleChange('whatsapp_access_token')}
+              autoComplete="off"
+            />
+            <button
+              type="button"
+              onClick={() => setShowWaToken((v) => !v)}
+              className="absolute inset-y-0 right-3 flex items-center text-zinc-400 hover:text-zinc-700"
+              tabIndex={-1}
+            >
+              {showWaToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </Field>
+
+        <Field label={t.wa_phone_number_id ?? 'Phone Number ID'} hint={t.wa_phone_number_id_hint ?? 'Found in Meta \u2192 WhatsApp \u2192 API Setup'}>
+          <input
+            className={inputClass}
+            placeholder="123456789012345"
+            value={form.whatsapp_phone_number_id}
+            onChange={(e) => setField('whatsapp_phone_number_id', e.target.value.replace(/[^0-9]/g, ''))}
+            inputMode="numeric"
+          />
+        </Field>
+
+        <Field label={t.wa_business_account_id ?? 'WhatsApp Business Account ID'} hint={t.wa_business_account_id_hint ?? 'Optional \u2014 required for template management'}>
+          <input
+            className={inputClass}
+            placeholder="123456789012345"
+            value={form.whatsapp_business_account_id}
+            onChange={(e) => setField('whatsapp_business_account_id', e.target.value.replace(/[^0-9]/g, ''))}
+            inputMode="numeric"
+          />
+        </Field>
+
+        <Field label={t.wa_default_cc ?? 'Default country code'} hint={t.wa_default_cc_hint ?? 'Calling code (digits only, e.g. 212) used for customer numbers saved without one.'}>
+          <input
+            className={inputClass}
+            placeholder="212"
+            value={form.whatsapp_default_country_code}
+            onChange={(e) => setField('whatsapp_default_country_code', e.target.value.replace(/[^0-9]/g, ''))}
+            inputMode="numeric"
+          />
+        </Field>
+
+        <div className="mt-2">
+          <button
+            type="button"
+            onClick={handleTest}
+            disabled={testing || saving}
+            className="inline-flex items-center gap-2 rounded-[5px] border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
+          >
+            {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {testing ? (t.wa_testing ?? 'Testing\u2026') : (t.wa_test ?? 'Test connection')}
+          </button>
+          <p className="mt-1.5 text-xs text-zinc-500">
+            {t.wa_test_hint ?? 'Tests the saved credentials. Save first if you just changed them.'}
+          </p>
+        </div>
       </div>
 
       <div className="pt-2 border-t border-zinc-100 flex justify-end">

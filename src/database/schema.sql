@@ -1133,6 +1133,43 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- ========================================================================
+-- WHATSAPP MESSAGE LOG
+-- ========================================================================
+-- Outbound WhatsApp Cloud API notifications sent to customers. One row per
+-- (order, event) so the same event is never sent twice, plus an audit trail.
+-- Written by service-role only; admins may read it.
+-- ========================================================================
+CREATE TABLE IF NOT EXISTS whatsapp_message_log (
+  id          uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  order_id    uuid REFERENCES orders(id) ON DELETE CASCADE,
+  event       text NOT NULL,
+  recipient   text,
+  message_id  text,
+  status      text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'failed')),
+  error       text,
+  created_at  timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at  timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  UNIQUE (order_id, event)
+);
+
+CREATE INDEX IF NOT EXISTS whatsapp_message_log_order_idx
+  ON whatsapp_message_log (order_id);
+
+ALTER TABLE whatsapp_message_log ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'whatsapp_message_log' AND policyname = 'Admins read whatsapp log') THEN
+    EXECUTE $p$CREATE POLICY "Admins read whatsapp log" ON whatsapp_message_log
+      FOR SELECT USING (EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'))$p$;
+  END IF;
+END $$;
+
+CREATE OR REPLACE TRIGGER whatsapp_message_log_updated_at
+  BEFORE UPDATE ON whatsapp_message_log
+  FOR EACH ROW EXECUTE PROCEDURE public.set_updated_at();
+
+
 -- Seed default notification settings.
 INSERT INTO store_settings (key, value)
 VALUES

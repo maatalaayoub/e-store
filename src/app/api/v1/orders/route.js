@@ -19,6 +19,7 @@ import {
   createNewOrderNotification,
   createOrderCancelledNotification,
 } from '@/modules/notifications/notification.service';
+import { notifyOrderWhatsApp, statusToEvent } from '@/lib/whatsapp-order';
 
 const IS_DEV = process.env.NODE_ENV !== 'production';
 const PRICE_TOLERANCE = 0.01; // MAD
@@ -494,6 +495,13 @@ export async function POST(req) {
       logger.logSwallowed('POST /api/v1/orders: in-app notification', err);
     }
 
+    // ── 7. WhatsApp customer notification (best-effort) ───────────────────
+    try {
+      await notifyOrderWhatsApp({ event: 'created', order, shipping });
+    } catch (err) {
+      logger.logSwallowed('POST /api/v1/orders: whatsapp notification', err);
+    }
+
     const responsePayload = { success: true, data: { id: order.id, order_number: order.order_number } };
     if (idempotencyKey) rememberIdempotent(idempotencyKey, responsePayload);
     return NextResponse.json(responsePayload, { status: 201 });
@@ -897,6 +905,16 @@ export async function PATCH(req) {
         }
       }
 
+      // WhatsApp customer notification for this status transition (best-effort).
+      try {
+        const event = statusToEvent(status);
+        if (event) {
+          await notifyOrderWhatsApp({ event, order: currentOrder, shipping: currentOrder.shipping_address });
+        }
+      } catch (err) {
+        logger.logSwallowed('PATCH /api/v1/orders: whatsapp status notification (admin)', err);
+      }
+
       return NextResponse.json({ success: true });
     }
 
@@ -953,6 +971,13 @@ export async function PATCH(req) {
       await sendTelegramMessage(msg, 'order_cancelled');
     } catch (err) {
       logger.logSwallowed('PATCH /api/v1/orders: telegram cancel notification (customer)', err);
+    }
+
+    // WhatsApp customer notification (best-effort).
+    try {
+      await notifyOrderWhatsApp({ event: 'cancelled', order, shipping: order.shipping_address });
+    } catch (err) {
+      logger.logSwallowed('PATCH /api/v1/orders: whatsapp cancel notification (customer)', err);
     }
 
     return NextResponse.json({ success: true });

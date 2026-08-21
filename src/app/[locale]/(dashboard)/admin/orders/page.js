@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Search, Filter, Download, ShoppingCart, RefreshCw, ChevronDown, Check, X, MapPin, Phone, User, Package, Calendar, CheckCircle2, XCircle, Loader2, RotateCw, Tag, Square, CheckSquare, MinusSquare, Trash2 } from "lucide-react";
+import { Search, Filter, Download, ShoppingCart, RefreshCw, ChevronDown, Check, X, MapPin, Phone, User, Package, Calendar, CheckCircle2, XCircle, Loader2, RotateCw, Tag, Square, CheckSquare, MinusSquare, Trash2, MessageCircle } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { AdminOrdersSkeleton } from "@/components/skeletons";
 import { useAdminOrderView } from "@/components/providers/AdminOrderViewContext";
@@ -125,6 +125,7 @@ function OrderDrawer({ order, onClose, onStatusChanged }) {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [pendingCancel, setPendingCancel] = useState(false);
+  const [sendingInvoice, setSendingInvoice] = useState(false);
   const [changeMenuOpen, setChangeMenuOpen] = useState(false);
   const [changeCoords, setChangeCoords] = useState({ top: 0, left: 0, width: 0 });
   const changeBtnRef = useRef(null);
@@ -198,6 +199,24 @@ function OrderDrawer({ order, onClose, onStatusChanged }) {
       setChangeMenuOpen(false);
     }
   }, [snapshot, submitting, onStatusChanged, tD.status_updated]);
+
+  // Send the customer a WhatsApp message with a secure invoice link.
+  const handleSendInvoice = useCallback(async () => {
+    const target = snapshot;
+    if (!target || sendingInvoice) return;
+    setSendingInvoice(true);
+    try {
+      const res = await fetch(`/api/v1/admin/orders/${target.id}/send-invoice`, { method: "POST" });
+      const json = await res.json();
+      if (!res.ok || !json?.ok) throw new Error(json?.error || "invoice_send_failed");
+      toast.success(tD.invoice_sent ?? "Invoice sent via WhatsApp");
+    } catch (err) {
+      const map = tD.invoice_errors ?? {};
+      toast.error(map[err.message] ?? (tD.invoice_send_failed ?? "Failed to send invoice"));
+    } finally {
+      setSendingInvoice(false);
+    }
+  }, [snapshot, sendingInvoice, tD]);
 
   // Close the "Change status" popover on outside click.
   useEffect(() => {
@@ -452,6 +471,17 @@ function OrderDrawer({ order, onClose, onStatusChanged }) {
           <div className="px-5 py-3 flex items-center justify-between">
             <span className="text-sm font-medium text-zinc-500">{tH.total ?? "Total"}</span>
             <span className="text-lg font-bold text-zinc-900">{total} DH</span>
+          </div>
+          <div className="px-5 pb-3">
+            <button
+              type="button"
+              disabled={sendingInvoice}
+              onClick={handleSendInvoice}
+              className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-green-200 bg-white px-3 py-2.5 text-sm font-semibold text-green-700 hover:bg-green-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            >
+              {sendingInvoice ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
+              <span>{tD.send_invoice_whatsapp ?? "Send invoice via WhatsApp"}</span>
+            </button>
           </div>
           {(() => {
             const status = data.status;
