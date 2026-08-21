@@ -137,7 +137,7 @@ function NotificationItem({
 
   const body = (
     <div
-      className={`flex items-start gap-3 rounded-lg p-3 transition-colors ${
+      className={`flex items-start gap-3 rounded-[3px] p-3 transition-colors ${
         isUnread ? "bg-zinc-50" : "bg-white"
       } hover:bg-zinc-100`}
     >
@@ -148,7 +148,7 @@ function NotificationItem({
           e.stopPropagation();
           onToggleSelect(n.id);
         }}
-        className={`mt-0.5 shrink-0 rounded p-0.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
+        className={`mt-0.5 shrink-0 rounded-[3px] p-0.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
           selected
             ? "text-blue-600 hover:text-blue-700"
             : "text-zinc-400 hover:text-zinc-600"
@@ -165,7 +165,7 @@ function NotificationItem({
         )}
       </button>
       <div
-        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white ${meta.color}`}
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[3px] text-white ${meta.color}`}
       >
         <Icon className="h-4 w-4" />
       </div>
@@ -173,7 +173,7 @@ function NotificationItem({
         <p className="text-sm font-medium text-zinc-900">
           {title}
           {isUnread && (
-            <span className="ms-1.5 inline-block h-2 w-2 rounded-full bg-blue-600" />
+            <span className="ms-1.5 inline-block h-2 w-2 rounded-[3px] bg-blue-600" />
           )}
         </p>
         <p className="mt-0.5 text-xs text-zinc-600 line-clamp-2">{content}</p>
@@ -189,7 +189,7 @@ function NotificationItem({
               e.stopPropagation();
               onRead(n.id);
             }}
-            className="rounded p-1 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700"
+            className="rounded-[3px] p-1 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700"
             title={t.mark_read}
             aria-label={t.mark_read}
           >
@@ -202,7 +202,7 @@ function NotificationItem({
             e.stopPropagation();
             onRequestDelete(n.id);
           }}
-          className="rounded p-1 text-zinc-400 hover:bg-red-50 hover:text-red-600"
+          className="rounded-[3px] p-1 text-zinc-400 hover:bg-red-50 hover:text-red-600"
           title={t.delete}
           aria-label={t.delete}
         >
@@ -225,7 +225,7 @@ function NotificationItem({
       <Link
         href={link}
         onClick={handleClick}
-        className="block outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded-lg"
+        className="block outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded-[3px]"
       >
         {body}
       </Link>
@@ -235,7 +235,7 @@ function NotificationItem({
   return (
     <div
       onClick={handleClick}
-      className="cursor-pointer rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+      className="cursor-pointer rounded-[3px] outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
     >
       {body}
     </div>
@@ -522,23 +522,21 @@ export default function NotificationBell() {
             return !o;
           });
         }}
-        className="relative rounded-lg p-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
+        className="relative rounded-[3px] p-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
         aria-label={t.title ?? "Notifications"}
         aria-haspopup="true"
         aria-expanded={open}
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
-          <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
-            {unreadCount > 99 ? "99+" : unreadCount}
-          </span>
+          <span className="absolute top-0.5 right-0.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
         )}
       </button>
 
       {open && (
         <div
           ref={panelRef}
-          className={`absolute top-full z-[110] mt-2 w-[360px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-xl ${
+          className={`absolute top-full z-[110] mt-2 w-[360px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-[3px] border border-zinc-100 bg-white shadow-xl ${
             isRtl ? "left-0" : "right-0"
           }`}
         >
@@ -555,7 +553,7 @@ export default function NotificationBell() {
                     e.stopPropagation();
                     toggleSelectAll();
                   }}
-                  className={`rounded p-1.5 transition-colors ${
+                  className={`rounded-[3px] p-1.5 transition-colors ${
                     selectedIds.length > 0
                       ? "text-blue-600 hover:bg-blue-50"
                       : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
@@ -578,7 +576,7 @@ export default function NotificationBell() {
                     e.stopPropagation();
                     setBulkDeleteOpen(true);
                   }}
-                  className="rounded p-1.5 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                  className="rounded-[3px] p-1.5 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
                   title={t.delete_selected ?? "Delete selected"}
                   aria-label={t.delete_selected ?? "Delete selected"}
                 >
@@ -588,7 +586,7 @@ export default function NotificationBell() {
               {selectedIds.length === 0 && unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
-                  className="rounded p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
+                  className="rounded-[3px] p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
                   title={t.mark_all_read ?? "Mark all as read"}
                   aria-label={t.mark_all_read ?? "Mark all as read"}
                 >
@@ -598,7 +596,7 @@ export default function NotificationBell() {
               {selectedIds.length === 0 && readNotifications.length > 0 && (
                 <button
                   onClick={clearRead}
-                  className="rounded p-1.5 text-zinc-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                  className="rounded-[3px] p-1.5 text-zinc-500 transition-colors hover:bg-red-50 hover:text-red-600"
                   title={t.clear_read ?? "Clear read"}
                   aria-label={t.clear_read ?? "Clear read"}
                 >
@@ -667,7 +665,7 @@ export default function NotificationBell() {
                 <button
                   onClick={() => fetchNotifications(false)}
                   disabled={loading}
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-100"
+                  className="flex items-center gap-1.5 rounded-[3px] px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-100"
                 >
                   {loading ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />

@@ -190,17 +190,17 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
     >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => !submitting && onClose?.()} />
       <div
-        className={`relative flex w-full max-h-[92vh] flex-col overflow-hidden bg-white shadow-xl transition-transform rounded-t-2xl sm:max-w-2xl sm:max-h-[90vh] sm:rounded-[5px] ${
+        className={`relative flex w-full max-h-[92vh] flex-col overflow-hidden bg-white shadow-xl transition-transform rounded-t-[3px] sm:max-w-2xl sm:max-h-[90vh] sm:rounded-[3px] ${
           isOpen ? "translate-y-0" : "translate-y-full sm:translate-y-4"
         }`}
       >
         <div className="flex justify-center pt-2 pb-1 sm:hidden">
-          <span className="h-1 w-10 rounded-full bg-zinc-300" />
+          <span className="h-1 w-10 rounded-[3px] bg-zinc-300" />
         </div>
 
         <div className="flex shrink-0 items-center justify-between border-b border-zinc-100 px-6 py-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-[5px] bg-blue-50 text-blue-600">
+            <span className="flex h-9 w-9 items-center justify-center rounded-[3px] bg-blue-50 text-blue-600">
               <Tag className="h-5 w-5" />
             </span>
             <h2 className="text-base font-semibold text-zinc-900">
@@ -225,13 +225,13 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
                   placeholder={t.form?.code_placeholder ?? "SUMMER25"}
-                  className="flex-1 rounded-[5px] border border-zinc-200 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className="flex-1 rounded-[3px] border border-zinc-200 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   dir="ltr"
                 />
                 <button
                   type="button"
                   onClick={() => setCode(generateCode())}
-                  className="inline-flex items-center gap-1.5 rounded-[5px] border border-zinc-200 px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+                  className="inline-flex items-center gap-1.5 rounded-[3px] border border-zinc-200 px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
                   {t.generate_button ?? "Generate"}
@@ -245,7 +245,7 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
                 <label className="mb-1.5 block text-sm font-medium text-zinc-700">
                   {t.form?.discount_type_label ?? "Discount type"}
                 </label>
-                <div className="flex rounded-[5px] border border-zinc-200 p-1">
+                <div className="flex rounded-[3px] border border-zinc-200 p-1">
                   {[
                     { key: "percentage_off", Icon: Percent, label: t.form?.percentage_off ?? "%" },
                     { key: "fixed_amount", Icon: Banknote, label: t.form?.fixed_amount ?? "Fixed" },
@@ -254,7 +254,7 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
                       key={key}
                       type="button"
                       onClick={() => setDiscountType(key)}
-                      className={`flex flex-1 items-center justify-center gap-2 rounded px-2 py-1.5 text-xs font-medium transition-colors ${
+                      className={`flex flex-1 items-center justify-center gap-2 rounded-[3px] px-2 py-1.5 text-xs font-medium transition-colors ${
                         discountType === key ? "bg-blue-600 text-white" : "text-zinc-600 hover:bg-zinc-50"
                       }`}
                     >
@@ -275,7 +275,7 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
                   max={discountType === "percentage_off" ? 100 : undefined}
                   value={discountValue}
                   onChange={(e) => setDiscountValue(e.target.value)}
-                  className="w-full rounded-[5px] border border-zinc-200 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className="w-full rounded-[3px] border border-zinc-200 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   dir="ltr"
                 />
               </div>
@@ -293,7 +293,7 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
                   step="0.01"
                   value={minOrderAmount}
                   onChange={(e) => setMinOrderAmount(e.target.value)}
-                  className="w-full rounded-[5px] border border-zinc-200 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className="w-full rounded-[3px] border border-zinc-200 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   dir="ltr"
                 />
               </div>
@@ -308,7 +308,7 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
                   value={maxOrderAmount}
                   onChange={(e) => setMaxOrderAmount(e.target.value)}
                   placeholder={t.form?.max_order_hint ?? "Optional — no upper limit"}
-                  className="w-full rounded-[5px] border border-zinc-200 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className="w-full rounded-[3px] border border-zinc-200 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   dir="ltr"
                 />
               </div>
@@ -322,7 +322,7 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
               <select
                 value={appliesTo}
                 onChange={(e) => setAppliesTo(e.target.value)}
-                className="w-full rounded-[5px] border border-zinc-200 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white"
+                className="w-full rounded-[3px] border border-zinc-200 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white"
               >
                 <option value="all">{t.form?.applies_to_all ?? "All products"}</option>
                 <option value="products">{t.form?.applies_to_products ?? "Selected products"}</option>
@@ -330,7 +330,7 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
               </select>
 
               {appliesTo === "products" && (
-                <div className="mt-3 rounded-[5px] border border-zinc-200 p-3">
+                <div className="mt-3 rounded-[3px] border border-zinc-200 p-3">
                   <div className="relative mb-2">
                     <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                     <input
@@ -338,7 +338,7 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
                       value={productSearch}
                       onChange={(e) => setProductSearch(e.target.value)}
                       placeholder={t.form?.select_products ?? "Search products"}
-                      className="w-full rounded-[5px] border border-zinc-200 ps-9 pe-3 py-1.5 text-sm outline-none focus:border-blue-500"
+                      className="w-full rounded-[3px] border border-zinc-200 ps-9 pe-3 py-1.5 text-sm outline-none focus:border-blue-500"
                     />
                   </div>
                   <div className="max-h-48 overflow-y-auto space-y-1">
@@ -347,7 +347,7 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
                       return (
                         <label
                           key={p.id}
-                          className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-zinc-50"
+                          className="flex cursor-pointer items-center gap-2 rounded-[3px] px-2 py-1.5 hover:bg-zinc-50"
                         >
                           <input
                             type="checkbox"
@@ -359,7 +359,7 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
                                   : prev.filter((id) => id !== String(p.id))
                               );
                             }}
-                            className="h-4 w-4 rounded border-zinc-300 text-blue-600"
+                            className="h-4 w-4 rounded-[3px] border-zinc-300 text-blue-600"
                           />
                           <span className="text-sm text-zinc-800">{p.name}</span>
                         </label>
@@ -370,7 +370,7 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
               )}
 
               {appliesTo === "categories" && (
-                <div className="mt-3 rounded-[5px] border border-zinc-200 p-3">
+                <div className="mt-3 rounded-[3px] border border-zinc-200 p-3">
                   <div className="relative mb-2">
                     <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                     <input
@@ -378,7 +378,7 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
                       value={categorySearch}
                       onChange={(e) => setCategorySearch(e.target.value)}
                       placeholder={t.form?.select_categories ?? "Search categories"}
-                      className="w-full rounded-[5px] border border-zinc-200 ps-9 pe-3 py-1.5 text-sm outline-none focus:border-blue-500"
+                      className="w-full rounded-[3px] border border-zinc-200 ps-9 pe-3 py-1.5 text-sm outline-none focus:border-blue-500"
                     />
                   </div>
                   <div className="max-h-48 overflow-y-auto space-y-1">
@@ -387,7 +387,7 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
                       return (
                         <label
                           key={c.id}
-                          className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-zinc-50"
+                          className="flex cursor-pointer items-center gap-2 rounded-[3px] px-2 py-1.5 hover:bg-zinc-50"
                         >
                           <input
                             type="checkbox"
@@ -399,7 +399,7 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
                                   : prev.filter((id) => id !== String(c.id))
                               );
                             }}
-                            className="h-4 w-4 rounded border-zinc-300 text-blue-600"
+                            className="h-4 w-4 rounded-[3px] border-zinc-300 text-blue-600"
                           />
                           <span className="text-sm text-zinc-800">{c.name}</span>
                         </label>
@@ -416,7 +416,7 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
                 <label className="mb-1.5 block text-sm font-medium text-zinc-700">
                   {t.form?.usage_limit_label ?? "Usage limit"}
                 </label>
-                <div className="mb-2 flex rounded-[5px] border border-zinc-200 p-1">
+                <div className="mb-2 flex rounded-[3px] border border-zinc-200 p-1">
                   {[
                     { key: "unlimited", Icon: InfinityIcon, label: t.form?.usage_unlimited_label ?? "Unlimited" },
                     { key: "limited", Icon: Hash, label: t.form?.usage_limited_label ?? "Limited" },
@@ -435,7 +435,7 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
                             if (!usageLimit) setUsageLimit("100");
                           }
                         }}
-                        className={`flex flex-1 items-center justify-center gap-1.5 rounded px-2 py-1.5 text-xs font-medium transition-colors ${
+                        className={`flex flex-1 items-center justify-center gap-1.5 rounded-[3px] px-2 py-1.5 text-xs font-medium transition-colors ${
                           active ? "bg-blue-600 text-white" : "text-zinc-600 hover:bg-zinc-50"
                         }`}
                       >
@@ -454,7 +454,7 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
                       value={usageLimit}
                       onChange={(e) => setUsageLimit(e.target.value)}
                       placeholder={t.form?.usage_limit_hint ?? "e.g. 100"}
-                      className="w-full rounded-[5px] border border-zinc-200 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      className="w-full rounded-[3px] border border-zinc-200 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                       dir="ltr"
                     />
                     <div className="mt-1.5 flex flex-wrap gap-1">
@@ -463,7 +463,7 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
                           key={n}
                           type="button"
                           onClick={() => setUsageLimit(String(n))}
-                          className={`rounded border px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                          className={`rounded-[3px] border px-2 py-0.5 text-[11px] font-medium transition-colors ${
                             Number(usageLimit) === n
                               ? "border-blue-600 bg-blue-50 text-blue-700"
                               : "border-zinc-200 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
@@ -484,7 +484,7 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
                   type="datetime-local"
                   value={startsAt}
                   onChange={(e) => setStartsAt(e.target.value)}
-                  className="w-full rounded-[5px] border border-zinc-200 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className="w-full rounded-[3px] border border-zinc-200 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   dir="ltr"
                 />
               </div>
@@ -496,7 +496,7 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
                   type="datetime-local"
                   value={expiresAt}
                   onChange={(e) => setExpiresAt(e.target.value)}
-                  className="w-full rounded-[5px] border border-zinc-200 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className="w-full rounded-[3px] border border-zinc-200 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   dir="ltr"
                 />
               </div>
@@ -508,13 +508,13 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
                 type="checkbox"
                 checked={isActive}
                 onChange={(e) => setIsActive(e.target.checked)}
-                className="h-4 w-4 rounded border-zinc-300 text-blue-600"
+                className="h-4 w-4 rounded-[3px] border-zinc-300 text-blue-600"
               />
               <span className="text-sm font-medium text-zinc-700">{t.form?.active_label ?? "Active"}</span>
             </label>
 
             {error && (
-              <p className="rounded-[5px] bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+              <p className="rounded-[3px] bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
             )}
           </div>
 
@@ -522,14 +522,14 @@ export default function PromoModal({ isOpen, onClose, onSaved, promo, products =
             <button
               type="button"
               onClick={() => !submitting && onClose?.()}
-              className="rounded-[5px] px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100"
+              className="rounded-[3px] px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100"
             >
               {dict?.common?.close ?? "Close"}
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-2 rounded-[5px] bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-[3px] bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-60"
             >
               {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
               {isEdit ? t.form?.title_edit ?? "Save" : t.add_button ?? "Create"}

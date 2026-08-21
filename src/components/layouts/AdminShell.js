@@ -290,7 +290,7 @@ export default function AdminShell({ children }) {
                     e.preventDefault();
                   }
                 }}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-3 rounded-[3px] px-3 py-2 text-sm font-medium transition-colors ${
                   active
                     ? "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
                     : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
@@ -301,11 +301,9 @@ export default function AdminShell({ children }) {
                   <Icon className="h-5 w-5" />
                   {showBadge && (
                     <span
-                      className="absolute -top-1.5 -end-2 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 ring-2 ring-white text-white text-[10px] font-bold flex items-center justify-center leading-none"
+                      className="absolute -top-0.5 -end-0.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"
                       aria-hidden="true"
-                    >
-                      {badgeCount > 99 ? "99+" : badgeCount}
-                    </span>
+                    />
                   )}
                 </span>
                 {tNav[item.key] ?? item.key}
@@ -323,7 +321,7 @@ export default function AdminShell({ children }) {
                 e.preventDefault();
               }
             }}
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
+            className="flex items-center gap-3 rounded-[3px] px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
           >
             <LogOut className={`h-5 w-5 ${logoutIconDirectionClass}`} />
             {tNav.exit}

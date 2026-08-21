@@ -167,18 +167,18 @@ export default function InviteMemberModal({ isOpen, onClose, onSaved, member }) 
       />
       <div
         className={`relative flex w-full max-h-[92vh] flex-col overflow-hidden bg-white shadow-xl transition-transform
-          rounded-t-2xl sm:max-w-lg sm:max-h-[90vh] sm:rounded-[5px]
+          rounded-t-[3px] sm:max-w-lg sm:max-h-[90vh] sm:rounded-[3px]
           ${isOpen ? "translate-y-0" : "translate-y-full sm:translate-y-4"}`}
       >
         {/* Grabber handle (mobile bottom-sheet affordance) */}
         <div className="flex justify-center pt-2 pb-1 sm:hidden">
-          <span className="h-1 w-10 rounded-full bg-zinc-300" />
+          <span className="h-1 w-10 rounded-[3px] bg-zinc-300" />
         </div>
 
         {/* Header (fixed) */}
         <div className="flex shrink-0 items-center justify-between border-b border-zinc-100 px-6 py-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-[5px] bg-blue-50 text-blue-600">
+            <span className="flex h-9 w-9 items-center justify-center rounded-[3px] bg-blue-50 text-blue-600">
               {isEdit ? <ShieldCheck className="h-5 w-5" /> : <UserPlus className="h-5 w-5" />}
             </span>
             <div>
@@ -215,7 +215,7 @@ export default function InviteMemberModal({ isOpen, onClose, onSaved, member }) 
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 placeholder={t.identifier_placeholder ?? "name@example.com or account ID"}
-                className="w-full rounded-[5px] border border-zinc-200 px-3 py-2 text-sm text-zinc-900 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className="w-full rounded-[3px] border border-zinc-200 px-3 py-2 text-sm text-zinc-900 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 autoFocus
                 dir="ltr"
               />
@@ -240,14 +240,14 @@ export default function InviteMemberModal({ isOpen, onClose, onSaved, member }) 
                   type="button"
                   key={key}
                   onClick={() => togglePermission(key)}
-                  className={`flex items-center gap-3 rounded-[5px] border px-3 py-2.5 text-start transition-colors ${
+                  className={`flex items-center gap-3 rounded-[3px] border px-3 py-2.5 text-start transition-colors ${
                     checked
                       ? "border-blue-500 bg-blue-50"
                       : "border-zinc-200 bg-white hover:border-zinc-300"
                   }`}
                 >
                   <span
-                    className={`flex h-8 w-8 items-center justify-center rounded-[5px] ${
+                    className={`flex h-8 w-8 items-center justify-center rounded-[3px] ${
                       checked ? "bg-blue-600 text-white" : "bg-zinc-100 text-zinc-500"
                     }`}
                   >
@@ -283,7 +283,7 @@ export default function InviteMemberModal({ isOpen, onClose, onSaved, member }) 
                   value={dataFrom}
                   onChange={(e) => setDataFrom(e.target.value)}
                   max={dataTo || undefined}
-                  className={`w-full rounded-[5px] border px-3 py-2 text-sm text-zinc-900 outline-none transition-colors focus:ring-2 ${
+                  className={`w-full rounded-[3px] border px-3 py-2 text-sm text-zinc-900 outline-none transition-colors focus:ring-2 ${
                     rangeInvalid
                       ? "border-red-400 focus:border-red-500 focus:ring-red-100"
                       : "border-zinc-200 focus:border-blue-500 focus:ring-blue-100"
@@ -300,7 +300,7 @@ export default function InviteMemberModal({ isOpen, onClose, onSaved, member }) 
                   value={dataTo}
                   onChange={(e) => setDataTo(e.target.value)}
                   min={dataFrom || undefined}
-                  className={`w-full rounded-[5px] border px-3 py-2 text-sm text-zinc-900 outline-none transition-colors focus:ring-2 ${
+                  className={`w-full rounded-[3px] border px-3 py-2 text-sm text-zinc-900 outline-none transition-colors focus:ring-2 ${
                     rangeInvalid
                       ? "border-red-400 focus:border-red-500 focus:ring-red-100"
                       : "border-zinc-200 focus:border-blue-500 focus:ring-blue-100"
@@ -329,7 +329,7 @@ export default function InviteMemberModal({ isOpen, onClose, onSaved, member }) 
           </div>
 
           {error && (
-            <p className="mt-4 rounded-[5px] bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+            <p className="mt-4 rounded-[3px] bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
           )}
           </div>
 
@@ -338,14 +338,14 @@ export default function InviteMemberModal({ isOpen, onClose, onSaved, member }) 
             <button
               type="button"
               onClick={() => !submitting && onClose?.()}
-              className="rounded-[5px] px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100"
+              className="rounded-[3px] px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100"
             >
               {t.cancel ?? "Cancel"}
             </button>
             <button
               type="submit"
               disabled={submitting || rangeInvalid}
-              className="inline-flex items-center gap-2 rounded-[5px] bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-[3px] bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-60"
             >
               {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
               {isEdit ? t.save ?? "Save changes" : t.send_invite ?? "Send invite"}

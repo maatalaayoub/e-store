@@ -197,16 +197,16 @@ export default function AdminMarketingPage() {
         </div>
         <button
           onClick={openCreate}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+          className="inline-flex items-center gap-2 rounded-[3px] bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
         >
           <Plus className="h-4 w-4" />
           {t.add_button ?? "Add promo code"}
         </button>
       </div>
 
-      {error && <p className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>}
+      {error && <p className="mb-6 rounded-[3px] bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>}
 
-      <div className="mb-4 flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2">
+      <div className="mb-4 flex items-center gap-2 rounded-[3px] border border-zinc-200 px-3 py-2">
         <Search className="h-4 w-4 text-zinc-400" />
         <input
           type="text"
@@ -218,15 +218,15 @@ export default function AdminMarketingPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-200 bg-zinc-50/50 px-6 py-12 text-center">
-          <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-400">
+        <div className="flex flex-col items-center justify-center rounded-[3px] border border-dashed border-zinc-200 bg-zinc-50/50 px-6 py-12 text-center">
+          <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-[3px] bg-zinc-100 text-zinc-400">
             <Tag className="h-6 w-6" />
           </span>
           <p className="text-sm font-medium text-zinc-700">{t.empty_title ?? "No promo codes"}</p>
           <p className="mt-1 max-w-sm text-xs text-zinc-500">{t.empty_desc ?? "Create one to get started."}</p>
           <button
             onClick={openCreate}
-            className="mt-4 inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            className="mt-4 inline-flex items-center gap-2 rounded-[3px] border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
           >
             <Plus className="h-4 w-4" />
             {t.add_button ?? "Add promo code"}
@@ -244,7 +244,7 @@ export default function AdminMarketingPage() {
                 <div
                   key={promo.id}
                   ref={(el) => { rowRefs.current[promo.id] = el; }}
-                  className={`rounded-xl border bg-white p-4 ${
+                  className={`rounded-[3px] border bg-white p-4 ${
                     isHighlighted ? "border-blue-300 ring-2 ring-inset ring-blue-200" : "border-zinc-200"
                   }`}
                 >
@@ -252,7 +252,7 @@ export default function AdminMarketingPage() {
                     <div className="flex min-w-0 items-center gap-2">
                       <button
                         onClick={() => copyCode(promo.code)}
-                        className="shrink-0 rounded border border-zinc-200 p-1 text-zinc-400 transition-colors hover:border-zinc-300 hover:bg-zinc-100 hover:text-zinc-700"
+                        className="shrink-0 rounded-[3px] border border-zinc-200 p-1 text-zinc-400 transition-colors hover:border-zinc-300 hover:bg-zinc-100 hover:text-zinc-700"
                         aria-label="Copy"
                       >
                         {copiedId === promo.code ? (
@@ -263,7 +263,7 @@ export default function AdminMarketingPage() {
                       </button>
                       <span className="truncate font-semibold text-zinc-900">{promo.code}</span>
                     </div>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${badge.class}`}>
+                    <span className={`shrink-0 rounded-[3px] px-2 py-0.5 text-xs font-semibold ${badge.class}`}>
                       {badge.text}
                     </span>
                   </div>
@@ -326,14 +326,14 @@ export default function AdminMarketingPage() {
                   <div className="mt-3 flex items-center justify-end gap-2 border-t border-zinc-100 pt-3">
                     <button
                       onClick={() => openEdit(promo)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+                      className="inline-flex items-center gap-1.5 rounded-[3px] border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                       {dict?.common?.edit ?? "Edit"}
                     </button>
                     <button
                       onClick={() => setRemoveTarget(promo)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                      className="inline-flex items-center gap-1.5 rounded-[3px] border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                       {dict?.common?.delete ?? "Delete"}
@@ -345,7 +345,7 @@ export default function AdminMarketingPage() {
           </div>
 
           {/* Desktop table */}
-          <div className="hidden overflow-hidden rounded-xl border border-zinc-200 bg-white md:block">
+          <div className="hidden overflow-hidden rounded-[3px] border border-zinc-200 bg-white md:block">
           <table className="w-full text-left text-sm">
             <thead className="bg-zinc-50 text-zinc-600">
               <tr>
@@ -372,7 +372,7 @@ export default function AdminMarketingPage() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => copyCode(promo.code)}
-                          className="rounded border border-zinc-200 p-1 text-zinc-400 transition-colors hover:border-zinc-300 hover:bg-zinc-100 hover:text-zinc-700"
+                          className="rounded-[3px] border border-zinc-200 p-1 text-zinc-400 transition-colors hover:border-zinc-300 hover:bg-zinc-100 hover:text-zinc-700"
                           aria-label="Copy"
                         >
                           {copiedId === promo.code ? (
@@ -415,7 +415,7 @@ export default function AdminMarketingPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${badge.class}`}>
+                      <span className={`inline-flex rounded-[3px] px-2 py-0.5 text-xs font-semibold ${badge.class}`}>
                         {badge.text}
                       </span>
                     </td>
@@ -431,14 +431,14 @@ export default function AdminMarketingPage() {
                       <div className="inline-flex items-center gap-2">
                         <button
                           onClick={() => openEdit(promo)}
-                          className="rounded-lg border border-zinc-200 p-1.5 text-zinc-500 hover:bg-zinc-100"
+                          className="rounded-[3px] border border-zinc-200 p-1.5 text-zinc-500 hover:bg-zinc-100"
                           aria-label="Edit"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => setRemoveTarget(promo)}
-                          className="rounded-lg border border-zinc-200 p-1.5 text-zinc-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                          className="rounded-[3px] border border-zinc-200 p-1.5 text-zinc-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                           aria-label="Delete"
                         >
                           <Trash2 className="h-4 w-4" />

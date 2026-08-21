@@ -76,15 +76,15 @@ function TeamPageSkeleton() {
     <div className="animate-pulse">
       <div className="mb-8 flex items-center justify-between">
         <div className="space-y-2">
-          <div className="h-8 w-40 rounded bg-zinc-200" />
-          <div className="h-3 w-64 rounded bg-zinc-200" />
+          <div className="h-8 w-40 rounded-[3px] bg-zinc-200" />
+          <div className="h-3 w-64 rounded-[3px] bg-zinc-200" />
         </div>
-        <div className="h-9 w-32 rounded-lg bg-zinc-200" />
+        <div className="h-9 w-32 rounded-[3px] bg-zinc-200" />
       </div>
-      <div className="mb-6 h-24 rounded-xl bg-zinc-100" />
+      <div className="mb-6 h-24 rounded-[3px] bg-zinc-100" />
       <div className="space-y-3">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-20 rounded-xl bg-zinc-100" />
+          <div key={i} className="h-20 rounded-[3px] bg-zinc-100" />
         ))}
       </div>
     </div>
@@ -187,7 +187,7 @@ export default function AdminTeamPage() {
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-zinc-900">{t.title ?? "Team"}</h1>
             {totalPeople > 0 && (
-              <span className="inline-flex items-center rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-700">
+              <span className="inline-flex items-center rounded-[3px] bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-700">
                 {totalPeople}
               </span>
             )}
@@ -198,7 +198,7 @@ export default function AdminTeamPage() {
         </div>
         <button
           onClick={openInvite}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+          className="inline-flex items-center gap-2 rounded-[3px] bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
         >
           <UserPlus className="h-4 w-4" />
           {t.invite_button ?? "Invite member"}
@@ -206,7 +206,7 @@ export default function AdminTeamPage() {
       </div>
 
       {error && (
-        <p className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
+        <p className="mb-6 rounded-[3px] bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
       )}
 
       {/* Owners */}
@@ -219,10 +219,10 @@ export default function AdminTeamPage() {
           {owners.map((o) => (
             <div
               key={o.id}
-              className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-white p-4"
+              className="flex items-center gap-3 rounded-[3px] border border-zinc-100 bg-white p-4"
             >
               <span
-                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${avatarClass(
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[3px] text-sm font-semibold ${avatarClass(
                   o.email ?? o.id
                 )}`}
               >
@@ -234,7 +234,7 @@ export default function AdminTeamPage() {
                 </p>
                 <p className="truncate text-xs text-zinc-500">{o.email}</p>
               </div>
-              <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+              <span className="inline-flex items-center gap-1 rounded-[3px] bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
                 <ShieldCheck className="h-3.5 w-3.5" />
                 {t.owner_badge ?? "Full access"}
               </span>
@@ -251,8 +251,8 @@ export default function AdminTeamPage() {
         </h2>
 
         {members.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-200 bg-zinc-50/50 px-6 py-12 text-center">
-            <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-400">
+          <div className="flex flex-col items-center justify-center rounded-[3px] border border-dashed border-zinc-200 bg-zinc-50/50 px-6 py-12 text-center">
+            <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-[3px] bg-zinc-100 text-zinc-400">
               <UsersIcon className="h-6 w-6" />
             </span>
             <p className="text-sm font-medium text-zinc-700">
@@ -263,7 +263,7 @@ export default function AdminTeamPage() {
             </p>
             <button
               onClick={openInvite}
-              className="mt-4 inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+              className="mt-4 inline-flex items-center gap-2 rounded-[3px] border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
             >
               <UserPlus className="h-4 w-4" />
               {t.invite_button ?? "Invite member"}
@@ -274,11 +274,11 @@ export default function AdminTeamPage() {
             {members.map((m) => (
               <div
                 key={m.id}
-                className="flex flex-col gap-4 rounded-xl border border-zinc-100 bg-white p-4 sm:flex-row sm:items-center"
+                className="flex flex-col gap-4 rounded-[3px] border border-zinc-100 bg-white p-4 sm:flex-row sm:items-center"
               >
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                   <span
-                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${avatarClass(
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[3px] text-sm font-semibold ${avatarClass(
                       m.email ?? m.id
                     )}`}
                   >
@@ -316,7 +316,7 @@ export default function AdminTeamPage() {
                     return (
                       <span
                         key={p}
-                        className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700"
+                        className="inline-flex items-center gap-1 rounded-[3px] bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700"
                       >
                         <Icon className="h-3 w-3" />
                         {tp[p] ?? p}
@@ -329,14 +329,14 @@ export default function AdminTeamPage() {
                 <div className="flex items-center gap-2 sm:shrink-0">
                   <button
                     onClick={() => openEdit(m)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+                    className="inline-flex items-center gap-1.5 rounded-[3px] border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
                   >
                     <ShieldCheck className="h-3.5 w-3.5" />
                     {t.edit_button ?? "Permissions"}
                   </button>
                   <button
                     onClick={() => setRemoveTarget(m)}
-                    className="inline-flex items-center justify-center rounded-lg border border-zinc-200 p-1.5 text-zinc-400 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                    className="inline-flex items-center justify-center rounded-[3px] border border-zinc-200 p-1.5 text-zinc-400 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                     aria-label={t.remove_button ?? "Remove"}
                   >
                     <Trash2 className="h-4 w-4" />

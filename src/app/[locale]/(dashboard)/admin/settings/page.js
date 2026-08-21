@@ -198,7 +198,7 @@ export default function AdminSettingsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6">
         {/* SECTION NAV */}
-        <aside className="rounded-xl border border-zinc-100 bg-white p-2 h-max">
+        <aside className="rounded-[3px] border border-zinc-100 bg-white p-2 h-max">
           <nav className="flex flex-wrap lg:flex-col gap-1">
             {SECTION_DEFS.map((s) => {
               const Icon = s.icon;
@@ -209,7 +209,7 @@ export default function AdminSettingsPage() {
                   onClick={() => {
                     if (s.id !== active) guard(() => setActive(s.id));
                   }}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
+                  className={`flex items-center gap-3 rounded-[3px] px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
                     isActive
                       ? "bg-blue-50 text-blue-600"
                       : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
@@ -224,7 +224,7 @@ export default function AdminSettingsPage() {
         </aside>
 
         {/* CONTENT */}
-        <section className="min-w-0 rounded-xl border border-zinc-100 bg-white p-6">
+        <section className="min-w-0 rounded-[3px] border border-zinc-100 bg-white p-6">
           {active === "general" && <GeneralSection />}
           {active === "storefront" && <StorefrontSection />}
           {active === "announcements" && <AnnouncementsSection />}
@@ -276,7 +276,7 @@ function SectionSaveButton({ onSave, dirty }) {
       <button
         onClick={handle}
         disabled={saving || (dirtyAware && !dirty)}
-        className="flex items-center gap-2 rounded-[5px] bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
+        className="flex items-center gap-2 rounded-[3px] bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
         {saving ? (dict?.admin?.settings?.saving ?? 'Saving…') : label}
@@ -358,7 +358,7 @@ function Field({ label, hint, children }) {
 }
 
 const inputClass =
-  "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-blue-600";
+  "w-full rounded-[3px] border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-blue-600";
 
 function SectionHeader({ title, description, icon }) {
   return (
@@ -435,10 +435,10 @@ function UnsavedChangesDialog({ open, t, onSave, onDiscard, onCancel, saving }) 
       aria-modal="true"
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col items-center gap-4"
+        className="bg-white rounded-[3px] shadow-2xl w-full max-w-sm p-6 flex flex-col items-center gap-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-500">
+        <div className="flex h-12 w-12 items-center justify-center rounded-[3px] bg-amber-50 text-amber-500">
           <AlertTriangle className="h-6 w-6" />
         </div>
         <div className="text-center">
@@ -452,7 +452,7 @@ function UnsavedChangesDialog({ open, t, onSave, onDiscard, onCancel, saving }) 
             type="button"
             onClick={onSave}
             disabled={saving}
-            className="w-full rounded-[5px] bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-75 inline-flex items-center justify-center gap-2"
+            className="w-full rounded-[3px] bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-75 inline-flex items-center justify-center gap-2"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             {saving ? (t.saving ?? 'Saving…') : (t.save ?? 'Save changes')}
@@ -461,7 +461,7 @@ function UnsavedChangesDialog({ open, t, onSave, onDiscard, onCancel, saving }) 
             type="button"
             onClick={onDiscard}
             disabled={saving}
-            className="w-full rounded-xl border border-red-200 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+            className="w-full rounded-[3px] border border-red-200 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
           >
             {t.discard ?? 'Discard changes'}
           </button>
@@ -469,7 +469,7 @@ function UnsavedChangesDialog({ open, t, onSave, onDiscard, onCancel, saving }) 
             type="button"
             onClick={onCancel}
             disabled={saving}
-            className="w-full rounded-xl py-2 text-sm font-medium text-zinc-500 hover:text-zinc-800 transition-colors disabled:opacity-50"
+            className="w-full rounded-[3px] py-2 text-sm font-medium text-zinc-500 hover:text-zinc-800 transition-colors disabled:opacity-50"
           >
             {t.cancel ?? 'Cancel'}
           </button>
@@ -597,7 +597,7 @@ function GeneralSection() {
     return (
       <div className="space-y-4 animate-pulse">
         {[...Array(10)].map((_, i) => (
-          <div key={i} className="h-10 rounded-lg bg-zinc-100" />
+          <div key={i} className="h-10 rounded-[3px] bg-zinc-100" />
         ))}
       </div>
     );
@@ -622,7 +622,7 @@ function GeneralSection() {
               key={g.id}
               type="button"
               onClick={() => setGroup(g.id)}
-              className={`inline-flex items-center gap-2 rounded-[5px] border px-3.5 py-2 text-sm font-medium transition-colors ${
+              className={`inline-flex items-center gap-2 rounded-[3px] border px-3.5 py-2 text-sm font-medium transition-colors ${
                 active
                   ? 'border-zinc-900 bg-zinc-900 text-white'
                   : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50'
@@ -635,7 +635,7 @@ function GeneralSection() {
         })}
       </div>
 
-      <div className="rounded-[5px] border border-zinc-200 bg-white p-5">
+      <div className="rounded-[3px] border border-zinc-200 bg-white p-5">
       {group === 'identity' && (
         <>
       <Field label={t.store_name} hint={t.store_name_hint}>
@@ -662,7 +662,7 @@ function GeneralSection() {
         <>
       <Field label={t.store_logo ?? 'Store logo'} hint={t.store_logo_hint ?? 'Used in headers, footers, and emails. Upload a transparent PNG for best results.'}>
         <div className="flex flex-col sm:flex-row gap-4 items-start">
-          <div className="flex h-20 items-center justify-center rounded-[5px] border border-zinc-200 bg-zinc-50" style={{ width: `${Math.min(Math.max(parseInt(form.store_logo_size || '160', 10) || 160, 80), 320)}px` }}>
+          <div className="flex h-20 items-center justify-center rounded-[3px] border border-zinc-200 bg-zinc-50" style={{ width: `${Math.min(Math.max(parseInt(form.store_logo_size || '160', 10) || 160, 80), 320)}px` }}>
             {form.store_logo ? (
               <img src={form.store_logo} alt="Store logo" className="max-h-full max-w-full object-contain p-2" style={{ maxHeight: `${Math.min(Math.max(parseInt(form.store_logo_height || '40', 10) || 40, 20), 120)}px` }} />
             ) : (
@@ -670,7 +670,7 @@ function GeneralSection() {
             )}
           </div>
           <div className="flex flex-col gap-2">
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-[5px] border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-[3px] border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
               <Loader2 className={`h-4 w-4 ${uploadingLogo.store_logo ? 'animate-spin' : 'hidden'}`} />
               <span>{uploadingLogo.store_logo ? (t.uploading ?? 'Uploading…') : (t.upload_logo ?? 'Upload logo')}</span>
               <input type="file" accept="image/*" className="hidden" onChange={(e) => handleLogoUpload(e, 'store_logo')} />
@@ -689,7 +689,7 @@ function GeneralSection() {
       </Field>
       <Field label={t.store_logo_dark ?? 'Store logo (dark version)'} hint={t.store_logo_dark_hint ?? 'Used on dark backgrounds like the footer. Upload a white/light version.'}>
         <div className="flex flex-col sm:flex-row gap-4 items-start">
-          <div className="flex h-20 items-center justify-center rounded-[5px] border border-zinc-200 bg-zinc-900" style={{ width: `${Math.min(Math.max(parseInt(form.store_logo_size || '160', 10) || 160, 80), 320)}px` }}>
+          <div className="flex h-20 items-center justify-center rounded-[3px] border border-zinc-200 bg-zinc-900" style={{ width: `${Math.min(Math.max(parseInt(form.store_logo_size || '160', 10) || 160, 80), 320)}px` }}>
             {form.store_logo_dark ? (
               <img src={form.store_logo_dark} alt="Store logo dark" className="max-h-full max-w-full object-contain p-2" style={{ maxHeight: `${Math.min(Math.max(parseInt(form.store_logo_height || '40', 10) || 40, 20), 120)}px` }} />
             ) : (
@@ -697,7 +697,7 @@ function GeneralSection() {
             )}
           </div>
           <div className="flex flex-col gap-2">
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-[5px] border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-[3px] border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
               <Loader2 className={`h-4 w-4 ${uploadingLogo.store_logo_dark ? 'animate-spin' : 'hidden'}`} />
               <span>{uploadingLogo.store_logo_dark ? (t.uploading ?? 'Uploading…') : (t.upload_logo_dark ?? 'Upload dark logo')}</span>
               <input type="file" accept="image/*" className="hidden" onChange={(e) => handleLogoUpload(e, 'store_logo_dark')} />
@@ -716,7 +716,7 @@ function GeneralSection() {
       </Field>
       <Field label={t.favicon ?? 'Favicon'} hint={t.favicon_hint ?? 'Small icon shown in browser tabs and search results. Also used as the SEO favicon. Square PNG/ICO/SVG recommended.'}>
         <div className="flex flex-col sm:flex-row gap-4 items-start">
-          <div className="flex h-16 w-16 items-center justify-center rounded-[5px] border border-zinc-200 bg-zinc-50">
+          <div className="flex h-16 w-16 items-center justify-center rounded-[3px] border border-zinc-200 bg-zinc-50">
             {form.seo_favicon ? (
               <img src={form.seo_favicon} alt="Favicon" className="max-h-full max-w-full object-contain p-2" />
             ) : (
@@ -724,7 +724,7 @@ function GeneralSection() {
             )}
           </div>
           <div className="flex flex-col gap-2">
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-[5px] border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-[3px] border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
               <Loader2 className={`h-4 w-4 ${uploadingLogo.seo_favicon ? 'animate-spin' : 'hidden'}`} />
               <span>{uploadingLogo.seo_favicon ? (t.uploading ?? 'Uploading…') : (t.upload_favicon ?? 'Upload favicon')}</span>
               <input type="file" accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/svg+xml,.ico" className="hidden" onChange={(e) => handleLogoUpload(e, 'seo_favicon')} />
@@ -879,7 +879,7 @@ function GeneralSection() {
             },
           ].map(({ key, icon }) => (
             <div key={key} className="flex items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[5px] bg-zinc-100 text-zinc-600">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[3px] bg-zinc-100 text-zinc-600">
                 {icon}
               </div>
               <input
@@ -905,7 +905,7 @@ function GeneralSection() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 rounded-[5px] bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+          className="flex items-center gap-2 rounded-[3px] bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {saving ? (t.saving ?? 'Saving…') : (t.save ?? 'Save changes')}
@@ -929,7 +929,7 @@ function PaymentsSection() {
       <SectionHeader title={t.title} description={t.desc} />
 
       {/* Base currency */}
-      <div className="mt-2 rounded-[5px] border border-zinc-200 bg-white">
+      <div className="mt-2 rounded-[3px] border border-zinc-200 bg-white">
         <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="max-w-sm">
             <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">
@@ -941,7 +941,7 @@ function PaymentsSection() {
             </p>
           </div>
           <select
-            className="w-full rounded-[5px] border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 sm:w-64"
+            className="w-full rounded-[3px] border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 sm:w-64"
             value={form.payments_currency}
             onChange={(e) => setField('payments_currency', e.target.value)}
           >
@@ -967,10 +967,10 @@ function PaymentsSection() {
 
 function MethodCard({ icon, iconClass, title, desc, enabled, onToggle, t, children }) {
   return (
-    <div className="rounded-[5px] border border-zinc-200 bg-white">
+    <div className="rounded-[3px] border border-zinc-200 bg-white">
       <div className="flex items-center justify-between gap-4 p-5">
         <div className="flex items-center gap-3">
-          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[5px] ${iconClass}`}>
+          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[3px] ${iconClass}`}>
             {icon}
           </div>
           <div>
@@ -980,7 +980,7 @@ function MethodCard({ icon, iconClass, title, desc, enabled, onToggle, t, childr
         </div>
         <div className="flex items-center gap-3">
           <span
-            className={`hidden rounded-[5px] px-2 py-1 text-[11px] font-medium sm:inline ${
+            className={`hidden rounded-[3px] px-2 py-1 text-[11px] font-medium sm:inline ${
               enabled ? 'bg-emerald-50 text-emerald-700' : 'bg-zinc-100 text-zinc-500'
             }`}
           >
@@ -1057,7 +1057,7 @@ function OrderMethodsSection() {
                 </div>
                 <div className="sm:col-span-2">
                   <input
-                    className="w-full rounded-[5px] border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                    className="w-full rounded-[3px] border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
                     inputMode="numeric"
                     placeholder="2126XXXXXXXX"
                     value={form.order_whatsapp_number}
@@ -1100,7 +1100,7 @@ function OrderMethodsSection() {
               </p>
               <a
                 href="?tab=payments"
-                className="mt-3 inline-flex items-center gap-2 rounded-[5px] border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-800 transition-colors hover:bg-zinc-50"
+                className="mt-3 inline-flex items-center gap-2 rounded-[3px] border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-800 transition-colors hover:bg-zinc-50"
               >
                 <CreditCard className="h-4 w-4" />
                 {t.online_configure ?? 'Configure Stripe'}
@@ -1298,7 +1298,7 @@ function NotificationsSection() {
               key={g.id}
               type="button"
               onClick={() => setGroup(g.id)}
-              className={`inline-flex items-center gap-2 rounded-[5px] border px-3.5 py-2 text-sm font-medium transition-colors ${
+              className={`inline-flex items-center gap-2 rounded-[3px] border px-3.5 py-2 text-sm font-medium transition-colors ${
                 active
                   ? 'border-zinc-900 bg-zinc-900 text-white'
                   : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50'
@@ -1306,13 +1306,13 @@ function NotificationsSection() {
             >
               {g.icon}
               <span>{g.label}</span>
-              <span className={`h-1.5 w-1.5 rounded-full ${g.on ? 'bg-green-500' : active ? 'bg-white/40' : 'bg-zinc-300'}`} />
+              <span className={`h-1.5 w-1.5 rounded-[3px] ${g.on ? 'bg-green-500' : active ? 'bg-white/40' : 'bg-zinc-300'}`} />
             </button>
           );
         })}
       </div>
 
-      <div className="rounded-[5px] border border-zinc-200 bg-white p-5">
+      <div className="rounded-[3px] border border-zinc-200 bg-white p-5">
       {group === 'admin' && (
         <>
       <Field label={t.new_order}>
@@ -1526,7 +1526,7 @@ function StorefrontSection() {
                 if (guard) guard(() => setTab(key));
                 else setTab(key);
               }}
-              className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-200 border ${
+              className={`inline-flex items-center gap-2 whitespace-nowrap rounded-[3px] px-4 py-2.5 text-sm font-medium transition-all duration-200 border ${
                 active
                   ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/25'
                   : 'bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300 hover:text-zinc-900 hover:bg-zinc-50'
@@ -1626,7 +1626,7 @@ function HeaderSidebarSection() {
                 key={key}
                 type="button"
                 onClick={() => setCartIcon(key)}
-                className={`flex flex-col items-center justify-center gap-2 rounded-xl border p-4 transition-all ${
+                className={`flex flex-col items-center justify-center gap-2 rounded-[3px] border p-4 transition-all ${
                   active
                     ? 'border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-500'
                     : 'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300'
@@ -1654,7 +1654,7 @@ function HeaderSidebarSection() {
                 key={key}
                 type="button"
                 onClick={() => setMenuIcon(key)}
-                className={`flex flex-col items-center justify-center gap-2 rounded-xl border p-4 transition-all ${
+                className={`flex flex-col items-center justify-center gap-2 rounded-[3px] border p-4 transition-all ${
                   active
                     ? 'border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-500'
                     : 'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300'
@@ -1685,7 +1685,7 @@ function HeaderSidebarSection() {
                 key={key}
                 type="button"
                 onClick={() => setTheme(key)}
-                className={`flex items-center gap-4 rounded-xl border p-4 text-left transition-all ${
+                className={`flex items-center gap-4 rounded-[3px] border p-4 text-left transition-all ${
                   active
                     ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
                     : 'border-zinc-200 bg-white hover:border-zinc-300'
@@ -1693,11 +1693,11 @@ function HeaderSidebarSection() {
                 aria-pressed={active}
               >
                 <span
-                  className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-zinc-200"
+                  className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[3px] border border-zinc-200"
                   style={{ backgroundColor: bg }}
                 >
                   <span
-                    className="h-6 w-6 rounded-full"
+                    className="h-6 w-6 rounded-[3px]"
                     style={{ backgroundColor: accent }}
                   />
                 </span>
@@ -1715,7 +1715,7 @@ function HeaderSidebarSection() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="inline-flex items-center gap-2 rounded-[5px] bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          className="inline-flex items-center gap-2 rounded-[3px] bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
         >
           {saving ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -1837,7 +1837,7 @@ function MobileNavSection() {
       />
 
       {/* Master enable toggle */}
-      <div className="flex items-start justify-between gap-4 rounded-xl border border-zinc-200 bg-white p-4">
+      <div className="flex items-start justify-between gap-4 rounded-[3px] border border-zinc-200 bg-white p-4">
         <div className="min-w-0">
           <h3 className="text-sm font-semibold text-zinc-800">
             {t.enable ?? 'Show mobile bottom navigation'}
@@ -1851,12 +1851,12 @@ function MobileNavSection() {
           role="switch"
           aria-checked={enabled}
           onClick={() => setEnabled((v) => !v)}
-          className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+          className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-[3px] transition-colors ${
             enabled ? 'bg-blue-600' : 'bg-zinc-300'
           }`}
         >
           <span
-            className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+            className={`inline-block h-5 w-5 transform rounded-[3px] bg-white shadow transition-transform ${
               enabled ? 'translate-x-5' : 'translate-x-0.5'
             }`}
           />
@@ -1893,7 +1893,7 @@ function MobileNavSection() {
             return (
               <label
                 key={key}
-                className={`flex items-start gap-3 rounded-xl border p-3 transition-colors ${
+                className={`flex items-start gap-3 rounded-[3px] border p-3 transition-colors ${
                   active
                     ? 'border-blue-500 bg-blue-50/40'
                     : 'border-zinc-200 bg-white hover:border-zinc-300'
@@ -1904,7 +1904,7 @@ function MobileNavSection() {
                 }`}
               >
                 <span
-                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[3px] ${
                     active ? 'bg-blue-600 text-white' : 'bg-zinc-100 text-zinc-500'
                   }`}
                 >
@@ -1923,12 +1923,12 @@ function MobileNavSection() {
                   checked={active}
                   disabled={!enabled || locked || atCap}
                   onChange={() => { if (!locked && !atCap) toggleBtn(key); }}
-                  className={`mt-1 h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 ${
+                  className={`mt-1 h-4 w-4 rounded-[3px] border-zinc-300 text-blue-600 focus:ring-blue-500 ${
                     locked ? 'hidden' : ''
                   }`}
                 />
                 {locked && (
-                  <span className="mt-0.5 shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-700">
+                  <span className="mt-0.5 shrink-0 rounded-[3px] bg-blue-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-700">
                     {t.always_on ?? 'Always on'}
                   </span>
                 )}
@@ -1942,7 +1942,7 @@ function MobileNavSection() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="inline-flex items-center gap-2 rounded-[5px] bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          className="inline-flex items-center gap-2 rounded-[3px] bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
         >
           {saving ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -1968,7 +1968,7 @@ function Swatch({ label, value, onChange }) {
           type="color"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="h-6 w-6 rounded cursor-pointer p-0 border border-zinc-300 bg-transparent"
+          className="h-6 w-6 rounded-[3px] cursor-pointer p-0 border border-zinc-300 bg-transparent"
           style={{ appearance: 'none', WebkitAppearance: 'none' }}
         />
         <input
@@ -1980,7 +1980,7 @@ function Swatch({ label, value, onChange }) {
           }}
           maxLength={7}
           spellCheck={false}
-          className="w-20 rounded border border-zinc-200 px-2 py-1 text-[11px] font-mono text-zinc-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-20 rounded-[3px] border border-zinc-200 px-2 py-1 text-[11px] font-mono text-zinc-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
       </span>
     </label>
@@ -2073,8 +2073,8 @@ function LayoutMiniPreview({ value }) {
         <div className={`${wrapBase} rounded`}>
           <div className="relative flex-1 bg-gradient-to-br from-zinc-200 to-zinc-300 rounded-t">
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-1.5 space-y-1">
-              <div className="h-1 w-2/3 bg-white/90 rounded-sm" />
-              <div className="h-1 w-1/3 bg-white/70 rounded-sm" />
+              <div className="h-1 w-2/3 bg-white/90 rounded-[3px]" />
+              <div className="h-1 w-1/3 bg-white/70 rounded-[3px]" />
             </div>
           </div>
           <div className="h-2.5 bg-zinc-900 m-0 rounded-b" />
@@ -2085,8 +2085,8 @@ function LayoutMiniPreview({ value }) {
         <div className={wrapBase}>
           <div className="flex-1 bg-gradient-to-br from-zinc-200 to-zinc-300" />
           <div className="py-1 flex flex-col items-center gap-0.5">
-            <div className="h-1 w-1/2 bg-zinc-700 rounded-sm" />
-            <div className="h-1 w-1/4 bg-zinc-400 rounded-sm" />
+            <div className="h-1 w-1/2 bg-zinc-700 rounded-[3px]" />
+            <div className="h-1 w-1/4 bg-zinc-400 rounded-[3px]" />
           </div>
           <div className="h-2.5 bg-zinc-900" />
         </div>
@@ -2096,102 +2096,102 @@ function LayoutMiniPreview({ value }) {
         <div className={wrapBase}>
           <div className="flex-1 bg-gradient-to-br from-zinc-200 to-zinc-300" />
           <div className="py-1 px-1 flex flex-col items-start gap-0.5">
-            <div className="h-1 w-2/3 bg-zinc-700 rounded-sm" />
-            <div className="h-1 w-1/3 bg-zinc-400 rounded-sm" />
+            <div className="h-1 w-2/3 bg-zinc-700 rounded-[3px]" />
+            <div className="h-1 w-1/3 bg-zinc-400 rounded-[3px]" />
           </div>
           <div className="h-2.5 bg-zinc-900" />
         </div>
       );
     case 'bordered':
       return (
-        <div className={`${wrapBase} border border-zinc-300 rounded p-1`}>
-          <div className="flex-1 bg-gradient-to-br from-zinc-200 to-zinc-300 rounded-sm" />
+        <div className={`${wrapBase} border border-zinc-300 rounded-[3px] p-1`}>
+          <div className="flex-1 bg-gradient-to-br from-zinc-200 to-zinc-300 rounded-[3px]" />
           <div className="py-1 flex flex-col items-center gap-0.5">
-            <div className="h-1 w-1/2 bg-zinc-700 rounded-sm" />
-            <div className="h-1 w-1/4 bg-zinc-400 rounded-sm" />
+            <div className="h-1 w-1/2 bg-zinc-700 rounded-[3px]" />
+            <div className="h-1 w-1/4 bg-zinc-400 rounded-[3px]" />
           </div>
-          <div className="h-2.5 bg-zinc-900 rounded-sm" />
+          <div className="h-2.5 bg-zinc-900 rounded-[3px]" />
         </div>
       );
     case 'shadow':
       return (
-        <div className={`${wrapBase} rounded shadow-md p-1`}>
-          <div className="flex-1 bg-gradient-to-br from-zinc-200 to-zinc-300 rounded-sm" />
+        <div className={`${wrapBase} rounded-[3px] shadow-md p-1`}>
+          <div className="flex-1 bg-gradient-to-br from-zinc-200 to-zinc-300 rounded-[3px]" />
           <div className="py-1 flex flex-col items-center gap-0.5">
-            <div className="h-1 w-1/2 bg-zinc-700 rounded-sm" />
-            <div className="h-1 w-1/4 bg-zinc-400 rounded-sm" />
+            <div className="h-1 w-1/2 bg-zinc-700 rounded-[3px]" />
+            <div className="h-1 w-1/4 bg-zinc-400 rounded-[3px]" />
           </div>
-          <div className="h-2.5 bg-zinc-900 rounded-sm" />
+          <div className="h-2.5 bg-zinc-900 rounded-[3px]" />
         </div>
       );
     case 'showcase':
       return (
-        <div className="flex flex-col w-full h-full bg-zinc-100 rounded-lg p-1">
-          <div className="relative flex-1 bg-gradient-to-br from-zinc-200 to-zinc-300 rounded-md">
-            <div className="absolute right-1 top-1 h-2 w-2 rounded-full bg-white/90" />
+        <div className="flex flex-col w-full h-full bg-zinc-100 rounded-[3px] p-1">
+          <div className="relative flex-1 bg-gradient-to-br from-zinc-200 to-zinc-300 rounded-[3px]">
+            <div className="absolute right-1 top-1 h-2 w-2 rounded-[3px] bg-white/90" />
             <div className="absolute inset-x-0 bottom-1 flex items-center justify-center gap-0.5">
-              <span className="h-[3px] w-[3px] rounded-full bg-white" />
-              <span className="h-[3px] w-[3px] rounded-full bg-white/50" />
-              <span className="h-[3px] w-[3px] rounded-full bg-white/50" />
+              <span className="h-[3px] w-[3px] rounded-[3px] bg-white" />
+              <span className="h-[3px] w-[3px] rounded-[3px] bg-white/50" />
+              <span className="h-[3px] w-[3px] rounded-[3px] bg-white/50" />
             </div>
           </div>
           <div className="py-1 px-1 flex items-center justify-between gap-1">
             <div className="flex flex-col gap-0.5 flex-1">
-              <div className="h-1 w-2/3 bg-zinc-700 rounded-sm" />
-              <div className="h-1 w-1/3 bg-zinc-900 rounded-sm" />
+              <div className="h-1 w-2/3 bg-zinc-700 rounded-[3px]" />
+              <div className="h-1 w-1/3 bg-zinc-900 rounded-[3px]" />
             </div>
-            <div className="h-2.5 w-2.5 rounded-full bg-zinc-900" />
+            <div className="h-2.5 w-2.5 rounded-[3px] bg-zinc-900" />
           </div>
         </div>
       );
     case 'boutique':
       return (
-        <div className="flex flex-col w-full h-full bg-white rounded-lg border border-zinc-300 p-1">
-          <div className="relative flex-1 bg-zinc-100 rounded-md">
-            <div className="absolute left-1 top-1 h-1.5 w-4 rounded-full bg-white" />
-            <div className="absolute right-1 top-1 h-2 w-2 rounded-full bg-white" />
+        <div className="flex flex-col w-full h-full bg-white rounded-[3px] border border-zinc-300 p-1">
+          <div className="relative flex-1 bg-zinc-100 rounded-[3px]">
+            <div className="absolute left-1 top-1 h-1.5 w-4 rounded-[3px] bg-white" />
+            <div className="absolute right-1 top-1 h-2 w-2 rounded-[3px] bg-white" />
             <div className="absolute inset-x-0 bottom-1 flex items-center justify-center gap-0.5">
-              <span className="h-[3px] w-[3px] rounded-full bg-emerald-600" />
-              <span className="h-[3px] w-[3px] rounded-full bg-zinc-300" />
+              <span className="h-[3px] w-[3px] rounded-[3px] bg-emerald-600" />
+              <span className="h-[3px] w-[3px] rounded-[3px] bg-zinc-300" />
             </div>
           </div>
           <div className="py-0.5 px-1 flex flex-col gap-[2px]">
-            <div className="h-1 w-1/3 bg-emerald-600 rounded-sm" />
-            <div className="h-1 w-2/3 bg-zinc-700 rounded-sm" />
+            <div className="h-1 w-1/3 bg-emerald-600 rounded-[3px]" />
+            <div className="h-1 w-2/3 bg-zinc-700 rounded-[3px]" />
           </div>
-          <div className="h-3 mx-1 mb-0.5 bg-zinc-900 rounded-full" />
+          <div className="h-3 mx-1 mb-0.5 bg-zinc-900 rounded-[3px]" />
         </div>
       );
     case 'floating':
       return (
         <div className={wrapBase}>
           <div className="relative flex-1 bg-gradient-to-br from-zinc-200 to-zinc-300">
-            <div className="absolute left-1 top-1 h-3 w-3 rounded-full bg-[#c8a85a]" />
-            <div className="absolute left-1/2 -translate-x-1/2 bottom-1 flex items-center gap-0.5 rounded-full bg-white px-1 py-[2px] shadow-sm">
-              <span className="h-1.5 w-1.5 rounded-full bg-zinc-700" />
-              <span className="h-1.5 w-1.5 rounded-full bg-zinc-700" />
+            <div className="absolute left-1 top-1 h-3 w-3 rounded-[3px] bg-[#c8a85a]" />
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-1 flex items-center gap-0.5 rounded-[3px] bg-white px-1 py-[2px] shadow-sm">
+              <span className="h-1.5 w-1.5 rounded-[3px] bg-zinc-700" />
+              <span className="h-1.5 w-1.5 rounded-[3px] bg-zinc-700" />
             </div>
           </div>
           <div className="py-1 flex flex-col items-center gap-0.5">
-            <div className="h-1 w-1/2 bg-zinc-700 rounded-sm" />
-            <div className="h-1 w-1/4 bg-zinc-400 rounded-sm" />
-            <div className="h-1 w-1/3 bg-[#c8a85a] rounded-sm" />
+            <div className="h-1 w-1/2 bg-zinc-700 rounded-[3px]" />
+            <div className="h-1 w-1/4 bg-zinc-400 rounded-[3px]" />
+            <div className="h-1 w-1/3 bg-[#c8a85a] rounded-[3px]" />
           </div>
         </div>
       );
     case 'retail':
       return (
-        <div className="flex flex-col w-full h-full bg-white rounded-lg border border-zinc-200 overflow-hidden shadow-sm">
+        <div className="flex flex-col w-full h-full bg-white rounded-[3px] border border-zinc-200 overflow-hidden shadow-sm">
           <div className="relative flex-1 bg-[#f5f5f5] flex items-center justify-center">
-            <div className="h-3/5 w-3/5 rounded bg-zinc-200" />
-            <div className="absolute left-1 top-1 h-1.5 w-5 rounded-sm bg-[#fff3dc]" />
+            <div className="h-3/5 w-3/5 rounded-[3px] bg-zinc-200" />
+            <div className="absolute left-1 top-1 h-1.5 w-5 rounded-[3px] bg-[#fff3dc]" />
           </div>
           <div className="px-1.5 py-1 flex flex-col gap-[3px]">
-            <div className="h-[3px] w-1/3 bg-zinc-300 rounded-sm" />
-            <div className="h-[3px] w-3/4 bg-zinc-600 rounded-sm" />
-            <div className="h-[3px] w-1/2 bg-zinc-400 rounded-sm" />
-            <div className="h-[3px] w-2/5 bg-zinc-800 rounded-sm" />
-            <div className="h-2.5 w-2/3 bg-[#ff9200] rounded-md mt-0.5" />
+            <div className="h-[3px] w-1/3 bg-zinc-300 rounded-[3px]" />
+            <div className="h-[3px] w-3/4 bg-zinc-600 rounded-[3px]" />
+            <div className="h-[3px] w-1/2 bg-zinc-400 rounded-[3px]" />
+            <div className="h-[3px] w-2/5 bg-zinc-800 rounded-[3px]" />
+            <div className="h-2.5 w-2/3 bg-[#ff9200] rounded-[3px] mt-0.5" />
           </div>
         </div>
       );
@@ -2271,14 +2271,14 @@ function CarouselSection() {
     return (
       <div className="space-y-4 animate-pulse">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-12 rounded-lg bg-zinc-100" />
+          <div key={i} className="h-12 rounded-[3px] bg-zinc-100" />
         ))}
       </div>
     );
   }
 
   const NumStepper = ({ label, hint, value, onChange, min = 1, max = 6 }) => (
-    <div className="flex items-center justify-between gap-4 rounded-xl border border-zinc-200 bg-white px-4 py-3.5">
+    <div className="flex items-center justify-between gap-4 rounded-[3px] border border-zinc-200 bg-white px-4 py-3.5">
       <div className="min-w-0">
         <p className="text-sm font-medium text-zinc-900">{label}</p>
         {hint && <p className="mt-0.5 text-xs text-zinc-500">{hint}</p>}
@@ -2288,14 +2288,14 @@ function CarouselSection() {
           type="button"
           onClick={() => onChange(Math.max(min, value - 1))}
           disabled={value <= min}
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-zinc-600 hover:bg-zinc-100 disabled:opacity-40 transition-colors text-lg font-medium leading-none"
+          className="flex h-8 w-8 items-center justify-center rounded-[3px] border border-zinc-200 bg-zinc-50 text-zinc-600 hover:bg-zinc-100 disabled:opacity-40 transition-colors text-lg font-medium leading-none"
         >−</button>
         <span className="w-5 text-center text-sm font-semibold text-zinc-900 tabular-nums">{value}</span>
         <button
           type="button"
           onClick={() => onChange(Math.min(max, value + 1))}
           disabled={value >= max}
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-zinc-600 hover:bg-zinc-100 disabled:opacity-40 transition-colors text-lg font-medium leading-none"
+          className="flex h-8 w-8 items-center justify-center rounded-[3px] border border-zinc-200 bg-zinc-50 text-zinc-600 hover:bg-zinc-100 disabled:opacity-40 transition-colors text-lg font-medium leading-none"
         >+</button>
       </div>
     </div>
@@ -2344,7 +2344,7 @@ function CarouselSection() {
         />
 
         {/* Autoplay toggle */}
-        <div className="mt-2 flex items-center justify-between gap-4 rounded-xl border border-zinc-200 bg-white px-4 py-3.5">
+        <div className="mt-2 flex items-center justify-between gap-4 rounded-[3px] border border-zinc-200 bg-white px-4 py-3.5">
           <div>
             <p className="text-sm font-medium text-zinc-900">{t.autoplay ?? "Autoplay"}</p>
             <p className="mt-0.5 text-xs text-zinc-500">{t.autoplay_desc ?? "Automatically advance slides"}</p>
@@ -2354,26 +2354,26 @@ function CarouselSection() {
             role="switch"
             aria-checked={autoplay}
             onClick={() => setAutoplay(!autoplay)}
-            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${autoplay ? 'bg-blue-600' : 'bg-zinc-200'}`}
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-[3px] border-2 border-transparent transition-colors duration-200 focus:outline-none ${autoplay ? 'bg-blue-600' : 'bg-zinc-200'}`}
           >
             <span
-              className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 ${autoplay ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0'}`}
+              className={`pointer-events-none inline-block h-5 w-5 rounded-[3px] bg-white shadow transform transition-transform duration-200 ${autoplay ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0'}`}
             />
           </button>
         </div>
 
         {/* Interval slider */}
-        <div className={`rounded-xl border border-zinc-200 bg-white px-4 py-3.5 transition-opacity ${!autoplay ? 'opacity-40 pointer-events-none' : ''}`}>
+        <div className={`rounded-[3px] border border-zinc-200 bg-white px-4 py-3.5 transition-opacity ${!autoplay ? 'opacity-40 pointer-events-none' : ''}`}>
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-medium text-zinc-900">{t.autoplay_interval ?? "Autoplay interval"}</p>
-            <span className="text-xs font-semibold text-zinc-700 tabular-nums bg-zinc-100 px-2 py-0.5 rounded-md">{(interval / 1000).toFixed(1)}s</span>
+            <span className="text-xs font-semibold text-zinc-700 tabular-nums bg-zinc-100 px-2 py-0.5 rounded-[3px]">{(interval / 1000).toFixed(1)}s</span>
           </div>
           <input
             type="range"
             min={1000} max={8000} step={500}
             value={interval}
             onChange={(e) => setCarouselInterval(Number(e.target.value))}
-            className="w-full h-1.5 rounded-full accent-blue-600"
+            className="w-full h-1.5 rounded-[3px] accent-blue-600"
           />
           <div className="flex justify-between mt-1 text-[10px] text-zinc-400 font-medium">
             <span>1 s</span><span>8 s</span>
@@ -2381,17 +2381,17 @@ function CarouselSection() {
         </div>
 
         {/* Speed slider */}
-        <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3.5">
+        <div className="rounded-[3px] border border-zinc-200 bg-white px-4 py-3.5">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-medium text-zinc-900">{t.transition_speed ?? "Transition speed"}</p>
-            <span className="text-xs font-semibold text-zinc-700 tabular-nums bg-zinc-100 px-2 py-0.5 rounded-md">{speed} ms</span>
+            <span className="text-xs font-semibold text-zinc-700 tabular-nums bg-zinc-100 px-2 py-0.5 rounded-[3px]">{speed} ms</span>
           </div>
           <input
             type="range"
             min={100} max={1200} step={50}
             value={speed}
             onChange={(e) => setSpeed(Number(e.target.value))}
-            className="w-full h-1.5 rounded-full accent-blue-600"
+            className="w-full h-1.5 rounded-[3px] accent-blue-600"
           />
           <div className="flex justify-between mt-1 text-[10px] text-zinc-400 font-medium">
             <span>100 ms</span><span>1200 ms</span>
@@ -2403,7 +2403,7 @@ function CarouselSection() {
           <button
             type="button"
             onClick={reset}
-            className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
+            className="rounded-[3px] border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
           >
             Reset
           </button>
@@ -2411,7 +2411,7 @@ function CarouselSection() {
             type="button"
             onClick={save}
             disabled={saving}
-            className="inline-flex items-center gap-2 rounded-[5px] bg-zinc-900 px-5 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:opacity-60 transition-colors"
+            className="inline-flex items-center gap-2 rounded-[3px] bg-zinc-900 px-5 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:opacity-60 transition-colors"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             {saving ? 'Saving…' : 'Save'}
@@ -2482,8 +2482,8 @@ function LayoutSection() {
   if (loading) {
     return (
       <div className="animate-pulse">
-        <div className="h-10 rounded-lg bg-zinc-100 mb-3" />
-        <div className="h-48 rounded-lg bg-zinc-100" />
+        <div className="h-10 rounded-[3px] bg-zinc-100 mb-3" />
+        <div className="h-48 rounded-[3px] bg-zinc-100" />
       </div>
     );
   }
@@ -2495,7 +2495,7 @@ function LayoutSection() {
         description={tL.desc ?? 'Choose a ready-made card layout for your storefront. Pair it with the colours and button styles from the previous tab.'}
       />
 
-      <div className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-zinc-200 bg-white px-4 py-3">
+      <div className="mb-6 flex items-center justify-between gap-4 rounded-[3px] border border-zinc-200 bg-white px-4 py-3">
         <div>
           <p className="text-sm font-semibold text-zinc-900">
             {tL.short_description_toggle ?? 'Show short description'}
@@ -2520,7 +2520,7 @@ function LayoutSection() {
               key={preset.value}
               type="button"
               onClick={() => setLayout(preset.value)}
-              className={`group/preset text-left rounded-xl border-2 transition-all overflow-hidden ${
+              className={`group/preset text-left rounded-[3px] border-2 transition-all overflow-hidden ${
                 selected
                   ? 'border-blue-600 ring-2 ring-blue-200 bg-blue-50/40'
                   : 'border-zinc-200 hover:border-zinc-300 bg-white'
@@ -2532,11 +2532,11 @@ function LayoutSection() {
               <div className="p-3">
                 <div className="flex items-center gap-2">
                   <span
-                    className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border-2 ${
+                    className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] border-2 ${
                       selected ? 'border-blue-600' : 'border-zinc-300'
                     }`}
                   >
-                    {selected && <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />}
+                    {selected && <span className="h-1.5 w-1.5 rounded-[3px] bg-blue-600" />}
                   </span>
                   <span className={`text-sm font-semibold leading-tight ${selected ? 'text-blue-700' : 'text-zinc-900'}`}>
                     {tL.presets?.[preset.value]?.label ?? preset.label}
@@ -2552,7 +2552,7 @@ function LayoutSection() {
       </div>
 
       {/* Live preview */}
-      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-6 sm:p-8">
+      <div className="rounded-[3px] border border-zinc-200 bg-zinc-50 p-6 sm:p-8">
         <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-semibold mb-4 text-center">
           {tL.preview ?? 'Live preview'}
         </p>
@@ -2575,10 +2575,10 @@ function LayoutSection() {
             />
           ) : (
             <div className="animate-pulse">
-              <div className="aspect-square w-full rounded-[5px] bg-zinc-100 mb-4" />
-              <div className="h-3 w-3/4 mx-auto bg-zinc-100 rounded mb-2" />
-              <div className="h-3 w-1/2 mx-auto bg-zinc-100 rounded mb-4" />
-              <div className="h-9 w-full bg-zinc-100 rounded-[5px]" />
+              <div className="aspect-square w-full rounded-[3px] bg-zinc-100 mb-4" />
+              <div className="h-3 w-3/4 mx-auto bg-zinc-100 rounded-[3px] mb-2" />
+              <div className="h-3 w-1/2 mx-auto bg-zinc-100 rounded-[3px] mb-4" />
+              <div className="h-9 w-full bg-zinc-100 rounded-[3px]" />
             </div>
           )}
         </div>
@@ -2601,7 +2601,7 @@ function LayoutSection() {
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 rounded-[5px] bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+          className="flex items-center gap-2 rounded-[3px] bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           <span className="hidden sm:inline">{saving ? (tL.saving ?? 'Saving…') : (tL.save ?? 'Save Layout')}</span>
@@ -2696,8 +2696,8 @@ function DisplaySection() {
   if (loading) {
     return (
       <div className="animate-pulse">
-        <div className="h-10 rounded-lg bg-zinc-100 mb-3" />
-        <div className="h-48 rounded-lg bg-zinc-100" />
+        <div className="h-10 rounded-[3px] bg-zinc-100 mb-3" />
+        <div className="h-48 rounded-[3px] bg-zinc-100" />
       </div>
     );
   }
@@ -2710,7 +2710,7 @@ function DisplaySection() {
       />
 
       {usesButtonBlock && (
-      <div className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-zinc-200 bg-white px-4 py-3">
+      <div className="mb-6 flex items-center justify-between gap-4 rounded-[3px] border border-zinc-200 bg-white px-4 py-3">
         <div>
           <p className="text-sm font-semibold text-zinc-900">
             {tD.hide_buttons_toggle ?? 'Hide buttons'}
@@ -2730,7 +2730,7 @@ function DisplaySection() {
           return (
             <label
               key={opt.value}
-              className={`flex items-center gap-2.5 cursor-pointer rounded-lg border px-3.5 py-2.5 text-sm font-medium transition-all select-none ${
+              className={`flex items-center gap-2.5 cursor-pointer rounded-[3px] border px-3.5 py-2.5 text-sm font-medium transition-all select-none ${
                 selected
                   ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-sm'
                   : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-900'
@@ -2745,11 +2745,11 @@ function DisplaySection() {
                 className="sr-only"
               />
               <span
-                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border-2 transition-colors ${
                   selected ? 'border-blue-600' : 'border-zinc-300'
                 }`}
               >
-                {selected && <span className="h-2 w-2 rounded-full bg-blue-600" />}
+                {selected && <span className="h-2 w-2 rounded-[3px] bg-blue-600" />}
               </span>
               {tBS[opt.value]?.label ?? opt.label}
             </label>
@@ -2759,7 +2759,7 @@ function DisplaySection() {
       )}
 
       {/* 2. Workshop panel — preview LEFT, controls RIGHT */}
-      <div className="rounded-xl border border-zinc-200 overflow-hidden grid grid-cols-1 md:grid-cols-2">
+      <div className="rounded-[3px] border border-zinc-200 overflow-hidden grid grid-cols-1 md:grid-cols-2">
         {/* Preview */}
         <div className="bg-zinc-50 border-b md:border-b-0 md:border-r border-zinc-200 flex flex-col items-center justify-center p-6 gap-3">
           <span className="text-[10px] uppercase tracking-widest text-zinc-400 font-semibold">{tD.preview ?? 'Preview'}</span>
@@ -2782,10 +2782,10 @@ function DisplaySection() {
               />
             ) : (
               <div className="animate-pulse">
-                <div className="aspect-square w-full rounded-[5px] bg-zinc-100 mb-4" />
-                <div className="h-3 w-3/4 mx-auto bg-zinc-100 rounded mb-2" />
-                <div className="h-3 w-1/2 mx-auto bg-zinc-100 rounded mb-4" />
-                <div className="h-9 w-full bg-zinc-100 rounded-[5px]" />
+                <div className="aspect-square w-full rounded-[3px] bg-zinc-100 mb-4" />
+                <div className="h-3 w-3/4 mx-auto bg-zinc-100 rounded-[3px] mb-2" />
+                <div className="h-3 w-1/2 mx-auto bg-zinc-100 rounded-[3px] mb-4" />
+                <div className="h-9 w-full bg-zinc-100 rounded-[3px]" />
               </div>
             )}
           </div>
@@ -2801,7 +2801,7 @@ function DisplaySection() {
         {/* Controls */}
         <div className={`p-5 transition-opacity duration-200 ${hideButtons && usesButtonBlock ? 'opacity-40 pointer-events-none select-none' : ''}`}>
           {hasOwnButton && (
-            <div className="flex h-full items-center justify-center rounded-lg bg-zinc-50 border border-zinc-200 p-5 text-center">
+            <div className="flex h-full items-center justify-center rounded-[3px] bg-zinc-50 border border-zinc-200 p-5 text-center">
               <p className="text-sm text-zinc-500">
                 {tD.own_button_notice ?? 'The active card layout has a built-in button. Switch to a different layout to customise button colours.'}
               </p>
@@ -2830,14 +2830,14 @@ function DisplaySection() {
                       type="color"
                       value={outlineBg}
                       onChange={(e) => setOutlineBg(e.target.value)}
-                      className="h-6 w-6 rounded cursor-pointer p-0 border border-zinc-300 bg-transparent"
+                      className="h-6 w-6 rounded-[3px] cursor-pointer p-0 border border-zinc-300 bg-transparent"
                       style={{ appearance: 'none', WebkitAppearance: 'none' }}
                     />
                   )}
                   <button
                     type="button"
                     onClick={() => setOutlineBg(outlineBg === 'transparent' ? outlineBorder : 'transparent')}
-                    className={`text-[11px] font-medium px-2 py-1 rounded border ${outlineBg === 'transparent' ? 'border-zinc-300 bg-zinc-50 text-zinc-500' : 'border-blue-300 bg-blue-50 text-blue-700'}`}
+                    className={`text-[11px] font-medium px-2 py-1 rounded-[3px] border ${outlineBg === 'transparent' ? 'border-zinc-300 bg-zinc-50 text-zinc-500' : 'border-blue-300 bg-blue-50 text-blue-700'}`}
                   >
                     {outlineBg === 'transparent' ? (tD.transparent ?? 'Transparent') : (tD.solid ?? 'Solid')}
                   </button>
@@ -2856,7 +2856,7 @@ function DisplaySection() {
                   key={val}
                   type="button"
                   onClick={()=>setButtonFontSize(val)}
-                  className={`flex-1 rounded-md border py-1.5 text-xs font-semibold transition-colors ${
+                  className={`flex-1 rounded-[3px] border py-1.5 text-xs font-semibold transition-colors ${
                     buttonFontSize===val
                       ? 'border-blue-600 bg-blue-50 text-blue-700'
                       : 'border-zinc-200 bg-white text-zinc-500 hover:border-zinc-300 hover:text-zinc-800'
@@ -2896,7 +2896,7 @@ function DisplaySection() {
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 rounded-[5px] bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+          className="flex items-center gap-2 rounded-[3px] bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           <span className="hidden sm:inline">{saving ? (tD.saving ?? 'Saving…') : (tD.save ?? 'Save Display Settings')}</span>
@@ -3003,7 +3003,7 @@ function IntegrationsSection() {
     return (
       <div className="space-y-4 animate-pulse">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-10 rounded-[5px] bg-zinc-100" />
+          <div key={i} className="h-10 rounded-[3px] bg-zinc-100" />
         ))}
       </div>
     );
@@ -3047,7 +3047,7 @@ function IntegrationsSection() {
               key={p.id}
               type="button"
               onClick={() => setPlatform(p.id)}
-              className={`inline-flex items-center gap-2 rounded-[5px] border px-3.5 py-2 text-sm font-medium transition-colors ${
+              className={`inline-flex items-center gap-2 rounded-[3px] border px-3.5 py-2 text-sm font-medium transition-colors ${
                 active
                   ? 'border-zinc-900 bg-zinc-900 text-white'
                   : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50'
@@ -3056,7 +3056,7 @@ function IntegrationsSection() {
               {p.icon}
               <span>{p.label}</span>
               <span
-                className={`h-1.5 w-1.5 rounded-full ${
+                className={`h-1.5 w-1.5 rounded-[3px] ${
                   p.configured ? 'bg-green-500' : active ? 'bg-white/40' : 'bg-zinc-300'
                 }`}
               />
@@ -3066,7 +3066,7 @@ function IntegrationsSection() {
       </div>
 
       {/* Platform panel */}
-      <div className="rounded-[5px] border border-zinc-200 bg-white p-5">
+      <div className="rounded-[3px] border border-zinc-200 bg-white p-5">
         {platform === 'telegram' && (
           <>
             <p className="mb-4 text-xs text-zinc-500">
@@ -3177,7 +3177,7 @@ function IntegrationsSection() {
                 type="button"
                 onClick={handleTest}
                 disabled={testing || saving}
-                className="inline-flex items-center gap-2 rounded-[5px] border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-[3px] border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
               >
                 {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 {testing ? (t.wa_testing ?? 'Testing\u2026') : (t.wa_test ?? 'Test connection')}
@@ -3194,7 +3194,7 @@ function IntegrationsSection() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 rounded-[5px] bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+          className="flex items-center gap-2 rounded-[3px] bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {saving ? (t.saving ?? 'Saving…') : (t.save_btn ?? 'Save Integrations')}
@@ -3241,10 +3241,10 @@ function SeoSection() {
         <button
           type="button"
           onClick={() => setField(field, on ? 'false' : 'true')}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${on ? 'bg-blue-600' : 'bg-zinc-300'}`}
+          className={`relative inline-flex h-6 w-11 items-center rounded-[3px] transition-colors ${on ? 'bg-blue-600' : 'bg-zinc-300'}`}
           aria-pressed={on}
         >
-          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${on ? 'translate-x-6' : 'translate-x-1'}`} />
+          <span className={`inline-block h-4 w-4 transform rounded-[3px] bg-white transition-transform ${on ? 'translate-x-6' : 'translate-x-1'}`} />
         </button>
       </Field>
     );
@@ -3600,7 +3600,7 @@ function HeroSection() {
     return (
       <div className="space-y-4 animate-pulse">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-24 rounded-xl bg-zinc-100" />
+          <div key={i} className="h-24 rounded-[3px] bg-zinc-100" />
         ))}
       </div>
     );
@@ -3609,7 +3609,7 @@ function HeroSection() {
   // ── Image upload tile ────────────────────────────────────────────────
   const ImageTile = ({ imageUrl, isUploading, onUpload, onDelete, onPreview, hint }) => (
     <div
-      className={`relative flex flex-col items-center justify-center w-full rounded-xl border-2 border-dashed overflow-hidden transition-colors ${imageUrl ? 'border-transparent' : 'border-zinc-200 bg-zinc-50 hover:border-blue-400 hover:bg-blue-50'}`}
+      className={`relative flex flex-col items-center justify-center w-full rounded-[3px] border-2 border-dashed overflow-hidden transition-colors ${imageUrl ? 'border-transparent' : 'border-zinc-200 bg-zinc-50 hover:border-blue-400 hover:bg-blue-50'}`}
       style={{ minHeight: '10rem' }}
     >
       {isUploading ? (
@@ -3620,21 +3620,21 @@ function HeroSection() {
       ) : imageUrl ? (
         <div className="w-full space-y-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imageUrl} alt="" className="w-full h-40 object-cover rounded-xl" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+          <img src={imageUrl} alt="" className="w-full h-40 object-cover rounded-[3px]" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
           <div className="flex flex-wrap items-center gap-2">
             {onPreview && (
               <button type="button" onClick={(e) => { e.preventDefault(); onPreview(imageUrl); }}
-                className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-zinc-700 text-sm font-medium hover:bg-zinc-50">
+                className="flex items-center gap-1.5 rounded-[3px] border border-zinc-200 bg-white px-3 py-2 text-zinc-700 text-sm font-medium hover:bg-zinc-50">
                 <Maximize2 className="h-4 w-4" /> {t.preview_image ?? 'Preview'}
               </button>
             )}
-            <label className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-zinc-700 text-sm font-medium hover:bg-zinc-50 cursor-pointer">
+            <label className="flex items-center gap-1.5 rounded-[3px] border border-zinc-200 bg-white px-3 py-2 text-zinc-700 text-sm font-medium hover:bg-zinc-50 cursor-pointer">
               <ImageIcon className="h-4 w-4" /> {t.change_image ?? 'Change'}
               <input type="file" accept="image/*" className="hidden" onChange={(e) => onUpload(e.target.files?.[0])} />
             </label>
             {onDelete && (
               <button type="button" onClick={(e) => { e.preventDefault(); onDelete(); }}
-                className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-600 text-sm font-medium hover:bg-red-100">
+                className="flex items-center gap-1.5 rounded-[3px] border border-red-200 bg-red-50 px-3 py-2 text-red-600 text-sm font-medium hover:bg-red-100">
                 <Trash2 className="h-4 w-4" /> {t.remove_image ?? 'Remove'}
               </button>
             )}
@@ -3660,13 +3660,13 @@ function HeroSection() {
       </div>
       <input type="range" min={0} max={90} step={5} value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full h-1.5 rounded-full accent-blue-600" />
+        className="w-full h-1.5 rounded-[3px] accent-blue-600" />
     </div>
   );
 
   // ── Text-align picker ─────────────────────────────────────────────────
   const AlignPicker = ({ value, onChange }) => (
-    <div className="flex items-center gap-0 border border-zinc-200 rounded-lg overflow-hidden w-fit">
+    <div className="flex items-center gap-0 border border-zinc-200 rounded-[3px] overflow-hidden w-fit">
       {[['left', AlignLeft], ['center', AlignCenter], ['right', AlignRight]].map(([val, Icon]) => (
         <button key={val} type="button" onClick={() => onChange(val)}
           className={`flex items-center justify-center h-8 w-9 transition-colors ${value === val ? 'bg-blue-600 text-white' : 'bg-white text-zinc-500 hover:bg-zinc-50'}`}>
@@ -3711,7 +3711,7 @@ function HeroSection() {
             const desc  = t[`type_${ht.value}_desc`] ?? ht.desc;
             return (
               <button key={ht.value} type="button" onClick={() => setHeroType(ht.value)}
-                className={`flex flex-col items-start gap-2 rounded-xl border-2 p-3 text-left transition-all ${active ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-200' : 'border-zinc-200 bg-white hover:border-zinc-300'}`}>
+                className={`flex flex-col items-start gap-2 rounded-[3px] border-2 p-3 text-left transition-all ${active ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-200' : 'border-zinc-200 bg-white hover:border-zinc-300'}`}>
                 <Icon className={`h-5 w-5 ${active ? 'text-blue-600' : 'text-zinc-400'}`} />
                 <div>
                   <p className={`text-xs font-semibold leading-tight ${active ? 'text-blue-700' : 'text-zinc-800'}`}>{label}</p>
@@ -3725,7 +3725,7 @@ function HeroSection() {
 
       {/* ── Single Image settings ─────────────────────────────────────── */}
       {heroType === 'single' && (
-        <div className="space-y-4 border border-zinc-200 rounded-xl p-4 mb-4">
+        <div className="space-y-4 border border-zinc-200 rounded-[3px] p-4 mb-4">
           <p className="text-sm font-semibold text-zinc-700">{t.panel_single ?? "Single Image Hero"}</p>
           <ImageTile
             imageUrl={singleCfg.image_url}
@@ -3755,7 +3755,7 @@ function HeroSection() {
 
       {/* ── Video Hero settings ───────────────────────────────────────── */}
       {heroType === 'video' && (
-        <div className="space-y-4 border border-zinc-200 rounded-xl p-4 mb-4">
+        <div className="space-y-4 border border-zinc-200 rounded-[3px] p-4 mb-4">
           <p className="text-sm font-semibold text-zinc-700">{t.panel_video ?? "Video Hero"}</p>
           <div>
             <label className="text-xs text-zinc-500 mb-1 block">{t.video_url_label ?? "Video URL (Supabase storage)"}</label>
@@ -3802,14 +3802,14 @@ function HeroSection() {
 
       {/* ── Countdown Hero settings ───────────────────────────────────── */}
       {heroType === 'countdown' && (
-        <div className="space-y-4 border border-zinc-200 rounded-xl p-4 mb-4">
+        <div className="space-y-4 border border-zinc-200 rounded-[3px] p-4 mb-4">
           <p className="text-sm font-semibold text-zinc-700">{t.panel_countdown ?? "Countdown Hero"}</p>
           <div>
             <label className="text-xs text-zinc-500 mb-2 block">{t.cd_bg_type ?? "Background type"}</label>
             <div className="flex items-center gap-3">
               {[['image', t.cd_bg_image ?? 'Image', ImageIcon], ['video', t.cd_bg_video ?? 'Video URL', Film]].map(([val, lbl, Icon]) => (
                 <button key={val} type="button" onClick={() => setCountdownCfg((p) => ({ ...p, background_type: val }))}
-                  className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${countdownCfg.background_type === val ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-zinc-200 text-zinc-600 hover:border-zinc-300'}`}>
+                  className={`flex items-center gap-2 rounded-[3px] border px-3 py-2 text-sm transition-colors ${countdownCfg.background_type === val ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-zinc-200 text-zinc-600 hover:border-zinc-300'}`}>
                   <Icon className="h-4 w-4" /> {lbl}
                 </button>
               ))}
@@ -3867,7 +3867,7 @@ function HeroSection() {
 
       {/* ── Multi-Image global config ─────────────────────────────────── */}
       {heroType === 'multi' && (
-        <div className="space-y-4 border border-zinc-200 rounded-xl p-4 mb-4">
+        <div className="space-y-4 border border-zinc-200 rounded-[3px] p-4 mb-4">
           <p className="text-sm font-semibold text-zinc-700">{t.multi_global ?? "Global Settings"}</p>
           <LocaleTabBar />
           <input className={inputClass} dir={inputDir} placeholder={t.ph_title_all_images ?? "Title (optional, overlaid on all images)"}
@@ -3901,7 +3901,7 @@ function HeroSection() {
 
       {/* ── iHerb-style hero settings ─────────────────────────────────── */}
       {heroType === 'iherb' && (
-        <div className="space-y-4 border border-zinc-200 rounded-xl p-4 mb-4">
+        <div className="space-y-4 border border-zinc-200 rounded-[3px] p-4 mb-4">
           <p className="text-sm font-semibold text-zinc-700">{t.panel_iherb ?? "iHerb Style Hero"}</p>
           <p className="text-xs text-zinc-500">
             {t.panel_iherb_desc ?? "Upload a main banner (mobile + desktop) and up to two side promo cards. The hero height is set by the main banner's aspect ratio so the whole image is always visible."}
@@ -3921,7 +3921,7 @@ function HeroSection() {
             <div className="flex items-center gap-3">
               {[['behind', t.pos_behind ?? 'Behind header'], ['below', t.pos_below ?? 'Below header']].map(([val, lbl]) => (
                 <button key={val} type="button" onClick={() => setIherbCfg((p) => ({ ...p, mobile_position: val }))}
-                  className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${iherbCfg.mobile_position === val ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-zinc-200 text-zinc-600 hover:border-zinc-300'}`}>
+                  className={`flex items-center gap-2 rounded-[3px] border px-3 py-2 text-sm transition-colors ${iherbCfg.mobile_position === val ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-zinc-200 text-zinc-600 hover:border-zinc-300'}`}>
                   {lbl}
                 </button>
               ))}
@@ -3935,7 +3935,7 @@ function HeroSection() {
                 type="checkbox"
                 checked={!!iherbCfg.autoplay}
                 onChange={(e) => setIherbCfg((p) => ({ ...p, autoplay: e.target.checked }))}
-                className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
+                className="h-4 w-4 rounded-[3px] border-zinc-300 text-blue-600 focus:ring-blue-500"
               />
               {t.auto_move ?? "Auto-move slides"}
             </label>
@@ -3946,7 +3946,7 @@ function HeroSection() {
                   type="number" min={1} max={30} step={1}
                   value={iherbCfg.autoplay_interval ?? 5}
                   onChange={(e) => setIherbCfg((p) => ({ ...p, autoplay_interval: Math.max(1, Math.min(30, Number(e.target.value) || 5)) }))}
-                  className="w-20 rounded-lg border border-zinc-200 px-2 py-1 text-sm"
+                  className="w-20 rounded-[3px] border border-zinc-200 px-2 py-1 text-sm"
                 />
                 <span className="text-xs text-zinc-500">{t.seconds ?? "seconds"}</span>
               </div>
@@ -3981,10 +3981,10 @@ function HeroSection() {
               <p className="text-sm text-zinc-400 text-center py-4">{t.side_cards_empty ?? "No side cards. Add one to show the desktop side layout."}</p>
             )}
             {(iherbCfg.side_cards ?? []).map((card, idx) => (
-              <div key={idx} className="border border-zinc-200 rounded-xl p-3 flex flex-col gap-3">
+              <div key={idx} className="border border-zinc-200 rounded-[3px] p-3 flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">{t.card ?? "Card"} {idx + 1}</span>
-                  <button onClick={() => removeCard(idx)} className="p-1 rounded text-red-400 hover:text-red-600">
+                  <button onClick={() => removeCard(idx)} className="p-1 rounded-[3px] text-red-400 hover:text-red-600">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -4002,7 +4002,7 @@ function HeroSection() {
                   onChange={(e) => updateCard(idx, 'href', e.target.value)} />
               </div>
             ))}
-            <button onClick={addCard} className="flex items-center gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
+            <button onClick={addCard} className="flex items-center gap-2 rounded-[3px] border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
               <Plus className="h-4 w-4" /> {t.add_side_card ?? "Add Side Card"}
             </button>
           </div>
@@ -4018,17 +4018,17 @@ function HeroSection() {
               <p className="text-sm text-zinc-400 text-center py-8">{t.no_slides ?? 'No slides yet. Add one below.'}</p>
             )}
             {slides.map((slide, idx) => (
-              <div key={idx} className="border border-zinc-200 rounded-xl p-4 flex flex-col gap-3">
+              <div key={idx} className="border border-zinc-200 rounded-[3px] p-4 flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">{t.slide ?? 'Slide'} {idx + 1}</span>
                   <div className="flex items-center gap-1">
-                    <button onClick={() => move(idx, -1)} disabled={idx === 0} className="p-1 rounded text-zinc-400 hover:text-zinc-700 disabled:opacity-30">
+                    <button onClick={() => move(idx, -1)} disabled={idx === 0} className="p-1 rounded-[3px] text-zinc-400 hover:text-zinc-700 disabled:opacity-30">
                       <ChevronUp className="h-4 w-4" />
                     </button>
-                    <button onClick={() => move(idx, 1)} disabled={idx === slides.length - 1} className="p-1 rounded text-zinc-400 hover:text-zinc-700 disabled:opacity-30">
+                    <button onClick={() => move(idx, 1)} disabled={idx === slides.length - 1} className="p-1 rounded-[3px] text-zinc-400 hover:text-zinc-700 disabled:opacity-30">
                       <ChevronDown className="h-4 w-4" />
                     </button>
-                    <button onClick={() => setConfirmDelete(idx)} className="p-1 rounded text-red-400 hover:text-red-600">
+                    <button onClick={() => setConfirmDelete(idx)} className="p-1 rounded-[3px] text-red-400 hover:text-red-600">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
@@ -4060,7 +4060,7 @@ function HeroSection() {
               </div>
             ))}
           </div>
-          <button onClick={add} className="flex items-center gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 mb-4">
+          <button onClick={add} className="flex items-center gap-2 rounded-[3px] border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 mb-4">
             <Plus className="h-4 w-4" /> {t.add_slide ?? 'Add Slide'}
           </button>
         </>
@@ -4069,7 +4069,7 @@ function HeroSection() {
       {/* ── Save button ──────────────────────────────────────────────── */}
       <div className="flex justify-end pt-2 border-t border-zinc-100">
         <button onClick={save} disabled={saving}
-          className="flex items-center gap-2 rounded-[5px] bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60">
+          className="flex items-center gap-2 rounded-[3px] bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60">
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {saving ? (t.saving ?? 'Saving…') : (t.save_hero ?? 'Save Hero Settings')}
         </button>
@@ -4079,13 +4079,13 @@ function HeroSection() {
       {previewImage && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4" onClick={() => setPreviewImage(null)}>
           <button onClick={() => setPreviewImage(null)}
-            className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+            className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-[3px] bg-white/10 hover:bg-white/20 text-white transition-colors"
             aria-label="Close preview">
             <XIcon className="h-5 w-5" />
           </button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={previewImage} alt="Hero preview" onClick={(e) => e.stopPropagation()}
-            className="max-h-[90vh] max-w-full rounded-xl object-contain shadow-2xl" />
+            className="max-h-[90vh] max-w-full rounded-[3px] object-contain shadow-2xl" />
         </div>,
         document.body
       )}
@@ -4121,17 +4121,17 @@ function Toggle({ defaultChecked = false, checked: controlledChecked, onChange, 
         if (!isControlled) setInternalOn(next);
         onChange?.(next);
       }}
-      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-0 p-0 transition-colors ${
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-[3px] border-0 p-0 transition-colors ${
         on ? "bg-blue-600" : "bg-zinc-300"
       } ${disabled || loading ? 'opacity-60 cursor-not-allowed' : ''}`}
     >
       {loading ? (
         <span className="absolute inset-0 flex items-center justify-center">
-          <span className="h-3.5 w-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+          <span className="h-3.5 w-3.5 rounded-[3px] border-2 border-white border-t-transparent animate-spin" />
         </span>
       ) : (
         <span
-          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+          className={`inline-block h-4 w-4 transform rounded-[3px] bg-white transition-transform ${
             on ? "translate-x-6 rtl:-translate-x-6" : "translate-x-1 rtl:-translate-x-1"
           }`}
         />
@@ -4363,7 +4363,7 @@ function AnnouncementSelect({ value, onChange, options, placeholder }) {
         onClick={toggleOpen}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className={`w-full flex items-center justify-between gap-2 rounded-[5px] border bg-white px-3 py-2 text-sm outline-none transition-all cursor-pointer ${
+        className={`w-full flex items-center justify-between gap-2 rounded-[3px] border bg-white px-3 py-2 text-sm outline-none transition-all cursor-pointer ${
           open
             ? 'border-blue-400'
             : 'border-zinc-200 hover:border-zinc-300'
@@ -4377,7 +4377,7 @@ function AnnouncementSelect({ value, onChange, options, placeholder }) {
       {open && (
         <ul
           role="listbox"
-          className={`absolute left-0 right-0 z-30 max-h-56 overflow-y-auto rounded-lg border border-zinc-200 bg-white p-1 shadow-lg ring-1 ring-black/5 ${
+          className={`absolute left-0 right-0 z-30 max-h-56 overflow-y-auto rounded-[3px] border border-zinc-200 bg-white p-1 shadow-lg ring-1 ring-black/5 ${
             openUp ? 'bottom-full mb-1' : 'top-full mt-1'
           }`}
         >
@@ -4393,7 +4393,7 @@ function AnnouncementSelect({ value, onChange, options, placeholder }) {
                     onChange?.({ target: { value: opt.value } });
                     setOpen(false);
                   }}
-                  className={`w-full text-left px-2.5 py-1.5 text-sm rounded-md transition-colors capitalize ${
+                  className={`w-full text-left px-2.5 py-1.5 text-sm rounded-[3px] transition-colors capitalize ${
                     active
                       ? 'bg-blue-50 text-blue-700 font-medium'
                       : 'text-zinc-700 hover:bg-zinc-50'
@@ -4415,7 +4415,7 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
   const preset = resolveAnnouncementStyle(value.type, value.bg_style, value.bg_style_colors);
   return (
     <div
-      className={`group w-full min-w-0 max-w-full overflow-hidden rounded-md border transition-all ${
+      className={`group w-full min-w-0 max-w-full overflow-hidden rounded-[3px] border transition-all ${
         value.is_active
           ? 'border-zinc-200 bg-white hover:border-zinc-300'
           : 'border-zinc-100 bg-zinc-50/50'
@@ -4446,7 +4446,7 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
               {/* Left: info */}
               <div className="flex items-center gap-2 shrink-0 min-w-0">
                 {value.social_show_logo && value.social_logo_url && (
-                  <img src={value.social_logo_url} alt="" className="h-6 w-6 rounded-full object-cover shrink-0" />
+                  <img src={value.social_logo_url} alt="" className="h-6 w-6 rounded-[3px] object-cover shrink-0" />
                 )}
                 {((value.social_show_name && value.social_business_name) || (value.social_show_phone && (value.social_whatsapp || value.social_facebook || ''))) && (
                   <span className="flex flex-col leading-tight">
@@ -4465,7 +4465,7 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
                   const p = SOCIAL_PLATFORMS.find((x) => x.id === pid);
                   if (!p) return null;
                   return (
-                    <span key={pid} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide"
+                    <span key={pid} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[3px] text-[11px] font-bold tracking-wide"
                       style={{ backgroundColor: value.social_btn_color || 'rgba(255,255,255,0.2)', color: '#fff' }}>
                       <BrandIcon name={pid} className="h-4 w-4" />
                       {p.label}
@@ -4483,7 +4483,7 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
                 {(() => {
                   const textNode = <span>{value.text || <span className="opacity-60 italic">{t.preview_placeholder ?? 'Your message preview…'}</span>}</span>;
                   const ctaNode = value.cta_text ? (
-                    <span className="px-3 py-1.5 rounded-full bg-white text-black text-[11px] font-bold tracking-wide shadow-sm">{value.cta_text}</span>
+                    <span className="px-3 py-1.5 rounded-[3px] bg-white text-black text-[11px] font-bold tracking-wide shadow-sm">{value.cta_text}</span>
                   ) : null;
                   if (ctaNode && value.cta_display_mode === 'swap') {
                     return <SwapStack textNode={textNode} buttonNode={ctaNode} seconds={value.cta_swap_seconds ?? 4} />;
@@ -4491,7 +4491,7 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
                   return <>{textNode}{ctaNode && <span className="ms-1">{ctaNode}</span>}</>;
                 })()}
                 {value.type === 'promotion' && value.promo_code && (
-                  <span className="px-2 py-0.5 rounded bg-white/20 font-mono text-[11px]">{value.promo_code}</span>
+                  <span className="px-2 py-0.5 rounded-[3px] bg-white/20 font-mono text-[11px]">{value.promo_code}</span>
                 )}
                 {value.type === 'limited' && value.end_at && (
                   <Countdown endAt={value.end_at} labels={{ d: 'd', h: 'h', m: 'm', s: 's' }} />
@@ -4503,12 +4503,12 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
 
       {/* Meta + actions */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 sm:px-4 py-2.5">
-        <span className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium capitalize"
+        <span className="inline-flex items-center gap-1.5 rounded-[3px] px-2 py-0.5 text-[11px] font-medium capitalize"
           style={{ backgroundColor: `${typeInfo.bg}1a`, color: typeInfo.bg }}>
-          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: typeInfo.bg }} />
+          <span className="h-1.5 w-1.5 rounded-[3px]" style={{ backgroundColor: typeInfo.bg }} />
           {t[`type_${value.type}`] ?? typeInfo.label}
         </span>
-        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium bg-zinc-100 text-zinc-600">
+        <span className="inline-flex items-center gap-1 rounded-[3px] px-2 py-0.5 text-[11px] font-medium bg-zinc-100 text-zinc-600">
           <Megaphone className="h-3 w-3 opacity-60" />
           {scopesLabel(t, value)}
         </span>
@@ -4517,12 +4517,12 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
         </span>
         <div className="flex items-center gap-0.5 ms-auto">
           <button onClick={() => onMove(-1)} disabled={isFirst}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 disabled:opacity-25 transition-colors"
+            className="p-1.5 rounded-[3px] text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 disabled:opacity-25 transition-colors"
             aria-label={t.move_up ?? 'Move up'}>
             <ChevronUp className="h-3.5 w-3.5" />
           </button>
           <button onClick={() => onMove(1)} disabled={isLast}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 disabled:opacity-25 transition-colors"
+            className="p-1.5 rounded-[3px] text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 disabled:opacity-25 transition-colors"
             aria-label={t.move_down ?? 'Move down'}>
             <ChevronDown className="h-3.5 w-3.5" />
           </button>
@@ -4530,7 +4530,7 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
             <Toggle checked={value.is_active} onChange={onToggle} loading={toggling} disabled={toggling} />
           </div>
           <button onClick={onEdit}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+            className="p-1.5 rounded-[3px] text-zinc-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
             aria-label={t.edit ?? 'Edit'}>
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
@@ -4538,7 +4538,7 @@ function AnnouncementRow({ value, t, isFirst, isLast, onMove, onDelete, onToggle
             </svg>
           </button>
           <button onClick={onDelete}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+            className="p-1.5 rounded-[3px] text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-colors"
             aria-label={t.delete ?? 'Delete'}>
             <Trash2 className="h-4 w-4" />
           </button>
@@ -4574,7 +4574,7 @@ function AnnouncementTypePicker({ open, t, onPick, onClose }) {
       <div onClick={close}
         className={`fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0'}`} />
       <div
-        className={`fixed z-[71] left-1/2 top-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md bg-white rounded-lg shadow-2xl transition-all duration-200 ${
+        className={`fixed z-[71] left-1/2 top-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md bg-white rounded-[3px] shadow-2xl transition-all duration-200 ${
           visible ? '-translate-y-1/2 opacity-100 scale-100' : '-translate-y-[45%] opacity-0 scale-95'
         }`}
       >
@@ -4583,7 +4583,7 @@ function AnnouncementTypePicker({ open, t, onPick, onClose }) {
             <h2 className="text-base font-semibold text-zinc-900">{t.pick_type_title ?? 'Choose announcement type'}</h2>
             <p className="text-xs text-zinc-500 mt-0.5">{t.pick_type_desc ?? 'Select what kind of banner you want to create.'}</p>
           </div>
-          <button onClick={close} className="p-2 rounded-lg hover:bg-zinc-100 text-zinc-500 transition-colors">
+          <button onClick={close} className="p-2 rounded-[3px] hover:bg-zinc-100 text-zinc-500 transition-colors">
             <XIcon className="h-4 w-4" />
           </button>
         </div>
@@ -4593,9 +4593,9 @@ function AnnouncementTypePicker({ open, t, onPick, onClose }) {
               key={tp.id}
               type="button"
               onClick={() => { onPick(tp.id); close(); }}
-              className="group flex items-center gap-3 rounded-xl border border-zinc-100 bg-white px-3 py-3 text-left hover:border-blue-200 hover:bg-blue-50/30 transition-colors"
+              className="group flex items-center gap-3 rounded-[3px] border border-zinc-100 bg-white px-3 py-3 text-left hover:border-blue-200 hover:bg-blue-50/30 transition-colors"
             >
-              <span className="h-9 w-9 rounded-lg flex items-center justify-center text-white shrink-0"
+              <span className="h-9 w-9 rounded-[3px] flex items-center justify-center text-white shrink-0"
                 style={{ backgroundColor: tp.bg }}>
                 <Megaphone className="h-4 w-4" />
               </span>
@@ -4622,7 +4622,7 @@ function ScopeMultiSelect({ value, onChange, t }) {
   const isAll = selected.includes('all');
 
   const chipCls = (active) =>
-    `inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all active:scale-95 ${
+    `inline-flex items-center gap-1.5 rounded-[3px] border px-3 py-1.5 text-xs font-medium transition-all active:scale-95 ${
       active
         ? 'border-blue-600 bg-blue-600 text-white shadow-sm'
         : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50'
@@ -4715,7 +4715,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
     onUpdate('social_platforms', next);
   };
 
-  const inputCls = "w-full rounded-[5px] border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:border-blue-400 transition-all";
+  const inputCls = "w-full rounded-[3px] border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:border-blue-400 transition-all";
 
   const content = (
     <>
@@ -4737,7 +4737,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
       >
         {/* Drag handle (mobile) */}
         <div className="sm:hidden flex justify-center pt-2 pb-1 shrink-0">
-          <div className="h-1 w-10 rounded-full bg-zinc-200" />
+          <div className="h-1 w-10 rounded-[3px] bg-zinc-200" />
         </div>
 
         <div className="flex items-center justify-between px-5 py-3 sm:py-4 border-b border-zinc-100 shrink-0">
@@ -4745,7 +4745,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
             <h2 className="text-base font-semibold text-zinc-900 truncate">{t.edit_title ?? 'Edit Announcement'}</h2>
             <p className="text-xs text-zinc-400 mt-0.5 capitalize">{t[`type_${value.type}`] ?? value.type}</p>
           </div>
-          <button onClick={handleClose} className="p-2 rounded-lg hover:bg-zinc-100 text-zinc-500 transition-colors shrink-0">
+          <button onClick={handleClose} className="p-2 rounded-[3px] hover:bg-zinc-100 text-zinc-500 transition-colors shrink-0">
             <XIcon className="h-4 w-4" />
           </button>
         </div>
@@ -4756,7 +4756,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
             const drawerPreset = resolveAnnouncementStyle(value.type, value.bg_style, value.bg_style_colors);
             return (
           <div
-            className="rounded-xl overflow-hidden text-sm font-medium"
+            className="rounded-[3px] overflow-hidden text-sm font-medium"
             style={{
               background: drawerPreset?.css ?? undefined,
               backgroundColor: drawerPreset ? undefined : (value.bg_color ?? '#111'),
@@ -4777,7 +4777,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
                 {/* Left: info */}
                 <div className="flex items-center gap-2 shrink-0">
                   {value.social_show_logo && value.social_logo_url && (
-                    <img src={value.social_logo_url} alt="" className="h-7 w-7 rounded-full object-cover shrink-0" />
+                    <img src={value.social_logo_url} alt="" className="h-7 w-7 rounded-[3px] object-cover shrink-0" />
                   )}
                   {((value.social_show_name && value.social_business_name) || (value.social_show_phone && (value.social_whatsapp || value.social_facebook || ''))) && (
                     <span className="flex flex-col leading-tight">
@@ -4796,7 +4796,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
                     const p = SOCIAL_PLATFORMS.find((x) => x.id === pid);
                     if (!p) return null;
                     return (
-                      <span key={pid} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold tracking-wide"
+                      <span key={pid} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[3px] text-xs font-bold tracking-wide"
                         style={{ backgroundColor: value.social_btn_color || 'rgba(255,255,255,0.2)', color: '#fff' }}>
                         <BrandIcon name={pid} className="h-4 w-4" />
                         {p.label}
@@ -4814,7 +4814,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
                   {(() => {
                     const textNode = <span>{previewText || <span className="opacity-50">{t.preview_placeholder ?? 'Your message preview…'}</span>}</span>;
                     const ctaNode = previewCta ? (
-                      <span className="px-4 py-2 rounded-full bg-white text-black text-xs font-bold tracking-wide shadow-sm">{previewCta}</span>
+                      <span className="px-4 py-2 rounded-[3px] bg-white text-black text-xs font-bold tracking-wide shadow-sm">{previewCta}</span>
                     ) : null;
                     if (ctaNode && value.cta_display_mode === 'swap') {
                       return <SwapStack textNode={textNode} buttonNode={ctaNode} seconds={value.cta_swap_seconds ?? 4} />;
@@ -4822,7 +4822,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
                     return <>{textNode}{ctaNode && <span className="ms-1">{ctaNode}</span>}</>;
                   })()}
                   {value.type === 'promotion' && value.promo_code && (
-                    <span className="px-2 py-0.5 rounded bg-white/20 font-mono text-xs">{value.promo_code}</span>
+                    <span className="px-2 py-0.5 rounded-[3px] bg-white/20 font-mono text-xs">{value.promo_code}</span>
                   )}
                   {value.type === 'limited' && value.end_at && (
                     <Countdown endAt={value.end_at} labels={{ d: 'd', h: 'h', m: 'm', s: 's' }} />
@@ -4835,7 +4835,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
           })()}
 
           {/* Language tab switcher (translatable fields below) */}
-          <div className="flex gap-1 p-1 bg-zinc-100 rounded-[5px]">
+          <div className="flex gap-1 p-1 bg-zinc-100 rounded-[3px]">
             {ANN_LANGS.map((lang) => {
               const tr = value.translations?.[lang];
               const hasContent =
@@ -4847,7 +4847,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
                   key={lang}
                   type="button"
                   onClick={() => setActiveLang(lang)}
-                  className={`relative flex-1 py-1.5 text-xs font-semibold rounded-[5px] transition-all ${
+                  className={`relative flex-1 py-1.5 text-xs font-semibold rounded-[3px] transition-all ${
                     activeLang === lang
                       ? 'bg-white text-zinc-900'
                       : 'text-zinc-500 hover:text-zinc-700'
@@ -4855,7 +4855,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
                 >
                   {ANN_LANG_LABELS[lang]}
                   {hasContent && (
-                    <span className="absolute top-1 end-1 h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    <span className="absolute top-1 end-1 h-1.5 w-1.5 rounded-[3px] bg-emerald-500" />
                   )}
                 </button>
               );
@@ -4910,7 +4910,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
                           const next = (readTr('marquee_messages') ?? []).filter((_, j) => j !== i);
                           setTr('marquee_messages', next);
                         }}
-                        className="p-2 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+                        className="p-2 rounded-[3px] text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
                         aria-label={t.delete ?? 'Delete'}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -4952,7 +4952,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
                     ]}
                   />
                 </div>
-                <label className="flex items-end justify-between gap-2 rounded-lg border border-zinc-100 px-3 py-2 cursor-pointer hover:bg-zinc-50">
+                <label className="flex items-end justify-between gap-2 rounded-[3px] border border-zinc-100 px-3 py-2 cursor-pointer hover:bg-zinc-50">
                   <span className="text-xs text-zinc-700">{t.marquee_pause_on_hover ?? 'Pause on hover'}</span>
                   <Toggle defaultChecked={value.marquee_pause_on_hover !== false} onChange={(v) => onUpdate('marquee_pause_on_hover', v)} />
                 </label>
@@ -4990,15 +4990,15 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
               {SOCIAL_PLATFORMS.map((p) => {
                 const enabled = (value.social_platforms ?? []).includes(p.id);
                 return (
-                  <div key={p.id} className={`rounded-xl border p-3 transition-all ${
+                  <div key={p.id} className={`rounded-[3px] border p-3 transition-all ${
                     enabled ? 'border-zinc-300 bg-zinc-50/60' : 'border-zinc-100 bg-white'
                   }`}>
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input
                         type="checkbox" checked={enabled} onChange={() => togglePlatform(p.id)}
-                        className="h-4 w-4 rounded border-zinc-300 accent-blue-600"
+                        className="h-4 w-4 rounded-[3px] border-zinc-300 accent-blue-600"
                       />
-                      <span className="h-7 w-7 rounded-lg flex items-center justify-center text-white shrink-0" style={{ backgroundColor: p.color }}>
+                      <span className="h-7 w-7 rounded-[3px] flex items-center justify-center text-white shrink-0" style={{ backgroundColor: p.color }}>
                         <BrandIcon name={p.id} className="h-3.5 w-3.5" />
                       </span>
                       <span className="text-sm font-medium text-zinc-800 flex-1">{p.label}</span>
@@ -5011,14 +5011,14 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
               })}
 
               {/* Button color */}
-              <div className="rounded-xl border border-zinc-100 p-3 space-y-2">
+              <div className="rounded-[3px] border border-zinc-100 p-3 space-y-2">
                 <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">{t.social_btn_color_label ?? 'Button color'}</p>
                 <div className="flex items-center gap-3">
                   <input
                     type="color"
                     value={value.social_btn_color || '#25D366'}
                     onChange={(e) => onUpdate('social_btn_color', e.target.value)}
-                    className="h-9 w-14 rounded-[5px] cursor-pointer border border-zinc-200 p-0.5"
+                    className="h-9 w-14 rounded-[3px] cursor-pointer border border-zinc-200 p-0.5"
                   />
                   <span className="text-xs text-zinc-500 font-mono">{value.social_btn_color || '— default'}</span>
                   {value.social_btn_color && (
@@ -5030,12 +5030,12 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
               </div>
 
               {/* Info panel: logo / name / phone */}
-              <div className="rounded-xl border border-zinc-100 p-3 space-y-3">
+              <div className="rounded-[3px] border border-zinc-100 p-3 space-y-3">
                 <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">{t.social_info_label ?? 'Contact info panel'}</p>
 
                 {/* Logo */}
                 <label className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" checked={!!value.social_show_logo} onChange={(e) => onUpdate('social_show_logo', e.target.checked)} className="h-4 w-4 rounded border-zinc-300 accent-blue-600" />
+                  <input type="checkbox" checked={!!value.social_show_logo} onChange={(e) => onUpdate('social_show_logo', e.target.checked)} className="h-4 w-4 rounded-[3px] border-zinc-300 accent-blue-600" />
                   <span className="text-sm font-medium text-zinc-800">{t.social_show_logo ?? 'Show logo'}</span>
                 </label>
                 {value.social_show_logo && (
@@ -5044,7 +5044,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
 
                 {/* Business name */}
                 <label className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" checked={!!value.social_show_name} onChange={(e) => onUpdate('social_show_name', e.target.checked)} className="h-4 w-4 rounded border-zinc-300 accent-blue-600" />
+                  <input type="checkbox" checked={!!value.social_show_name} onChange={(e) => onUpdate('social_show_name', e.target.checked)} className="h-4 w-4 rounded-[3px] border-zinc-300 accent-blue-600" />
                   <span className="text-sm font-medium text-zinc-800">{t.social_show_name ?? 'Show business name'}</span>
                 </label>
                 {value.social_show_name && (
@@ -5053,7 +5053,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
 
                 {/* Phone / handle */}
                 <label className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" checked={!!value.social_show_phone} onChange={(e) => onUpdate('social_show_phone', e.target.checked)} className="h-4 w-4 rounded border-zinc-300 accent-blue-600" />
+                  <input type="checkbox" checked={!!value.social_show_phone} onChange={(e) => onUpdate('social_show_phone', e.target.checked)} className="h-4 w-4 rounded-[3px] border-zinc-300 accent-blue-600" />
                   <span className="text-sm font-medium text-zinc-800">{t.social_show_phone ?? 'Show phone number'}</span>
                 </label>
               </div>
@@ -5142,7 +5142,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
                       onUpdate('bg_color', p.solid);
                       onUpdate('text_color', p.text);
                     }}
-                    className={`group relative rounded-lg overflow-hidden border transition-all text-start focus:outline-none ${
+                    className={`group relative rounded-[3px] overflow-hidden border transition-all text-start focus:outline-none ${
                       selected
                         ? 'border-blue-500 ring-2 ring-blue-500/30'
                         : 'border-zinc-200 hover:border-zinc-300'
@@ -5158,7 +5158,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
                       <p className="text-[11px] font-medium text-zinc-800 truncate">{p.label}</p>
                     </div>
                     {selected && (
-                      <span className="absolute top-1 end-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-white">
+                      <span className="absolute top-1 end-1 inline-flex h-4 w-4 items-center justify-center rounded-[3px] bg-blue-600 text-white">
                         <Check className="h-2.5 w-2.5" />
                       </span>
                     )}
@@ -5183,7 +5183,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
                 if (idx === 0) onUpdate('bg_color', hex);
               };
               return (
-                <div className="mt-4 rounded-lg border border-zinc-100 p-3">
+                <div className="mt-4 rounded-[3px] border border-zinc-100 p-3">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
                       {t.gradient_colors ?? 'Gradient colors'}
@@ -5198,12 +5198,12 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {colors.map((hex, i) => (
-                      <label key={i} className="flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-2 py-1.5">
+                      <label key={i} className="flex items-center gap-1.5 rounded-[3px] border border-zinc-200 bg-white px-2 py-1.5">
                         <input
                           type="color"
                           value={hex || '#000000'}
                           onChange={(e) => setColorAt(i, e.target.value)}
-                          className="h-6 w-8 cursor-pointer rounded-sm border-0 bg-transparent p-0"
+                          className="h-6 w-8 cursor-pointer rounded-[3px] border-0 bg-transparent p-0"
                         />
                         <span className="text-[10px] font-mono text-zinc-600">{hex}</span>
                       </label>
@@ -5225,12 +5225,12 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
               {!value.bg_style && (
                 <div>
                   <label className="block text-xs text-zinc-600 mb-1.5">{t.bg_color ?? 'Background'}</label>
-                  <input type="color" value={value.bg_color || '#111111'} onChange={(e) => onUpdate('bg_color', e.target.value)} className="h-10 w-full rounded-[5px] border border-zinc-200 cursor-pointer" />
+                  <input type="color" value={value.bg_color || '#111111'} onChange={(e) => onUpdate('bg_color', e.target.value)} className="h-10 w-full rounded-[3px] border border-zinc-200 cursor-pointer" />
                 </div>
               )}
               <div>
                 <label className="block text-xs text-zinc-600 mb-1.5">{t.text_color ?? 'Text color'}</label>
-                <input type="color" value={value.text_color || '#ffffff'} onChange={(e) => onUpdate('text_color', e.target.value)} className="h-10 w-full rounded-[5px] border border-zinc-200 cursor-pointer" />
+                <input type="color" value={value.text_color || '#ffffff'} onChange={(e) => onUpdate('text_color', e.target.value)} className="h-10 w-full rounded-[3px] border border-zinc-200 cursor-pointer" />
               </div>
               <div>
                 <label className="block text-xs text-zinc-600 mb-1.5">{t.font_size ?? 'Font size'}</label>
@@ -5316,7 +5316,7 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
                 ['border_enabled', t.border ?? 'Border'],
                 ['carousel_enabled', t.carousel ?? 'Carousel rotate'],
               ].map(([field, label]) => (
-                <label key={field} className="flex items-center justify-between gap-3 rounded-lg border border-zinc-100 px-3 py-2.5 cursor-pointer hover:bg-zinc-50">
+                <label key={field} className="flex items-center justify-between gap-3 rounded-[3px] border border-zinc-100 px-3 py-2.5 cursor-pointer hover:bg-zinc-50">
                   <span className="text-sm text-zinc-700">{label}</span>
                   <Toggle defaultChecked={!!value[field]} onChange={(v) => onUpdate(field, v)} />
                 </label>
@@ -5327,13 +5327,13 @@ function AnnouncementDrawer({ value, t, onUpdate, onClose, onSaveRow, saving }) 
 
         <div className="shrink-0 border-t border-zinc-100 px-5 py-3 sm:py-4 flex gap-3">
           <button onClick={handleClose} disabled={saving}
-            className="flex-1 rounded-xl border border-zinc-200 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50 disabled:opacity-50 transition-colors">
+            className="flex-1 rounded-[3px] border border-zinc-200 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50 disabled:opacity-50 transition-colors">
             {t.cancel ?? 'Cancel'}
           </button>
           <button
             onClick={() => onSaveRow(handleClose)}
             disabled={saving}
-            className="flex-1 inline-flex items-center justify-center gap-2 rounded-[5px] bg-blue-600 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60 transition-colors">
+            className="flex-1 inline-flex items-center justify-center gap-2 rounded-[3px] bg-blue-600 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60 transition-colors">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {saving ? (t.saving ?? 'Saving…') : (t.save ?? 'Save')}
           </button>
@@ -5528,7 +5528,7 @@ function AnnouncementsSection() {
     return (
       <div className="space-y-3 animate-pulse">
         {[...Array(2)].map((_, i) => (
-          <div key={i} className="h-20 rounded-2xl bg-zinc-100" />
+          <div key={i} className="h-20 rounded-[3px] bg-zinc-100" />
         ))}
       </div>
     );
@@ -5545,7 +5545,7 @@ function AnnouncementsSection() {
         <button
           type="button"
           onClick={startAdd}
-          className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+          className="inline-flex items-center gap-2 rounded-[3px] bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
         >
           <Plus className="h-4 w-4" />
           {t.add ?? 'Add Announcement'}
@@ -5554,7 +5554,7 @@ function AnnouncementsSection() {
 
       <div className="flex flex-col gap-4 mb-5">
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-14 rounded-2xl border border-dashed border-zinc-200 text-zinc-400">
+          <div className="flex flex-col items-center justify-center py-14 rounded-[3px] border border-dashed border-zinc-200 text-zinc-400">
             <Megaphone className="h-10 w-10 mb-3 opacity-40" />
             <p className="text-sm font-medium text-zinc-500">{t.no_items ?? 'No announcements yet.'}</p>
             <p className="text-xs text-zinc-400 mt-1">{t.no_items_hint ?? 'Click “Add Announcement” to create your first banner.'}</p>
@@ -5580,12 +5580,12 @@ function AnnouncementsSection() {
               return (
                 <section
                   key={g.key}
-                  className="min-w-0 max-w-full rounded-2xl border border-zinc-200 bg-white/60 overflow-hidden"
+                  className="min-w-0 max-w-full rounded-[3px] border border-zinc-200 bg-white/60 overflow-hidden"
                 >
                   {/* Group header */}
                   <header className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-zinc-100 bg-zinc-50/70 flex-wrap">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="inline-flex items-center justify-center h-6 w-6 rounded-md bg-blue-100 text-blue-600">
+                      <span className="inline-flex items-center justify-center h-6 w-6 rounded-[3px] bg-blue-100 text-blue-600">
                         <Megaphone className="h-3.5 w-3.5" />
                       </span>
                       <span className="text-sm font-semibold text-zinc-800 truncate">
@@ -5596,7 +5596,7 @@ function AnnouncementsSection() {
                       </span>
                     </div>
                     {showRotation && (
-                      <div className="flex items-center gap-2 min-w-0 px-3 py-1.5 rounded-lg bg-white border border-zinc-200">
+                      <div className="flex items-center gap-2 min-w-0 px-3 py-1.5 rounded-[3px] bg-white border border-zinc-200">
                         <Clock className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
                         <span className="text-xs text-zinc-600 shrink-0 hidden sm:inline">
                           {t.rotation_speed ?? 'Rotation'}
@@ -5759,7 +5759,7 @@ function ProductSectionsSection() {
         <button
           onClick={save}
           disabled={saving || loading}
-          className="flex items-center gap-2 rounded-[5px] bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+          className="flex items-center gap-2 rounded-[3px] bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {saving ? (dict?.admin?.settings?.saving ?? "Saving…") : (dict?.admin?.settings?.save ?? "Save changes")}

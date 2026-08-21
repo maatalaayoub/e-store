@@ -320,10 +320,10 @@ export default function AdminSearch({ locale, isRtl }) {
           aria-expanded={open}
           aria-autocomplete="list"
           aria-controls="admin-search-listbox"
-          className="w-full sm:w-64 md:w-72 rounded-full border border-zinc-200 bg-zinc-50 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600 focus:bg-white transition-colors ps-10 pe-12"
+          className="w-full sm:w-64 md:w-72 rounded-[3px] border border-zinc-200 bg-zinc-50 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600 focus:bg-white transition-colors ps-10 pe-12"
         />
         <kbd
-          className="absolute hidden md:inline-flex items-center gap-1 rounded border border-zinc-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 select-none end-2.5"
+          className="absolute hidden md:inline-flex items-center gap-1 rounded-[3px] border border-zinc-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 select-none end-2.5"
           aria-hidden="true"
         >
           {/Mac/i.test(typeof navigator !== "undefined" ? navigator.platform : "") ? "⌘K" : "Ctrl+K"}
@@ -335,7 +335,7 @@ export default function AdminSearch({ locale, isRtl }) {
           id="admin-search-listbox"
           role="listbox"
           ref={listRef}
-          className={`absolute top-full mt-2 w-full sm:w-[min(28rem,calc(100vw-2rem))] max-h-[70vh] overflow-y-auto rounded-2xl border border-zinc-200 bg-white shadow-2xl shadow-zinc-900/5 z-[60] ${
+          className={`absolute top-full mt-2 w-full sm:w-[min(28rem,calc(100vw-2rem))] max-h-[70vh] overflow-y-auto rounded-[3px] border border-zinc-200 bg-white shadow-2xl shadow-zinc-900/5 z-[60] ${
             isRtl ? "right-0" : "left-0"
           }`}
         >
@@ -379,11 +379,11 @@ export default function AdminSearch({ locale, isRtl }) {
                           aria-selected={isActive}
                           onMouseEnter={() => setActiveIdx(idx)}
                           onMouseDown={(e) => { e.preventDefault(); go(item); }}
-                          className={`mx-1 flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
+                          className={`mx-1 flex items-center gap-3 px-3 py-2 rounded-[3px] cursor-pointer transition-colors ${
                             isActive ? "bg-blue-50 text-blue-700" : "text-zinc-700 hover:bg-zinc-50"
                           }`}
                         >
-                          <span className={`grid place-items-center h-8 w-8 rounded-lg shrink-0 ${
+                          <span className={`grid place-items-center h-8 w-8 rounded-[3px] shrink-0 ${
                             isActive ? "bg-blue-100 text-blue-600" : "bg-zinc-100 text-zinc-600"
                           }`}>
                             <Icon className="h-4 w-4" />
