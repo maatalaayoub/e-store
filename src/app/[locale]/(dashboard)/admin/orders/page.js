@@ -4,11 +4,19 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Search, Filter, Download, ShoppingCart, RefreshCw, ChevronDown, Check, X, MapPin, Phone, User, Package, Calendar, CheckCircle2, XCircle, Loader2, RotateCw, Tag, Square, CheckSquare, MinusSquare, Trash2, MessageCircle } from "lucide-react";
+import dynamic from "next/dynamic";
+import { Search, Filter, Download, ShoppingCart, RefreshCw, ChevronDown, Check, X, MapPin, Phone, User, Package, Calendar, CheckCircle2, XCircle, Loader2, RotateCw, Tag, Square, CheckSquare, MinusSquare, Trash2, MessageCircle, LayoutList, CalendarDays } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { AdminOrdersSkeleton } from "@/components/skeletons";
 import { useAdminOrderView } from "@/components/providers/AdminOrderViewContext";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
+
+// Lazy — the calendar (and FullCalendar) only loads when the admin opens the
+// Calendar view, keeping the default List view's bundle lean.
+const OrdersCalendarContainer = dynamic(
+  () => import("@/components/admin/orders-calendar/OrdersCalendarContainer"),
+  { ssr: false },
+);
 import { toast } from "sonner";
 import { resolveCategoryName } from "@/lib/category-locale";
 import { resolveProductTranslation } from "@/lib/product-locale";
@@ -615,6 +623,7 @@ export default function AdminOrdersPage() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [view, setView] = useState("list"); // "list" | "calendar"
   const filterBtnRef = useRef(null);
   const filterPanelRef = useRef(null);
 
@@ -623,6 +632,7 @@ export default function AdminOrdersPage() {
   const tStats = t.stats ?? {};
   const tTabs = t.tabs ?? {};
   const tH = t.headers ?? {};
+  const tCal = t.calendar ?? {};
   const params = useParams();
   const locale = params?.locale || "en";
   const { pendingOrderId, clearPendingOrder } = useAdminOrderView();
@@ -654,6 +664,13 @@ export default function AdminOrdersPage() {
     setSelectedOrder(null);
     clearPendingOrder();
   }, [clearPendingOrder]);
+
+  // Open the existing order drawer for a given id (used by the calendar view).
+  // Falls back to a minimal snapshot when the row isn't in the loaded list.
+  const openOrderById = useCallback((id) => {
+    const order = orders.find((o) => o.id === id) ?? { id };
+    setSelectedOrder(order);
+  }, [orders]);
 
   /**
    * Called by the drawer after a successful status PATCH. Keeps the underlying
@@ -763,7 +780,8 @@ export default function AdminOrdersPage() {
   };
 
   const clearFilters = () => { setDateRange("all"); setCancelledBy("any"); };
-  const activeFilterCount = (dateRange !== "all" ? 1 : 0) + (cancelledBy !== "any" ? 1 : 0);
+  // Date-range only affects the list view (the calendar navigates dates itself).
+  const activeFilterCount = (view === "list" && dateRange !== "all" ? 1 : 0) + (cancelledBy !== "any" ? 1 : 0);
 
   /* ── Bulk selection ── */
   // Clear selection whenever the visible list changes (tab / search / filters).
@@ -862,6 +880,28 @@ export default function AdminOrdersPage() {
           <p className="text-sm text-zinc-500 mt-1">{t.subtitle ?? "Manage customer orders"}</p>
         </div>
         <div className="flex items-center gap-2">
+          <div className="inline-flex items-center rounded-[3px] border border-zinc-200 bg-white p-0.5 h-10">
+            <button
+              onClick={() => setView("list")}
+              aria-pressed={view === "list"}
+              className={`inline-flex items-center gap-1.5 rounded-[2px] px-3 py-1.5 text-sm font-medium transition-colors ${
+                view === "list" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-50"
+              }`}
+            >
+              <LayoutList className="h-4 w-4" />
+              <span className="hidden sm:inline">{tCal.list_view ?? "List"}</span>
+            </button>
+            <button
+              onClick={() => setView("calendar")}
+              aria-pressed={view === "calendar"}
+              className={`inline-flex items-center gap-1.5 rounded-[2px] px-3 py-1.5 text-sm font-medium transition-colors ${
+                view === "calendar" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-50"
+              }`}
+            >
+              <CalendarDays className="h-4 w-4" />
+              <span className="hidden sm:inline">{tCal.calendar_view ?? "Calendar"}</span>
+            </button>
+          </div>
           <button
             onClick={loadData}
             disabled={loading}
@@ -932,6 +972,7 @@ export default function AdminOrdersPage() {
             </button>
 
             {/* Bulk-select controls */}
+            {view === "list" && (
             <div className="flex items-center gap-1 border-l border-zinc-200 pl-2 ml-1">
               {/* Mobile-only select-all (desktop has one in the table header) */}
               <button
@@ -971,6 +1012,7 @@ export default function AdminOrdersPage() {
                 </>
               )}
             </div>
+            )}
 
             {filterOpen && typeof document !== "undefined" && createPortal(
               <div
@@ -979,6 +1021,7 @@ export default function AdminOrdersPage() {
                 className="rounded-[3px] border border-zinc-200 bg-white shadow-xl p-4 flex flex-col gap-4"
               >
                 {/* Date range */}
+                {view === "list" && (
                 <div>
                   <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-2">{tFp.date_range ?? "Date range"}</p>
                   <div className="flex flex-wrap gap-1.5">
@@ -1003,6 +1046,7 @@ export default function AdminOrdersPage() {
                     ))}
                   </div>
                 </div>
+                )}
 
                 {/* Cancelled by */}
                 <div>
@@ -1042,7 +1086,7 @@ export default function AdminOrdersPage() {
         </div>
 
         {/* Loading skeleton */}
-        {loading && (
+        {view === "list" && loading && (
           <div className="divide-y divide-zinc-100 px-6">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="py-4 flex gap-4 animate-pulse">
@@ -1055,7 +1099,7 @@ export default function AdminOrdersPage() {
         )}
 
         {/* EMPTY STATE */}
-        {!loading && filtered.length === 0 && (
+        {view === "list" && !loading && filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center text-center px-6 py-16">
             <div className="flex h-12 w-12 items-center justify-center rounded-[3px] bg-zinc-100 text-zinc-400 mb-3">
               <ShoppingCart className="h-6 w-6" />
@@ -1066,7 +1110,7 @@ export default function AdminOrdersPage() {
         )}
 
         {/* MOBILE CARDS */}
-        {!loading && filtered.length > 0 && (
+        {view === "list" && !loading && filtered.length > 0 && (
           <ul className="divide-y divide-zinc-200 sm:hidden">
             {filtered.map((o) => {
               const customer = o.shipping_address?.full_name ?? "Guest";
@@ -1139,7 +1183,7 @@ export default function AdminOrdersPage() {
         )}
 
         {/* DESKTOP TABLE */}
-        {!loading && filtered.length > 0 && (
+        {view === "list" && !loading && filtered.length > 0 && (
           <div className="hidden sm:block overflow-x-auto scrollbar-hide">
             <table className="w-full text-left text-sm text-zinc-600">
               <thead className="bg-white text-xs uppercase text-zinc-400 border-b border-zinc-100">
@@ -1237,6 +1281,17 @@ export default function AdminOrdersPage() {
               </tbody>
             </table>
           </div>
+        )}
+
+        {/* CALENDAR VIEW */}
+        {view === "calendar" && (
+          <OrdersCalendarContainer
+            bare
+            onOrderClick={openOrderById}
+            status={activeTab === "all" ? null : activeTab}
+            search={search}
+            cancelledBy={cancelledBy}
+          />
         )}
       </div>
     </>

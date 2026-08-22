@@ -252,3 +252,133 @@ body {
   100% { transform: scale(1); }
 }
 .animate-heart-pop { animation: heart-pop 0.35s ease-out forwards; }
+
+/* ───────────────────── Orders Calendar (FullCalendar overrides) ─────────────────────
+   Scoped to `.oc-calendar` so it can't leak into other FullCalendar usages.
+   Aligns FullCalendar's default chrome with the admin design system
+   (zinc palette, 3px radii, subtle borders). */
+.oc-calendar .fc {
+  --fc-border-color: var(--color-zinc-100, #f4f4f5);
+  --fc-today-bg-color: var(--color-blue-50, #eff6ff);
+  --fc-neutral-bg-color: var(--color-zinc-50, #fafafa);
+  --fc-page-bg-color: #ffffff;
+  --fc-now-indicator-color: var(--color-red-500, #ef4444);
+  font-size: 0.8125rem;
+}
+.oc-calendar .fc .fc-scrollgrid {
+  border-radius: 3px;
+  overflow: hidden;
+}
+.oc-calendar .fc .fc-col-header-cell-cushion {
+  padding: 6px 4px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-zinc-400, #a1a1aa);
+}
+.oc-calendar .fc .fc-daygrid-day-number {
+  padding: 4px 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-zinc-600, #52525b);
+}
+.oc-calendar .fc .fc-day-today .fc-daygrid-day-number {
+  color: var(--color-blue-600, #2563eb);
+}
+.oc-calendar .fc .fc-daygrid-day.fc-day-other {
+  background: var(--color-zinc-50, #fafafa);
+}
+.oc-calendar .fc .fc-event {
+  border-radius: 3px;
+  border: none;
+  padding: 1px 2px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+/* FullCalendar forces white event text via .fc-event-main; let our tinted
+   chips (status / revenue) drive the text colour instead for readability. */
+.oc-calendar .fc .fc-event .fc-event-main { color: inherit; }
+.oc-calendar .fc .fc-event .fc-event-title,
+.oc-calendar .fc .fc-event .fc-event-time { color: inherit; }
+.oc-calendar .fc .fc-daygrid-event {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.oc-calendar .fc .fc-more-link {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-zinc-500, #71717a);
+}
+.oc-calendar .fc .fc-popover {
+  border-radius: 3px;
+  border: 1px solid var(--color-zinc-100, #f4f4f5);
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1);
+  z-index: 40;
+}
+.oc-calendar .fc .fc-timegrid-slot {
+  height: 2.25rem;
+}
+.oc-calendar .fc .fc-timegrid-axis-cushion,
+.oc-calendar .fc .fc-timegrid-slot-label-cushion {
+  font-size: 0.6875rem;
+  color: var(--color-zinc-400, #a1a1aa);
+}
+
+/* Per-status event chip tint. Light background + readable text, matching the
+   status pills used on the orders list. Applied via classNames on each event. */
+.oc-calendar .fc .oc-ev { color: var(--color-zinc-700, #3f3f46); }
+.oc-calendar .fc .oc-ev-pending    { background: var(--color-amber-50,   #fffbeb); color: var(--color-amber-700,   #b45309); }
+.oc-calendar .fc .oc-ev-confirmed  { background: var(--color-blue-50,    #eff6ff); color: var(--color-blue-700,    #1d4ed8); }
+.oc-calendar .fc .oc-ev-processing { background: var(--color-violet-50,  #f5f3ff); color: var(--color-violet-700,  #6d28d9); }
+.oc-calendar .fc .oc-ev-shipped    { background: var(--color-indigo-50,  #eef2ff); color: var(--color-indigo-700,  #4338ca); }
+.oc-calendar .fc .oc-ev-delivered  { background: var(--color-emerald-50, #ecfdf5); color: var(--color-emerald-700, #047857); }
+.oc-calendar .fc .oc-ev-cancelled  { background: var(--color-red-50,     #fef2f2); color: var(--color-red-700,     #b91c1c); }
+.oc-calendar .fc .oc-ev-cancelled .fc-event-title { text-decoration: line-through; }
+.oc-calendar .fc .oc-ev-revenue    { background: var(--color-emerald-100, #d1fae5); color: var(--color-emerald-800, #065f46); font-weight: 700; }
+
+/* Month-view day cell: number + per-day order count badge. */
+.oc-calendar .fc .oc-daynum {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-width: 3.5rem;
+}
+.oc-calendar .fc .oc-day-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.05rem;
+  padding: 0 0.3rem;
+  border-radius: 3px;
+  background: var(--color-zinc-100, #f4f4f5);
+  color: var(--color-zinc-500, #71717a);
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.oc-calendar .fc .fc-day-today .oc-day-count {
+  background: var(--color-blue-100, #dbeafe);
+  color: var(--color-blue-700, #1d4ed8);
+}
+
+/* Keyboard focus visibility for interactive events, more-links and nav. */
+.oc-calendar .fc a.fc-event:focus-visible,
+.oc-calendar .fc .fc-event[tabindex]:focus-visible,
+.oc-calendar .fc .fc-more-link:focus-visible,
+.oc-calendar .fc .fc-daygrid-day-number:focus-visible {
+  outline: 2px solid var(--color-blue-600, #2563eb);
+  outline-offset: 1px;
+  border-radius: 3px;
+}
+/* Comfortable touch targets on small screens. */
+@media (max-width: 640px) {
+  .oc-calendar .fc .fc-daygrid-event { padding: 2px 3px; }
+  .oc-calendar .fc .fc-more-link { padding: 2px 4px; }
+}
+/* RTL: keep the more-link and popover content aligned to the start. */
+.oc-calendar .fc-direction-rtl .fc-daygrid-more-link { text-align: right; }

@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { Plus, Settings, Package } from "lucide-react";
 import { useDictionary } from "@/components/providers/LocaleProvider";
 import { AdminDashboardSkeleton } from "@/components/skeletons";
+import OverviewCalendarSection from "@/components/admin/orders-calendar/OverviewCalendarSection";
 
 const STATUS_STYLES = {
   active:   { pill: "bg-emerald-50 text-emerald-700" },
@@ -87,8 +88,11 @@ export default function AdminDashboard() {
         ))}
       </div>
 
+      {/* REVENUE CALENDAR */}
+      <OverviewCalendarSection />
+
       {/* RECENT PRODUCTS TABLE */}
-      <div className="rounded-[3px] border border-zinc-100 bg-white flex flex-col">
+      <div className="mt-8 rounded-[3px] border border-zinc-100 bg-white flex flex-col">
         <div className="border-b border-zinc-100 px-6 py-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-zinc-900">{t.recent_title}</h2>
           <Link

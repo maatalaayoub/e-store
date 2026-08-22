@@ -735,6 +735,15 @@ export async function GET(req) {
     const limitParam = searchParams.get('limit');
     const statusParam = searchParams.get('status');
     const sortParam = searchParams.get('sort');
+    const fromParam = searchParams.get('from');
+    const toParam = searchParams.get('to');
+
+    // Optional created_at range (used by the calendar to fetch only the visible
+    // window). Accepts any Date-parseable string; invalid values are ignored.
+    const fromDate = fromParam ? new Date(fromParam) : null;
+    const toDate = toParam ? new Date(toParam) : null;
+    const fromIso = fromDate && !Number.isNaN(fromDate.getTime()) ? fromDate.toISOString() : null;
+    const toIso = toDate && !Number.isNaN(toDate.getTime()) ? toDate.toISOString() : null;
 
     const isPaginated =
       pageParam != null || limitParam != null || statusParam != null || sortParam != null;
@@ -761,6 +770,11 @@ export async function GET(req) {
     if (statusParam && ALLOWED_STATUSES.includes(statusParam)) {
       query = query.eq('status', statusParam);
     }
+
+    // Date-range scoping (indexed on created_at). Keeps calendar/date-filtered
+    // requests from scanning the whole table.
+    if (fromIso) query = query.gte('created_at', fromIso);
+    if (toIso) query = query.lte('created_at', toIso);
 
     // Restrict staff to orders within their allowed date window.
     query = applyStaffDateWindow(query, dataWindow);
